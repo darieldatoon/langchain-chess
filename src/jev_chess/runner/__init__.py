@@ -1,6 +1,8 @@
 """Native game runner: drives a game between two players, records per-ply telemetry."""
 
+from jev_chess.runner.adjudication import AdjudicationConfig, Adjudicator, Evaluator
 from jev_chess.runner.game import (
+    Adjudication,
     GameRecord,
     Player,
     PlyRecord,
@@ -9,6 +11,7 @@ from jev_chess.runner.game import (
     Termination,
     play_game,
 )
+from jev_chess.runner.match import Budget, GamePlan, Match, MatchConfig, plan_games
 from jev_chess.runner.openings import BOOK, Opening, board_after, pick_openings
 from jev_chess.runner.players import (
     AnyPlayer,
@@ -32,8 +35,14 @@ from jev_chess.runner.players import (
 
 __all__ = [
     "BOOK",
+    "Adjudication",
+    "AdjudicationConfig",
+    "Adjudicator",
     "AnyPlayer",
+    "Budget",
     "EnginePlayer",
+    "Evaluator",
+    "GamePlan",
     "GameRecord",
     "HybridPlayer",
     "HybridSpec",
@@ -42,6 +51,8 @@ __all__ = [
     "LLMPlayer",
     "LLMSpec",
     "MaiaSpec",
+    "Match",
+    "MatchConfig",
     "Opening",
     "Player",
     "PlayerSpec",
@@ -58,5 +69,6 @@ __all__ = [
     "build_player",
     "parse_spec",
     "pick_openings",
+    "plan_games",
     "play_game",
 ]

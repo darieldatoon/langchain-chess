@@ -25,7 +25,17 @@ type Termination = Literal[
     "fifty_moves",
     "threefold_repetition",
     "max_plies",
+    "adjudication_decisive",
+    "adjudication_max_plies",
 ]
+
+
+class Adjudication(Protocol):
+    """Optional early-ending rules; see runner.adjudication for the Stockfish one."""
+
+    def after_ply(self, board: chess.Board) -> tuple[str, str] | None: ...
+
+    def at_max_plies(self, board: chess.Board) -> tuple[str, str]: ...
 
 
 class Player(Protocol):
@@ -120,6 +130,7 @@ def play_game(
     opening_uci: Sequence[str] = (),
     max_plies: int = 200,
     on_ply: OnPly = lambda _: None,
+    adjudicator: Adjudication | None = None,
 ) -> GameRecord:
     board = chess.Board()
     for uci in opening_uci:
@@ -162,7 +173,17 @@ def play_game(
         board.push(move)
         on_ply(record)
         ended = _termination(board)
-    result, termination = ended if ended is not None else ("1/2-1/2", "max_plies")
+        if ended is None and adjudicator is not None:
+            early = adjudicator.after_ply(board)
+            if early is not None:
+                ended = cast("tuple[Result, Termination]", early)
+    if ended is None:
+        ended = (
+            cast("tuple[Result, Termination]", adjudicator.at_max_plies(board))
+            if adjudicator is not None
+            else ("1/2-1/2", "max_plies")
+        )
+    result, termination = ended
     return GameRecord(
         game_id=game_id,
         white=white.name,

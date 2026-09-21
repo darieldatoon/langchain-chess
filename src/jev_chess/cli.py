@@ -14,6 +14,8 @@ from rich.table import Table
 from jev_chess.analysis.records import JevRecord, PositionRecord
 from jev_chess.core import DescriptionStyle, all_move_facts, describe, material_balance, snapshot
 from jev_chess.engines import MaiaOpponent, MaiaRating, Oracle, OracleConfig
+from jev_chess.runner.game import GameRecord
+from jev_chess.runner.match import MatchConfig
 from jev_chess.settings import EngineSettings
 
 app = typer.Typer(no_args_is_help=True, help="System 1 vs System 2 chess experiments.")
@@ -357,7 +359,59 @@ def recall_report_cmd(
         console.print(tac)
 
 
-# --- Phase 3: play games -----------------------------------------------------------------
+# --- Phase 3 / 5: play games ---------------------------------------------------------------
+
+
+def _match_config(
+    games: int,
+    max_plies: int,
+    seed: int,
+    swap_colours: bool,
+    workers: int,
+    max_usd: float | None,
+    adjudicate: bool,
+    adjudication_depth: int,
+) -> "MatchConfig":
+    from jev_chess.runner import MatchConfig
+
+    return MatchConfig(
+        games=games,
+        max_plies=max_plies,
+        seed=seed,
+        swap_colours=swap_colours,
+        workers=workers,
+        max_usd=max_usd,
+        adjudicate=adjudicate,
+        adjudication_depth=adjudication_depth,
+    )
+
+
+def _run_match(white: str, black: str, out: Path, config: MatchConfig, label: str) -> None:
+    from jev_chess.runner import HybridSpec, JevSpec, LLMSpec, Match, SpecError, parse_spec
+    from jev_chess.settings import GatewaySettings
+
+    try:
+        specs = (parse_spec(white), parse_spec(black))
+    except SpecError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    needs_gateway = any(isinstance(s, (JevSpec, LLMSpec, HybridSpec)) for s in specs)
+    gateway = GatewaySettings() if needs_gateway else None
+
+    def on_game(record: GameRecord) -> None:
+        wt, bt = record.white_totals, record.black_totals
+        console.print(
+            f"[bold]{record.game_id}[/] {record.white} vs {record.black}, {record.opening}: "
+            f"{record.result} by {record.termination} after {record.plies} plies; "
+            f"white {wt.latency_ms / 1000:.0f}s ${wt.cost_usd:.3f}, "
+            f"black {bt.latency_ms / 1000:.0f}s ${bt.cost_usd:.3f}"
+        )
+
+    match = Match(specs[0], specs[1], config, out, EngineSettings(), gateway, on_game=on_game)
+    played = match.run(label)
+    console.print(
+        f"{len(played)} games written to {out / 'games.jsonl'}; spent ${match.budget.spent_usd:.3f}"
+        + (f"; {len(match.skipped)} games skipped by --max-usd" if match.skipped else "")
+    )
 
 
 @app.command()
@@ -376,55 +430,135 @@ def play(
     max_plies: Annotated[int, typer.Option(min=2, max=600)] = 200,
     seed: int = 0,
     swap_colours: Annotated[bool, typer.Option(help="alternate colours each game")] = True,
+    workers: Annotated[int, typer.Option(min=1, max=32, help="concurrent games")] = 1,
+    max_usd: Annotated[
+        float | None, typer.Option(help="stop starting games past this spend")
+    ] = None,
+    adjudicate: Annotated[
+        bool, typer.Option(help="Stockfish adjudication of decided games")
+    ] = True,
+    adjudication_depth: Annotated[int, typer.Option(min=4, max=30)] = 12,
 ) -> None:
     """Play games between two players from the opening book, appending records as they go."""
-    import random
-
-    from jev_chess.analysis import append_jsonl
-    from jev_chess.runner import (
-        GameRecord,
-        HybridSpec,
-        JevSpec,
-        LLMSpec,
-        Roster,
-        SpecError,
-        parse_spec,
-        pick_openings,
-        play_game,
+    config = _match_config(
+        games, max_plies, seed, swap_colours, workers, max_usd, adjudicate, adjudication_depth
     )
-    from jev_chess.settings import GatewaySettings
+    _run_match(white, black, out, config, out.name)
 
-    try:
-        specs = (parse_spec(white), parse_spec(black))
-    except SpecError as exc:
-        raise typer.BadParameter(str(exc)) from exc
-    needs_gateway = any(isinstance(s, (JevSpec, LLMSpec, HybridSpec)) for s in specs)
-    gateway = GatewaySettings() if needs_gateway else None
-    rng = random.Random(seed)
-    openings = pick_openings(rng, games)
-    plies_path, games_path = out / "plies.jsonl", out / "games.jsonl"
-    with Roster(specs[0], specs[1], EngineSettings(), gateway, seed) as roster:
-        assert roster.white is not None
-        assert roster.black is not None
-        for index, opening in enumerate(openings):
-            swap = swap_colours and index % 2 == 1
-            w, b = (roster.black, roster.white) if swap else (roster.white, roster.black)
-            game_id = f"{out.name}-{seed}-{index:03d}"
-            console.print(f"[bold]{game_id}[/] {w.name} vs {b.name}, {opening.name}")
-            record: GameRecord = play_game(
-                w,
-                b,
-                game_id,
-                opening.name,
-                opening.uci,
-                max_plies,
-                on_ply=lambda ply: append_jsonl(plies_path, ply),
-            )
-            append_jsonl(games_path, record)
-            wt, bt = record.white_totals, record.black_totals
-            console.print(
-                f"  {record.result} by {record.termination} after {record.plies} plies; "
-                f"white {wt.latency_ms / 1000:.0f}s ${wt.cost_usd:.3f}, "
-                f"black {bt.latency_ms / 1000:.0f}s ${bt.cost_usd:.3f}"
-            )
-    console.print(f"wrote {games} games to {games_path}")
+
+@app.command()
+def sweep(
+    players: Annotated[str, typer.Option(help="comma-separated player specs under test")],
+    opponents: Annotated[str, typer.Option(help="comma-separated opponent specs")],
+    out: Annotated[Path, typer.Option(help="run directory; one subdirectory per pairing")] = Path(
+        "runs/sweep"
+    ),
+    games: Annotated[int, typer.Option(min=1)] = 10,
+    max_plies: Annotated[int, typer.Option(min=2, max=600)] = 200,
+    seed: int = 0,
+    workers: Annotated[int, typer.Option(min=1, max=32)] = 4,
+    max_usd: Annotated[float | None, typer.Option(help="total cap across all pairings")] = None,
+    adjudicate: bool = True,
+    adjudication_depth: Annotated[int, typer.Option(min=4, max=30)] = 12,
+) -> None:
+    """Every player against every opponent. Records land in out/<player>__<opponent>/."""
+    config = _match_config(
+        games, max_plies, seed, True, workers, max_usd, adjudicate, adjudication_depth
+    )
+    for player in _split(players):
+        for opponent in _split(opponents):
+            label = f"{_slug(player)}__{_slug(opponent)}"
+            console.rule(f"{player} vs {opponent}")
+            _run_match(player, opponent, out / label, config, label)
+
+
+def _split(text: str) -> list[str]:
+    return [part.strip() for part in text.split(",") if part.strip()]
+
+
+def _slug(spec: str) -> str:
+    return spec.replace(":", "-").replace("/", "-").replace(".", "_")
+
+
+@app.command()
+def grade(
+    run: Annotated[Path, typer.Option(help="run directory containing plies.jsonl")],
+    depth: Annotated[int, typer.Option(min=1, max=40)] = 16,
+    workers: Annotated[int, typer.Option(min=1, max=32)] = 4,
+) -> None:
+    """Grade every recorded ply with the oracle; writes grades.jsonl next to plies.jsonl."""
+    from jev_chess.analysis import grade_plies, read_jsonl, write_jsonl
+    from jev_chess.runner import PlyRecord
+
+    plies = [p for path in sorted(run.rglob("plies.jsonl")) for p in read_jsonl(path, PlyRecord)]
+    if not plies:
+        raise typer.BadParameter(f"no plies.jsonl under {run}", param_hint="--run")
+    settings = EngineSettings()
+    config = OracleConfig(depth=depth, multipv=1)
+    with Progress(console=console) as progress:
+        task = progress.add_task("grading", total=len(plies))
+        grades = grade_plies(
+            plies,
+            lambda: Oracle.open(settings.stockfish_path, config),
+            workers,
+            progress=lambda _: progress.advance(task),
+        )
+    out = run / "grades.jsonl"
+    console.print(f"wrote {write_jsonl(out, grades)} grades to {out}")
+
+
+@app.command()
+def report(
+    run: Annotated[Path, typer.Option(help="run directory (searched recursively)")],
+) -> None:
+    """Per-player strength, cost, and latency from games, plies, and grades under a run."""
+    from jev_chess.analysis import anchor_rows, pareto_rows, read_jsonl, summarise
+    from jev_chess.analysis.grade import GradeRecord
+    from jev_chess.runner import PlyRecord
+
+    games = [g for path in sorted(run.rglob("games.jsonl")) for g in read_jsonl(path, GameRecord)]
+    plies = [p for path in sorted(run.rglob("plies.jsonl")) for p in read_jsonl(path, PlyRecord)]
+    grades = [
+        g for path in sorted(run.rglob("grades.jsonl")) for g in read_jsonl(path, GradeRecord)
+    ]
+    if not games:
+        raise typer.BadParameter(f"no games.jsonl under {run}", param_hint="--run")
+    summaries = summarise(games, plies, grades)
+    table = Table(
+        "player",
+        "games",
+        "W-D-L",
+        "score",
+        "Elo",
+        "ACPL",
+        "blunder%",
+        "s/move (median)",
+        "$/game",
+        "escalate%",
+        "override%",
+        "override gain cp",
+        "fallbacks",
+        "illegal",
+    )
+    for s in pareto_rows(list(summaries.values())):
+        table.add_row(
+            s.player,
+            str(s.games),
+            f"{s.wins}-{s.draws}-{s.losses}",
+            f"{s.score:.0%}",
+            f"{s.elo:.0f}" if s.elo is not None else "",
+            f"{s.acpl:.0f}" if s.acpl is not None else "",
+            f"{s.blunder_rate:.1%}" if s.blunder_rate is not None else "",
+            f"{s.median_latency_ms / 1000:.1f}",
+            f"{s.cost_per_game:.3f}" + ("" if s.cost_known else "+?"),
+            f"{s.escalation_rate:.0%}",
+            f"{s.override_rate:.0%}" if s.override_rate is not None else "",
+            f"{s.mean_override_gain_cp:+.0f}" if s.mean_override_gain_cp is not None else "",
+            str(s.fallbacks),
+            str(s.illegal_attempts),
+        )
+    console.print(table)
+    anchors = Table("engine", "games", "W-D-L", "anchor Elo")
+    for s in anchor_rows(list(summaries.values())):
+        anchors.add_row(s.player, str(s.games), f"{s.wins}-{s.draws}-{s.losses}", f"{s.elo:.0f}")
+    console.print(anchors)

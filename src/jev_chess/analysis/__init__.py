@@ -1,5 +1,7 @@
 """Offline analysis: position sampling, Stockfish labelling, Jev ranking, recall reports."""
 
+from jev_chess.analysis.elo import Pairing, anchor_rating, expected, fit_elo, pairings
+from jev_chess.analysis.grade import GradeRecord, classify, grade_one, grade_plies
 from jev_chess.analysis.label import label_one, label_positions
 from jev_chess.analysis.rank import backoff_seconds, rank_positions, rank_with_retry, to_record
 from jev_chess.analysis.recall import (
@@ -28,6 +30,7 @@ from jev_chess.analysis.records import (
     read_jsonl,
     write_jsonl,
 )
+from jev_chess.analysis.report import PlayerSummary, anchor_rows, pareto_rows, summarise
 from jev_chess.analysis.sample import (
     RandomOpener,
     SampleConfig,
@@ -39,26 +42,38 @@ from jev_chess.analysis.sample import (
 
 __all__ = [
     "GatePoint",
+    "GradeRecord",
     "JevRecord",
     "Joined",
     "LabelMove",
     "OracleLabel",
+    "Pairing",
+    "PlayerSummary",
     "PositionRecord",
     "RandomOpener",
     "RankedCandidate",
     "RecallReport",
     "SampleConfig",
     "ScoreReport",
+    "anchor_rating",
+    "anchor_rows",
     "append_jsonl",
     "backoff_seconds",
     "calibration",
+    "classify",
     "existing_ids",
+    "expected",
+    "fit_elo",
     "gate_report",
+    "grade_one",
+    "grade_plies",
     "join",
     "label_one",
     "label_positions",
     "oracle_rung",
     "oracle_tactic_present",
+    "pairings",
+    "pareto_rows",
     "phase_of",
     "pick_positions",
     "play_game",
@@ -68,6 +83,7 @@ __all__ = [
     "recall_report",
     "sample_positions",
     "score_report",
+    "summarise",
     "tactics_calibration",
     "to_record",
     "white_cp",

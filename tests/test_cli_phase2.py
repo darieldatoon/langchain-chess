@@ -469,7 +469,7 @@ def test_play_command_random_vs_random_writes_records(tmp_path: Path) -> None:
     assert all(g.plies <= 12 for g in games)
     assert len(plies) == sum(g.plies - g.opening_plies for g in games)
     assert games[0].game_id != games[1].game_id
-    assert "wrote 2 games" in result.output
+    assert "2 games written" in result.output
 
 
 def test_play_command_rejects_bad_spec(tmp_path: Path) -> None:
