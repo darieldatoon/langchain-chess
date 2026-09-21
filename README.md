@@ -5,16 +5,17 @@ plays fast and cheap. Reasoning LLMs play slower and better. A confidence-gated 
 lets Jev move when it is sure and escalates its top-k candidates to an LLM when it is not.
 Stockfish grades every move.
 
-Every model call, Jev included, goes through the LangSmith LLM Gateway so cost, latency,
-and tokens are traced in one place and one API key covers every provider.
+Every model call, Jev included, goes through the LangSmith LLM Gateway, so one gateway key
+covers every provider and each call is traced with cost and latency. Tracing and gateway can
+use different LangSmith orgs; see `.env.example`.
 
 ## Setup
 
 ```sh
-brew install stockfish lc0 lefthook
+brew install stockfish lc0
 uv sync
-lefthook install
-cp .env.example .env   # LangSmith key only; provider keys live in the workspace gateway
+uv run lefthook install   # lefthook ships as a dev dependency
+cp .env.example .env   # two LangSmith keys: one for tracing, one for the gateway
 ```
 
 ## Commands
