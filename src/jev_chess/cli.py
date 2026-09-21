@@ -365,7 +365,7 @@ def play(
     white: Annotated[
         str,
         typer.Option(
-            help="player spec, e.g. jev, maia:1100, llm:claude-opus-5, llm:openai:gpt-5.6-sol:low"
+            help="e.g. jev, maia:1100, llm:claude-opus-5:low, hybrid:claude-opus-5:low:k5:t0.9"
         ),
     ],
     black: Annotated[str, typer.Option(help="player spec")],
@@ -383,6 +383,7 @@ def play(
     from jev_chess.analysis import append_jsonl
     from jev_chess.runner import (
         GameRecord,
+        HybridSpec,
         JevSpec,
         LLMSpec,
         Roster,
@@ -397,7 +398,7 @@ def play(
         specs = (parse_spec(white), parse_spec(black))
     except SpecError as exc:
         raise typer.BadParameter(str(exc)) from exc
-    needs_gateway = any(isinstance(s, (JevSpec, LLMSpec)) for s in specs)
+    needs_gateway = any(isinstance(s, (JevSpec, LLMSpec, HybridSpec)) for s in specs)
     gateway = GatewaySettings() if needs_gateway else None
     rng = random.Random(seed)
     openings = pick_openings(rng, games)

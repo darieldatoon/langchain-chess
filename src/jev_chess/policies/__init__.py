@@ -1,5 +1,6 @@
 """Move policies as LangGraph graphs: position in, ranking or decision out."""
 
+from jev_chess.policies.hybrid import GateSignal, HybridConfig, HybridPolicy, gate_value, shortlist
 from jev_chess.policies.jev import (
     Classifier,
     JevConfig,
@@ -35,6 +36,9 @@ __all__ = [
     "Candidate",
     "ChatModel",
     "Classifier",
+    "GateSignal",
+    "HybridConfig",
+    "HybridPolicy",
     "JevConfig",
     "JevPolicy",
     "JevRanking",
@@ -50,10 +54,12 @@ __all__ = [
     "build_request",
     "build_state",
     "cost_usd",
+    "gate_value",
     "history_san",
     "legal_decision",
     "make_chat_model",
     "parse_move",
     "parse_response",
     "resolve_model_spec",
+    "shortlist",
 ]

@@ -13,6 +13,8 @@ from jev_chess.runner.openings import BOOK, Opening, board_after, pick_openings
 from jev_chess.runner.players import (
     AnyPlayer,
     EnginePlayer,
+    HybridPlayer,
+    HybridSpec,
     JevPlayer,
     JevSpec,
     LLMPlayer,
@@ -33,6 +35,8 @@ __all__ = [
     "AnyPlayer",
     "EnginePlayer",
     "GameRecord",
+    "HybridPlayer",
+    "HybridSpec",
     "JevPlayer",
     "JevSpec",
     "LLMPlayer",

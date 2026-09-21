@@ -5,10 +5,19 @@ import chess
 import pytest
 
 from jev_chess.engines import EloLimit, MaiaOpponent, SkillLimit, StockfishOpponent
-from jev_chess.policies import JevPolicy, LLMConfig, LLMPolicy, MoveDecision
+from jev_chess.policies import (
+    HybridConfig,
+    HybridPolicy,
+    JevPolicy,
+    LLMConfig,
+    LLMPolicy,
+    MoveDecision,
+)
 from jev_chess.runner import (
     BOOK,
     EnginePlayer,
+    HybridPlayer,
+    HybridSpec,
     JevPlayer,
     JevSpec,
     LLMPlayer,
@@ -297,3 +306,92 @@ def test_roster_exit_tolerates_unopened_players() -> None:
     roster = Roster(RandomSpec(), RandomSpec(), EngineSettings(_env_file=None))
     roster.__exit__(None, None, None)
     assert roster.white is None
+
+
+# --- hybrid specs -------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("hybrid:claude-opus-5", HybridSpec("langsmith:anthropic/claude-opus-5")),
+        (
+            "hybrid:openai:gpt-5.6-sol:low:k3:t0.7:confidence",
+            HybridSpec("openai:gpt-5.6-sol", "low", 3, None, 0.7, "confidence"),
+        ),
+        (
+            "hybrid:gpt-5.6-sol:p0.8:t0",
+            HybridSpec("langsmith:openai/gpt-5.6-sol", top_p=0.8, threshold=0.0),
+        ),
+        ("hybrid:claude-opus-5:t1", HybridSpec("langsmith:anthropic/claude-opus-5", threshold=1.0)),
+    ],
+)
+def test_parse_hybrid_spec(text: str, expected: HybridSpec) -> None:
+    spec = parse_spec(text)
+    assert spec == expected
+    assert spec.name.startswith("hybrid:")
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "hybrid",
+        "hybrid:t0.9",
+        "hybrid:claude-opus-5:k0",
+        "hybrid:claude-opus-5:t2",
+        "hybrid:mystery-9000",
+        "hybrid:claude-opus-5:p0",
+    ],
+)
+def test_parse_hybrid_spec_rejects(text: str) -> None:
+    with pytest.raises(SpecError):
+        parse_spec(text)
+
+
+def test_hybrid_spec_name_matches_config_label() -> None:
+    spec = parse_spec("hybrid:claude-opus-5:low:k5:t0.9")
+    assert spec.name == "hybrid:langsmith:anthropic/claude-opus-5:low:k5:t0.9:margin"
+
+
+def test_build_hybrid_player(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        HybridPolicy,
+        "from_settings",
+        classmethod(
+            lambda cls, settings=None, config=None: HybridPolicy(
+                JevPolicy(FakeClassifier(scripted=choice_response({"e2e4": 0.9, "d2d4": 0.1}))),
+                LLMPolicy(FakeChatModel([reply("MOVE: e4")]), (config or HybridConfig()).llm),
+                config,
+            )
+        ),
+    )
+    player = build_player(
+        HybridSpec("langsmith:anthropic/claude-opus-5", threshold=0.5),
+        EngineSettings(_env_file=None),
+        GATEWAY,
+    )
+    assert isinstance(player, HybridPlayer)
+    decision = player.decide(chess.Board(), "g", 1)
+    assert decision.source == "jev"
+    assert decision.jev_top_uci == "e2e4"
+    player.close()
+
+
+def test_parse_hybrid_spec_non_numeric_suffix_stays_in_the_model_text() -> None:
+    # `kx` is not a k<int> option, so it is treated as part of an explicit provider:model spec.
+    spec = parse_spec("hybrid:claude-opus-5:kx")
+    assert isinstance(spec, HybridSpec)
+    assert spec.model == "claude-opus-5:kx"
+
+
+def test_hybrid_player_close_is_a_noop() -> None:
+    player = HybridPlayer(
+        HybridPolicy(
+            JevPolicy(FakeClassifier()),
+            LLMPolicy(FakeChatModel([reply("MOVE: a3")]), LLMConfig()),
+            HybridConfig(threshold=1.0),
+        ),
+        "hybrid:test",
+    )
+    assert player.name == "hybrid:test"
+    assert player.close() is None

@@ -54,6 +54,7 @@ class PlyRecord(BaseModel):
     illegal_attempts: int
     jev_confidence: float | None
     jev_margin: float | None
+    jev_top_uci: str | None
 
 
 class SideTotals(BaseModel):
@@ -155,6 +156,7 @@ def play_game(
             illegal_attempts=decision.illegal_attempts,
             jev_confidence=decision.jev_confidence,
             jev_margin=decision.jev_margin,
+            jev_top_uci=decision.jev_top_uci,
         )
         totals[board.turn].add(decision)
         board.push(move)

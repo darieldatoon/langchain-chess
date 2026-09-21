@@ -79,6 +79,7 @@ class MoveDecision:
     jev_confidence: float | None = None
     jev_margin: float | None = None
     jev_top_k: tuple[Candidate, ...] | None = None
+    jev_top_uci: str | None = None
     raw_reply: str | None = None
 
 

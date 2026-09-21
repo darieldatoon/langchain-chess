@@ -10,6 +10,10 @@ engine starts:
         the LLM Gateway (the default when you give a bare name such as `claude-opus-5`);
         `openai:gpt-5.6-sol` or `anthropic:claude-opus-5` go straight to the provider.
         `nolegal` drops the legal-move list from the prompt.
+    hybrid:<model>[:effort][:k<int>|:p<float>][:t<float>][:margin|confidence]
+        Jev ranks; if the gate signal clears t (default 0.9 on margin) Jev's move is played,
+        else the LLM chooses among Jev's top k (default 5) or top-p mass. t0 is Jev-only,
+        t1 is the pure pruner.
     maia:1100           Maia at that rating (1100..1900)
     stockfish:1500      Stockfish capped at UCI_Elo 1500 (1320..3190)
     stockfish:skill:3   Stockfish at Skill Level 3 (0..20)
@@ -28,7 +32,16 @@ from langchain_core.runnables import RunnableConfig
 from jev_chess.core import DescriptionStyle
 from jev_chess.engines import EloLimit, MaiaOpponent, MaiaRating, SkillLimit, StockfishOpponent
 from jev_chess.engines.protocol import MovePlayer
-from jev_chess.policies import JevConfig, JevPolicy, LLMConfig, LLMPolicy, MoveDecision
+from jev_chess.policies import (
+    GateSignal,
+    HybridConfig,
+    HybridPolicy,
+    JevConfig,
+    JevPolicy,
+    LLMConfig,
+    LLMPolicy,
+    MoveDecision,
+)
 from jev_chess.policies.llm import resolve_model_spec
 from jev_chess.policies.pricing import cost_usd
 from jev_chess.policies.types import ReasoningEffort, legal_decision
@@ -54,6 +67,30 @@ class LLMSpec:
     def name(self) -> str:
         suffix = "" if self.include_legal_moves else ":nolegal"
         return f"llm:{self.model}:{self.reasoning_effort}{suffix}"
+
+
+@dataclass(frozen=True, slots=True)
+class HybridSpec:
+    model: str
+    reasoning_effort: ReasoningEffort = "medium"
+    k: int = 5
+    top_p: float | None = None
+    threshold: float = 0.9
+    gate: GateSignal = "margin"
+
+    @property
+    def config(self) -> HybridConfig:
+        return HybridConfig(
+            llm=LLMConfig(model=self.model, reasoning_effort=self.reasoning_effort),
+            k=self.k,
+            top_p=self.top_p,
+            gate=self.gate,
+            threshold=self.threshold,
+        )
+
+    @property
+    def name(self) -> str:
+        return self.config.label
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,7 +120,7 @@ class RandomSpec:
         return "random"
 
 
-type PlayerSpec = JevSpec | LLMSpec | MaiaSpec | StockfishSpec | RandomSpec
+type PlayerSpec = JevSpec | LLMSpec | HybridSpec | MaiaSpec | StockfishSpec | RandomSpec
 
 
 class SpecError(ValueError):
@@ -140,7 +177,52 @@ def parse_spec(text: str) -> PlayerSpec:
             reasoning_effort=cast("ReasoningEffort", effort),
             include_legal_moves=include_legal,
         )
+    if kind == "hybrid" and len(parts) >= 2:
+        return _parse_hybrid(text, parts[1:])
     raise SpecError(f"unrecognised player spec {text!r}")
+
+
+def _parse_hybrid(text: str, rest: list[str]) -> HybridSpec:
+    options: dict[str, Any] = {}
+    gates = get_args(GateSignal.__value__)
+    efforts = get_args(ReasoningEffort.__value__)
+
+    def is_option(token: str) -> bool:
+        return (
+            token in gates
+            or token in efforts
+            or (len(token) > 1 and token[0] in "kpt" and _is_number(token[1:]))
+        )
+
+    while rest and is_option(rest[-1]):
+        token = rest.pop()
+        if token in gates:
+            options["gate"] = token
+        elif token in efforts:
+            options["reasoning_effort"] = token
+        elif token[0] == "k":
+            options["k"] = int(token[1:])
+        elif token[0] == "p":
+            options["top_p"] = float(token[1:])
+        else:
+            options["threshold"] = float(token[1:])
+    model_text = ":".join(rest)
+    if not model_text:
+        raise SpecError(f"hybrid spec needs an LLM model, got {text!r}")
+    try:
+        spec = HybridSpec(model=resolve_model_spec(model_text), **options)
+        spec.config  # noqa: B018  # validates k / threshold / top_p ranges
+    except ValueError as exc:
+        raise SpecError(str(exc)) from exc
+    return spec
+
+
+def _is_number(token: str) -> bool:
+    try:
+        float(token)
+    except ValueError:
+        return False
+    return True
 
 
 def _run_config(player: str, game_id: str, ply: int) -> RunnableConfig:
@@ -234,6 +316,22 @@ class JevPlayer:
         return None
 
 
+class HybridPlayer:
+    def __init__(self, policy: HybridPolicy, name: str) -> None:
+        self._policy = policy
+        self._name = name
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    def decide(self, board: chess.Board, game_id: str, ply: int) -> MoveDecision:
+        return self._policy.decide(board, run_config=_run_config(self._name, game_id, ply))
+
+    def close(self) -> None:
+        return None
+
+
 class LLMPlayer:
     def __init__(self, policy: LLMPolicy, name: str) -> None:
         self._policy = policy
@@ -268,6 +366,8 @@ def build_player(
     if isinstance(spec, JevSpec):
         policy = JevPolicy.from_settings(gateway, JevConfig(style=spec.style))
         return JevPlayer(policy, spec.name)
+    if isinstance(spec, HybridSpec):
+        return HybridPlayer(HybridPolicy.from_settings(gateway, spec.config), spec.name)
     config = LLMConfig(
         model=spec.model,
         reasoning_effort=spec.reasoning_effort,
@@ -277,7 +377,7 @@ def build_player(
     return LLMPlayer(LLMPolicy.from_settings(gateway, config), spec.name)
 
 
-type AnyPlayer = RandomPlayer | EnginePlayer | JevPlayer | LLMPlayer
+type AnyPlayer = RandomPlayer | EnginePlayer | JevPlayer | LLMPlayer | HybridPlayer
 
 
 class Roster:
