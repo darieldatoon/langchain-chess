@@ -17,7 +17,7 @@ dependencies = [
     "pydantic>=2.13",
     "typer>=0.27",
     "rich>=15",
-    "python-dotenv>=1.1",
+    "pydantic-settings>=2.10",
 ]
 
 [project.scripts]

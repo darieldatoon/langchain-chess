@@ -10,7 +10,7 @@ from rich.table import Table
 
 from jev_chess.core import DescriptionStyle, all_move_facts, describe, material_balance, snapshot
 from jev_chess.engines import MaiaOpponent, MaiaRating, Oracle, OracleConfig
-from jev_chess.settings import engine_settings, load_env
+from jev_chess.settings import EngineSettings
 
 app = typer.Typer(no_args_is_help=True, help="System 1 vs System 2 chess experiments.")
 console = Console()
@@ -75,7 +75,7 @@ def oracle(
     multipv: Annotated[int, typer.Option(min=1, max=10)] = _DEFAULT_ORACLE.multipv,
 ) -> None:
     """Rank the top moves with full-strength Stockfish."""
-    settings = engine_settings(load_env())
+    settings = EngineSettings()
     board = _board(fen)
     config = OracleConfig(depth=depth, multipv=multipv)
     with Oracle.open(settings.stockfish_path, config) as engine:
@@ -100,7 +100,7 @@ def maia(
 ) -> None:
     """Ask Maia what a human at the given rating would play."""
     chosen = _rating(rating)
-    settings = engine_settings(load_env())
+    settings = EngineSettings()
     board = _board(fen)
     with MaiaOpponent.open(chosen, settings.maia_weights_dir, settings.lc0_path) as engine:
         move = engine.play(board)

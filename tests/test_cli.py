@@ -7,6 +7,7 @@ from typer.testing import CliRunner
 from jev_chess import cli
 from jev_chess.cli import app
 from jev_chess.engines import MaiaOpponent, Oracle
+from jev_chess.settings import EngineSettings
 from tests.fakes import FakeBackend, info
 
 runner = CliRunner()
@@ -41,7 +42,7 @@ def test_facts_rejects_bad_style_and_bad_fen() -> None:
 
 def test_oracle_command_renders_ranking(monkeypatch: pytest.MonkeyPatch) -> None:
     backend = FakeBackend(scripted_infos=[info("a1a8", mate=1), info("a1a2", cp=900)])
-    monkeypatch.setattr(cli, "load_env", lambda: {})
+    monkeypatch.setattr(cli, "EngineSettings", lambda: EngineSettings(_env_file=None))
     monkeypatch.setattr(
         Oracle, "open", classmethod(lambda cls, path, config: Oracle(backend, config))
     )
@@ -54,7 +55,9 @@ def test_oracle_command_renders_ranking(monkeypatch: pytest.MonkeyPatch) -> None
 
 def test_maia_command(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     backend = FakeBackend(scripted_move=chess.Move.from_uci("e2e4"))
-    monkeypatch.setattr(cli, "load_env", lambda: {"MAIA_WEIGHTS_DIR": str(tmp_path)})
+    monkeypatch.setattr(
+        cli, "EngineSettings", lambda: EngineSettings(_env_file=None, maia_weights_dir=tmp_path)
+    )
     monkeypatch.setattr(
         MaiaOpponent,
         "open",
