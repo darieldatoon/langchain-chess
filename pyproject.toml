@@ -13,10 +13,10 @@ dependencies = [
     "langchain-anthropic>=1.7",
     "langchain-openai>=1.6",
     "langsmith>=0.13",
-    "typesafe-sdk>=0.7",
     "pydantic>=2.13",
     "typer>=0.27",
     "rich>=15",
+    "langchain-typesafe>=0.0.1a3",
 ]
 
 [project.scripts]
@@ -73,3 +73,7 @@ branch = true
 fail_under = 100
 show_missing = true
 exclude_also = ["if TYPE_CHECKING:", "@overload"]
+
+[tool.uv]
+# langchain-typesafe is still an alpha release
+prerelease = "allow"
