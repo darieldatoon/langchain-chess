@@ -5,9 +5,11 @@ engine starts:
 
     jev                 Jev's top move, rich descriptions
     jev:terse           Jev with terse descriptions
-    llm:anthropic:claude-opus-5[:medium]
-    llm:openai:gpt-5.6-sol[:low|medium|high]
-    llm:...:nolegal     same, but without the legal-move list in the prompt
+    llm:<model>[:low|medium|high][:nolegal]
+        <model> is an init_chat_model spec. `langsmith:openai/gpt-5.6-sol` goes through
+        the LLM Gateway (the default when you give a bare name such as `claude-opus-5`);
+        `openai:gpt-5.6-sol` or `anthropic:claude-opus-5` go straight to the provider.
+        `nolegal` drops the legal-move list from the prompt.
     maia:1100           Maia at that rating (1100..1900)
     stockfish:1500      Stockfish capped at UCI_Elo 1500 (1320..3190)
     stockfish:skill:3   Stockfish at Skill Level 3 (0..20)
@@ -27,7 +29,7 @@ from jev_chess.core import DescriptionStyle
 from jev_chess.engines import EloLimit, MaiaOpponent, MaiaRating, SkillLimit, StockfishOpponent
 from jev_chess.engines.protocol import MovePlayer
 from jev_chess.policies import JevConfig, JevPolicy, LLMConfig, LLMPolicy, MoveDecision
-from jev_chess.policies.llm import Provider
+from jev_chess.policies.llm import resolve_model_spec
 from jev_chess.policies.pricing import cost_usd
 from jev_chess.policies.types import ReasoningEffort, legal_decision
 from jev_chess.settings import EngineSettings, GatewaySettings
@@ -44,7 +46,6 @@ class JevSpec:
 
 @dataclass(frozen=True, slots=True)
 class LLMSpec:
-    provider: Provider
     model: str
     reasoning_effort: ReasoningEffort = "medium"
     include_legal_moves: bool = True
@@ -52,7 +53,7 @@ class LLMSpec:
     @property
     def name(self) -> str:
         suffix = "" if self.include_legal_moves else ":nolegal"
-        return f"llm:{self.provider}:{self.model}:{self.reasoning_effort}{suffix}"
+        return f"llm:{self.model}:{self.reasoning_effort}{suffix}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,21 +116,26 @@ def parse_spec(text: str) -> PlayerSpec:
         raise SpecError(
             f"stockfish spec must be `stockfish:<elo>` or `stockfish:skill:<n>`, got {text!r}"
         )
-    if kind == "llm" and 3 <= len(parts) <= 5:
-        provider, model, *rest = parts[1:]
-        if provider not in get_args(Provider.__value__):
-            raise SpecError(f"llm provider must be anthropic or openai, got {provider!r}")
+    if kind == "llm" and len(parts) >= 2:
+        rest = parts[1:]
         include_legal = True
         effort: str = "medium"
-        for token in rest:
+        # Options hang off the right; whatever is left in the middle is the model spec, which
+        # may itself contain colons (`openai:gpt-5.6-sol`).
+        while rest and rest[-1] in ("nolegal", *get_args(ReasoningEffort.__value__)):
+            token = rest.pop()
             if token == "nolegal":
                 include_legal = False
-            elif token in get_args(ReasoningEffort.__value__):
-                effort = token
             else:
-                raise SpecError(f"unknown llm option {token!r} in {text!r}")
+                effort = token
+        model_text = ":".join(rest)
+        if not model_text:
+            raise SpecError(f"llm spec needs a model, got {text!r}")
+        try:
+            model = resolve_model_spec(model_text)
+        except ValueError as exc:
+            raise SpecError(str(exc)) from exc
         return LLMSpec(
-            provider=cast("Provider", provider),
             model=model,
             reasoning_effort=cast("ReasoningEffort", effort),
             include_legal_moves=include_legal,
@@ -263,7 +269,6 @@ def build_player(
         policy = JevPolicy.from_settings(gateway, JevConfig(style=spec.style))
         return JevPlayer(policy, spec.name)
     config = LLMConfig(
-        provider=spec.provider,
         model=spec.model,
         reasoning_effort=spec.reasoning_effort,
         include_legal_moves=spec.include_legal_moves,

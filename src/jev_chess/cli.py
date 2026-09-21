@@ -363,7 +363,10 @@ def recall_report_cmd(
 @app.command()
 def play(
     white: Annotated[
-        str, typer.Option(help="player spec, e.g. jev, maia:1100, llm:anthropic:claude-opus-5")
+        str,
+        typer.Option(
+            help="player spec, e.g. jev, maia:1100, llm:claude-opus-5, llm:openai:gpt-5.6-sol:low"
+        ),
     ],
     black: Annotated[str, typer.Option(help="player spec")],
     games: Annotated[int, typer.Option(min=1)] = 1,

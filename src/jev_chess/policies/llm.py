@@ -13,7 +13,7 @@ import re
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Literal, Protocol, cast
+from typing import Any, Protocol, cast
 
 import chess
 from langchain.chat_models import init_chat_model
@@ -28,7 +28,35 @@ from jev_chess.policies.pricing import cost_usd
 from jev_chess.policies.types import MoveDecision, ReasoningEffort, legal_decision
 from jev_chess.settings import GatewaySettings
 
-type Provider = Literal["anthropic", "openai"]
+DEFAULT_MODEL = "langsmith:anthropic/claude-opus-5"
+GATEWAY_PREFIX = "langsmith:"
+
+# Bare model names route through the gateway; the provider is inferred from the name so
+# `claude-opus-5` becomes `langsmith:anthropic/claude-opus-5`.
+_NAME_PREFIXES: tuple[tuple[str, str], ...] = (
+    ("claude", "anthropic"),
+    ("gpt", "openai"),
+    ("o1", "openai"),
+    ("o3", "openai"),
+    ("o4", "openai"),
+)
+
+
+def resolve_model_spec(text: str) -> str:
+    """Expand a bare model name to a gateway spec; pass explicit `provider:model` through."""
+    if ":" in text:
+        return text
+    for prefix, provider in _NAME_PREFIXES:
+        if text.startswith(prefix):
+            return f"{GATEWAY_PREFIX}{provider}/{text}"
+    msg = f"cannot infer a provider for {text!r}; use provider:model or langsmith:provider/model"
+    raise ValueError(msg)
+
+
+def bare_model_name(spec: str) -> str:
+    """Strip provider prefixes: both gateway and direct specs give the plain model name."""
+    return spec.rsplit("/", 1)[-1].rsplit(":", 1)[-1]
+
 
 SYSTEM_PROMPT = (
     "You are a strong chess player. You will be shown a game in progress and asked for your "
@@ -48,8 +76,10 @@ class ChatModel(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class LLMConfig:
-    provider: Provider = "anthropic"
-    model: str = "claude-opus-5"
+    """`model` is an `init_chat_model` spec: `langsmith:openai/gpt-5.6-sol` (gateway, default
+    style) or `openai:gpt-5.6-sol` (direct to the provider, needs that provider's key)."""
+
+    model: str = DEFAULT_MODEL
     reasoning_effort: ReasoningEffort = "medium"
     include_legal_moves: bool = True
     max_retries: int = 3
@@ -57,8 +87,16 @@ class LLMConfig:
     seed: int = 0
 
     @property
+    def model_name(self) -> str:
+        return bare_model_name(self.model)
+
+    @property
+    def via_gateway(self) -> bool:
+        return self.model.startswith(GATEWAY_PREFIX)
+
+    @property
     def label(self) -> str:
-        return f"{self.provider}:{self.model}:{self.reasoning_effort}"
+        return f"{self.model}:{self.reasoning_effort}"
 
 
 @dataclass
@@ -159,23 +197,18 @@ def _usage(message: AIMessage) -> tuple[int, int, int]:
     )
 
 
-def make_chat_model(config: LLMConfig, settings: GatewaySettings) -> ChatModel:
-    """One client for every provider: `init_chat_model("langsmith:<provider>/<model>")`.
-
-    The `langsmith` provider targets the gateway's unified `/v1` endpoint, which translates
-    the OpenAI-shaped request (including `reasoning_effort`) for whichever provider the model
-    id names. Key and URL are passed explicitly so nothing depends on process env.
-    """
-    return cast(
-        "ChatModel",
-        init_chat_model(
-            f"langsmith:{config.provider}/{config.model}",
-            reasoning_effort=config.reasoning_effort,
-            max_tokens=config.max_tokens,
-            base_url=f"{settings.gateway_url}/v1",
-            api_key=settings.langsmith_gateway_api_key,
-        ),
-    )
+def make_chat_model(config: LLMConfig, settings: GatewaySettings | None = None) -> ChatModel:
+    """`init_chat_model(config.model, ...)`. Gateway specs get the gateway key and URL passed
+    explicitly; direct specs rely on the provider integration's own environment."""
+    kwargs: dict[str, Any] = {
+        "reasoning_effort": config.reasoning_effort,
+        "max_tokens": config.max_tokens,
+    }
+    if config.via_gateway:
+        settings = settings or GatewaySettings()
+        kwargs["base_url"] = f"{settings.gateway_url}/v1"
+        kwargs["api_key"] = settings.langsmith_gateway_api_key
+    return cast("ChatModel", init_chat_model(config.model, **kwargs))
 
 
 def build_graph(model: ChatModel, config: LLMConfig) -> CompiledStateGraph[LLMState]:
@@ -243,12 +276,12 @@ def build_graph(model: ChatModel, config: LLMConfig) -> CompiledStateGraph[LLMSt
             {m.uci() for m in board.legal_moves},
             uci=state.parsed_uci,
             source="fallback_random" if fell_back else "llm",
-            model=config.model,
+            model=config.model_name,
             latency_ms=state.latency_ms,
             input_tokens=state.input_tokens,
             output_tokens=state.output_tokens,
             reasoning_tokens=state.reasoning_tokens,
-            cost_usd=cost_usd(config.model, state.input_tokens, state.output_tokens),
+            cost_usd=cost_usd(config.model_name, state.input_tokens, state.output_tokens),
             illegal_attempts=state.attempts - (0 if fell_back else 1),
             raw_reply=state.reply,
         )
@@ -293,7 +326,6 @@ class LLMPolicy:
     def from_settings(
         cls, settings: GatewaySettings | None = None, config: LLMConfig | None = None
     ) -> "LLMPolicy":
-        settings = settings or GatewaySettings()
         config = config or LLMConfig()
         return cls(make_chat_model(config, settings), config)
 

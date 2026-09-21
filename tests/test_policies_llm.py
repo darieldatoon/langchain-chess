@@ -194,7 +194,7 @@ def test_legal_decision_rejects_illegal_uci() -> None:
     )
 
 
-def test_make_chat_model_uses_langsmith_provider(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_make_chat_model_gateway_and_direct(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: list[tuple[str, dict[str, object]]] = []
 
     def spy(model: str, **kwargs: object) -> FakeChatModel:
@@ -209,18 +209,54 @@ def test_make_chat_model_uses_langsmith_provider(monkeypatch: pytest.MonkeyPatch
         TYPESAFE_API_KEY="lsv2_x",
         TYPESAFE_BASE_URL="https://gateway.smith.langchain.com/typesafe",
     )
-    make_chat_model(
-        LLMConfig(provider="anthropic", model="claude-opus-5", reasoning_effort="low"), settings
-    )
-    make_chat_model(LLMConfig(provider="openai", model="gpt-5.6-sol"), settings)
-    assert captured[0][0] == "langsmith:anthropic/claude-opus-5"
-    assert captured[0][1]["reasoning_effort"] == "low"
-    assert captured[0][1]["max_tokens"] == 8000
-    assert captured[0][1]["base_url"] == "https://gateway.smith.langchain.com/v1"
-    assert str(captured[0][1]["api_key"]) == "**********"
-    assert captured[1][0] == "langsmith:openai/gpt-5.6-sol"
-    policy = LLMPolicy.from_settings(settings, LLMConfig(provider="openai", model="gpt-5.6-sol"))
-    assert policy.config.label == "openai:gpt-5.6-sol:medium"
+    make_chat_model(LLMConfig(reasoning_effort="low"), settings)
+    make_chat_model(LLMConfig(model="openai:gpt-5.6-sol"))
+    gateway_model, gateway_kwargs = captured[0]
+    assert gateway_model == "langsmith:anthropic/claude-opus-5"
+    assert gateway_kwargs["reasoning_effort"] == "low"
+    assert gateway_kwargs["max_tokens"] == 8000
+    assert gateway_kwargs["base_url"] == "https://gateway.smith.langchain.com/v1"
+    assert str(gateway_kwargs["api_key"]) == "**********"
+    direct_model, direct_kwargs = captured[1]
+    assert direct_model == "openai:gpt-5.6-sol"
+    assert "base_url" not in direct_kwargs
+    assert "api_key" not in direct_kwargs
+    policy = LLMPolicy.from_settings(settings, LLMConfig(model="langsmith:openai/gpt-5.6-sol"))
+    assert policy.config.label == "langsmith:openai/gpt-5.6-sol:medium"
+    assert policy.config.model_name == "gpt-5.6-sol"
+    assert policy.config.via_gateway
+
+
+def test_direct_spec_prices_by_bare_model_name() -> None:
+    fake = FakeChatModel([reply("MOVE: e4", 100, 50)])
+    decision = LLMPolicy(fake, LLMConfig(model="openai:gpt-5.6-sol")).decide(chess.Board())
+    assert decision.model == "gpt-5.6-sol"
+    assert decision.cost_usd == pytest.approx((100 * 4 + 50 * 20) / 1_000_000)
+
+
+@pytest.mark.parametrize(
+    ("text", "spec"),
+    [
+        ("claude-opus-5", "langsmith:anthropic/claude-opus-5"),
+        ("gpt-5.6-sol", "langsmith:openai/gpt-5.6-sol"),
+        ("o3-mini", "langsmith:openai/o3-mini"),
+        ("openai:gpt-5.6-sol", "openai:gpt-5.6-sol"),
+        ("anthropic:claude-opus-5", "anthropic:claude-opus-5"),
+        ("langsmith:openai/gpt-5.6-sol", "langsmith:openai/gpt-5.6-sol"),
+    ],
+)
+def test_resolve_model_spec(text: str, spec: str) -> None:
+    from jev_chess.policies import bare_model_name, resolve_model_spec
+
+    assert resolve_model_spec(text) == spec
+    assert bare_model_name(spec) == text.split(":")[-1].split("/")[-1]
+
+
+def test_resolve_model_spec_rejects_unknown_bare_name() -> None:
+    from jev_chess.policies import resolve_model_spec
+
+    with pytest.raises(ValueError, match="cannot infer a provider"):
+        resolve_model_spec("mystery-9000")
 
 
 def test_from_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:

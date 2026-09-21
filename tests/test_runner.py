@@ -149,8 +149,13 @@ def test_side_totals_track_unknown_cost_and_fallbacks() -> None:
         ("maia:1500", MaiaSpec(rating=1500)),
         ("stockfish:1600", StockfishSpec(EloLimit(1600))),
         ("stockfish:skill:3", StockfishSpec(SkillLimit(3))),
-        ("llm:anthropic:claude-opus-5", LLMSpec("anthropic", "claude-opus-5")),
-        ("llm:openai:gpt-5.6-sol:high:nolegal", LLMSpec("openai", "gpt-5.6-sol", "high", False)),
+        ("llm:claude-opus-5", LLMSpec("langsmith:anthropic/claude-opus-5")),
+        ("llm:langsmith:openai/gpt-5.6-sol:low", LLMSpec("langsmith:openai/gpt-5.6-sol", "low")),
+        ("llm:openai:gpt-5.6-sol:high:nolegal", LLMSpec("openai:gpt-5.6-sol", "high", False)),
+        (
+            "llm:anthropic:claude-opus-5:nolegal:low",
+            LLMSpec("anthropic:claude-opus-5", "low", False),
+        ),
     ],
 )
 def test_parse_spec(text: str, expected: object) -> None:
@@ -170,8 +175,9 @@ def test_parse_spec(text: str, expected: object) -> None:
         "stockfish:1000",
         "stockfish:skill:99",
         "stockfish:x:y:z",
-        "llm:google:gemini",
-        "llm:anthropic:claude:turbo",
+        "llm",
+        "llm:mystery-9000",
+        "llm:nolegal",
         "random:1",
         "engine",
     ],
@@ -187,6 +193,7 @@ def test_spec_names() -> None:
     assert (
         parse_spec("llm:openai:gpt-5.6-sol:nolegal").name == "llm:openai:gpt-5.6-sol:medium:nolegal"
     )
+    assert parse_spec("llm:gpt-5.6-sol").name == "llm:langsmith:openai/gpt-5.6-sol:medium"
     assert parse_spec("jev:terse").name == "jev:terse"
 
 
@@ -269,7 +276,7 @@ def test_build_player_and_roster(monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     assert build_player(MaiaSpec(1100), engines).name == "maia:1100"
     assert build_player(StockfishSpec(SkillLimit(1)), engines).name == "stockfish:skill:1"
     assert build_player(JevSpec(), engines, GATEWAY).name == "jev"
-    llm = build_player(LLMSpec("openai", "gpt-5.6-sol", "low"), engines, GATEWAY)
+    llm = build_player(LLMSpec("openai:gpt-5.6-sol", "low"), engines, GATEWAY)
     assert llm.name == "llm:openai:gpt-5.6-sol:low"
 
     with Roster(MaiaSpec(1100), StockfishSpec(EloLimit(1400)), engines) as roster:

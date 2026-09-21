@@ -14,9 +14,11 @@ from jev_chess.policies.llm import (
     ChatModel,
     LLMConfig,
     LLMPolicy,
+    bare_model_name,
     build_prompt,
     make_chat_model,
     parse_move,
+    resolve_model_spec,
 )
 from jev_chess.policies.pricing import PRICES, Price, cost_usd
 from jev_chess.policies.types import (
@@ -42,6 +44,7 @@ __all__ = [
     "MoveSource",
     "Price",
     "ReasoningEffort",
+    "bare_model_name",
     "build_prompt",
     "build_questions",
     "build_request",
@@ -52,4 +55,5 @@ __all__ = [
     "make_chat_model",
     "parse_move",
     "parse_response",
+    "resolve_model_spec",
 ]
