@@ -26,13 +26,21 @@ def pairings(games: Iterable[GameRecord]) -> list[Pairing]:
 
 
 def anchor_rating(name: str) -> float | None:
-    """Known ratings for engine players; None for anything we are trying to measure."""
+    """Known ratings for anchor engines; None for anything whose rating is fitted.
+
+    Only Maia anchors. A 180-game calibration (2026-09-21) showed Stockfish's UCI_Elo caps
+    sit on a different scale: anchored on Maia, Stockfish 1320/1600/2000 fit to 1308/1714/
+    1940, whereas anchoring on Stockfish compressed Maia 1100..1900 into 1396..1637. Maia's
+    ratings are human Lichess ratings, which is the scale we want policies reported on.
+    """
     parts = name.split(":")
     if parts[0] == "maia" and len(parts) == 2:
         return float(parts[1])
-    if parts[0] == "stockfish" and len(parts) == 2 and parts[1].isdigit():
-        return float(parts[1])
     return None
+
+
+def is_engine(name: str) -> bool:
+    return name.split(":")[0] in {"maia", "stockfish", "random"}
 
 
 def expected(rating_a: float, rating_b: float) -> float:

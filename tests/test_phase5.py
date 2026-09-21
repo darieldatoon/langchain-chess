@@ -326,10 +326,14 @@ def test_grade_plies_parallel_preserves_order_and_no_override_when_same_move() -
 
 
 def test_anchor_rating_and_expected() -> None:
+    from jev_chess.analysis import is_engine
+
     assert anchor_rating("maia:1500") == 1500
-    assert anchor_rating("stockfish:1600") == 1600
-    assert anchor_rating("stockfish:skill:3") is None
+    assert anchor_rating("stockfish:1600") is None  # fitted, not anchored (see calibration)
     assert anchor_rating("jev") is None
+    assert is_engine("stockfish:skill:3")
+    assert is_engine("random")
+    assert not is_engine("hybrid:claude-opus-5:low:k5:t0.9:margin")
     assert expected(1500, 1500) == 0.5
     assert expected(1900, 1500) > 0.9
 
@@ -594,3 +598,30 @@ def test_sweep_shares_one_budget_across_pairings(
     assert result.exit_code == 0, result.output
     assert "skipped by --max-usd" in result.output
     assert "sweep spent $" in result.output
+
+
+def test_sweep_continues_past_a_failed_pairing(tmp_path: Path) -> None:
+    out = tmp_path / "sweep"
+    result = runner.invoke(
+        app,
+        [
+            "sweep",
+            "--players",
+            "wizard,random",
+            "--opponents",
+            "random",
+            "--out",
+            str(out),
+            "--games",
+            "1",
+            "--max-plies",
+            "8",
+            "--workers",
+            "1",
+            "--no-adjudicate",
+        ],
+    )
+    assert result.exit_code == 1
+    assert "wizard__random failed" in result.output
+    assert (out / "random__random" / "games.jsonl").exists()
+    assert "1 pairing(s) failed" in result.output

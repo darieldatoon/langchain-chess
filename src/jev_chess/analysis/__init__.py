@@ -1,6 +1,6 @@
 """Offline analysis: position sampling, Stockfish labelling, Jev ranking, recall reports."""
 
-from jev_chess.analysis.elo import Pairing, anchor_rating, expected, fit_elo, pairings
+from jev_chess.analysis.elo import Pairing, anchor_rating, expected, fit_elo, is_engine, pairings
 from jev_chess.analysis.grade import GradeRecord, classify, grade_one, grade_plies
 from jev_chess.analysis.label import label_one, label_positions
 from jev_chess.analysis.rank import backoff_seconds, rank_positions, rank_with_retry, to_record
@@ -67,6 +67,7 @@ __all__ = [
     "gate_report",
     "grade_one",
     "grade_plies",
+    "is_engine",
     "join",
     "label_one",
     "label_positions",

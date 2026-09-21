@@ -4,7 +4,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from statistics import mean, median
 
-from jev_chess.analysis.elo import anchor_rating, fit_elo, pairings
+from jev_chess.analysis.elo import fit_elo, is_engine, pairings
 from jev_chess.analysis.grade import GradeRecord
 from jev_chess.runner.game import GameRecord, PlyRecord
 
@@ -111,15 +111,10 @@ def summarise(
 
 
 def pareto_rows(summaries: Sequence[PlayerSummary]) -> list[PlayerSummary]:
-    """Players under test (not rating anchors) sorted by Elo, for the Pareto table."""
-    return sorted(
-        (s for s in summaries if anchor_rating(s.player) is None),
-        key=lambda s: -(s.elo or 0),
-    )
+    """Players under test (not engines) sorted by Elo, for the Pareto table."""
+    return sorted((s for s in summaries if not is_engine(s.player)), key=lambda s: -(s.elo or 0))
 
 
 def anchor_rows(summaries: Sequence[PlayerSummary]) -> list[PlayerSummary]:
-    """Engine opponents with known ratings, sorted by name."""
-    return sorted(
-        (s for s in summaries if anchor_rating(s.player) is not None), key=lambda s: s.player
-    )
+    """Engine opponents (Maia anchored, Stockfish fitted), sorted by name."""
+    return sorted((s for s in summaries if is_engine(s.player)), key=lambda s: s.player)

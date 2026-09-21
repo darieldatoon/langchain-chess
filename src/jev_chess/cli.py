@@ -470,12 +470,20 @@ def sweep(
         games, max_plies, seed, True, workers, max_usd, adjudicate, adjudication_depth
     )
     budget = Budget(max_usd)
+    failed: list[str] = []
     for player in _split(players):
         for opponent in _split(opponents):
             label = f"{_slug(player)}__{_slug(opponent)}"
             console.rule(f"{player} vs {opponent}")
-            _run_match(player, opponent, out / label, config, label, budget)
+            try:
+                _run_match(player, opponent, out / label, config, label, budget)
+            except Exception as exc:  # one bad pairing must not sink the sweep
+                failed.append(label)
+                console.print(f"[red]{label} failed: {type(exc).__name__}: {exc}[/]")
     console.print(f"sweep spent ${budget.spent_usd:.3f} in total")
+    if failed:
+        console.print(f"[red]{len(failed)} pairing(s) failed: {', '.join(failed)}[/]")
+        raise typer.Exit(code=1)
 
 
 def _split(text: str) -> list[str]:
@@ -564,7 +572,7 @@ def report(
             str(s.illegal_attempts),
         )
     console.print(table)
-    anchors = Table("engine", "games", "W-D-L", "anchor Elo")
+    anchors = Table("engine", "games", "W-D-L", "Elo (Maia anchored)")
     for s in anchor_rows(list(summaries.values())):
         anchors.add_row(s.player, str(s.games), f"{s.wins}-{s.draws}-{s.losses}", f"{s.elo:.0f}")
     console.print(anchors)
