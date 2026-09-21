@@ -355,3 +355,72 @@ def recall_report_cmd(
                 rate = "" if b.accuracy is None else f"{b.accuracy:.1%}"
                 tac.add_row(f"{b.lower:.1f}-{b.upper:.1f}", str(b.count), rate)
         console.print(tac)
+
+
+# --- Phase 3: play games -----------------------------------------------------------------
+
+
+@app.command()
+def play(
+    white: Annotated[
+        str, typer.Option(help="player spec, e.g. jev, maia:1100, llm:anthropic:claude-opus-5")
+    ],
+    black: Annotated[str, typer.Option(help="player spec")],
+    games: Annotated[int, typer.Option(min=1)] = 1,
+    out: Annotated[Path, typer.Option(help="directory for plies.jsonl and games.jsonl")] = Path(
+        "runs/scratch"
+    ),
+    max_plies: Annotated[int, typer.Option(min=2, max=600)] = 200,
+    seed: int = 0,
+    swap_colours: Annotated[bool, typer.Option(help="alternate colours each game")] = True,
+) -> None:
+    """Play games between two players from the opening book, appending records as they go."""
+    import random
+
+    from jev_chess.analysis import append_jsonl
+    from jev_chess.runner import (
+        GameRecord,
+        JevSpec,
+        LLMSpec,
+        Roster,
+        SpecError,
+        parse_spec,
+        pick_openings,
+        play_game,
+    )
+    from jev_chess.settings import GatewaySettings
+
+    try:
+        specs = (parse_spec(white), parse_spec(black))
+    except SpecError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    needs_gateway = any(isinstance(s, (JevSpec, LLMSpec)) for s in specs)
+    gateway = GatewaySettings() if needs_gateway else None
+    rng = random.Random(seed)
+    openings = pick_openings(rng, games)
+    plies_path, games_path = out / "plies.jsonl", out / "games.jsonl"
+    with Roster(specs[0], specs[1], EngineSettings(), gateway, seed) as roster:
+        assert roster.white is not None
+        assert roster.black is not None
+        for index, opening in enumerate(openings):
+            swap = swap_colours and index % 2 == 1
+            w, b = (roster.black, roster.white) if swap else (roster.white, roster.black)
+            game_id = f"{out.name}-{seed}-{index:03d}"
+            console.print(f"[bold]{game_id}[/] {w.name} vs {b.name}, {opening.name}")
+            record: GameRecord = play_game(
+                w,
+                b,
+                game_id,
+                opening.name,
+                opening.uci,
+                max_plies,
+                on_ply=lambda ply: append_jsonl(plies_path, ply),
+            )
+            append_jsonl(games_path, record)
+            wt, bt = record.white_totals, record.black_totals
+            console.print(
+                f"  {record.result} by {record.termination} after {record.plies} plies; "
+                f"white {wt.latency_ms / 1000:.0f}s ${wt.cost_usd:.3f}, "
+                f"black {bt.latency_ms / 1000:.0f}s ${bt.cost_usd:.3f}"
+            )
+    console.print(f"wrote {games} games to {games_path}")

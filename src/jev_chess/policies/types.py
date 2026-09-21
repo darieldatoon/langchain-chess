@@ -1,6 +1,7 @@
 """Types shared by move policies."""
 
 from dataclasses import dataclass
+from typing import Any, Literal
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,3 +53,38 @@ class JevRanking:
         if len(self.candidates) < 2:
             return self.top.probability
         return self.top.probability - self.candidates[1].probability
+
+
+type MoveSource = Literal["jev", "llm", "fallback_jev", "fallback_random", "engine"]
+type ReasoningEffort = Literal["low", "medium", "high"]
+
+
+@dataclass(frozen=True, slots=True)
+class MoveDecision:
+    """One move plus everything we want to know about how it was chosen.
+
+    Construct through `legal_decision` so a decision can never name an illegal move.
+    """
+
+    uci: str
+    source: MoveSource
+    model: str
+    latency_ms: float
+    input_tokens: int = 0
+    output_tokens: int = 0
+    reasoning_tokens: int = 0
+    cost_usd: float | None = None
+    escalated: bool = False
+    illegal_attempts: int = 0
+    jev_confidence: float | None = None
+    jev_margin: float | None = None
+    jev_top_k: tuple[Candidate, ...] | None = None
+    raw_reply: str | None = None
+
+
+def legal_decision(legal_moves: frozenset[str] | set[str], **fields: Any) -> MoveDecision:
+    decision = MoveDecision(**fields)
+    if decision.uci not in legal_moves:
+        msg = f"{decision.uci} is not a legal move here"
+        raise ValueError(msg)
+    return decision

@@ -35,6 +35,9 @@ class GatewaySettings(BaseSettings):
 
     langsmith_gateway: bool = Field(validation_alias="LANGSMITH_GATEWAY")
     langsmith_gateway_api_key: SecretStr = Field(validation_alias="LANGSMITH_GATEWAY_API_KEY")
+    gateway_url: str = Field(
+        default=f"https://{GATEWAY_HOST}", validation_alias="LANGSMITH_GATEWAY_URL"
+    )
     typesafe_api_key: SecretStr = Field(validation_alias="TYPESAFE_API_KEY")
     typesafe_base_url: str = Field(validation_alias="TYPESAFE_BASE_URL")
 

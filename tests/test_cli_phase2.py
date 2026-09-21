@@ -437,3 +437,86 @@ def test_jev_rank_resumes_and_appends(fake_policy: FakeClassifier, tmp_path: Pat
     assert sorted(r.id for r in records) == ["p0", "p1", "p2"]
     assert next(r for r in records if r.id == "p1").model == "old"
     assert len(fake_policy.requests) == 2
+
+
+def test_play_command_random_vs_random_writes_records(tmp_path: Path) -> None:
+    from jev_chess.runner import GameRecord, PlyRecord
+
+    out = tmp_path / "scratch"
+    result = runner.invoke(
+        app,
+        [
+            "play",
+            "--white",
+            "random",
+            "--black",
+            "random",
+            "--games",
+            "2",
+            "--out",
+            str(out),
+            "--max-plies",
+            "12",
+            "--seed",
+            "3",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    games = list(read_jsonl(out / "games.jsonl", GameRecord))
+    plies = list(read_jsonl(out / "plies.jsonl", PlyRecord))
+    assert len(games) == 2
+    assert games[0].white == "random"
+    assert all(g.plies <= 12 for g in games)
+    assert len(plies) == sum(g.plies - g.opening_plies for g in games)
+    assert games[0].game_id != games[1].game_id
+    assert "wrote 2 games" in result.output
+
+
+def test_play_command_rejects_bad_spec(tmp_path: Path) -> None:
+    result = runner.invoke(
+        app, ["play", "--white", "wizard", "--black", "random", "--out", str(tmp_path)]
+    )
+    assert result.exit_code != 0
+
+
+def test_play_command_swaps_colours_and_uses_gateway_players(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from jev_chess.runner import GameRecord
+
+    monkeypatch.setattr(
+        JevPolicy,
+        "from_settings",
+        classmethod(lambda cls, settings=None, config=None: JevPolicy(FakeClassifier(), config)),
+    )
+    import jev_chess.settings as settings_module
+
+    fixed = settings_module.GatewaySettings(
+        _env_file=None,
+        LANGSMITH_GATEWAY=True,
+        LANGSMITH_GATEWAY_API_KEY="lsv2_x",
+        TYPESAFE_API_KEY="lsv2_x",
+        TYPESAFE_BASE_URL="https://gateway.smith.langchain.com/typesafe",
+    )
+    monkeypatch.setattr(settings_module, "GatewaySettings", lambda: fixed)
+    out = tmp_path / "jev-vs-random"
+    result = runner.invoke(
+        app,
+        [
+            "play",
+            "--white",
+            "jev",
+            "--black",
+            "random",
+            "--games",
+            "2",
+            "--out",
+            str(out),
+            "--max-plies",
+            "10",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    games = list(read_jsonl(out / "games.jsonl", GameRecord))
+    assert (games[0].white, games[0].black) == ("jev", "random")
+    assert (games[1].white, games[1].black) == ("random", "jev")

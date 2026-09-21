@@ -1,1 +1,58 @@
 """Native game runner: drives a game between two players, records per-ply telemetry."""
+
+from jev_chess.runner.game import (
+    GameRecord,
+    Player,
+    PlyRecord,
+    Result,
+    SideTotals,
+    Termination,
+    play_game,
+)
+from jev_chess.runner.openings import BOOK, Opening, board_after, pick_openings
+from jev_chess.runner.players import (
+    AnyPlayer,
+    EnginePlayer,
+    JevPlayer,
+    JevSpec,
+    LLMPlayer,
+    LLMSpec,
+    MaiaSpec,
+    PlayerSpec,
+    RandomPlayer,
+    RandomSpec,
+    Roster,
+    SpecError,
+    StockfishSpec,
+    build_player,
+    parse_spec,
+)
+
+__all__ = [
+    "BOOK",
+    "AnyPlayer",
+    "EnginePlayer",
+    "GameRecord",
+    "JevPlayer",
+    "JevSpec",
+    "LLMPlayer",
+    "LLMSpec",
+    "MaiaSpec",
+    "Opening",
+    "Player",
+    "PlayerSpec",
+    "PlyRecord",
+    "RandomPlayer",
+    "RandomSpec",
+    "Result",
+    "Roster",
+    "SideTotals",
+    "SpecError",
+    "StockfishSpec",
+    "Termination",
+    "board_after",
+    "build_player",
+    "parse_spec",
+    "pick_openings",
+    "play_game",
+]

@@ -10,17 +10,46 @@ from jev_chess.policies.jev import (
     history_san,
     parse_response,
 )
-from jev_chess.policies.types import Candidate, JevRanking
+from jev_chess.policies.llm import (
+    ChatModel,
+    LLMConfig,
+    LLMPolicy,
+    build_prompt,
+    make_chat_model,
+    parse_move,
+)
+from jev_chess.policies.pricing import PRICES, Price, cost_usd
+from jev_chess.policies.types import (
+    Candidate,
+    JevRanking,
+    MoveDecision,
+    MoveSource,
+    ReasoningEffort,
+    legal_decision,
+)
 
 __all__ = [
+    "PRICES",
     "Candidate",
+    "ChatModel",
     "Classifier",
     "JevConfig",
     "JevPolicy",
     "JevRanking",
+    "LLMConfig",
+    "LLMPolicy",
+    "MoveDecision",
+    "MoveSource",
+    "Price",
+    "ReasoningEffort",
+    "build_prompt",
     "build_questions",
     "build_request",
     "build_state",
+    "cost_usd",
     "history_san",
+    "legal_decision",
+    "make_chat_model",
+    "parse_move",
     "parse_response",
 ]

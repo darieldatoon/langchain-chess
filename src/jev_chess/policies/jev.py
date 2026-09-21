@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from typing import Any, Protocol, cast
 
 import chess
-from langchain_core.runnables import RunnableLambda
+from langchain_core.runnables import RunnableConfig, RunnableLambda
 from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
 from langchain_typesafe.types import (
     ChoiceAnswer,
@@ -263,10 +263,14 @@ class JevPolicy:
         )
         return cls(classifier, config)
 
-    def rank(self, board: chess.Board) -> JevRanking:
-        result = self._graph.invoke(JevState(fen=board.fen(), history=history_san(board)))
+    def rank(self, board: chess.Board, run_config: RunnableConfig | None = None) -> JevRanking:
+        state = JevState(fen=board.fen(), history=history_san(board))
+        result = self._graph.invoke(state, config=run_config)
         return cast("JevRanking", result["ranking"])
 
-    async def arank(self, board: chess.Board) -> JevRanking:
-        result = await self._graph.ainvoke(JevState(fen=board.fen(), history=history_san(board)))
+    async def arank(
+        self, board: chess.Board, run_config: RunnableConfig | None = None
+    ) -> JevRanking:
+        state = JevState(fen=board.fen(), history=history_san(board))
+        result = await self._graph.ainvoke(state, config=run_config)
         return cast("JevRanking", result["ranking"])
