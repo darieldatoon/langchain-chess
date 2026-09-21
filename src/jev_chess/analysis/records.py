@@ -70,6 +70,21 @@ def write_jsonl(path: Path, records: Iterable[BaseModel]) -> int:
     return count
 
 
+def append_jsonl(path: Path, record: BaseModel) -> None:
+    """Append one record and flush, so a crash mid-run keeps everything finished so far."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(record.model_dump_json())
+        handle.write("\n")
+
+
+def existing_ids(path: Path, model: type[BaseModel]) -> set[str]:
+    """Ids already present in a JSONL file, or empty if it does not exist."""
+    if not path.exists():
+        return set()
+    return {getattr(record, "id") for record in read_jsonl(path, model)}  # noqa: B009
+
+
 def read_jsonl[ModelT: BaseModel](path: Path, model: type[ModelT]) -> Iterator[ModelT]:
     with path.open(encoding="utf-8") as handle:
         for line in handle:

@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.progress import Progress
 from rich.table import Table
 
-from jev_chess.analysis.records import PositionRecord
+from jev_chess.analysis.records import JevRecord, PositionRecord
 from jev_chess.core import DescriptionStyle, all_move_facts, describe, material_balance, snapshot
 from jev_chess.engines import MaiaOpponent, MaiaRating, Oracle, OracleConfig
 from jev_chess.settings import EngineSettings
@@ -245,21 +245,25 @@ def jev_rank_cmd(
     with_eval: Annotated[bool, typer.Option(help="also ask for a position Score")] = False,
     with_nouls: Annotated[bool, typer.Option(help="also ask the two Nouls")] = False,
 ) -> None:
-    """Ask Jev to rank every sampled position; writes its full distribution per position."""
+    """Ask Jev to rank every sampled position. Appends as it goes; reruns skip finished ids."""
     import asyncio
 
-    from jev_chess.analysis import rank_positions, read_jsonl, write_jsonl
+    from jev_chess.analysis import append_jsonl, existing_ids, rank_positions, read_jsonl
     from jev_chess.policies import JevConfig, JevPolicy
 
-    records = list(read_jsonl(positions, PositionRecord))
+    done = existing_ids(out, JevRecord)
+    records = [r for r in read_jsonl(positions, PositionRecord) if r.id not in done]
     config = JevConfig(model=model, style=_style(style), with_eval=with_eval, with_nouls=with_nouls)
     policy = JevPolicy.from_settings(config=config)
     with Progress(console=console) as progress:
-        task = progress.add_task("ranking", total=len(records))
-        rankings = asyncio.run(
-            rank_positions(records, policy, concurrency, progress=lambda _: progress.advance(task))
-        )
-    console.print(f"wrote {write_jsonl(out, rankings)} rankings to {out}")
+        task = progress.add_task("ranking", total=len(records), completed=0)
+
+        def on_done(record: JevRecord) -> None:
+            append_jsonl(out, record)
+            progress.advance(task)
+
+        asyncio.run(rank_positions(records, policy, concurrency, progress=on_done))
+    console.print(f"{len(records)} new rankings appended to {out} ({len(done)} were already done)")
 
 
 @app.command("recall-report")

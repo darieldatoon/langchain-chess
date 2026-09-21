@@ -400,3 +400,40 @@ def test_recall_report_prints_score_gate_and_tactics_tables(tmp_path: Path) -> N
     assert "exact 100.0%" in result.output
     assert "1 - needs_calculation" in result.output
     assert "tactic truly present" in result.output
+
+
+def test_jev_rank_resumes_and_appends(fake_policy: FakeClassifier, tmp_path: Path) -> None:
+    positions = tmp_path / "positions.jsonl"
+    write_jsonl(
+        positions,
+        [
+            PositionRecord(
+                id=f"p{i}", fen=ITALIAN, ply=10, phase="opening", game_id="g", white="1", black="1"
+            )
+            for i in range(3)
+        ],
+    )
+    out = tmp_path / "jev.jsonl"
+    write_jsonl(
+        out,
+        [
+            JevRecord(
+                id="p1",
+                model="old",
+                style="rich",
+                candidates=[RankedCandidate(uci="e1g1", probability=1.0)],
+                confidence=1.0,
+                input_tokens=1,
+                output_tokens=1,
+                latency_ms=1.0,
+            )
+        ],
+    )
+    result = runner.invoke(app, ["jev-rank", "--positions", str(positions), "--out", str(out)])
+    assert result.exit_code == 0, result.output
+    assert "2 new rankings appended" in result.output
+    assert "(1 were already done)" in result.output
+    records = list(read_jsonl(out, JevRecord))
+    assert sorted(r.id for r in records) == ["p0", "p1", "p2"]
+    assert next(r for r in records if r.id == "p1").model == "old"
+    assert len(fake_policy.requests) == 2

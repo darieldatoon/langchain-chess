@@ -332,3 +332,43 @@ async def test_rank_positions_threads_sleep_through() -> None:
     out = await rank_positions([position("p0")], policy, concurrency=1, sleep=fake_sleep)
     assert out[0].candidates[0].uci == "e2e4"
     assert slept == [1.0]
+
+
+def test_existing_ids_and_append(tmp_path: Path) -> None:
+    from jev_chess.analysis import append_jsonl, existing_ids
+
+    path = tmp_path / "x.jsonl"
+    assert existing_ids(path, PositionRecord) == set()
+    append_jsonl(path, position("a"))
+    append_jsonl(path, position("b"))
+    assert existing_ids(path, PositionRecord) == {"a", "b"}
+    assert [r.id for r in read_jsonl(path, PositionRecord)] == ["a", "b"]
+
+
+class DroppingClassifier(FakeClassifier):
+    """Raises a connection error a fixed number of times, then answers."""
+
+    def __init__(self, failures: int) -> None:
+        super().__init__(scripted=choice_response({"e2e4": 1.0}))
+        self.failures = failures
+
+    async def ainvoke(self, input: ClassifierRequest, config: Any = None) -> ClassifierResponse:
+        from langchain_typesafe.client import TypeSafeAPIConnectionError
+
+        if self.failures:
+            self.failures -= 1
+            raise TypeSafeAPIConnectionError("connection dropped")
+        return await super().ainvoke(input, config)
+
+
+async def test_rank_with_retry_handles_connection_errors_with_exponential_backoff() -> None:
+    from jev_chess.analysis import rank_with_retry
+
+    slept: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        slept.append(seconds)
+
+    ranking = await rank_with_retry(JevPolicy(DroppingClassifier(3)), chess.Board(), fake_sleep)
+    assert ranking.top.uci == "e2e4"
+    assert slept == [1.0, 2.0, 4.0]

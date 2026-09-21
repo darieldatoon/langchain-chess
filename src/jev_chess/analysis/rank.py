@@ -1,14 +1,20 @@
 """Rank sampled positions with the Jev policy, concurrently.
 
-The gateway rate-limits bursts (429 with a retry-after hint) and the classifier does not
-retry on its own, so `arank` calls are wrapped in bounded exponential backoff.
+The gateway rate-limits bursts (429 with a retry-after hint) and connections drop now and
+then; the classifier does not retry on its own, so `arank` calls are wrapped in bounded
+exponential backoff over every transient error class.
 """
 
 import asyncio
 from collections.abc import Awaitable, Callable, Iterable
 
 import chess
-from langchain_typesafe.client import TypeSafeRateLimitError
+from langchain_typesafe.client import (
+    TypeSafeAPIConnectionError,
+    TypeSafeAPITimeoutError,
+    TypeSafeInternalServerError,
+    TypeSafeRateLimitError,
+)
 
 from jev_chess.analysis.records import JevRecord, PositionRecord, RankedCandidate
 from jev_chess.policies import JevPolicy, JevRanking
@@ -20,6 +26,12 @@ DEFAULT_CONCURRENCY = 4
 MAX_ATTEMPTS = 6
 BASE_BACKOFF_S = 1.0
 MAX_BACKOFF_S = 30.0
+TRANSIENT_ERRORS = (
+    TypeSafeRateLimitError,
+    TypeSafeAPIConnectionError,
+    TypeSafeAPITimeoutError,
+    TypeSafeInternalServerError,
+)
 
 
 def backoff_seconds(attempt: int, retry_after_ms: float | None) -> float:
@@ -38,10 +50,11 @@ async def rank_with_retry(
     for attempt in range(max_attempts):
         try:
             return await policy.arank(board)
-        except TypeSafeRateLimitError as exc:
+        except TRANSIENT_ERRORS as exc:
             if attempt == max_attempts - 1:
                 raise
-            await sleep(backoff_seconds(attempt, exc.retry_after_ms))
+            retry_after = getattr(exc, "retry_after_ms", None)
+            await sleep(backoff_seconds(attempt, retry_after))
     raise AssertionError("unreachable")  # pragma: no cover
 
 
