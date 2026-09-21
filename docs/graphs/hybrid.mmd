@@ -1,0 +1,23 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	rank_jev(rank_jev)
+	play_jev(play_jev)
+	shortlist(shortlist)
+	ask_llm(ask_llm)
+	decide(decide)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> rank_jev;
+	ask_llm --> decide;
+	rank_jev -.-> play_jev;
+	rank_jev -.-> shortlist;
+	shortlist --> ask_llm;
+	decide --> __end__;
+	play_jev --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

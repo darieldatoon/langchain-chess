@@ -35,3 +35,12 @@ uv run ruff check . && uv run ruff format --check . && uv run ty check
 - `src/jev_chess/runner` native game loop and telemetry
 - `src/jev_chess/uci` UCI adapter for arenas and Lichess
 - `src/jev_chess/analysis` grading, recall, Pareto reports
+
+## Policy graphs
+
+Each move policy is a LangGraph. Rendered from the compiled graphs (`docs/graphs/*.mmd` is the
+Mermaid source).
+
+| Jev | LLM | Hybrid |
+|---|---|---|
+| ![Jev policy graph](docs/graphs/jev.png) | ![LLM policy graph](docs/graphs/llm.png) | ![Hybrid policy graph](docs/graphs/hybrid.png) |
