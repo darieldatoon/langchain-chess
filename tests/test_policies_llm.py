@@ -194,15 +194,14 @@ def test_legal_decision_rejects_illegal_uci() -> None:
     )
 
 
-def test_make_chat_model_targets_gateway_paths(monkeypatch: pytest.MonkeyPatch) -> None:
-    captured: list[dict[str, object]] = []
+def test_make_chat_model_uses_langsmith_provider(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: list[tuple[str, dict[str, object]]] = []
 
-    class Spy:
-        def __init__(self, **kwargs: object) -> None:
-            captured.append(kwargs)
+    def spy(model: str, **kwargs: object) -> FakeChatModel:
+        captured.append((model, kwargs))
+        return FakeChatModel([reply("MOVE: e4")])
 
-    monkeypatch.setattr(llm_module, "ChatAnthropic", Spy)
-    monkeypatch.setattr(llm_module, "ChatOpenAI", Spy)
+    monkeypatch.setattr(llm_module, "init_chat_model", spy)
     settings = GatewaySettings(
         _env_file=None,
         LANGSMITH_GATEWAY=True,
@@ -214,19 +213,19 @@ def test_make_chat_model_targets_gateway_paths(monkeypatch: pytest.MonkeyPatch) 
         LLMConfig(provider="anthropic", model="claude-opus-5", reasoning_effort="low"), settings
     )
     make_chat_model(LLMConfig(provider="openai", model="gpt-5.6-sol"), settings)
-    assert captured[0]["base_url"] == "https://gateway.smith.langchain.com/anthropic"
-    assert captured[0]["reasoning_effort"] == "low"
-    assert captured[0]["max_tokens"] == 8000
-    assert captured[1]["base_url"] == "https://gateway.smith.langchain.com/openai/v1"
-    assert captured[1]["model"] == "gpt-5.6-sol"
-    assert str(captured[1]["api_key"]) == "**********"
+    assert captured[0][0] == "langsmith:anthropic/claude-opus-5"
+    assert captured[0][1]["reasoning_effort"] == "low"
+    assert captured[0][1]["max_tokens"] == 8000
+    assert captured[0][1]["base_url"] == "https://gateway.smith.langchain.com/v1"
+    assert str(captured[0][1]["api_key"]) == "**********"
+    assert captured[1][0] == "langsmith:openai/gpt-5.6-sol"
     policy = LLMPolicy.from_settings(settings, LLMConfig(provider="openai", model="gpt-5.6-sol"))
     assert policy.config.label == "openai:gpt-5.6-sol:medium"
 
 
 def test_from_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        llm_module, "ChatAnthropic", lambda **kwargs: FakeChatModel([reply("MOVE: e4")])
+        llm_module, "init_chat_model", lambda model, **kwargs: FakeChatModel([reply("MOVE: e4")])
     )
     for k, v in {
         "LANGSMITH_GATEWAY": "true",

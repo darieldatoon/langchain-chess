@@ -16,10 +16,9 @@ from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol, cast
 
 import chess
-from langchain_anthropic import ChatAnthropic
+from langchain.chat_models import init_chat_model
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig, RunnableLambda
-from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
@@ -161,21 +160,21 @@ def _usage(message: AIMessage) -> tuple[int, int, int]:
 
 
 def make_chat_model(config: LLMConfig, settings: GatewaySettings) -> ChatModel:
-    """Build the provider client pointed at the gateway's direct provider path."""
-    key = settings.langsmith_gateway_api_key
-    if config.provider == "anthropic":
-        return ChatAnthropic(
-            model=config.model,
+    """One client for every provider: `init_chat_model("langsmith:<provider>/<model>")`.
+
+    The `langsmith` provider targets the gateway's unified `/v1` endpoint, which translates
+    the OpenAI-shaped request (including `reasoning_effort`) for whichever provider the model
+    id names. Key and URL are passed explicitly so nothing depends on process env.
+    """
+    return cast(
+        "ChatModel",
+        init_chat_model(
+            f"langsmith:{config.provider}/{config.model}",
             reasoning_effort=config.reasoning_effort,
             max_tokens=config.max_tokens,
-            base_url=f"{settings.gateway_url}/anthropic",
-            api_key=key,
-        )
-    return ChatOpenAI(
-        model=config.model,
-        reasoning_effort=config.reasoning_effort,
-        base_url=f"{settings.gateway_url}/openai/v1",
-        api_key=key,
+            base_url=f"{settings.gateway_url}/v1",
+            api_key=settings.langsmith_gateway_api_key,
+        ),
     )
 
 
