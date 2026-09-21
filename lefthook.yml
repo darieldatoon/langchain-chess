@@ -1,0 +1,23 @@
+pre-commit:
+  parallel: true
+  commands:
+    ruff-format:
+      glob: "*.py"
+      run: uv run ruff format --check {staged_files}
+    ruff-lint:
+      glob: "*.py"
+      run: uv run ruff check {staged_files}
+    ty:
+      glob: "*.py"
+      run: uv run ty check
+    secrets:
+      # patterns require a key body so this file's own regex never matches itself
+      run: |
+        if git diff --cached -U0 -- . ':!lefthook.yml' | grep -E '^\+.*(sk-ant-[A-Za-z0-9_-]{20,}|sk-proj-[A-Za-z0-9_-]{20,}|lsv2_[a-z]{2}_[A-Za-z0-9]{20,}|ts_live_[A-Za-z0-9]{16,}|ghp_[A-Za-z0-9]{36})' ; then
+          echo "possible secret in staged changes"; exit 1
+        fi
+
+pre-push:
+  commands:
+    tests:
+      run: uv run pytest -q

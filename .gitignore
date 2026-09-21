@@ -1,0 +1,36 @@
+# local plans, never committed
+plans/
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+
+# secrets
+.env
+.env.*
+!.env.example
+
+# experiment outputs
+runs/
+*.jsonl
+data/positions/*.epd
+data/positions/*.pgn
+data/openings/*.pgn
+data/openings/*.epd
+
+# engines and weights (install via brew / download script)
+/engines/
+*.pb.gz
+
+.DS_Store
+
+# coverage
+.coverage
+.coverage.*
+htmlcov/
