@@ -1,8 +1,10 @@
 import random
 from pathlib import Path
+from typing import Any
 
 import chess
 import pytest
+from langchain_typesafe.types import ClassifierRequest, ClassifierResponse
 
 from jev_chess.analysis import (
     JevRecord,
@@ -255,3 +257,76 @@ def test_joined_helpers() -> None:
         [ranking("y", {"a1a2": 0.8, "a1a8": 0.2}, 0.5)],
     )[0]
     assert mated.cp_loss_of_jev_top() == (100_000 - 1) - (-100_000 + 2)
+
+
+# --- rate limiting ------------------------------------------------------------------------
+
+
+def test_backoff_prefers_server_hint_and_caps() -> None:
+    from jev_chess.analysis import backoff_seconds
+
+    assert backoff_seconds(0, None) == 1.0
+    assert backoff_seconds(3, None) == 8.0
+    assert backoff_seconds(10, None) == 30.0
+    assert backoff_seconds(0, 2500.0) == 2.5
+    assert backoff_seconds(0, 90_000.0) == 30.0
+
+
+class RateLimitedClassifier(FakeClassifier):
+    def __init__(self, failures: int, retry_after_ms: float | None = None) -> None:
+        super().__init__(scripted=choice_response({"e2e4": 1.0}))
+        self.failures = failures
+        self.retry_after_ms = retry_after_ms
+
+    async def ainvoke(self, input: ClassifierRequest, config: Any = None) -> ClassifierResponse:
+        if self.failures:
+            self.failures -= 1
+            raise _rate_limit(self.retry_after_ms)
+        return await super().ainvoke(input, config)
+
+
+def _rate_limit(retry_after_ms: float | None) -> Exception:
+    import httpx2
+    from langchain_typesafe.client import TypeSafeRateLimitError
+
+    headers = {"retry-after-ms": str(int(retry_after_ms))} if retry_after_ms else {}
+    return TypeSafeRateLimitError(429, body=None, headers=httpx2.Headers(headers))
+
+
+async def test_rank_with_retry_backs_off_then_succeeds() -> None:
+    from jev_chess.analysis import rank_with_retry
+
+    slept: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        slept.append(seconds)
+
+    policy = JevPolicy(RateLimitedClassifier(failures=2, retry_after_ms=500.0))
+    ranking = await rank_with_retry(policy, chess.Board(), sleep=fake_sleep)
+    assert ranking.top.uci == "e2e4"
+    assert slept == [0.5, 0.5]
+
+
+async def test_rank_with_retry_gives_up_after_max_attempts() -> None:
+    from langchain_typesafe.client import TypeSafeRateLimitError
+
+    from jev_chess.analysis import rank_with_retry
+
+    async def fake_sleep(seconds: float) -> None:
+        pass
+
+    policy = JevPolicy(RateLimitedClassifier(failures=99))
+    with pytest.raises(TypeSafeRateLimitError):
+        await rank_with_retry(policy, chess.Board(), sleep=fake_sleep, max_attempts=3)
+
+
+async def test_rank_positions_threads_sleep_through() -> None:
+    slept: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        slept.append(seconds)
+
+    policy = JevPolicy(RateLimitedClassifier(failures=1))
+    out = await rank_positions([position("p0")], policy, concurrency=1, sleep=fake_sleep)
+    assert out[0].candidates[0].uci == "e2e4"
+    assert slept == [1.0]

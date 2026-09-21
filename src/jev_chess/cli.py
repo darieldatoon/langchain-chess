@@ -228,7 +228,7 @@ def jev_rank_cmd(
         "data/positions/jev_rich.jsonl"
     ),
     style: Annotated[str, typer.Option(help="terse or rich")] = "rich",
-    concurrency: Annotated[int, typer.Option(min=1, max=64)] = 8,
+    concurrency: Annotated[int, typer.Option(min=1, max=64)] = 4,
     model: str = "jev-latest",
 ) -> None:
     """Ask Jev to rank every sampled position; writes its full distribution per position."""
