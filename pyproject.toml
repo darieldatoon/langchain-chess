@@ -12,11 +12,12 @@ dependencies = [
     "langchain-core>=1.6",
     "langchain-anthropic>=1.7",
     "langchain-openai>=1.6",
+    "langchain-typesafe>=0.0.1a3",
     "langsmith>=0.13",
     "pydantic>=2.13",
     "typer>=0.27",
     "rich>=15",
-    "langchain-typesafe>=0.0.1a3",
+    "python-dotenv>=1.1",
 ]
 
 [project.scripts]
