@@ -554,3 +554,43 @@ def test_report_command_shows_anchor_table(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert "maia:1100" in result.output
     assert "1100" in result.output
+
+
+def test_sweep_shares_one_budget_across_pairings(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from jev_chess.runner import players as players_module
+
+    class Pricey(RandomPlayer):
+        def decide(self, board: chess.Board, game_id: str, ply: int) -> MoveDecision:
+            d = super().decide(board, game_id, ply)
+            return MoveDecision(
+                uci=d.uci, source="llm", model="pricey", latency_ms=0.0, cost_usd=0.5
+            )
+
+    monkeypatch.setattr(players_module, "RandomPlayer", Pricey)
+    out = tmp_path / "sweep"
+    result = runner.invoke(
+        app,
+        [
+            "sweep",
+            "--players",
+            "random",
+            "--opponents",
+            "random,random",
+            "--out",
+            str(out),
+            "--games",
+            "3",
+            "--max-plies",
+            "10",
+            "--workers",
+            "1",
+            "--no-adjudicate",
+            "--max-usd",
+            "3",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "skipped by --max-usd" in result.output
+    assert "sweep spent $" in result.output

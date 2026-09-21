@@ -15,7 +15,7 @@ from jev_chess.analysis.records import JevRecord, PositionRecord
 from jev_chess.core import DescriptionStyle, all_move_facts, describe, material_balance, snapshot
 from jev_chess.engines import MaiaOpponent, MaiaRating, Oracle, OracleConfig
 from jev_chess.runner.game import GameRecord
-from jev_chess.runner.match import MatchConfig
+from jev_chess.runner.match import Budget, MatchConfig
 from jev_chess.settings import EngineSettings
 
 app = typer.Typer(no_args_is_help=True, help="System 1 vs System 2 chess experiments.")
@@ -386,7 +386,9 @@ def _match_config(
     )
 
 
-def _run_match(white: str, black: str, out: Path, config: MatchConfig, label: str) -> None:
+def _run_match(
+    white: str, black: str, out: Path, config: MatchConfig, label: str, budget: Budget | None = None
+) -> None:
     from jev_chess.runner import HybridSpec, JevSpec, LLMSpec, Match, SpecError, parse_spec
     from jev_chess.settings import GatewaySettings
 
@@ -406,7 +408,9 @@ def _run_match(white: str, black: str, out: Path, config: MatchConfig, label: st
             f"black {bt.latency_ms / 1000:.0f}s ${bt.cost_usd:.3f}"
         )
 
-    match = Match(specs[0], specs[1], config, out, EngineSettings(), gateway, on_game=on_game)
+    match = Match(
+        specs[0], specs[1], config, out, EngineSettings(), gateway, on_game=on_game, budget=budget
+    )
     played = match.run(label)
     console.print(
         f"{len(played)} games written to {out / 'games.jsonl'}; spent ${match.budget.spent_usd:.3f}"
@@ -465,11 +469,13 @@ def sweep(
     config = _match_config(
         games, max_plies, seed, True, workers, max_usd, adjudicate, adjudication_depth
     )
+    budget = Budget(max_usd)
     for player in _split(players):
         for opponent in _split(opponents):
             label = f"{_slug(player)}__{_slug(opponent)}"
             console.rule(f"{player} vs {opponent}")
-            _run_match(player, opponent, out / label, config, label)
+            _run_match(player, opponent, out / label, config, label, budget)
+    console.print(f"sweep spent ${budget.spent_usd:.3f} in total")
 
 
 def _split(text: str) -> list[str]:

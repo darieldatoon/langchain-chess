@@ -89,6 +89,7 @@ class Match:
         gateway: GatewaySettings | None,
         open_oracle: OpenOracle | None = None,
         on_game: OnGame = lambda _: None,
+        budget: Budget | None = None,
     ) -> None:
         self._white, self._black = white, black
         self._config = config
@@ -102,7 +103,8 @@ class Match:
         )
         self._on_game = on_game
         self._write_lock = threading.Lock()
-        self.budget = Budget(config.max_usd)
+        # A shared Budget lets `sweep` cap total spend across pairings.
+        self.budget = budget if budget is not None else Budget(config.max_usd)
         self.skipped: list[GamePlan] = []
 
     def _append(self, path: Path, record: PlyRecord | GameRecord) -> None:
