@@ -6,10 +6,13 @@ ceiling above the LLM alone: if Stockfish's best move is rarely in Jev's top-k, 
 
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
+from statistics import median
 
 from jev_chess.analysis.records import JevRecord, OracleLabel, Phase, PositionRecord
 
 MATE_SCORE = 100_000
+# Losses beyond this are all "decisive"; without a cap, mates at ±100k swamp the mean.
+CP_LOSS_CAP = 1000
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,7 +53,7 @@ class Joined:
         scores = {m.uci: _score(m.cp, m.mate) for m in self.label.ranked}
         if self.jev_top not in scores:
             return None
-        return max(0, scores[self.label.best.uci] - scores[self.jev_top])
+        return min(CP_LOSS_CAP, max(0, scores[self.label.best.uci] - scores[self.jev_top]))
 
 
 def _score(cp: int | None, mate: int | None) -> int:
@@ -89,6 +92,7 @@ class RecallReport:
     oracle_top3_hit_at: dict[int, float]
     recall_by_phase: dict[Phase, dict[int, float]]
     mean_cp_loss: float | None
+    median_cp_loss: float | None
     cp_loss_coverage: float
     confidence_calibration: tuple[Bucket, ...]
     margin_calibration: tuple[Bucket, ...]
@@ -135,6 +139,7 @@ def recall_report(rows: Sequence[Joined], ks: Sequence[int] = (1, 3, 5, 8)) -> R
             for phase in phases
         },
         mean_cp_loss=sum(losses) / len(losses) if losses else None,
+        median_cp_loss=float(median(losses)) if losses else None,
         cp_loss_coverage=len(losses) / len(rows) if rows else 0.0,
         confidence_calibration=calibration(rows, "jev_confidence"),
         margin_calibration=calibration(rows, "jev_margin"),

@@ -237,7 +237,7 @@ def test_recall_report_command(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert "1 positions" in result.output
     assert "100.0%" in result.output  # recall@2
-    assert "10 cp" in result.output
+    assert "mean 10 cp, median 10 cp" in result.output
     assert (
         runner.invoke(
             app,

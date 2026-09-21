@@ -223,7 +223,8 @@ def test_join_and_recall_report() -> None:
     assert report.oracle_top3_hit_at[1] == pytest.approx(2 / 3)
     assert report.recall_by_phase["opening"] == {1: 1.0, 2: 1.0}
     assert report.recall_by_phase["endgame"] == {1: 0.0, 2: 1.0}
-    assert report.mean_cp_loss == pytest.approx((0 + (100_000 - 1 - 900)) / 2)
+    assert report.mean_cp_loss == pytest.approx((0 + 1000) / 2)
+    assert report.median_cp_loss == 500.0
     assert report.cp_loss_coverage == pytest.approx(2 / 3)
     assert report.mean_latency_ms == 200.0
     assert report.mean_input_tokens == 100.0
@@ -238,6 +239,7 @@ def test_recall_report_on_empty_input() -> None:
     assert report.n == 0
     assert report.recall_at == {1: 0.0}
     assert report.mean_cp_loss is None
+    assert report.median_cp_loss is None
     assert report.cp_loss_coverage == 0.0
     assert all(b.count == 0 for b in calibration([], "jev_confidence"))
 
@@ -256,7 +258,7 @@ def test_joined_helpers() -> None:
         [label("y", ("a1a8", None, 1), ("a1a2", None, -2))],
         [ranking("y", {"a1a2": 0.8, "a1a8": 0.2}, 0.5)],
     )[0]
-    assert mated.cp_loss_of_jev_top() == (100_000 - 1) - (-100_000 + 2)
+    assert mated.cp_loss_of_jev_top() == 1000
 
 
 # --- rate limiting ------------------------------------------------------------------------

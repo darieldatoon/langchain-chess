@@ -277,9 +277,13 @@ def recall_report_cmd(
     for phase, table in report.recall_by_phase.items():
         phases.add_row(phase, *(f"{table[kk]:.1%}" for kk in report.recall_at))
     console.print(phases)
-    loss = "n/a" if report.mean_cp_loss is None else f"{report.mean_cp_loss:.0f} cp"
+    loss = (
+        "n/a"
+        if report.mean_cp_loss is None or report.median_cp_loss is None
+        else f"mean {report.mean_cp_loss:.0f} cp, median {report.median_cp_loss:.0f} cp"
+    )
     console.print(
-        f"mean cp loss of Jev's top move: {loss} "
+        f"cp loss of Jev's top move (capped at 1000): {loss} "
         f"(known for {report.cp_loss_coverage:.0%} of positions)"
     )
     for title, buckets in (
