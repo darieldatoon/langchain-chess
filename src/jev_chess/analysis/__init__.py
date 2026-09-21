@@ -2,7 +2,21 @@
 
 from jev_chess.analysis.label import label_one, label_positions
 from jev_chess.analysis.rank import backoff_seconds, rank_positions, rank_with_retry, to_record
-from jev_chess.analysis.recall import Joined, RecallReport, calibration, join, recall_report
+from jev_chess.analysis.recall import (
+    GatePoint,
+    Joined,
+    RecallReport,
+    ScoreReport,
+    calibration,
+    gate_report,
+    join,
+    oracle_rung,
+    oracle_tactic_present,
+    recall_report,
+    score_report,
+    tactics_calibration,
+    white_cp,
+)
 from jev_chess.analysis.records import (
     JevRecord,
     LabelMove,
@@ -22,6 +36,7 @@ from jev_chess.analysis.sample import (
 )
 
 __all__ = [
+    "GatePoint",
     "JevRecord",
     "Joined",
     "LabelMove",
@@ -31,11 +46,15 @@ __all__ = [
     "RankedCandidate",
     "RecallReport",
     "SampleConfig",
+    "ScoreReport",
     "backoff_seconds",
     "calibration",
+    "gate_report",
     "join",
     "label_one",
     "label_positions",
+    "oracle_rung",
+    "oracle_tactic_present",
     "phase_of",
     "pick_positions",
     "play_game",
@@ -44,6 +63,9 @@ __all__ = [
     "read_jsonl",
     "recall_report",
     "sample_positions",
+    "score_report",
+    "tactics_calibration",
     "to_record",
+    "white_cp",
     "write_jsonl",
 ]

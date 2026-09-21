@@ -3,6 +3,10 @@
 Built as a three-node LangGraph so the same shape (build request, call model, decide)
 composes with the LLM policy and the hybrid later. Graph state is JSON-serialisable
 (FEN plus SAN history) so games can be checkpointed and replayed.
+
+Optionally the same request carries a Score (position evaluation) and two Nouls
+(does this position need calculation; is a tactic available). Jev evaluates all questions
+in parallel, so the extras cost a few dozen input tokens and no latency.
 """
 
 import time
@@ -12,8 +16,15 @@ from typing import Any, Protocol, cast
 
 import chess
 from langchain_core.runnables import RunnableLambda
-from langchain_typesafe import Choice, Score, TypeSafeClassifier
-from langchain_typesafe.types import ChoiceAnswer, ClassifierRequest, ClassifierResponse
+from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
+from langchain_typesafe.types import (
+    ChoiceAnswer,
+    ClassifierRequest,
+    ClassifierResponse,
+    NoulAnswer,
+    NoulCriteria,
+    ScoreAnswer,
+)
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
@@ -24,23 +35,68 @@ from jev_chess.settings import GatewaySettings
 
 MOVE_QUESTION = "move"
 EVAL_QUESTION = "eval"
+CALCULATION_QUESTION = "needs_calculation"
+TACTICS_QUESTION = "tactics_present"
 
-EVAL_RUNGS: tuple[str, ...] = (
-    "Black is winning decisively",
-    "Black is clearly better",
-    "Black is slightly better",
-    "Equal",
-    "White is slightly better",
-    "White is clearly better",
-    "White is winning decisively",
-)
-
+# Deliberately no value ordering here (Dariel, 2026-09-21): sacrifices are sometimes right,
+# and a stated preference would make Jev's ranking an echo of the prompt.
 MOVE_INSTRUCTIONS = (
     "You are playing {side}. Choose the strongest legal move. Every option is a legal move in "
     "UCI notation with board-verified facts: what it captures, whether it gives check or "
     "checkmate, whether the destination square is attacked or defended, and the net material "
-    "result of the exchange on that square. Prefer checkmate above all, then moves that win "
-    "material or avoid losing it, then moves that improve piece activity and king safety."
+    "result of the exchange on that square."
+)
+
+EVAL_INSTRUCTIONS = (
+    "Evaluate the position from White's point of view, considering material, king safety, "
+    "piece activity, and pawn structure. Use the material count in the state as the starting "
+    "point and adjust for the other factors."
+)
+
+EVAL_RUNGS: tuple[str, ...] = (
+    "Black has a decisive advantage; White is lost with correct play",
+    "Black is clearly better; roughly a piece or a major positional edge ahead",
+    "Black is slightly better; roughly a pawn or a small positional edge ahead",
+    "Equal; neither side has more than a token advantage",
+    "White is slightly better; roughly a pawn or a small positional edge ahead",
+    "White is clearly better; roughly a piece or a major positional edge ahead",
+    "White has a decisive advantage; Black is lost with correct play",
+)
+
+CALCULATION_INSTRUCTIONS = (
+    "Does choosing the best move here require calculating concrete variations several moves "
+    "deep, rather than applying general principles such as development, centralisation, and "
+    "piece safety?"
+)
+CALCULATION_CRITERIA = NoulCriteria(
+    true=(
+        "The position contains forcing sequences, hanging or attacked pieces on both sides, "
+        "mating threats, or a pawn about to promote, so the right move depends on calculating "
+        "what happens after it. A strong player would stop and work out lines before moving."
+    ),
+    false=(
+        "No pieces are under immediate threat, there are no forcing captures or checks that "
+        "change the material balance, and any reasonable developing or improving move keeps the "
+        "position sound. A strong player would move quickly on principle."
+    ),
+)
+
+TACTICS_INSTRUCTIONS = (
+    "Is there a forcing tactical idea available to the side to move right now: a move that "
+    "wins material, gives checkmate, or creates a threat the opponent must answer immediately?"
+)
+TACTICS_CRITERIA = NoulCriteria(
+    true=(
+        "At least one legal move captures material that cannot be safely recaptured, delivers "
+        "or forces checkmate, or attacks a piece or the king in a way that forces a specific "
+        "reply. The move facts list a positive exchange result, a check, or a checkmate for such "
+        "a move."
+    ),
+    false=(
+        "Every capture available is either equal or losing according to the exchange facts, no "
+        "move gives check or mate, and the side to move has no immediate threat to make. The "
+        "position is quiet."
+    ),
 )
 
 
@@ -49,11 +105,7 @@ class Classifier(Protocol):
 
     def invoke(self, input: ClassifierRequest, config: Any = None) -> ClassifierResponse: ...
 
-    async def ainvoke(
-        self,
-        input: ClassifierRequest,
-        config: Any = None,
-    ) -> ClassifierResponse: ...
+    async def ainvoke(self, input: ClassifierRequest, config: Any = None) -> ClassifierResponse: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,6 +114,7 @@ class JevConfig:
     style: DescriptionStyle = "rich"
     history_plies: int = 6
     with_eval: bool = False
+    with_nouls: bool = False
 
 
 @dataclass
@@ -97,23 +150,38 @@ def build_state(board: chess.Board, history: Sequence[str], config: JevConfig) -
     }
 
 
-def build_request(
-    board: chess.Board, history: Sequence[str], config: JevConfig
-) -> ClassifierRequest:
+def build_questions(board: chess.Board, config: JevConfig) -> dict[str, Any]:
     facts = all_move_facts(board)
-    criteria = describe_all(facts, config.style)
     questions: dict[str, Any] = {
         MOVE_QUESTION: Choice(
             instructions=MOVE_INSTRUCTIONS.format(side=side_of(board.turn)),
-            criteria=dict(criteria),
+            criteria=dict(describe_all(facts, config.style)),
         )
     }
     if config.with_eval:
-        questions[EVAL_QUESTION] = Score(
-            instructions="Evaluate the position from White's point of view.",
-            criteria=list(EVAL_RUNGS),
+        questions[EVAL_QUESTION] = Score(instructions=EVAL_INSTRUCTIONS, criteria=list(EVAL_RUNGS))
+    if config.with_nouls:
+        questions[CALCULATION_QUESTION] = Noul(
+            instructions=CALCULATION_INSTRUCTIONS, criteria=CALCULATION_CRITERIA
         )
-    return {"state": build_state(board, history, config), "questions": questions}
+        questions[TACTICS_QUESTION] = Noul(
+            instructions=TACTICS_INSTRUCTIONS, criteria=TACTICS_CRITERIA
+        )
+    return questions
+
+
+def build_request(
+    board: chess.Board, history: Sequence[str], config: JevConfig
+) -> ClassifierRequest:
+    return {
+        "state": build_state(board, history, config),
+        "questions": build_questions(board, config),
+    }
+
+
+def _noul(response: ClassifierResponse, name: str) -> float | None:
+    answer = response.answers.get(name)
+    return answer.noul if isinstance(answer, NoulAnswer) else None
 
 
 def parse_response(response: ClassifierResponse, latency_ms: float) -> JevRanking:
@@ -121,7 +189,6 @@ def parse_response(response: ClassifierResponse, latency_ms: float) -> JevRankin
     assert isinstance(answer, ChoiceAnswer), "move question must be a Choice"
     ordered = sorted(answer.probabilities.items(), key=lambda kv: (-kv[1], kv[0]))
     eval_answer = response.answers.get(EVAL_QUESTION)
-    eval_score = getattr(eval_answer, "score", None)
     return JevRanking(
         candidates=tuple(Candidate(uci=u, probability=p) for u, p in ordered),
         confidence=answer.confidence,
@@ -129,7 +196,9 @@ def parse_response(response: ClassifierResponse, latency_ms: float) -> JevRankin
         input_tokens=response.usage.input_tokens or 0,
         output_tokens=response.usage.output_tokens or 0,
         latency_ms=latency_ms,
-        eval_score=eval_score,
+        eval_score=eval_answer.score if isinstance(eval_answer, ScoreAnswer) else None,
+        needs_calculation=_noul(response, CALCULATION_QUESTION),
+        tactics_present=_noul(response, TACTICS_QUESTION),
     )
 
 

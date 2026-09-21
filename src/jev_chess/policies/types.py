@@ -20,6 +20,8 @@ class JevRanking:
     output_tokens: int
     latency_ms: float
     eval_score: float | None = None
+    needs_calculation: float | None = None
+    tactics_present: float | None = None
 
     def __post_init__(self) -> None:
         if not self.candidates:

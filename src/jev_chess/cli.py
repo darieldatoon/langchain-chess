@@ -130,18 +130,30 @@ def jev(
     style: Annotated[str, typer.Option(help="terse or rich")] = "rich",
     top: Annotated[int, typer.Option(min=1, max=50)] = 10,
     with_eval: Annotated[bool, typer.Option(help="also ask Jev for a position score")] = False,
+    with_nouls: Annotated[
+        bool, typer.Option(help="also ask needs_calculation and tactics_present")
+    ] = False,
 ) -> None:
     """Ask Jev to rank every legal move; prints the top of its distribution."""
     from jev_chess.policies import JevConfig, JevPolicy
 
     board = _board(fen)
-    policy = JevPolicy.from_settings(config=JevConfig(style=_style(style), with_eval=with_eval))
-    ranking = policy.rank(board)
+    config = JevConfig(style=_style(style), with_eval=with_eval, with_nouls=with_nouls)
+    ranking = JevPolicy.from_settings(config=config).rank(board)
+    extras = [
+        f"eval {ranking.eval_score:.2f}" if ranking.eval_score is not None else "",
+        f"needs_calculation {ranking.needs_calculation:.2f}"
+        if ranking.needs_calculation is not None
+        else "",
+        f"tactics_present {ranking.tactics_present:.2f}"
+        if ranking.tactics_present is not None
+        else "",
+    ]
     console.print(
         f"[bold]{ranking.model}[/] {ranking.latency_ms:.0f}ms, "
         f"{ranking.input_tokens} in / {ranking.output_tokens} out tokens, "
         f"confidence {ranking.confidence:.2f}, margin {ranking.margin:.2f}"
-        + (f", eval {ranking.eval_score}" if ranking.eval_score is not None else "")
+        + "".join(f", {e}" for e in extras if e)
     )
     table = Table("rank", "uci", "san", "probability")
     for rank, candidate in enumerate(ranking.top_k(top), start=1):
@@ -230,6 +242,8 @@ def jev_rank_cmd(
     style: Annotated[str, typer.Option(help="terse or rich")] = "rich",
     concurrency: Annotated[int, typer.Option(min=1, max=64)] = 4,
     model: str = "jev-latest",
+    with_eval: Annotated[bool, typer.Option(help="also ask for a position Score")] = False,
+    with_nouls: Annotated[bool, typer.Option(help="also ask the two Nouls")] = False,
 ) -> None:
     """Ask Jev to rank every sampled position; writes its full distribution per position."""
     import asyncio
@@ -238,7 +252,8 @@ def jev_rank_cmd(
     from jev_chess.policies import JevConfig, JevPolicy
 
     records = list(read_jsonl(positions, PositionRecord))
-    policy = JevPolicy.from_settings(config=JevConfig(model=model, style=_style(style)))
+    config = JevConfig(model=model, style=_style(style), with_eval=with_eval, with_nouls=with_nouls)
+    policy = JevPolicy.from_settings(config=config)
     with Progress(console=console) as progress:
         task = progress.add_task("ranking", total=len(records))
         rankings = asyncio.run(
@@ -255,7 +270,16 @@ def recall_report_cmd(
     k: Annotated[str, typer.Option(help="comma-separated k values")] = "1,3,5,8",
 ) -> None:
     """Recall@k of Stockfish's best move within Jev's top-k, plus calibration tables."""
-    from jev_chess.analysis import JevRecord, OracleLabel, join, read_jsonl, recall_report
+    from jev_chess.analysis import (
+        JevRecord,
+        OracleLabel,
+        gate_report,
+        join,
+        read_jsonl,
+        recall_report,
+        score_report,
+        tactics_calibration,
+    )
 
     rows = join(
         read_jsonl(positions, PositionRecord),
@@ -296,3 +320,34 @@ def recall_report_cmd(
                 acc = "" if b.accuracy is None else f"{b.accuracy:.1%}"
                 cal.add_row(f"{b.lower:.1f}-{b.upper:.1f}", str(b.count), acc)
         console.print(cal)
+
+    gates = Table("gate signal", *(f">= {t:.2f}" for t in (0.5, 0.6, 0.7, 0.8, 0.9, 0.95)))
+    gates.title = "Jev plays alone when signal clears threshold: kept share / top-1 accuracy"
+    by_signal: dict[str, list[str]] = {}
+    for point in gate_report(rows):
+        acc = "" if point.accuracy is None else f"{point.accuracy:.0%}"
+        by_signal.setdefault(point.signal, []).append(f"{point.kept:.0%} / {acc}")
+    for signal, cells in by_signal.items():
+        gates.add_row(signal, *cells)
+    console.print(gates)
+
+    scores = score_report(rows)
+    if scores is not None:
+        console.print(
+            f"[bold]Score vs Stockfish rung[/] (n={scores.n}): exact {scores.exact:.1%}, "
+            f"within one {scores.within_one:.1%}, mean abs error {scores.mean_abs_error:.2f} rungs"
+        )
+        confusion = Table("oracle rung", *(str(g) for g in range(7)))
+        for truth in range(7):
+            row = scores.confusion.get(truth, {})
+            confusion.add_row(str(truth), *(str(row.get(g, 0)) for g in range(7)))
+        console.print(confusion)
+
+    tactics = tactics_calibration(rows)
+    if any(b.count for b in tactics):
+        tac = Table("tactics_present", "n", "tactic truly present")
+        for b in tactics:
+            if b.count:
+                rate = "" if b.accuracy is None else f"{b.accuracy:.1%}"
+                tac.add_row(f"{b.lower:.1f}-{b.upper:.1f}", str(b.count), rate)
+        console.print(tac)

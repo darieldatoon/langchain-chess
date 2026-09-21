@@ -54,6 +54,9 @@ class JevRecord(BaseModel):
     input_tokens: int
     output_tokens: int
     latency_ms: float
+    eval_score: float | None = None
+    needs_calculation: float | None = None
+    tactics_present: float | None = None
 
 
 def write_jsonl(path: Path, records: Iterable[BaseModel]) -> int:

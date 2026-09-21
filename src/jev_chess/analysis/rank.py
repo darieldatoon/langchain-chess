@@ -57,6 +57,9 @@ def to_record(record: PositionRecord, ranking: JevRanking, style: str) -> JevRec
         input_tokens=ranking.input_tokens,
         output_tokens=ranking.output_tokens,
         latency_ms=ranking.latency_ms,
+        eval_score=ranking.eval_score,
+        needs_calculation=ranking.needs_calculation,
+        tactics_present=ranking.tactics_present,
     )
 
 

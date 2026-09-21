@@ -276,3 +276,127 @@ def test_recall_report_command(tmp_path: Path) -> None:
 
 def test_jev_module_exports_typesafe_classifier() -> None:
     assert jev_module.TypeSafeClassifier is not None
+
+
+def test_jev_command_prints_nouls(monkeypatch: pytest.MonkeyPatch) -> None:
+    from langchain_typesafe.types import NoulAnswer
+
+    response = choice_response({"e1g1": 0.5, "b1c3": 0.5}, 0.6, eval_score=3.0)
+    response.answers["needs_calculation"] = NoulAnswer(type="noul", noul=0.25)
+    response.answers["tactics_present"] = NoulAnswer(type="noul", noul=0.75)
+    fake = FakeClassifier(scripted=response)
+    monkeypatch.setattr(
+        JevPolicy,
+        "from_settings",
+        classmethod(lambda cls, settings=None, config=None: JevPolicy(fake, config)),
+    )
+    result = runner.invoke(app, ["jev", ITALIAN, "--with-eval", "--with-nouls"])
+    assert result.exit_code == 0, result.output
+    assert "needs_calculation 0.25" in result.output
+    assert "tactics_present 0.75" in result.output
+    assert set(fake.requests[0]["questions"]) == {
+        "move",
+        "eval",
+        "needs_calculation",
+        "tactics_present",
+    }
+
+
+def test_jev_rank_command_passes_flags(fake_policy: FakeClassifier, tmp_path: Path) -> None:
+    positions = tmp_path / "positions.jsonl"
+    write_jsonl(
+        positions,
+        [
+            PositionRecord(
+                id="p0",
+                fen=ITALIAN,
+                ply=10,
+                phase="opening",
+                game_id="g",
+                white="1100",
+                black="1100",
+            )
+        ],
+    )
+    out = tmp_path / "jev.jsonl"
+    result = runner.invoke(
+        app,
+        [
+            "jev-rank",
+            "--positions",
+            str(positions),
+            "--out",
+            str(out),
+            "--with-eval",
+            "--with-nouls",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert set(fake_policy.requests[0]["questions"]) >= {"eval", "needs_calculation"}
+    assert next(iter(read_jsonl(out, JevRecord))).eval_score == 3.0
+
+
+def test_recall_report_prints_score_gate_and_tactics_tables(tmp_path: Path) -> None:
+    positions = tmp_path / "p.jsonl"
+    labels = tmp_path / "l.jsonl"
+    rankings = tmp_path / "r.jsonl"
+    write_jsonl(
+        positions,
+        [
+            PositionRecord(
+                id="a", fen=ITALIAN, ply=10, phase="opening", game_id="g", white="1", black="1"
+            )
+        ],
+    )
+    write_jsonl(
+        labels,
+        [
+            OracleLabel(
+                id="a",
+                depth=16,
+                ranked=[
+                    LabelMove(uci="f3e5", cp=30, mate=None),
+                    LabelMove(uci="d2d3", cp=20, mate=None),
+                ],
+            )
+        ],
+    )
+    write_jsonl(
+        rankings,
+        [
+            JevRecord(
+                id="a",
+                model="jev-test",
+                style="rich",
+                candidates=[
+                    RankedCandidate(uci="f3e5", probability=0.9),
+                    RankedCandidate(uci="d2d3", probability=0.1),
+                ],
+                confidence=0.95,
+                input_tokens=100,
+                output_tokens=10,
+                latency_ms=200.0,
+                eval_score=3.1,
+                needs_calculation=0.2,
+                tactics_present=0.8,
+            )
+        ],
+    )
+    result = runner.invoke(
+        app,
+        [
+            "recall-report",
+            "--positions",
+            str(positions),
+            "--labels",
+            str(labels),
+            "--rankings",
+            str(rankings),
+        ],
+        env={"COLUMNS": "200"},  # rich wraps table cells at the 80-column test default
+    )
+    assert result.exit_code == 0, result.output
+    assert "Score vs Stockfish rung" in result.output
+    assert "exact 100.0%" in result.output
+    assert "1 - needs_calculation" in result.output
+    assert "tactic truly present" in result.output
