@@ -625,3 +625,28 @@ def test_sweep_continues_past_a_failed_pairing(tmp_path: Path) -> None:
     assert "wizard__random failed" in result.output
     assert (out / "random__random" / "games.jsonl").exists()
     assert "1 pairing(s) failed" in result.output
+
+
+def test_match_opens_stockfish_from_engine_settings(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Without an injected oracle opener, Match builds Stockfish from EngineSettings."""
+    from jev_chess.runner import match as match_module
+
+    seen: dict[str, object] = {}
+
+    def fake_open(cls: object, path: str | None, config: OracleConfig) -> str:
+        seen.update(path=path, depth=config.depth, multipv=config.multipv)
+        return "oracle"
+
+    monkeypatch.setattr(match_module.Oracle, "open", classmethod(fake_open))
+    match = Match(
+        RandomSpec(),
+        RandomSpec(),
+        MatchConfig(games=1, adjudication_depth=7),
+        tmp_path,
+        EngineSettings(stockfish_path="/opt/sf"),
+        None,
+    )
+    assert match._open_oracle() == "oracle"
+    assert seen == {"path": "/opt/sf", "depth": 7, "multipv": 1}

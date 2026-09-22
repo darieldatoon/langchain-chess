@@ -431,8 +431,9 @@ def test_jev_rank_resumes_and_appends(fake_policy: FakeClassifier, tmp_path: Pat
     )
     result = runner.invoke(app, ["jev-rank", "--positions", str(positions), "--out", str(out)])
     assert result.exit_code == 0, result.output
-    assert "2 new rankings appended" in result.output
-    assert "(1 were already done)" in result.output
+    flat = " ".join(result.output.split())  # rich wraps at the terminal width; CI is 80 columns
+    assert "2 new rankings appended" in flat
+    assert "(1 were already done)" in flat
     records = list(read_jsonl(out, JevRecord))
     assert sorted(r.id for r in records) == ["p0", "p1", "p2"]
     assert next(r for r in records if r.id == "p1").model == "old"
@@ -459,6 +460,7 @@ def test_play_command_random_vs_random_writes_records(tmp_path: Path) -> None:
             "12",
             "--seed",
             "3",
+            "--no-adjudicate",
         ],
     )
     assert result.exit_code == 0, result.output
@@ -514,6 +516,7 @@ def test_play_command_swaps_colours_and_uses_gateway_players(
             str(out),
             "--max-plies",
             "10",
+            "--no-adjudicate",
         ],
     )
     assert result.exit_code == 0, result.output
