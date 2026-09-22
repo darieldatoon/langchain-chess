@@ -13,13 +13,10 @@ interface Props {
   onMove: (uci: string, fenAfter: string) => void;
 }
 
-// react-chessboard takes style objects, so the board is the one place semantic tokens are read
-// as CSS variables instead of Tailwind classes. Dark squares are the brand blue toned down over
-// the card surface so the table stays calm in both themes; light squares are the card surface.
-const light = { backgroundColor: "var(--bg-surface-level-3)" };
-const dark = {
-  backgroundColor: "color-mix(in srgb, var(--bg-brand) 55%, var(--bg-surface-level-3))",
-};
+// react-chessboard takes style objects, so board colours are CSS variables defined per theme
+// in src/index.css from semantic tokens.
+const light = { backgroundColor: "var(--board-light)" };
+const dark = { backgroundColor: "var(--board-dark)" };
 
 export function Board({ fen, orientation, humanSide, lastMove, locked, onMove }: Props) {
   const canMove = !locked && sideToMove(fen) === humanSide;
@@ -35,9 +32,9 @@ export function Board({ fen, orientation, humanSide, lastMove, locked, onMove }:
         animationDurationInMs: 180,
         lightSquareStyle: light,
         darkSquareStyle: dark,
-        dropSquareStyle: { boxShadow: "inset 0 0 0 3px var(--border-focus)" },
-        darkSquareNotationStyle: { color: "var(--bg-surface-level-3)", fontSize: "11px" },
-        lightSquareNotationStyle: { color: "var(--text-tertiary)", fontSize: "11px" },
+        dropSquareStyle: { boxShadow: "inset 0 0 0 3px var(--board-drop)" },
+        darkSquareNotationStyle: { color: "var(--board-notation-on-dark)", fontSize: "11px" },
+        lightSquareNotationStyle: { color: "var(--board-notation-on-light)", fontSize: "11px" },
         boardStyle: { borderRadius: "var(--radius-md, 6px)", overflow: "hidden" },
         squareStyles,
         canDragPiece: ({ piece }) => canMove && isOwnPiece(piece.pieceType, humanSide),

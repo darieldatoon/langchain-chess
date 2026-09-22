@@ -45,7 +45,7 @@ export function pairs(plies: PlyView[]): MoveRow[] {
 
 export function lastMoveStyles(uci: string | null): Record<string, React.CSSProperties> {
   if (!uci || uci.length < 4) return {};
-  const highlight = { backgroundColor: "var(--bg-warning-subtle)" };
+  const highlight = { backgroundColor: "var(--board-last-move)" };
   return { [uci.slice(0, 2)]: highlight, [uci.slice(2, 4)]: highlight };
 }
 
