@@ -34,6 +34,9 @@ from jev_chess.policies import Candidate, JevConfig, JevPolicy, JevRanking
 from tests.fake_jev import FakeClassifier, choice_response
 from tests.fakes import FakeBackend, info
 
+# rank_with_retry owns backoff in the analysis path; the graph's own retries would hide it.
+NO_INNER_RETRY = JevConfig(max_attempts=1)
+
 
 class RandomPlayer:
     def __init__(self, seed: int) -> None:
@@ -303,7 +306,7 @@ async def test_rank_with_retry_backs_off_then_succeeds() -> None:
     async def fake_sleep(seconds: float) -> None:
         slept.append(seconds)
 
-    policy = JevPolicy(RateLimitedClassifier(failures=2, retry_after_ms=500.0))
+    policy = JevPolicy(RateLimitedClassifier(failures=2, retry_after_ms=500.0), NO_INNER_RETRY)
     ranking = await rank_with_retry(policy, chess.Board(), sleep=fake_sleep)
     assert ranking.top.uci == "e2e4"
     assert slept == [0.5, 0.5]
@@ -317,7 +320,7 @@ async def test_rank_with_retry_gives_up_after_max_attempts() -> None:
     async def fake_sleep(seconds: float) -> None:
         pass
 
-    policy = JevPolicy(RateLimitedClassifier(failures=99))
+    policy = JevPolicy(RateLimitedClassifier(failures=99), NO_INNER_RETRY)
     with pytest.raises(TypeSafeRateLimitError):
         await rank_with_retry(policy, chess.Board(), sleep=fake_sleep, max_attempts=3)
 
@@ -328,7 +331,7 @@ async def test_rank_positions_threads_sleep_through() -> None:
     async def fake_sleep(seconds: float) -> None:
         slept.append(seconds)
 
-    policy = JevPolicy(RateLimitedClassifier(failures=1))
+    policy = JevPolicy(RateLimitedClassifier(failures=1), NO_INNER_RETRY)
     out = await rank_positions([position("p0")], policy, concurrency=1, sleep=fake_sleep)
     assert out[0].candidates[0].uci == "e2e4"
     assert slept == [1.0]
@@ -369,6 +372,7 @@ async def test_rank_with_retry_handles_connection_errors_with_exponential_backof
     async def fake_sleep(seconds: float) -> None:
         slept.append(seconds)
 
-    ranking = await rank_with_retry(JevPolicy(DroppingClassifier(3)), chess.Board(), fake_sleep)
+    policy = JevPolicy(DroppingClassifier(3), NO_INNER_RETRY)
+    ranking = await rank_with_retry(policy, chess.Board(), fake_sleep)
     assert ranking.top.uci == "e2e4"
     assert slept == [1.0, 2.0, 4.0]

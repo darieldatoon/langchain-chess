@@ -9,6 +9,7 @@ Optionally the same request carries a Score (position evaluation) and two Nouls
 in parallel, so the extras cost a few dozen input tokens and no latency.
 """
 
+import asyncio
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass, field
@@ -17,6 +18,12 @@ from typing import Any, Protocol, cast
 import chess
 from langchain_core.runnables import RunnableConfig, RunnableLambda
 from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
+from langchain_typesafe.client import (
+    TypeSafeAPIConnectionError,
+    TypeSafeAPITimeoutError,
+    TypeSafeInternalServerError,
+    TypeSafeRateLimitError,
+)
 from langchain_typesafe.types import (
     ChoiceAnswer,
     ClassifierRequest,
@@ -33,6 +40,15 @@ from jev_chess.core.position import side_of
 from jev_chess.policies.pricing import cost_usd
 from jev_chess.policies.types import Candidate, JevRanking, MoveDecision, legal_decision
 from jev_chess.settings import GatewaySettings
+
+TRANSIENT_ERRORS = (
+    TypeSafeRateLimitError,
+    TypeSafeAPIConnectionError,
+    TypeSafeAPITimeoutError,
+    TypeSafeInternalServerError,
+)
+BASE_BACKOFF_S = 0.5
+MAX_BACKOFF_S = 4.0
 
 MOVE_QUESTION = "move"
 EVAL_QUESTION = "eval"
@@ -116,6 +132,10 @@ class JevConfig:
     history_plies: int = 6
     with_eval: bool = False
     with_nouls: bool = False
+    # Jev answers in well under a second; a call that runs long is a stalled connection, so
+    # give up early and try again rather than wait out the client's 30 s default.
+    timeout_s: float = 15.0
+    max_attempts: int = 3
 
 
 @dataclass
@@ -127,7 +147,12 @@ class JevState:
     request: ClassifierRequest | None = None
     response: ClassifierResponse | None = None
     latency_ms: float = 0.0
+    attempts: int = 0
     ranking: JevRanking | None = None
+
+
+def backoff_seconds(attempt: int) -> float:
+    return min(MAX_BACKOFF_S, BASE_BACKOFF_S * 2**attempt)
 
 
 def build_state(board: chess.Board, history: Sequence[str], config: JevConfig) -> dict[str, Any]:
@@ -212,14 +237,34 @@ def build_graph(
     def ask_jev(state: JevState) -> dict[str, Any]:
         assert state.request is not None
         started = time.perf_counter()
-        response = classifier.invoke(state.request)
-        return {"response": response, "latency_ms": (time.perf_counter() - started) * 1000}
+        attempt = 0
+        while True:
+            try:
+                response = classifier.invoke(state.request)
+                break
+            except TRANSIENT_ERRORS:
+                attempt += 1
+                if attempt >= config.max_attempts:
+                    raise
+                time.sleep(backoff_seconds(attempt - 1))
+        latency = (time.perf_counter() - started) * 1000
+        return {"response": response, "latency_ms": latency, "attempts": attempt + 1}
 
     async def ask_jev_async(state: JevState) -> dict[str, Any]:
         assert state.request is not None
         started = time.perf_counter()
-        response = await classifier.ainvoke(state.request)
-        return {"response": response, "latency_ms": (time.perf_counter() - started) * 1000}
+        attempt = 0
+        while True:
+            try:
+                response = await classifier.ainvoke(state.request)
+                break
+            except TRANSIENT_ERRORS:
+                attempt += 1
+                if attempt >= config.max_attempts:
+                    raise
+                await asyncio.sleep(backoff_seconds(attempt - 1))
+        latency = (time.perf_counter() - started) * 1000
+        return {"response": response, "latency_ms": latency, "attempts": attempt + 1}
 
     def decide(state: JevState) -> dict[str, Any]:
         assert state.response is not None
@@ -294,6 +339,7 @@ class JevPolicy:
             model=config.model,
             api_key=settings.typesafe_api_key,
             base_url=settings.typesafe_base_url,
+            timeout=config.timeout_s,
         )
         return cls(classifier, config, context_schema)
 

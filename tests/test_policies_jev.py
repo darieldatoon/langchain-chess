@@ -1,3 +1,5 @@
+from typing import Any
+
 import chess
 import pytest
 from langchain_typesafe import Choice, Score
@@ -163,3 +165,77 @@ def test_live_jev_ranks_italian_through_gateway() -> None:
     assert ranking.model.startswith("jev")
     assert abs(sum(c.probability for c in ranking.candidates) - 1.0) < 0.05
     assert ranking.input_tokens > 500
+
+
+class FlakyClassifier(FakeClassifier):
+    """Raises a transient error `failures` times before answering like FakeClassifier."""
+
+    def __init__(self, failures: int, error: type[Exception]) -> None:
+        super().__init__(scripted=choice_response({"e2e4": 0.9, "d2d4": 0.1}, confidence=0.8))
+        self.failures = failures
+        self.error = error
+        self.attempts = 0
+
+    def _maybe_fail(self) -> None:
+        self.attempts += 1
+        if self.attempts <= self.failures:
+            raise self.error("stalled")
+
+    def invoke(self, input: Any, config: Any = None) -> Any:
+        self._maybe_fail()
+        return super().invoke(input, config)
+
+    async def ainvoke(self, input: Any, config: Any = None) -> Any:
+        self._maybe_fail()
+        return await super().ainvoke(input, config)
+
+
+def test_backoff_grows_and_caps() -> None:
+    assert [jev_module.backoff_seconds(a) for a in range(5)] == [0.5, 1.0, 2.0, 4.0, 4.0]
+
+
+def test_transient_errors_are_retried_then_succeed(monkeypatch: pytest.MonkeyPatch) -> None:
+    from langchain_typesafe.client import TypeSafeAPITimeoutError
+
+    slept: list[float] = []
+    monkeypatch.setattr(jev_module.time, "sleep", slept.append)
+    fake = FlakyClassifier(2, TypeSafeAPITimeoutError)
+    ranking = JevPolicy(fake, JevConfig(max_attempts=3)).rank(chess.Board())
+    assert ranking.top.uci == "e2e4"
+    assert fake.attempts == 3
+    assert slept == [0.5, 1.0]
+
+
+def test_retries_are_bounded(monkeypatch: pytest.MonkeyPatch) -> None:
+    from langchain_typesafe.client import TypeSafeAPIConnectionError
+
+    monkeypatch.setattr(jev_module.time, "sleep", lambda _s: None)
+    fake = FlakyClassifier(5, TypeSafeAPIConnectionError)
+    with pytest.raises(TypeSafeAPIConnectionError):
+        JevPolicy(fake, JevConfig(max_attempts=2)).rank(chess.Board())
+    assert fake.attempts == 2
+
+
+def test_non_transient_errors_are_not_retried() -> None:
+    fake = FlakyClassifier(1, ValueError)
+    with pytest.raises(ValueError, match="stalled"):
+        JevPolicy(fake, JevConfig()).rank(chess.Board())
+    assert fake.attempts == 1
+
+
+async def test_async_retry_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    from langchain_typesafe.client import TypeSafeAPITimeoutError
+
+    slept: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        slept.append(seconds)
+
+    monkeypatch.setattr(jev_module.asyncio, "sleep", fake_sleep)
+    fake = FlakyClassifier(1, TypeSafeAPITimeoutError)
+    ranking = await JevPolicy(fake, JevConfig()).arank(chess.Board())
+    assert ranking.top.uci == "e2e4"
+    assert slept == [0.5]
+    exhausted = FlakyClassifier(3, TypeSafeAPITimeoutError)
+    with pytest.raises(TypeSafeAPITimeoutError):
+        await JevPolicy(exhausted, JevConfig(max_attempts=2)).arank(chess.Board())

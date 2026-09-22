@@ -255,7 +255,14 @@ def jev_rank_cmd(
 
     done = existing_ids(out, JevRecord)
     records = [r for r in read_jsonl(positions, PositionRecord) if r.id not in done]
-    config = JevConfig(model=model, style=_style(style), with_eval=with_eval, with_nouls=with_nouls)
+    # rank_with_retry handles backoff (with the gateway's retry-after hints) for this path.
+    config = JevConfig(
+        model=model,
+        style=_style(style),
+        with_eval=with_eval,
+        with_nouls=with_nouls,
+        max_attempts=1,
+    )
     policy = JevPolicy.from_settings(config=config)
     with Progress(console=console) as progress:
         task = progress.add_task("ranking", total=len(records), completed=0)
