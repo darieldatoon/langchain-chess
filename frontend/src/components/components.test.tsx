@@ -2,7 +2,15 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { DEFAULT_CONTEXT, START_FEN, type PlyView } from "../types";
 import { Banner } from "./Banner";
-import { lastMoveStyles, money, pairs, seconds, sourceClass, sourceLabel } from "../format";
+import {
+  isAtBottom,
+  lastMoveStyles,
+  money,
+  pairs,
+  seconds,
+  sourceClass,
+  sourceLabel,
+} from "../format";
 import { Board } from "./Board";
 import { MoveList } from "./MoveList";
 import { PlyDetails } from "./PlyDetails";
@@ -45,7 +53,7 @@ const llm: PlyView = {
   illegal_attempts: 1,
   escalated: true,
   jev_margin: 0.1,
-  raw_reply: "Thinking...\nMOVE: Nc6",
+  raw_reply: "## Plan\n\nDevelop the knight.\n\nMOVE: **Nc6**",
 };
 
 describe("Banner", () => {
@@ -75,6 +83,32 @@ describe("MoveList", () => {
     rerender(<MoveList plies={[jev]} />);
     expect(screen.getByText("e5")).toBeInTheDocument();
     expect(screen.getByText("1.")).toBeInTheDocument();
+  });
+});
+
+describe("MoveList scrolling", () => {
+  it("detects the bottom within tolerance", () => {
+    expect(isAtBottom({ scrollTop: 92, scrollHeight: 200, clientHeight: 100 })).toBe(true);
+    expect(isAtBottom({ scrollTop: 40, scrollHeight: 200, clientHeight: 100 })).toBe(false);
+  });
+
+  it("follows new moves while at the bottom and holds after a manual scroll up", () => {
+    const { rerender } = render(<MoveList plies={[human]} />);
+    const list = screen.getByLabelText("move list");
+    Object.defineProperty(list, "scrollHeight", { value: 400, configurable: true });
+    Object.defineProperty(list, "clientHeight", { value: 100, configurable: true });
+    rerender(<MoveList plies={[human, jev]} />);
+    expect(list.scrollTop).toBe(400);
+    list.scrollTop = 10;
+    fireEvent.scroll(list);
+    rerender(<MoveList plies={[human, jev, { ...human, ply: 3, san: "Nf3" }]} />);
+    expect(list.scrollTop).toBe(10);
+    list.scrollTop = 300;
+    fireEvent.scroll(list);
+    rerender(
+      <MoveList plies={[human, jev, { ...human, ply: 3, san: "Nf3" }, { ...jev, ply: 4 }]} />,
+    );
+    expect(list.scrollTop).toBe(400);
   });
 });
 
@@ -115,6 +149,8 @@ describe("PlyDetails", () => {
     expect(screen.getByText("900")).toBeInTheDocument();
     expect(screen.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("LLM reply")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Plan" })).toBeInTheDocument();
+    expect(screen.getByText("Nc6", { selector: ".markdown strong" })).toBeInTheDocument();
   });
 
   it("hides the gate line outside the hybrid or without a signal", () => {

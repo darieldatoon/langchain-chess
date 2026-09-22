@@ -1,3 +1,4 @@
+import Markdown from "react-markdown";
 import { money, seconds, sourceClass, sourceLabel } from "../format";
 import type { PlayContext, PlyView } from "../types";
 
@@ -61,7 +62,9 @@ export function PlyDetails({ ply, context }: { ply: PlyView | null; context: Pla
       {ply.raw_reply && (
         <details className="reply">
           <summary>LLM reply</summary>
-          <pre>{ply.raw_reply}</pre>
+          <div className="markdown">
+            <Markdown>{ply.raw_reply}</Markdown>
+          </div>
         </details>
       )}
     </section>

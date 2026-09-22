@@ -74,3 +74,13 @@ export function describeError(error: unknown): string | null {
   if (error instanceof Error) return error.message;
   return typeof error === "string" ? error : JSON.stringify(error);
 }
+
+const STICK_TOLERANCE_PX = 8;
+
+export function isAtBottom(el: {
+  scrollTop: number;
+  scrollHeight: number;
+  clientHeight: number;
+}): boolean {
+  return el.scrollHeight - el.scrollTop - el.clientHeight <= STICK_TOLERANCE_PX;
+}

@@ -136,7 +136,7 @@ def build_prompt(
         f"Moves so far: {position.pgn or '(none, this is the first move)'}",
         f"FEN: {position.fen}",
         "Board (ranks 8 to 1, uppercase is White):",
-        str(board),
+        f"```\n{board}\n```",
         f"{side_of(board.turn).capitalize()} to move.",
     ]
     if board.is_check():

@@ -136,6 +136,20 @@ describe("App", () => {
     expect(fake.submit).toHaveBeenCalledWith({}, expect.anything());
   });
 
+  it("starts a new game as Black from the colour toggle", async () => {
+    saveSettings({ apiKey: "k", context: DEFAULT_CONTEXT });
+    window.history.replaceState(null, "", "?thread=t-old");
+    render(<App />);
+    expect(screen.getByRole("button", { name: "White" })).toHaveAttribute("aria-pressed", "true");
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Black" }));
+    });
+    expect(screen.getByRole("button", { name: "Black" })).toHaveAttribute("aria-pressed", "true");
+    expect(window.location.search).toBe("");
+    expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
+    expect(window.localStorage.getItem("jev-chess:settings")).toContain('"human_side":"black"');
+  });
+
   it("shows stream errors and the thread id", () => {
     saveSettings({ apiKey: "k", context: DEFAULT_CONTEXT });
     fake.error = new Error("401 unauthorized");
