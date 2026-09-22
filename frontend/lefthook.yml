@@ -4,10 +4,10 @@ pre-commit:
     frontend-check:
       root: "frontend/"
       glob: "*.{ts,tsx,css,json}"
-      run: vp check
+      run: pnpm exec vp check
 
 pre-push:
   commands:
     frontend-tests:
       root: "frontend/"
-      run: vp test --run --coverage
+      run: pnpm exec vp test --run --coverage

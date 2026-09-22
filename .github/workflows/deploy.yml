@@ -36,10 +36,11 @@ jobs:
           uv run ruff check src tests
           uv run ty check
           uv run pytest -q
-          cd frontend && vp check && vp test --run --coverage
+          pnpm --dir frontend exec vp check
+          pnpm --dir frontend exec vp test --run --coverage
 
       - name: Build UI into the Python package
-        run: cd frontend && vp build
+        run: pnpm --dir frontend exec vp build
 
       # `langgraph deploy` re-sends the env file as the revision's secrets on every deploy, so
       # the file must carry the full runtime set or a redeploy could drop them.

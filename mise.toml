@@ -16,7 +16,7 @@ run = [
 
 [tasks.dev]
 description = "Agent Server (Studio) on :2024 and Vite dev server on :5173"
-run = "uv run langgraph dev --no-browser & (cd frontend && vp dev); kill %1"
+run = "uv run langgraph dev --no-browser & pnpm --dir frontend exec vp dev; kill %1"
 
 [tasks.check]
 description = "Lint, format check, and type check both halves"
@@ -24,16 +24,16 @@ run = [
   "uv run ruff format --check src tests",
   "uv run ruff check src tests",
   "uv run ty check",
-  "cd frontend && vp check",
+  "pnpm --dir frontend exec vp check",
 ]
 
 [tasks.test]
 description = "Python and frontend tests with 100% coverage gates"
-run = ["uv run pytest -q", "cd frontend && vp test --run --coverage"]
+run = ["uv run pytest -q", "pnpm --dir frontend exec vp test --run --coverage"]
 
 [tasks.build]
 description = "Build the UI into the Python package so the image can serve it under /ui"
-run = "cd frontend && vp build"
+run = "pnpm --dir frontend exec vp build"
 
 [tasks.deploy]
 description = "Build the UI, then build and push the image to LangSmith Deployments"
