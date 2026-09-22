@@ -1,0 +1,40 @@
+# One toolchain file for both halves of the repo. `mise trust && mise install && mise run setup`.
+
+[tools]
+node = "24"
+pnpm = "12"
+uv = "0.12"
+lefthook = "2"
+
+[tasks.setup]
+description = "Install Python and frontend dependencies, then git hooks"
+run = [
+  "uv sync --all-groups",
+  "pnpm --dir frontend install --frozen-lockfile",
+  "lefthook install",
+]
+
+[tasks.dev]
+description = "Agent Server (Studio) on :2024 and Vite dev server on :5173"
+run = "uv run langgraph dev --no-browser & (cd frontend && vp dev); kill %1"
+
+[tasks.check]
+description = "Lint, format check, and type check both halves"
+run = [
+  "uv run ruff format --check src tests",
+  "uv run ruff check src tests",
+  "uv run ty check",
+  "cd frontend && vp check",
+]
+
+[tasks.test]
+description = "Python and frontend tests with 100% coverage gates"
+run = ["uv run pytest -q", "cd frontend && vp test --run --coverage"]
+
+[tasks.build]
+description = "Build the UI into the Python package so the image can serve it under /ui"
+run = "cd frontend && vp build"
+
+[tasks.deploy]
+description = "Build the UI, then build and push the image to LangSmith Deployments"
+run = ["mise run build", "uv run langgraph deploy --no-remote --name jev-chess-app --deployment-type dev"]

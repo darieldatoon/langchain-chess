@@ -1,0 +1,13 @@
+# Included by the root lefthook.yml; `root` scopes file globs and the working directory.
+pre-commit:
+  commands:
+    frontend-check:
+      root: "frontend/"
+      glob: "*.{ts,tsx,css,json}"
+      run: vp check
+
+pre-push:
+  commands:
+    frontend-tests:
+      root: "frontend/"
+      run: vp test --run --coverage

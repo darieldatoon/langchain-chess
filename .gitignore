@@ -34,3 +34,10 @@ data/openings/*.epd
 .coverage
 .coverage.*
 htmlcov/
+
+# frontend build output lives inside the Python package so the image can serve it; CI builds it
+/src/jev_chess/server/static/
+/frontend/coverage/
+
+# local dev server state (langgraph dev)
+/.langgraph_api/

@@ -44,3 +44,21 @@ Mermaid source).
 | Jev | LLM | Hybrid |
 |---|---|---|
 | ![Jev policy graph](docs/graphs/jev.png) | ![LLM policy graph](docs/graphs/llm.png) | ![Hybrid policy graph](docs/graphs/hybrid.png) |
+
+## Play it
+
+Four graphs are registered in `langgraph.json`: `game` (human vs one policy, one thread per
+game) and the single-move graphs `jev`, `llm`, `hybrid`. Knobs (policy, model, effort, k,
+threshold, gate, description style, your colour) are the graph context, so Studio assistants
+and the UI share one schema.
+
+```sh
+mise trust && mise install && mise run setup   # uv, pnpm, lefthook hooks
+uv run langgraph dev                            # Agent Server + Studio on :2024
+cd frontend && vp dev                           # UI on :5173, talks to :2024
+```
+
+The built UI is served by the Agent Server itself under `/ui`; `mise run build` writes it into
+`src/jev_chess/server/static/`. Pushing to `main` runs `.github/workflows/deploy.yml`, which
+builds the UI and the image and deploys with `langgraph deploy`. Against a deployment, open
+Settings in the UI and paste a LangSmith API key; it stays in your browser.
