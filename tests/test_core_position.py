@@ -33,3 +33,10 @@ def test_material_balance() -> None:
     assert (start.white, start.black, start.diff) == (39, 39, 0)
     up_a_rook = material_balance(chess.Board("r6k/8/8/8/8/8/8/Q6K w - - 0 1"))
     assert up_a_rook.diff == 4
+
+
+def test_movetext_from_san_replays_from_the_start() -> None:
+    from jev_chess.core import movetext_from_san
+
+    assert movetext_from_san([]) == ""
+    assert movetext_from_san(["e4", "e5", "Nf3"]) == "1. e4 e5 2. Nf3"

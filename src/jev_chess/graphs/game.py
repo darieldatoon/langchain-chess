@@ -192,7 +192,7 @@ def build_game_graph(context: PlayContext, mover: Mover) -> GameGraph:
         ply = len(state.moves) + 1
         run_config = _policy_run_config(config, label, ply)
         try:
-            result = mover.graph.invoke(mover.to_input(board), config=run_config)
+            result = mover.graph.invoke(mover.to_input(board, state.history), config=run_config)
         except Exception as exc:  # provider errors must not strand the thread
             # The human's move is already applied; an empty submit retries the opponent.
             return {"error": f"{label} failed to move: {exc}"}

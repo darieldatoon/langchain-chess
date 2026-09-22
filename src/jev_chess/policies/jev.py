@@ -264,6 +264,11 @@ def history_san(board: chess.Board) -> list[str]:
     return out
 
 
+def _history(board: chess.Board, history: Sequence[str] | None) -> list[str]:
+    """Callers holding a FEN-only board pass the SAN history explicitly."""
+    return list(history) if history is not None else history_san(board)
+
+
 class JevPolicy:
     """Rank legal moves with Jev. `rank` is sync, `arank` is async; both run the same graph."""
 
@@ -297,14 +302,22 @@ class JevPolicy:
         """The compiled graph, so callers can embed it as a subgraph or draw it."""
         return self._graph
 
-    def rank(self, board: chess.Board, run_config: RunnableConfig | None = None) -> JevRanking:
-        state = JevState(fen=board.fen(), history=history_san(board))
+    def rank(
+        self,
+        board: chess.Board,
+        run_config: RunnableConfig | None = None,
+        history: Sequence[str] | None = None,
+    ) -> JevRanking:
+        state = JevState(fen=board.fen(), history=_history(board, history))
         result = self._graph.invoke(state, config=run_config)
         return cast("JevRanking", result["ranking"])
 
     async def arank(
-        self, board: chess.Board, run_config: RunnableConfig | None = None
+        self,
+        board: chess.Board,
+        run_config: RunnableConfig | None = None,
+        history: Sequence[str] | None = None,
     ) -> JevRanking:
-        state = JevState(fen=board.fen(), history=history_san(board))
+        state = JevState(fen=board.fen(), history=_history(board, history))
         result = await self._graph.ainvoke(state, config=run_config)
         return cast("JevRanking", result["ranking"])

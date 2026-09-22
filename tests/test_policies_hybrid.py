@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 import chess
 import pytest
 
@@ -185,3 +187,19 @@ def test_from_settings_wires_both_policies(monkeypatch: pytest.MonkeyPatch) -> N
     hybrid = HybridPolicy.from_settings(None, HybridConfig(threshold=1.0))
     assert built == ["jev", "llm"]
     assert hybrid.decide(chess.Board()).source == "llm"
+
+
+def test_explicit_history_reaches_jev_and_the_llm() -> None:
+    hybrid, fake_jev, fake_llm = policy(UNSURE, ["MOVE: Nc3"], threshold=1.0)
+    board = chess.Board(ITALIAN)  # no move stack: the FEN-only case the game graph hits
+    hybrid.decide(board, history=["e4", "e5", "Nf3", "Nc6", "Bc4", "Nf6"])
+    state = cast("dict[str, Any]", fake_jev.requests[0]["state"])
+    assert state["recent_moves_san"] == ["e4", "e5", "Nf3", "Nc6", "Bc4", "Nf6"]
+    assert "Moves so far: 1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6" in str(fake_llm.calls[0][1].content)
+
+
+async def test_explicit_history_async() -> None:
+    hybrid, fake_jev, _ = policy(UNSURE, ["MOVE: Nc3"], threshold=1.0)
+    await hybrid.adecide(chess.Board(ITALIAN), history=["e4", "e5"])
+    state = cast("dict[str, Any]", fake_jev.requests[0]["state"])
+    assert state["recent_moves_san"] == ["e4", "e5"]

@@ -253,3 +253,14 @@ def test_policy_failure_is_recorded_and_the_thread_stays_playable() -> None:
     retried = working.invoke({}, config=config)
     assert retried["error"] is None
     assert len(retried["history"]) == 2
+
+
+def test_policy_prompt_sees_the_thread_history() -> None:
+    """Boards are rebuilt from FEN, so the SAN history must come from the game state."""
+    llm = FakeChatModel([reply("MOVE: e5"), reply("MOVE: Nc6")])
+    g, config = threaded(PlayContext(policy="llm"), llm_mover(LLMPolicy(llm, LLMConfig())))
+    g.invoke({"move": "e2e4"}, config=config)
+    g.invoke({"move": "Nf3"}, config=config)
+    second_prompt = str(llm.calls[1][1].content)
+    assert "Moves so far: 1. e4 e5 2. Nf3" in second_prompt
+    assert "(none, this is the first move)" not in second_prompt

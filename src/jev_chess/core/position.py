@@ -1,5 +1,7 @@
 """Snapshot a python-chess board into the model-facing Position."""
 
+from collections.abc import Sequence
+
 import chess
 
 from jev_chess.core.types import MaterialBalance, Position, Side
@@ -22,6 +24,17 @@ def movetext(board: chess.Board) -> str:
     if not board.move_stack:
         return ""
     return board.root().variation_san(board.move_stack)
+
+
+def movetext_from_san(history: Sequence[str]) -> str:
+    """SAN movetext for a game replayed from the start; empty for no moves.
+
+    Boards rebuilt from a FEN carry no move stack, so callers that only have the SAN list
+    (the game graph, thread state) use this instead of `movetext`.
+    """
+    board = chess.Board()
+    moves = [board.push_san(san) for san in history]
+    return chess.Board().variation_san(moves) if moves else ""
 
 
 def legal_moves_uci(board: chess.Board) -> tuple[str, ...]:

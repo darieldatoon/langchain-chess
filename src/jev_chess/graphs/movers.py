@@ -7,7 +7,7 @@ finds the policy graph and Studio renders it nested inside the game.
 """
 
 import random
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -21,7 +21,6 @@ from jev_chess.policies import (
     JevPolicy,
     LLMPolicy,
     MoveDecision,
-    history_san,
     legal_decision,
     ranking_decision,
 )
@@ -34,14 +33,14 @@ from jev_chess.settings import GatewaySettings
 @dataclass(frozen=True, slots=True)
 class Mover:
     graph: CompiledStateGraph[Any]
-    to_input: Callable[[chess.Board], Any]
+    to_input: Callable[[chess.Board, Sequence[str]], Any]
     to_decision: Callable[[dict[str, Any], chess.Board], MoveDecision]
 
 
 def jev_mover(policy: JevPolicy) -> Mover:
     return Mover(
         graph=policy.graph,
-        to_input=lambda board: JevState(fen=board.fen(), history=history_san(board)),
+        to_input=lambda board, history: JevState(fen=board.fen(), history=list(history)),
         to_decision=lambda result, board: ranking_decision(result["ranking"], board),
     )
 
@@ -49,7 +48,7 @@ def jev_mover(policy: JevPolicy) -> Mover:
 def llm_mover(policy: LLMPolicy) -> Mover:
     return Mover(
         graph=policy.graph,
-        to_input=lambda board: LLMState(fen=board.fen(), history=history_san(board)),
+        to_input=lambda board, history: LLMState(fen=board.fen(), history=list(history)),
         to_decision=lambda result, board: result["decision"],
     )
 
@@ -57,7 +56,7 @@ def llm_mover(policy: LLMPolicy) -> Mover:
 def hybrid_mover(policy: HybridPolicy) -> Mover:
     return Mover(
         graph=policy.graph,
-        to_input=lambda board: HybridState(fen=board.fen()),
+        to_input=lambda board, history: HybridState(fen=board.fen(), history=list(history)),
         to_decision=lambda result, board: result["decision"],
     )
 
@@ -95,7 +94,7 @@ def build_random_graph(seed: int = 0) -> CompiledStateGraph[RandomState]:
 def random_mover(seed: int = 0) -> Mover:
     return Mover(
         graph=build_random_graph(seed),
-        to_input=lambda board: RandomState(fen=board.fen()),
+        to_input=lambda board, _history: RandomState(fen=board.fen()),
         to_decision=lambda result, board: result["decision"],
     )
 

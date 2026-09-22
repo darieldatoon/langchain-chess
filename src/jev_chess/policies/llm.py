@@ -22,7 +22,7 @@ from langchain_core.runnables import RunnableConfig, RunnableLambda
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from jev_chess.core import snapshot
+from jev_chess.core import movetext_from_san, snapshot
 from jev_chess.core.position import side_of
 from jev_chess.policies.pricing import cost_usd
 from jev_chess.policies.types import MoveDecision, ReasoningEffort, legal_decision
@@ -132,8 +132,10 @@ def build_prompt(
     candidates: Sequence[str] | None,
 ) -> str:
     position = snapshot(board)
+    # Prefer `history`: boards rebuilt from a FEN have no move stack to derive it from.
+    pgn = movetext_from_san(history) or position.pgn
     lines = [
-        f"Moves so far: {position.pgn or '(none, this is the first move)'}",
+        f"Moves so far: {pgn or '(none, this is the first move)'}",
         f"FEN: {position.fen}",
         "Board (ranks 8 to 1, uppercase is White):",
         f"```\n{board}\n```",
@@ -360,10 +362,15 @@ class LLMPolicy:
     def graph(self) -> CompiledStateGraph[LLMState]:
         return self._graph
 
-    def _input(self, board: chess.Board, candidates: Sequence[str] | None) -> LLMState:
+    def _input(
+        self,
+        board: chess.Board,
+        candidates: Sequence[str] | None,
+        history: Sequence[str] | None,
+    ) -> LLMState:
         return LLMState(
             fen=board.fen(),
-            history=history_san(board),
+            history=list(history) if history is not None else history_san(board),
             candidates=list(candidates) if candidates is not None else None,
         )
 
@@ -372,8 +379,9 @@ class LLMPolicy:
         board: chess.Board,
         candidates: Sequence[str] | None = None,
         run_config: RunnableConfig | None = None,
+        history: Sequence[str] | None = None,
     ) -> MoveDecision:
-        result = self._graph.invoke(self._input(board, candidates), config=run_config)
+        result = self._graph.invoke(self._input(board, candidates, history), config=run_config)
         return cast("MoveDecision", result["decision"])
 
     async def adecide(
@@ -381,6 +389,8 @@ class LLMPolicy:
         board: chess.Board,
         candidates: Sequence[str] | None = None,
         run_config: RunnableConfig | None = None,
+        history: Sequence[str] | None = None,
     ) -> MoveDecision:
-        result = await self._graph.ainvoke(self._input(board, candidates), config=run_config)
+        state = self._input(board, candidates, history)
+        result = await self._graph.ainvoke(state, config=run_config)
         return cast("MoveDecision", result["decision"])

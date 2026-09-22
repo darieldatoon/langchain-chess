@@ -12,6 +12,7 @@ Whenever the LLM is consulted we also record what Jev would have played, so phas
 "did the LLM override Jev, and was the override better?" from the records alone.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal, cast
 
@@ -20,7 +21,7 @@ from langchain_core.runnables import RunnableConfig, RunnableLambda
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from jev_chess.policies.jev import JevConfig, JevPolicy
+from jev_chess.policies.jev import JevConfig, JevPolicy, history_san
 from jev_chess.policies.llm import LLMConfig, LLMPolicy
 from jev_chess.policies.pricing import cost_usd
 from jev_chess.policies.types import Candidate, JevRanking, MoveDecision, legal_decision
@@ -74,6 +75,7 @@ def shortlist(ranking: JevRanking, config: HybridConfig) -> tuple[Candidate, ...
 @dataclass
 class HybridState:
     fen: str
+    history: list[str] = field(default_factory=list)
     ranking: JevRanking | None = None
     gate_value: float = 0.0
     candidates: list[str] = field(default_factory=list)
@@ -87,11 +89,11 @@ def build_graph(
     # Node parameters named `config` receive the RunnableConfig LangGraph was invoked with,
     # which is how LangSmith run metadata reaches the nested policy graphs.
     def rank_jev(state: HybridState, config: RunnableConfig) -> dict[str, Any]:
-        ranking = jev.rank(chess.Board(state.fen), run_config=config)
+        ranking = jev.rank(chess.Board(state.fen), run_config=config, history=state.history)
         return {"ranking": ranking, "gate_value": gate_value(ranking, hybrid.gate)}
 
     async def rank_jev_async(state: HybridState, config: RunnableConfig) -> dict[str, Any]:
-        ranking = await jev.arank(chess.Board(state.fen), run_config=config)
+        ranking = await jev.arank(chess.Board(state.fen), run_config=config, history=state.history)
         return {"ranking": ranking, "gate_value": gate_value(ranking, hybrid.gate)}
 
     def route(state: HybridState) -> str:
@@ -129,11 +131,15 @@ def build_graph(
 
     def ask_llm(state: HybridState, config: RunnableConfig) -> dict[str, Any]:
         board = chess.Board(state.fen)
-        return {"llm_decision": llm.decide(board, state.candidates, run_config=config)}
+        decision = llm.decide(board, state.candidates, run_config=config, history=state.history)
+        return {"llm_decision": decision}
 
     async def ask_llm_async(state: HybridState, config: RunnableConfig) -> dict[str, Any]:
         board = chess.Board(state.fen)
-        return {"llm_decision": await llm.adecide(board, state.candidates, run_config=config)}
+        decision = await llm.adecide(
+            board, state.candidates, run_config=config, history=state.history
+        )
+        return {"llm_decision": decision}
 
     def decide(state: HybridState) -> dict[str, Any]:
         ranking, chosen = state.ranking, state.llm_decision
@@ -207,12 +213,26 @@ class HybridPolicy:
     def graph(self) -> CompiledStateGraph[HybridState]:
         return self._graph
 
-    def decide(self, board: chess.Board, run_config: RunnableConfig | None = None) -> MoveDecision:
-        result = self._graph.invoke(HybridState(fen=board.fen()), config=run_config)
+    def _input(self, board: chess.Board, history: Sequence[str] | None) -> HybridState:
+        return HybridState(
+            fen=board.fen(),
+            history=list(history) if history is not None else history_san(board),
+        )
+
+    def decide(
+        self,
+        board: chess.Board,
+        run_config: RunnableConfig | None = None,
+        history: Sequence[str] | None = None,
+    ) -> MoveDecision:
+        result = self._graph.invoke(self._input(board, history), config=run_config)
         return cast("MoveDecision", result["decision"])
 
     async def adecide(
-        self, board: chess.Board, run_config: RunnableConfig | None = None
+        self,
+        board: chess.Board,
+        run_config: RunnableConfig | None = None,
+        history: Sequence[str] | None = None,
     ) -> MoveDecision:
-        result = await self._graph.ainvoke(HybridState(fen=board.fen()), config=run_config)
+        result = await self._graph.ainvoke(self._input(board, history), config=run_config)
         return cast("MoveDecision", result["decision"])
