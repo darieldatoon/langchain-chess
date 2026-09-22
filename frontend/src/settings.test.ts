@@ -6,6 +6,7 @@ import {
   DEV_API_URL,
   loadSettings,
   saveSettings,
+  withKnob,
 } from "./settings";
 import { DEFAULT_CONTEXT } from "./types";
 
@@ -39,9 +40,14 @@ describe("apiUrl", () => {
   });
 });
 
-describe("configurableOf", () => {
+describe("configurableOf and withKnob", () => {
   it("copies every context key", () => {
     expect(configurableOf(DEFAULT_CONTEXT)).toEqual(DEFAULT_CONTEXT);
     expect(configurableOf(DEFAULT_CONTEXT)).not.toBe(DEFAULT_CONTEXT);
+  });
+
+  it("keeps the context when the value is undefined", () => {
+    expect(withKnob(DEFAULT_CONTEXT, "policy", undefined)).toBe(DEFAULT_CONTEXT);
+    expect(withKnob(DEFAULT_CONTEXT, "policy", "jev").policy).toBe("jev");
   });
 });

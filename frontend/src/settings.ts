@@ -44,3 +44,12 @@ export function apiUrl(
 export function configurableOf(context: PlayContext): Record<string, unknown> {
   return { ...context };
 }
+
+/** Select reports `undefined` on deselect; keep the previous value in that case. */
+export function withKnob<K extends keyof PlayContext>(
+  context: PlayContext,
+  key: K,
+  value: PlayContext[K] | undefined,
+): PlayContext {
+  return value === undefined ? context : { ...context, [key]: value };
+}

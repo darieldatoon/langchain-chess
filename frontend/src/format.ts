@@ -45,7 +45,7 @@ export function pairs(plies: PlyView[]): MoveRow[] {
 
 export function lastMoveStyles(uci: string | null): Record<string, React.CSSProperties> {
   if (!uci || uci.length < 4) return {};
-  const highlight = { backgroundColor: "var(--board-last)" };
+  const highlight = { backgroundColor: "var(--bg-warning-subtle)" };
   return { [uci.slice(0, 2)]: highlight, [uci.slice(2, 4)]: highlight };
 }
 
@@ -83,4 +83,9 @@ export function isAtBottom(el: {
   clientHeight: number;
 }): boolean {
   return el.scrollHeight - el.scrollTop - el.clientHeight <= STICK_TOLERANCE_PX;
+}
+
+/** Macaw's Slider reports a range as an array; the threshold is a single value. */
+export function sliderValue(value: number | number[]): number {
+  return Array.isArray(value) ? value[0] : value;
 }

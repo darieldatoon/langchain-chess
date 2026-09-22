@@ -3,20 +3,32 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { DEFAULT_SETTINGS } from "../settings";
 import { SettingsPanel } from "./SettingsPanel";
 
+vi.mock("@langchain/macaw-components/Select", async () =>
+  (await import("../test/macawShims")).selectShim(),
+);
+vi.mock("@langchain/macaw-components/Slider", async () =>
+  (await import("../test/macawShims")).sliderShim(),
+);
+
+function open(onSave = vi.fn(), onClose = vi.fn()) {
+  render(<SettingsPanel open settings={DEFAULT_SETTINGS} onSave={onSave} onClose={onClose} />);
+  return { onSave, onClose };
+}
+
 describe("SettingsPanel", () => {
   it("edits the key and hybrid knobs, then saves trimmed", () => {
-    const onSave = vi.fn();
-    render(<SettingsPanel settings={DEFAULT_SETTINGS} onSave={onSave} onClose={vi.fn()} />);
-    fireEvent.change(screen.getByLabelText("LangSmith API key"), { target: { value: " lsv2_x " } });
+    const { onSave } = open();
+    fireEvent.change(screen.getByLabelText("LangSmith API Key"), { target: { value: " lsv2_x " } });
     fireEvent.change(screen.getByLabelText("Threshold"), { target: { value: "0.5" } });
+    expect(screen.getByTestId("threshold-value")).toHaveTextContent("0.50");
     fireEvent.change(screen.getByLabelText("Signal"), { target: { value: "confidence" } });
-    fireEvent.change(screen.getByLabelText("Shortlist size"), { target: { value: "3" } });
+    fireEvent.change(screen.getByLabelText("Shortlist Size"), { target: { value: "3" } });
     fireEvent.change(screen.getByLabelText("Model"), { target: { value: "gpt-5.6-sol" } });
-    fireEvent.change(screen.getByLabelText("Reasoning effort"), { target: { value: "low" } });
-    fireEvent.change(screen.getByLabelText("You play"), { target: { value: "black" } });
-    fireEvent.change(screen.getByLabelText("Move descriptions"), { target: { value: "terse" } });
-    fireEvent.click(screen.getByLabelText("Ask for a position Score"));
-    fireEvent.click(screen.getByLabelText("Ask the Noul questions"));
+    fireEvent.change(screen.getByLabelText("Reasoning Effort"), { target: { value: "low" } });
+    fireEvent.change(screen.getByLabelText("You Play"), { target: { value: "black" } });
+    fireEvent.change(screen.getByLabelText("Move Descriptions"), { target: { value: "terse" } });
+    fireEvent.click(screen.getByRole("switch", { name: "Ask for a position Score" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Ask the Noul questions" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(onSave).toHaveBeenCalledWith({
       apiKey: "lsv2_x",
@@ -35,28 +47,34 @@ describe("SettingsPanel", () => {
     });
   });
 
+  it("keeps the previous value when a select is cleared", () => {
+    const { onSave } = open();
+    fireEvent.change(screen.getByLabelText("Opponent"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(onSave.mock.calls[0][0].context.policy).toBe("hybrid");
+  });
+
   it("shows only the sections the chosen policy uses", () => {
-    render(<SettingsPanel settings={DEFAULT_SETTINGS} onSave={vi.fn()} onClose={vi.fn()} />);
+    open();
     const policy = screen.getByLabelText("Opponent");
     fireEvent.change(policy, { target: { value: "llm" } });
     expect(screen.queryByLabelText("Threshold")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Move descriptions")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByLabelText("List legal moves in the prompt"));
+    expect(screen.queryByLabelText("Move Descriptions")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("switch", { name: "List legal moves in the prompt" }));
     fireEvent.change(policy, { target: { value: "jev" } });
     expect(screen.queryByLabelText("Model")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Move descriptions")).toBeInTheDocument();
+    expect(screen.getByLabelText("Move Descriptions")).toBeInTheDocument();
     fireEvent.change(policy, { target: { value: "random" } });
-    expect(screen.queryByLabelText("Move descriptions")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Move Descriptions")).not.toBeInTheDocument();
   });
 
-  it("closes from the button, the backdrop, and cancel, but not from inside", () => {
-    const onClose = vi.fn();
-    render(<SettingsPanel settings={DEFAULT_SETTINGS} onSave={vi.fn()} onClose={onClose} />);
-    fireEvent.click(screen.getByRole("button", { name: "Close settings" }));
+  it("closes from cancel and stays closed when not open", () => {
+    const { onClose } = open();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    fireEvent.click(screen.getByRole("dialog"));
-    expect(onClose).toHaveBeenCalledTimes(2);
-    fireEvent.click(screen.getByTestId("backdrop"));
-    expect(onClose).toHaveBeenCalledTimes(3);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    render(
+      <SettingsPanel open={false} settings={DEFAULT_SETTINGS} onSave={vi.fn()} onClose={vi.fn()} />,
+    );
+    expect(screen.getAllByRole("dialog")).toHaveLength(1);
   });
 });

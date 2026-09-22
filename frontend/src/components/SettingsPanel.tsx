@@ -1,16 +1,58 @@
+import { Button } from "@langchain/macaw-components/Button";
+import { Input } from "@langchain/macaw-components/Input";
+import { Pane } from "@langchain/macaw-components/Pane";
+import { Select, type SelectOption } from "@langchain/macaw-components/Select";
+import { Slider } from "@langchain/macaw-components/Slider";
+import { Switch } from "@langchain/macaw-components/Switch";
+import { Text } from "@langchain/macaw-components/Text";
 import { useState } from "react";
-import type { Settings } from "../settings";
-import type { PlayContext } from "../types";
+import { sliderValue } from "../format";
+import { withKnob, type Settings } from "../settings";
+import type {
+  DescriptionStyle,
+  GateSignal,
+  PlayContext,
+  PolicyKind,
+  ReasoningEffort,
+  Side,
+} from "../types";
 
 interface Props {
+  open: boolean;
   settings: Settings;
   onSave: (settings: Settings) => void;
   onClose: () => void;
 }
 
-const MODELS = ["claude-opus-5", "gpt-5.6-sol"];
+const POLICIES: SelectOption<PolicyKind>[] = [
+  {
+    value: "hybrid",
+    label: "Hybrid",
+    description: "Jev moves when sure, the LLM decides otherwise",
+  },
+  { value: "jev", label: "Jev Only", description: "System 1: one typed decision per move" },
+  { value: "llm", label: "LLM Only", description: "System 2: a reasoning model picks every move" },
+  { value: "random", label: "Random", description: "A uniform random legal move" },
+];
+const SIDES: SelectOption<Side>[] = [
+  { value: "white", label: "White" },
+  { value: "black", label: "Black" },
+];
+const EFFORTS: SelectOption<ReasoningEffort>[] = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+];
+const STYLES: SelectOption<DescriptionStyle>[] = [
+  { value: "rich", label: "Rich", description: "Captures, checks, exchange results" },
+  { value: "terse", label: "Terse", description: "Move names only" },
+];
+const GATES: SelectOption<GateSignal>[] = [
+  { value: "margin", label: "Margin", description: "Top-1 minus top-2 probability" },
+  { value: "confidence", label: "Confidence", description: "Jev's Choice confidence" },
+];
 
-export function SettingsPanel({ settings, onSave, onClose }: Props) {
+export function SettingsPanel({ open, settings, onSave, onClose }: Props) {
   const [apiKey, setApiKey] = useState(settings.apiKey);
   const [ctx, setCtx] = useState<PlayContext>(settings.context);
   const set = <K extends keyof PlayContext>(key: K, value: PlayContext[K]) =>
@@ -19,201 +61,205 @@ export function SettingsPanel({ settings, onSave, onClose }: Props) {
   const usesJev = ctx.policy === "jev" || ctx.policy === "hybrid";
 
   return (
-    <div className="settings-backdrop" onClick={onClose} data-testid="backdrop">
-      <aside
-        className="settings"
-        role="dialog"
-        aria-label="Settings"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header>
-          <h2>Settings</h2>
-          <button type="button" onClick={onClose} aria-label="Close settings">
-            ×
-          </button>
-        </header>
-
-        <h3>Connection</h3>
-        <div className="field">
-          <label htmlFor="api-key">LangSmith API key</label>
-          <input
+    <Pane
+      open={open}
+      onClose={onClose}
+      title="Settings"
+      description="Connection and opponent configuration. Changes apply to the next move."
+      noBackArrow
+      dialogStyle={{ width: "min(30rem, 100vw)" }}
+    >
+      <div className="flex flex-col gap-space-5 p-space-5">
+        <Section title="Connection">
+          <Input
             id="api-key"
+            size="md"
             type="password"
-            autoComplete="off"
+            label="LangSmith API Key"
             value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="lsv2_…"
+            onChange={setApiKey}
+            placeholder="lsv2_..."
+            hintText="Stored in this browser only. Not needed against langgraph dev."
           />
-          <span className="hint">Stored in this browser only. Not needed for `langgraph dev`.</span>
-        </div>
+        </Section>
 
-        <h3>Game</h3>
-        <div className="field">
-          <label htmlFor="policy">Opponent</label>
-          <select
-            id="policy"
-            value={ctx.policy}
-            onChange={(e) => set("policy", e.target.value as PlayContext["policy"])}
-          >
-            <option value="hybrid">Hybrid: Jev, then LLM when unsure</option>
-            <option value="jev">Jev only (System 1)</option>
-            <option value="llm">LLM only (System 2)</option>
-            <option value="random">Random mover</option>
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="side">You play</label>
-          <select
-            id="side"
-            value={ctx.human_side}
-            onChange={(e) => set("human_side", e.target.value as PlayContext["human_side"])}
-          >
-            <option value="white">White</option>
-            <option value="black">Black</option>
-          </select>
-          <span className="hint">Applies to the next new game.</span>
-        </div>
+        <Section title="Game">
+          <Field id="policy" label="Opponent">
+            <Select
+              aria-label="Opponent"
+              size="md"
+              value={ctx.policy}
+              options={POLICIES}
+              hideSearch
+              onChange={(v) => setCtx((c) => withKnob(c, "policy", v))}
+            />
+          </Field>
+          <Field id="side" label="You Play" hint="Applies to the next new game.">
+            <Select
+              aria-label="You Play"
+              size="md"
+              value={ctx.human_side}
+              options={SIDES}
+              hideSearch
+              onChange={(v) => setCtx((c) => withKnob(c, "human_side", v))}
+            />
+          </Field>
+        </Section>
 
         {usesLlm && (
-          <>
-            <h3>LLM</h3>
-            <div className="field">
-              <label htmlFor="model">Model</label>
-              <input
-                id="model"
-                list="models"
-                value={ctx.model}
-                onChange={(e) => set("model", e.target.value)}
-              />
-              <datalist id="models">
-                {MODELS.map((m) => (
-                  <option key={m} value={m} />
-                ))}
-              </datalist>
-              <span className="hint">
-                Bare names go through the LLM Gateway; `openai:gpt-5.6-sol` goes direct.
-              </span>
-            </div>
-            <div className="field">
-              <label htmlFor="effort">Reasoning effort</label>
-              <select
-                id="effort"
+          <Section title="LLM">
+            <Input
+              id="model"
+              size="md"
+              label="Model"
+              value={ctx.model}
+              onChange={(v) => set("model", v)}
+              hintText="Bare names route through the LLM Gateway; openai:gpt-5.6-sol goes direct."
+            />
+            <Field id="effort" label="Reasoning Effort">
+              <Select
+                aria-label="Reasoning Effort"
+                size="md"
                 value={ctx.reasoning_effort}
-                onChange={(e) =>
-                  set("reasoning_effort", e.target.value as PlayContext["reasoning_effort"])
-                }
-              >
-                <option value="low">low</option>
-                <option value="medium">medium</option>
-                <option value="high">high</option>
-              </select>
-            </div>
+                options={EFFORTS}
+                hideSearch
+                onChange={(v) => setCtx((c) => withKnob(c, "reasoning_effort", v))}
+              />
+            </Field>
             {ctx.policy === "llm" && (
-              <div className="field inline">
-                <input
-                  id="legal"
-                  type="checkbox"
-                  checked={ctx.include_legal_moves}
-                  onChange={(e) => set("include_legal_moves", e.target.checked)}
-                />
-                <label htmlFor="legal">List legal moves in the prompt</label>
-              </div>
+              <Switch
+                label="List legal moves in the prompt"
+                checked={ctx.include_legal_moves}
+                onChange={(v) => set("include_legal_moves", v)}
+              />
             )}
-          </>
+          </Section>
         )}
 
         {usesJev && (
-          <>
-            <h3>Jev</h3>
-            <div className="field">
-              <label htmlFor="style">Move descriptions</label>
-              <select
-                id="style"
+          <Section title="Jev">
+            <Field id="style" label="Move Descriptions">
+              <Select
+                aria-label="Move Descriptions"
+                size="md"
                 value={ctx.style}
-                onChange={(e) => set("style", e.target.value as PlayContext["style"])}
-              >
-                <option value="rich">rich</option>
-                <option value="terse">terse</option>
-              </select>
-            </div>
-            <div className="field inline">
-              <input
-                id="eval"
-                type="checkbox"
-                checked={ctx.with_eval}
-                onChange={(e) => set("with_eval", e.target.checked)}
+                options={STYLES}
+                hideSearch
+                onChange={(v) => setCtx((c) => withKnob(c, "style", v))}
               />
-              <label htmlFor="eval">Ask for a position Score</label>
-            </div>
-            <div className="field inline">
-              <input
-                id="nouls"
-                type="checkbox"
-                checked={ctx.with_nouls}
-                onChange={(e) => set("with_nouls", e.target.checked)}
-              />
-              <label htmlFor="nouls">Ask the Noul questions</label>
-            </div>
-          </>
+            </Field>
+            <Switch
+              label="Ask for a position Score"
+              checked={ctx.with_eval}
+              onChange={(v) => set("with_eval", v)}
+            />
+            <Switch
+              label="Ask the Noul questions"
+              checked={ctx.with_nouls}
+              onChange={(v) => set("with_nouls", v)}
+            />
+          </Section>
         )}
 
         {ctx.policy === "hybrid" && (
-          <>
-            <h3>Gate</h3>
-            <div className="field">
-              <label htmlFor="threshold">Threshold</label>
-              <div className="range">
-                <input
-                  id="threshold"
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  value={ctx.threshold}
-                  onChange={(e) => set("threshold", Number(e.target.value))}
-                />
-                <output>{ctx.threshold.toFixed(2)}</output>
-              </div>
-              <span className="hint">0 is Jev alone, 1 hands every move to the LLM.</span>
-            </div>
-            <div className="field">
-              <label htmlFor="gate">Signal</label>
-              <select
-                id="gate"
-                value={ctx.gate}
-                onChange={(e) => set("gate", e.target.value as PlayContext["gate"])}
-              >
-                <option value="margin">margin (top-1 minus top-2)</option>
-                <option value="confidence">Choice confidence</option>
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="k">Shortlist size</label>
-              <input
-                id="k"
-                type="number"
-                min={1}
-                max={20}
-                value={ctx.k}
-                onChange={(e) => set("k", Number(e.target.value))}
+          <Section title="Gate">
+            <Field
+              id="threshold"
+              label="Threshold"
+              hint="0 is Jev alone, 1 hands every move to the LLM."
+              trailing={
+                <Text variant="sm" as="span" className="font-mono" data-testid="threshold-value">
+                  {ctx.threshold.toFixed(2)}
+                </Text>
+              }
+            >
+              <Slider
+                aria-label="Threshold"
+                min={0}
+                max={1}
+                step={0.05}
+                value={ctx.threshold}
+                onChange={(v) => set("threshold", sliderValue(v))}
               />
-            </div>
-          </>
+            </Field>
+            <Field id="gate" label="Signal">
+              <Select
+                aria-label="Signal"
+                size="md"
+                value={ctx.gate}
+                options={GATES}
+                hideSearch
+                onChange={(v) => setCtx((c) => withKnob(c, "gate", v))}
+              />
+            </Field>
+            <Input
+              id="k"
+              size="md"
+              type="number"
+              label="Shortlist Size"
+              value={String(ctx.k)}
+              onChange={(v) => set("k", Number(v))}
+              min={1}
+              max={20}
+            />
+          </Section>
         )}
 
-        <div className="actions">
-          <button type="button" onClick={onClose}>
+        <div className="flex justify-end gap-space-2 border-t border-subtle pt-space-4">
+          <Button variant="outlined" color="secondary" size="md" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            type="button"
-            className="primary"
+          </Button>
+          <Button
+            color="primary"
+            size="md"
             onClick={() => onSave({ apiKey: apiKey.trim(), context: ctx })}
           >
             Save
-          </button>
+          </Button>
         </div>
-      </aside>
+      </div>
+    </Pane>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-space-3">
+      <Text variant="h4" as="h3" color="secondary">
+        {title}
+      </Text>
+      {children}
+    </section>
+  );
+}
+
+function Field({
+  id,
+  label,
+  hint,
+  trailing,
+  children,
+}: {
+  id: string;
+  label: string;
+  hint?: string;
+  trailing?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-space-1">
+      <div className="flex items-center justify-between">
+        <Text variant="sm" weight="medium" as="label" htmlFor={id}>
+          {label}
+        </Text>
+        {trailing}
+      </div>
+      <div id={id}>{children}</div>
+      {hint && (
+        <Text variant="xs" color="tertiary">
+          {hint}
+        </Text>
+      )}
     </div>
   );
 }

@@ -1,14 +1,29 @@
+import { Banner } from "@langchain/macaw-components/Banner";
+import { Button } from "@langchain/macaw-components/Button";
+import { Card } from "@langchain/macaw-components/Card";
+import { ErrorMessage } from "@langchain/macaw-components/ErrorMessage";
+import { GroupedTabs } from "@langchain/macaw-components/GroupedTabs";
+import { IconButton } from "@langchain/macaw-components/IconButton";
+import { Logo } from "@langchain/macaw-components/Logo";
+import { Text } from "@langchain/macaw-components/Text";
+import { ThinkingState } from "@langchain/macaw-components/ThinkingState";
+import { GearSixIcon } from "@phosphor-icons/react/dist/ssr/GearSix";
 import { useCallback, useEffect, useState } from "react";
-import { Banner } from "./components/Banner";
+import { sideToMove } from "./chess";
 import { Board } from "./components/Board";
 import { MoveList } from "./components/MoveList";
 import { PlyDetails } from "./components/PlyDetails";
 import { SettingsPanel } from "./components/SettingsPanel";
-import { sideToMove } from "./chess";
+import { ThemeToggle } from "./components/ThemeToggle";
 import { describeError, statusLine } from "./format";
-import type { Side } from "./types";
 import { loadSettings, saveSettings, type Settings } from "./settings";
+import type { Side } from "./types";
 import { useGame, writeThreadToUrl } from "./useGame";
+
+const SIDE_TABS = [
+  { value: "white", display: "White" },
+  { value: "black", display: "Black" },
+] as const;
 
 export default function App() {
   const [settings, setSettings] = useState<Settings>(() => loadSettings());
@@ -37,39 +52,62 @@ export default function App() {
   );
 
   return (
-    <div className="app">
-      <header className="topbar">
-        <div className="brand">
-          <h1>Jev Chess</h1>
-        </div>
-        <div className="actions">
-          <div className="segmented" role="group" aria-label="Your colour">
-            {(["white", "black"] as const).map((side) => (
-              <button
-                key={side}
-                type="button"
-                aria-pressed={settings.context.human_side === side}
-                onClick={() => chooseSide(side)}
-                title="Starts a new game as this colour"
-              >
-                {side === "white" ? "White" : "Black"}
-              </button>
-            ))}
+    <div className="min-h-screen bg-surface-level-1 text-primary">
+      <div className="mx-auto flex max-w-6xl flex-col gap-space-5 px-space-5 pb-space-8 pt-space-5">
+        <header className="flex flex-wrap items-center justify-between gap-space-4">
+          <div className="flex items-center gap-space-3">
+            <Logo brand="langchain" variant="logomark" size="sm" />
+            <Text variant="h2" as="h1">
+              Jev Chess
+            </Text>
           </div>
-          <button type="button" onClick={newGame}>
-            New game
-          </button>
-          <button type="button" onClick={() => setOpen(true)}>
-            Settings
-          </button>
-        </div>
-      </header>
+          <div className="flex items-center gap-space-2">
+            <GroupedTabs
+              value={settings.context.human_side}
+              onChange={chooseSide}
+              options={SIDE_TABS}
+              size="md"
+              tooltip="Starts a new game as this colour"
+            />
+            <Button variant="outlined" color="secondary" size="md" onClick={newGame}>
+              New game
+            </Button>
+            <IconButton
+              variant="outlined"
+              color="secondary"
+              size="md"
+              icon={GearSixIcon}
+              label="Settings"
+              onClick={() => setOpen(true)}
+            />
+            <ThemeToggle />
+          </div>
+        </header>
 
-      {!settings.apiKey && <Banner onOpenSettings={() => setOpen(true)} />}
+        {!settings.apiKey && (
+          <Banner
+            intent="warning"
+            title="No LangSmith API key"
+            action={
+              <Button variant="plain" size="sm" color="primary" onClick={() => setOpen(true)}>
+                Open settings
+              </Button>
+            }
+          >
+            Moves against a deployed server will fail until you add one.
+          </Banner>
+        )}
 
-      <Table key={gameNumber} settings={settings} />
+        <Table key={gameNumber} settings={settings} />
+      </div>
 
-      {open && <SettingsPanel settings={settings} onSave={onSave} onClose={() => setOpen(false)} />}
+      <SettingsPanel
+        key={open ? "open" : "closed"}
+        open={open}
+        settings={settings}
+        onSave={onSave}
+        onClose={() => setOpen(false)}
+      />
     </div>
   );
 }
@@ -88,10 +126,11 @@ function Table({ settings }: { settings: Settings }) {
   const boardFen = game.pendingFen ?? game.fen;
   const lastMove = game.plies.at(-1)?.uci ?? null;
   const streamError = describeError(game.streamError);
+  const error = game.error ?? streamError;
 
   return (
-    <main className="layout">
-      <div className="board-wrap">
+    <main className="grid items-start gap-space-5 lg:grid-cols-[minmax(320px,640px)_minmax(280px,1fr)]">
+      <Card intent="neutral" className="flex flex-col gap-space-3">
         <Board
           fen={boardFen}
           orientation={game.humanSide}
@@ -100,43 +139,57 @@ function Table({ settings }: { settings: Settings }) {
           locked={game.isLoading || game.status !== "playing" || game.pendingFen !== null}
           onMove={(uci, fen) => void game.play(uci, fen)}
         />
-        <div className="status">
+        <div className="flex min-h-8 items-center justify-between gap-space-3">
           {game.isThinking ? (
-            <span className="thinking">{game.player || "Opponent"} is thinking…</span>
+            <ThinkingState
+              label={`${game.player || "Opponent"} is thinking`}
+              tone="brand"
+              size="sm"
+              showElapsed
+            />
           ) : (
-            <span>{statusLine(game)}</span>
+            <Text variant="body" color="secondary">
+              {statusLine(game)}
+            </Text>
           )}
           {needsStart && !game.isThinking && (
-            <button type="button" className="primary" onClick={() => void game.start()}>
+            <Button color="primary" size="md" onClick={() => void game.start()}>
               Start
-            </button>
+            </Button>
           )}
           {canRetry && !game.isLoading && (
-            <button type="button" onClick={() => void game.start()}>
+            <Button
+              variant="outlined"
+              color="secondary"
+              size="md"
+              onClick={() => void game.start()}
+            >
               Retry opponent move
-            </button>
+            </Button>
           )}
         </div>
-        {(game.error || streamError) && (
-          <div className="status error" role="status">
-            {game.error ?? streamError}
+        {error && (
+          <div role="status">
+            <ErrorMessage size="sm" message={error} />
           </div>
         )}
-      </div>
-      <aside className="side">
+      </Card>
+      <aside className="flex flex-col gap-space-4">
         <PlyDetails ply={game.lastPolicyPly} context={settings.context} />
         <MoveList plies={game.plies} />
-        <section className="card">
-          <h2>Opponent</h2>
-          <p className="mono" style={{ margin: 0, fontSize: 13 }}>
+        <Card intent="neutral" className="flex flex-col gap-space-2">
+          <Text variant="h4" as="h2" color="secondary">
+            Opponent
+          </Text>
+          <Text variant="sm" className="font-mono">
             {game.player || settings.context.policy}
-          </p>
+          </Text>
           {game.threadId && (
-            <p className="muted" style={{ margin: "6px 0 0", fontSize: 12 }}>
-              Thread <span className="mono">{game.threadId}</span>
-            </p>
+            <Text variant="xs" color="tertiary">
+              Thread <span className="font-mono">{game.threadId}</span>
+            </Text>
           )}
-        </section>
+        </Card>
       </aside>
     </main>
   );

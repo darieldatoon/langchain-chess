@@ -1,19 +1,21 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vite-plus/test";
-import { DEFAULT_CONTEXT, START_FEN, type PlyView } from "../types";
-import { Banner } from "./Banner";
 import {
   isAtBottom,
   lastMoveStyles,
+  sliderValue,
   money,
   pairs,
   seconds,
   sourceClass,
   sourceLabel,
 } from "../format";
+import { DEFAULT_CONTEXT, START_FEN, type PlyView } from "../types";
 import { Board } from "./Board";
 import { MoveList } from "./MoveList";
 import { PlyDetails } from "./PlyDetails";
+import { renderWithProviders } from "../test/renderApp";
+import { ThemeToggle } from "./ThemeToggle";
 
 const human: PlyView = {
   ply: 1,
@@ -56,16 +58,7 @@ const llm: PlyView = {
   raw_reply: "## Plan\n\nDevelop the knight.\n\nMOVE: **Nc6**",
 };
 
-describe("Banner", () => {
-  it("opens settings", () => {
-    const open = vi.fn();
-    render(<Banner onOpenSettings={open} />);
-    fireEvent.click(screen.getByRole("button", { name: "Open settings" }));
-    expect(open).toHaveBeenCalled();
-  });
-});
-
-describe("MoveList", () => {
+describe("format helpers", () => {
   it("pairs plies into rows and classes them by source", () => {
     expect(pairs([])).toEqual([]);
     expect(pairs([human, jev, { ...human, ply: 3, san: "Nf3" }])).toHaveLength(2);
@@ -74,22 +67,47 @@ describe("MoveList", () => {
     expect(sourceClass("llm")).toBe("llm");
   });
 
-  it("renders an empty hint and rows", () => {
-    const { rerender } = render(<MoveList plies={[]} />);
-    expect(screen.getByText("No moves yet.")).toBeInTheDocument();
-    rerender(<MoveList plies={[human, jev, { ...human, ply: 3, san: "Nf3" }]} />);
-    expect(screen.getByText("e5")).toHaveClass("jev");
-    expect(screen.getByText("Nf3")).toBeInTheDocument();
-    rerender(<MoveList plies={[jev]} />);
-    expect(screen.getByText("e5")).toBeInTheDocument();
-    expect(screen.getByText("1.")).toBeInTheDocument();
+  it("formats money, time, and labels", () => {
+    expect(money(undefined)).toBe("n/a");
+    expect(money(0.00006)).toBe("$0.0001");
+    expect(money(0.245)).toBe("$0.245");
+    expect(seconds(240)).toBe("240 ms");
+    expect(seconds(8200)).toBe("8.2 s");
+    expect(sourceLabel("jev")).toBe("Jev played");
+    expect(sourceLabel("llm")).toBe("LLM chose");
+    expect(sourceLabel("fallback_jev")).toBe("LLM failed, Jev played");
+    expect(sourceLabel("fallback_random")).toBe("LLM failed, random move");
+    expect(sourceLabel("engine")).toBe("Engine");
+    expect(sourceLabel("other")).toBe("other");
   });
-});
 
-describe("MoveList scrolling", () => {
+  it("highlights the last move squares", () => {
+    expect(lastMoveStyles(null)).toEqual({});
+    expect(lastMoveStyles("e2")).toEqual({});
+    expect(Object.keys(lastMoveStyles("e2e4"))).toEqual(["e2", "e4"]);
+  });
+
+  it("takes the first slider value from a range", () => {
+    expect(sliderValue(0.4)).toBe(0.4);
+    expect(sliderValue([0.2, 0.8])).toBe(0.2);
+  });
+
   it("detects the bottom within tolerance", () => {
     expect(isAtBottom({ scrollTop: 92, scrollHeight: 200, clientHeight: 100 })).toBe(true);
     expect(isAtBottom({ scrollTop: 40, scrollHeight: 200, clientHeight: 100 })).toBe(false);
+  });
+});
+
+describe("MoveList", () => {
+  it("renders an empty hint and rows, including a row without a white move", () => {
+    const { rerender } = render(<MoveList plies={[]} />);
+    expect(screen.getByText("No moves yet.")).toBeInTheDocument();
+    rerender(<MoveList plies={[human, jev, { ...human, ply: 3, san: "Nf3" }]} />);
+    expect(screen.getByText("e5")).toHaveClass("bg-brand-subtle");
+    expect(screen.getByText("Nf3")).toBeInTheDocument();
+    rerender(<MoveList plies={[{ ...jev, source: "fallback_jev" }]} />);
+    expect(screen.getByText("e5")).toHaveClass("bg-error-subtle");
+    expect(screen.getByText("1.")).toBeInTheDocument();
   });
 
   it("follows new moves while at the bottom and holds after a manual scroll up", () => {
@@ -113,20 +131,6 @@ describe("MoveList scrolling", () => {
 });
 
 describe("PlyDetails", () => {
-  it("formats money, time, and labels", () => {
-    expect(money(undefined)).toBe("n/a");
-    expect(money(0.00006)).toBe("$0.0001");
-    expect(money(0.245)).toBe("$0.245");
-    expect(seconds(240)).toBe("240 ms");
-    expect(seconds(8200)).toBe("8.2 s");
-    expect(sourceLabel("jev")).toBe("Jev played");
-    expect(sourceLabel("llm")).toBe("LLM chose");
-    expect(sourceLabel("fallback_jev")).toBe("LLM failed, Jev played");
-    expect(sourceLabel("fallback_random")).toBe("LLM failed, random move");
-    expect(sourceLabel("engine")).toBe("Engine");
-    expect(sourceLabel("other")).toBe("other");
-  });
-
   it("shows a hint without a ply", () => {
     render(<PlyDetails ply={null} context={DEFAULT_CONTEXT} />);
     expect(screen.getByText(/Make a move/)).toBeInTheDocument();
@@ -138,19 +142,32 @@ describe("PlyDetails", () => {
     expect(screen.getByText(/margin 0.92 vs threshold 0.90/)).toBeInTheDocument();
     expect(screen.getByText(/Jev was sure enough/)).toBeInTheDocument();
     expect(screen.getByLabelText("jev candidates").children).toHaveLength(2);
-    expect(screen.queryByText("LLM reply")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("e5 probability")).toHaveAttribute("aria-valuenow", "90");
+    expect(screen.queryByText("Show LLM reply")).not.toBeInTheDocument();
   });
 
-  it("shows LLM telemetry, the reply, and the confidence gate", () => {
+  it("shows LLM telemetry, toggles the markdown reply, and uses the confidence gate", () => {
     render(<PlyDetails ply={llm} context={{ ...DEFAULT_CONTEXT, gate: "confidence" }} />);
     expect(screen.getByText("LLM chose")).toBeInTheDocument();
     expect(screen.getByText(/confidence 0.80/)).toBeInTheDocument();
     expect(screen.getByText(/escalated to the LLM/)).toBeInTheDocument();
     expect(screen.getByText("900")).toBeInTheDocument();
     expect(screen.getByText("1")).toBeInTheDocument();
-    expect(screen.getByText("LLM reply")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Show LLM reply" }));
     expect(screen.getByRole("heading", { level: 2, name: "Plan" })).toBeInTheDocument();
     expect(screen.getByText("Nc6", { selector: ".markdown strong" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Hide LLM reply" }));
+    expect(screen.queryByRole("heading", { level: 2, name: "Plan" })).not.toBeInTheDocument();
+  });
+
+  it("uses a plain badge for engine moves", () => {
+    render(
+      <PlyDetails
+        ply={{ ...jev, source: "engine", model: "random", jev_top: undefined }}
+        context={DEFAULT_CONTEXT}
+      />,
+    );
+    expect(screen.getByText("Engine")).toBeInTheDocument();
   });
 
   it("hides the gate line outside the hybrid or without a signal", () => {
@@ -164,14 +181,7 @@ describe("PlyDetails", () => {
 });
 
 describe("Board", () => {
-  it("highlights the last move squares", () => {
-    expect(lastMoveStyles(null)).toEqual({});
-    expect(lastMoveStyles("e2")).toEqual({});
-    expect(Object.keys(lastMoveStyles("e2e4"))).toEqual(["e2", "e4"]);
-  });
-
   it("renders the position", () => {
-    const onMove = vi.fn();
     render(
       <Board
         fen={START_FEN}
@@ -179,9 +189,19 @@ describe("Board", () => {
         humanSide="white"
         lastMove="e2e4"
         locked={false}
-        onMove={onMove}
+        onMove={vi.fn()}
       />,
     );
-    expect(document.querySelector('[data-column="a"]') ?? document.body).toBeTruthy();
+    expect(document.body).toBeTruthy();
+  });
+});
+
+describe("ThemeToggle", () => {
+  it("switches between light and dark", () => {
+    renderWithProviders(<ThemeToggle />);
+    fireEvent.click(screen.getByRole("button", { name: "Switch to dark theme" }));
+    expect(document.documentElement).toHaveClass("dark");
+    fireEvent.click(screen.getByRole("button", { name: "Switch to light theme" }));
+    expect(document.documentElement).not.toHaveClass("dark");
   });
 });

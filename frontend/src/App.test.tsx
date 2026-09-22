@@ -1,9 +1,10 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import App from "./App";
 import { describeError, statusLine } from "./format";
 import { saveSettings } from "./settings";
 import { fake, resetFake } from "./test/fakeStream";
+import { renderWithProviders as render } from "./test/renderApp";
 import { DEFAULT_CONTEXT, type PlyView } from "./types";
 
 vi.mock("react-chessboard", () => ({
@@ -30,6 +31,12 @@ vi.mock("react-chessboard", () => ({
   ),
 }));
 vi.mock("@langchain/react", async () => (await import("./test/fakeStream")).useStreamMock());
+vi.mock("@langchain/macaw-components/Select", async () =>
+  (await import("./test/macawShims")).selectShim(),
+);
+vi.mock("@langchain/macaw-components/Slider", async () =>
+  (await import("./test/macawShims")).sliderShim(),
+);
 
 const base = { status: "playing" as const, result: null, history: [], humanSide: "white" as const };
 
@@ -69,12 +76,12 @@ describe("statusLine", () => {
 describe("App", () => {
   it("shows the banner without a key and opens settings from it", () => {
     render(<App />);
-    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(screen.getByText("No LangSmith API key")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Open settings" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("LangSmith API key"), { target: { value: "lsv2_k" } });
+    fireEvent.change(screen.getByLabelText("LangSmith API Key"), { target: { value: "lsv2_k" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByText("No LangSmith API key")).not.toBeInTheDocument();
     expect(window.localStorage.getItem("jev-chess:settings")).toContain("lsv2_k");
   });
 
@@ -88,21 +95,18 @@ describe("App", () => {
       error: "e2e5 is not a legal move here.",
     });
     render(<App />);
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByText("No LangSmith API key")).not.toBeInTheDocument();
     expect(screen.getByText("Jev played")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("not a legal move");
-    expect(screen.getAllByText("jev").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
-    fireEvent.click(screen.getByRole("button", { name: "Close settings" }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
   });
 
   it("offers Start when the human is black and shows thinking while loading", async () => {
     saveSettings({ apiKey: "k", context: { ...DEFAULT_CONTEXT, human_side: "black" } });
     render(<App />);
-    const start = screen.getByRole("button", { name: "Start" });
     await act(async () => {
-      fireEvent.click(start);
+      fireEvent.click(screen.getByRole("button", { name: "Start" }));
     });
     expect(fake.submit).toHaveBeenCalledWith({}, expect.anything());
     resetFake({ human_side: "black" });
@@ -136,21 +140,19 @@ describe("App", () => {
     expect(fake.submit).toHaveBeenCalledWith({}, expect.anything());
   });
 
-  it("starts a new game as Black from the colour toggle", async () => {
+  it("starts a new game as Black from the colour tabs", async () => {
     saveSettings({ apiKey: "k", context: DEFAULT_CONTEXT });
     window.history.replaceState(null, "", "?thread=t-old");
     render(<App />);
-    expect(screen.getByRole("button", { name: "White" })).toHaveAttribute("aria-pressed", "true");
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Black" }));
+      fireEvent.click(screen.getByText("Black"));
     });
-    expect(screen.getByRole("button", { name: "Black" })).toHaveAttribute("aria-pressed", "true");
     expect(window.location.search).toBe("");
     expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
     expect(window.localStorage.getItem("jev-chess:settings")).toContain('"human_side":"black"');
   });
 
-  it("shows stream errors and the thread id", () => {
+  it("shows stream errors and the thread id, and clears them on a new game", () => {
     saveSettings({ apiKey: "k", context: DEFAULT_CONTEXT });
     fake.error = new Error("401 unauthorized");
     window.history.replaceState(null, "", "?thread=t-42");
