@@ -4,6 +4,7 @@ import { Board } from "./components/Board";
 import { MoveList } from "./components/MoveList";
 import { PlyDetails } from "./components/PlyDetails";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { sideToMove } from "./chess";
 import { describeError, statusLine } from "./format";
 import { loadSettings, saveSettings, type Settings } from "./settings";
 import { useGame } from "./useGame";
@@ -22,6 +23,12 @@ export default function App() {
 
   const needsStart =
     game.humanSide === "black" && game.history.length === 0 && game.status === "playing";
+  // The opponent's turn with nothing in flight means its last move failed; an empty submit retries.
+  const canRetry =
+    !needsStart &&
+    game.status === "playing" &&
+    game.pendingFen === null &&
+    sideToMove(game.fen) !== game.humanSide;
   const boardFen = game.pendingFen ?? game.fen;
   const lastMove = game.plies.at(-1)?.uci ?? null;
   const streamError = describeError(game.streamError);
@@ -64,6 +71,11 @@ export default function App() {
             {needsStart && !game.isThinking && (
               <button type="button" className="primary" onClick={() => void game.start()}>
                 Start
+              </button>
+            )}
+            {canRetry && !game.isLoading && (
+              <button type="button" onClick={() => void game.start()}>
+                Retry opponent move
               </button>
             )}
           </div>

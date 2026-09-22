@@ -66,6 +66,9 @@ SYSTEM_PROMPT = (
 )
 
 
+EMPTY_REPLY = "[no text in reply]"
+
+
 class ChatModel(Protocol):
     """The slice of a LangChain chat model the policy uses, so tests can inject a fake."""
 
@@ -83,7 +86,9 @@ class LLMConfig:
     reasoning_effort: ReasoningEffort = "medium"
     include_legal_moves: bool = True
     max_retries: int = 3
-    max_tokens: int = 8000
+    # Output cap covers reasoning too. 8000 was exhausted by Opus at medium effort mid-game
+    # (2026-09-22), which returned empty text; keep this well above any reasoning budget.
+    max_tokens: int = 32000
     seed: int = 0
 
     @property
@@ -223,9 +228,17 @@ def build_graph(
 
     def _absorb(state: LLMState, reply: AIMessage, started: float) -> dict[str, Any]:
         i, o, r = _usage(reply)
+        text = _text(reply)
+        # Anthropic rejects a replayed assistant turn with empty text, so keep a placeholder in
+        # the transcript when the model produced none (typically the output cap hit reasoning).
+        kept = (
+            reply
+            if text.strip()
+            else AIMessage(content=EMPTY_REPLY, usage_metadata=reply.usage_metadata)
+        )
         return {
-            "messages": [*state.messages, reply],
-            "reply": _text(reply),
+            "messages": [*state.messages, kept],
+            "reply": text,
             "attempts": state.attempts + 1,
             "latency_ms": state.latency_ms + (time.perf_counter() - started) * 1000,
             "input_tokens": state.input_tokens + i,
@@ -258,10 +271,14 @@ def build_graph(
         allowed = (
             state.candidates if state.candidates is not None else list(snapshot(board).legal_moves)
         )
+        reason = (
+            "your reply had no text, so the output budget was probably spent on reasoning"
+            if not state.reply.strip()
+            else f"that move was rejected: {state.rejection}"
+        )
         text = (
-            f"That move was rejected: {state.rejection}. "
-            f"Choose from: {', '.join(san_list(board, allowed))}. "
-            "End with `MOVE: <move>`."
+            f"Try again, {reason}. Choose from: {', '.join(san_list(board, allowed))}. "
+            "Keep the reply short and end with `MOVE: <move>`."
         )
         return {"messages": [*state.messages, HumanMessage(text)]}
 

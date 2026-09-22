@@ -120,6 +120,22 @@ describe("App", () => {
     expect(fake.submit).toHaveBeenCalledWith({ move: "e2e4" }, expect.anything());
   });
 
+  it("offers a retry when the opponent failed to move", async () => {
+    saveSettings({ apiKey: "k", context: DEFAULT_CONTEXT });
+    resetFake({
+      fen: "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+      history: ["e4"],
+      plies: [{ ...ply, ply: 1, side: "white", san: "e4", uci: "e2e4", source: "human" }],
+      error: "llm failed to move: 400",
+    });
+    render(<App />);
+    expect(screen.getByRole("status")).toHaveTextContent("failed to move");
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Retry opponent move" }));
+    });
+    expect(fake.submit).toHaveBeenCalledWith({}, expect.anything());
+  });
+
   it("shows stream errors and the thread id", () => {
     saveSettings({ apiKey: "k", context: DEFAULT_CONTEXT });
     fake.error = new Error("401 unauthorized");

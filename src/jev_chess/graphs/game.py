@@ -190,9 +190,12 @@ def build_game_graph(context: PlayContext, mover: Mover) -> GameGraph:
     def policy_move(state: GameState, config: RunnableConfig) -> dict[str, Any]:
         board = board_of(state)
         ply = len(state.moves) + 1
-        result = mover.graph.invoke(
-            mover.to_input(board), config=_policy_run_config(config, label, ply)
-        )
+        run_config = _policy_run_config(config, label, ply)
+        try:
+            result = mover.graph.invoke(mover.to_input(board), config=run_config)
+        except Exception as exc:  # provider errors must not strand the thread
+            # The human's move is already applied; an empty submit retries the opponent.
+            return {"error": f"{label} failed to move: {exc}"}
         decision = mover.to_decision(result, board)
         move = chess.Move.from_uci(decision.uci)
         return push(state, board, move, decision_view(decision, board), context.max_plies)

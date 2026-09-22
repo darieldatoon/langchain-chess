@@ -229,3 +229,27 @@ def test_make_game_graph_reads_configurable(monkeypatch: pytest.MonkeyPatch) -> 
     result = g.invoke({})
     assert (captured[0].policy, captured[0].human_side) == ("random", "black")
     assert len(result["moves"]) == 1
+
+
+def test_policy_failure_is_recorded_and_the_thread_stays_playable() -> None:
+    class Boom:
+        def invoke(self, state: Any, config: Any = None) -> dict[str, Any]:
+            raise RuntimeError("400 text content blocks must be non-empty")
+
+    inner = random_mover()
+    broken = Mover(
+        graph=cast("Any", Boom()), to_input=inner.to_input, to_decision=inner.to_decision
+    )
+    g, config = threaded(PlayContext(policy="random"), broken)
+    failed = g.invoke({"move": "e2e4"}, config=config)
+    assert failed["history"] == ["e4"]
+    assert failed["status"] == "playing"
+    assert failed["error"] == "random failed to move: 400 text content blocks must be non-empty"
+
+    # Empty submit retries the opponent once the policy works again.
+    working: Any = build_game_graph(PlayContext(policy="random"), inner).copy(
+        update={"checkpointer": g.checkpointer}
+    )
+    retried = working.invoke({}, config=config)
+    assert retried["error"] is None
+    assert len(retried["history"]) == 2

@@ -214,7 +214,7 @@ def test_make_chat_model_gateway_and_direct(monkeypatch: pytest.MonkeyPatch) -> 
     gateway_model, gateway_kwargs = captured[0]
     assert gateway_model == "langsmith:anthropic/claude-opus-5"
     assert gateway_kwargs["reasoning_effort"] == "low"
-    assert gateway_kwargs["max_tokens"] == 8000
+    assert gateway_kwargs["max_tokens"] == 32000
     assert gateway_kwargs["base_url"] == "https://gateway.smith.langchain.com/v1"
     assert str(gateway_kwargs["api_key"]) == "**********"
     direct_model, direct_kwargs = captured[1]
@@ -279,3 +279,19 @@ def test_live_opus_plays_a_legal_move() -> None:
     assert decision.source == "llm"
     assert decision.reasoning_tokens > 0
     assert decision.cost_usd is not None
+
+
+def test_empty_reply_is_replaced_before_retry() -> None:
+    from langchain_core.messages import AIMessage
+
+    from jev_chess.policies.llm import EMPTY_REPLY
+
+    fake = FakeChatModel([reply("", 100, 8000, 0), reply("MOVE: Nc3")])
+    decision = LLMPolicy(fake, LLMConfig()).decide(italian_board())
+    assert decision.uci == "b1c3"
+    assert decision.illegal_attempts == 1
+    replayed = fake.calls[1]
+    assistant = [m for m in replayed if isinstance(m, AIMessage)]
+    assert [m.content for m in assistant] == [EMPTY_REPLY]
+    assert "no text" in str(replayed[-1].content)
+    assert "Keep the reply short" in str(replayed[-1].content)
