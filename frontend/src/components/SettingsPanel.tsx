@@ -67,7 +67,9 @@ export function SettingsPanel({ open, settings, onSave, onClose }: Props) {
       title="Settings"
       description="Connection and opponent configuration. Changes apply to the next move."
       noBackArrow
-      dialogStyle={{ width: "min(30rem, 100vw)" }}
+      // Pane lays its content out as a block inside a full-screen overlay; the auto margin
+      // anchors it to the right edge, where its slide-in animation comes from.
+      dialogStyle={{ width: "min(30rem, 100vw)", marginLeft: "auto", marginRight: 0 }}
     >
       <div className="flex flex-col gap-space-5 p-space-5">
         <Section title="Connection">
