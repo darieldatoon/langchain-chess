@@ -42,8 +42,8 @@ from jev_chess.policies import (
     LLMPolicy,
     MoveDecision,
 )
+from jev_chess.policies.jev import ranking_decision
 from jev_chess.policies.llm import resolve_model_spec
-from jev_chess.policies.pricing import cost_usd
 from jev_chess.policies.types import ReasoningEffort, legal_decision
 from jev_chess.settings import EngineSettings, GatewaySettings
 
@@ -298,19 +298,7 @@ class JevPlayer:
 
     def decide(self, board: chess.Board, game_id: str, ply: int) -> MoveDecision:
         ranking = self._policy.rank(board, run_config=_run_config(self._name, game_id, ply))
-        return legal_decision(
-            {m.uci() for m in board.legal_moves},
-            uci=ranking.top.uci,
-            source="jev",
-            model=ranking.model,
-            latency_ms=ranking.latency_ms,
-            input_tokens=ranking.input_tokens,
-            output_tokens=ranking.output_tokens,
-            cost_usd=cost_usd(ranking.model, ranking.input_tokens, ranking.output_tokens),
-            jev_confidence=ranking.confidence,
-            jev_margin=ranking.margin,
-            jev_top_k=ranking.top_k(5),
-        )
+        return ranking_decision(ranking, board)
 
     def close(self) -> None:
         return None

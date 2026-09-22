@@ -211,7 +211,9 @@ def make_chat_model(config: LLMConfig, settings: GatewaySettings | None = None) 
     return cast("ChatModel", init_chat_model(config.model, **kwargs))
 
 
-def build_graph(model: ChatModel, config: LLMConfig) -> CompiledStateGraph[LLMState]:
+def build_graph(
+    model: ChatModel, config: LLMConfig, context_schema: Any = None
+) -> CompiledStateGraph[LLMState]:
     rng = random.Random(config.seed)
 
     def prepare(state: LLMState) -> dict[str, Any]:
@@ -287,7 +289,7 @@ def build_graph(model: ChatModel, config: LLMConfig) -> CompiledStateGraph[LLMSt
         )
         return {"decision": decision}
 
-    graph: StateGraph[LLMState] = StateGraph(LLMState)
+    graph: StateGraph[LLMState, Any] = StateGraph(LLMState, context_schema=context_schema)
     graph.add_node("prepare", prepare)
     graph.add_node("call_llm", RunnableLambda(call_llm, afunc=call_llm_async))
     graph.add_node("parse", parse)
@@ -318,16 +320,28 @@ def history_san(board: chess.Board) -> list[str]:
 class LLMPolicy:
     """Ask a reasoning LLM for a move. `candidates` restricts it to a shortlist (hybrid)."""
 
-    def __init__(self, model: ChatModel, config: LLMConfig | None = None) -> None:
+    def __init__(
+        self,
+        model: ChatModel,
+        config: LLMConfig | None = None,
+        context_schema: Any = None,
+    ) -> None:
         self.config = config or LLMConfig()
-        self._graph = build_graph(model, self.config)
+        self._graph = build_graph(model, self.config, context_schema)
 
     @classmethod
     def from_settings(
-        cls, settings: GatewaySettings | None = None, config: LLMConfig | None = None
+        cls,
+        settings: GatewaySettings | None = None,
+        config: LLMConfig | None = None,
+        context_schema: Any = None,
     ) -> "LLMPolicy":
         config = config or LLMConfig()
-        return cls(make_chat_model(config, settings), config)
+        return cls(make_chat_model(config, settings), config, context_schema)
+
+    @property
+    def graph(self) -> CompiledStateGraph[LLMState]:
+        return self._graph
 
     def _input(self, board: chess.Board, candidates: Sequence[str] | None) -> LLMState:
         return LLMState(

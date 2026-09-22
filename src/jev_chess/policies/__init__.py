@@ -10,6 +10,7 @@ from jev_chess.policies.jev import (
     build_state,
     history_san,
     parse_response,
+    ranking_decision,
 )
 from jev_chess.policies.llm import (
     ChatModel,
@@ -60,6 +61,7 @@ __all__ = [
     "make_chat_model",
     "parse_move",
     "parse_response",
+    "ranking_decision",
     "resolve_model_spec",
     "shortlist",
 ]

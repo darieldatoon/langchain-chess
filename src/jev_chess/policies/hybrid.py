@@ -82,7 +82,7 @@ class HybridState:
 
 
 def build_graph(
-    jev: JevPolicy, llm: LLMPolicy, hybrid: HybridConfig
+    jev: JevPolicy, llm: LLMPolicy, hybrid: HybridConfig, context_schema: Any = None
 ) -> CompiledStateGraph[HybridState]:
     # Node parameters named `config` receive the RunnableConfig LangGraph was invoked with,
     # which is how LangSmith run metadata reaches the nested policy graphs.
@@ -160,7 +160,7 @@ def build_graph(
         )
         return {"decision": decision}
 
-    graph: StateGraph[HybridState] = StateGraph(HybridState)
+    graph: StateGraph[HybridState, Any] = StateGraph(HybridState, context_schema=context_schema)
     graph.add_node("rank_jev", RunnableLambda(rank_jev, afunc=rank_jev_async))
     graph.add_node("play_jev", play_jev)
     graph.add_node("shortlist", make_shortlist)
@@ -178,20 +178,34 @@ def build_graph(
 
 
 class HybridPolicy:
-    def __init__(self, jev: JevPolicy, llm: LLMPolicy, config: HybridConfig | None = None) -> None:
+    def __init__(
+        self,
+        jev: JevPolicy,
+        llm: LLMPolicy,
+        config: HybridConfig | None = None,
+        context_schema: Any = None,
+    ) -> None:
         self.config = config or HybridConfig()
-        self._graph = build_graph(jev, llm, self.config)
+        self._graph = build_graph(jev, llm, self.config, context_schema)
 
     @classmethod
     def from_settings(
-        cls, settings: Any = None, config: HybridConfig | None = None
+        cls,
+        settings: Any = None,
+        config: HybridConfig | None = None,
+        context_schema: Any = None,
     ) -> "HybridPolicy":
         config = config or HybridConfig()
         return cls(
             JevPolicy.from_settings(settings, config.jev),
             LLMPolicy.from_settings(settings, config.llm),
             config,
+            context_schema,
         )
+
+    @property
+    def graph(self) -> CompiledStateGraph[HybridState]:
+        return self._graph
 
     def decide(self, board: chess.Board, run_config: RunnableConfig | None = None) -> MoveDecision:
         result = self._graph.invoke(HybridState(fen=board.fen()), config=run_config)

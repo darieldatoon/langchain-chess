@@ -30,7 +30,8 @@ from langgraph.graph.state import CompiledStateGraph
 
 from jev_chess.core import DescriptionStyle, all_move_facts, describe_all, material_balance
 from jev_chess.core.position import side_of
-from jev_chess.policies.types import Candidate, JevRanking
+from jev_chess.policies.pricing import cost_usd
+from jev_chess.policies.types import Candidate, JevRanking, MoveDecision, legal_decision
 from jev_chess.settings import GatewaySettings
 
 MOVE_QUESTION = "move"
@@ -202,7 +203,9 @@ def parse_response(response: ClassifierResponse, latency_ms: float) -> JevRankin
     )
 
 
-def build_graph(classifier: Classifier, config: JevConfig) -> CompiledStateGraph[JevState]:
+def build_graph(
+    classifier: Classifier, config: JevConfig, context_schema: Any = None
+) -> CompiledStateGraph[JevState]:
     def prepare(state: JevState) -> dict[str, Any]:
         return {"request": build_request(chess.Board(state.fen), state.history, config)}
 
@@ -222,7 +225,7 @@ def build_graph(classifier: Classifier, config: JevConfig) -> CompiledStateGraph
         assert state.response is not None
         return {"ranking": parse_response(state.response, state.latency_ms)}
 
-    graph: StateGraph[JevState] = StateGraph(JevState)
+    graph: StateGraph[JevState, Any] = StateGraph(JevState, context_schema=context_schema)
     graph.add_node("prepare", prepare)
     graph.add_node("ask_jev", RunnableLambda(ask_jev, afunc=ask_jev_async))
     graph.add_node("decide", decide)
@@ -231,6 +234,24 @@ def build_graph(classifier: Classifier, config: JevConfig) -> CompiledStateGraph
     graph.add_edge("ask_jev", "decide")
     graph.add_edge("decide", END)
     return graph.compile()
+
+
+def ranking_decision(ranking: JevRanking, board: chess.Board) -> MoveDecision:
+    """Jev alone plays its top-ranked move. Shared by the runner and the game graph."""
+    return legal_decision(
+        {m.uci() for m in board.legal_moves},
+        uci=ranking.top.uci,
+        source="jev",
+        model=ranking.model,
+        latency_ms=ranking.latency_ms,
+        input_tokens=ranking.input_tokens,
+        output_tokens=ranking.output_tokens,
+        cost_usd=cost_usd(ranking.model, ranking.input_tokens, ranking.output_tokens),
+        jev_confidence=ranking.confidence,
+        jev_margin=ranking.margin,
+        jev_top_k=ranking.top_k(5),
+        jev_top_uci=ranking.top.uci,
+    )
 
 
 def history_san(board: chess.Board) -> list[str]:
@@ -246,13 +267,21 @@ def history_san(board: chess.Board) -> list[str]:
 class JevPolicy:
     """Rank legal moves with Jev. `rank` is sync, `arank` is async; both run the same graph."""
 
-    def __init__(self, classifier: Classifier, config: JevConfig | None = None) -> None:
+    def __init__(
+        self,
+        classifier: Classifier,
+        config: JevConfig | None = None,
+        context_schema: Any = None,
+    ) -> None:
         self.config = config or JevConfig()
-        self._graph = build_graph(classifier, self.config)
+        self._graph = build_graph(classifier, self.config, context_schema)
 
     @classmethod
     def from_settings(
-        cls, settings: GatewaySettings | None = None, config: JevConfig | None = None
+        cls,
+        settings: GatewaySettings | None = None,
+        config: JevConfig | None = None,
+        context_schema: Any = None,
     ) -> "JevPolicy":
         settings = settings or GatewaySettings()
         config = config or JevConfig()
@@ -261,7 +290,12 @@ class JevPolicy:
             api_key=settings.typesafe_api_key,
             base_url=settings.typesafe_base_url,
         )
-        return cls(classifier, config)
+        return cls(classifier, config, context_schema)
+
+    @property
+    def graph(self) -> CompiledStateGraph[JevState]:
+        """The compiled graph, so callers can embed it as a subgraph or draw it."""
+        return self._graph
 
     def rank(self, board: chess.Board, run_config: RunnableConfig | None = None) -> JevRanking:
         state = JevState(fen=board.fen(), history=history_san(board))
