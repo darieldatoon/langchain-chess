@@ -1,0 +1,30 @@
+# Build context for `langgraph build` / `langgraph deploy --no-remote`. The Python package
+# and the Vite build output under src/jev_chess/server/static are all the image needs.
+# Docker semantics only: a gitignored static/ still gets in, which is what CI relies on.
+.git/
+.venv/
+node_modules/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+credentials.json
+runs/
+data/
+engines/
+plans/
+docs/
+tests/
+frontend/
+*.jsonl
+*.pb.gz
+.DS_Store
+.github/
