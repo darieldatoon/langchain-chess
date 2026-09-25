@@ -168,8 +168,8 @@ the same commit (pip would look for them on PyPI).
 
 ```sh
 uvx --env-file /absolute/path/to/.env \
-  --from "git+https://github.com/darieldatoon/jev-chess#subdirectory=libs/cli" lcchess play
-uv tool install "git+https://github.com/darieldatoon/jev-chess#subdirectory=libs/cli"
+  --from "git+https://github.com/darieldatoon/langchain-chess#subdirectory=libs/cli" lcchess play
+uv tool install "git+https://github.com/darieldatoon/langchain-chess#subdirectory=libs/cli"
 ```
 
 ## Environment
@@ -199,7 +199,7 @@ mise provides every tool (node, pnpm, uv, lefthook, `sfw`, fastchess); Python co
 Add dependencies with `sfw uv add --package <distribution> <dependency>` (root dev tools:
 `sfw uv add --group dev <tool>`) and `sfw pnpm add <pkg>` in `apps/web`. Pull requests
 run `mise run check` and `mise run test` (`.github/workflows/ci.yml`). Pushing to `main` runs
-both and then `mise run deploy` (`.github/workflows/deploy.yml`), which deploys `jev-chess-app`. The pre-push hook runs `mise run test`; the pre-commit hook checks
+both and then `mise run deploy` (`.github/workflows/deploy.yml`), which deploys `langchain-chess-app`. The pre-push hook runs `mise run test`; the pre-commit hook checks
 only the staged files.
 
 The image builds from the uv workspace and its lockfile (`langgraph.json` `source.kind = "uv"`).

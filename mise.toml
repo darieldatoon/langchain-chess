@@ -84,7 +84,7 @@ run = "pnpm --dir apps/web exec vp build"
 description = "Build the UI, then build and push the image to LangSmith Deployments"
 run = [
   "mise run build",
-  "uv run --all-packages langgraph deploy --no-remote --name jev-chess-app --deployment-type dev",
+  "uv run --all-packages langgraph deploy --no-remote --name langchain-chess-app --deployment-type dev",
 ]
 
 [tasks."test:uci"]
