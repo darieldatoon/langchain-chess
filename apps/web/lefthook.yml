@@ -5,9 +5,3 @@ pre-commit:
       root: "apps/web/"
       glob: "*.{ts,tsx,css,json}"
       run: pnpm exec vp check
-
-pre-push:
-  commands:
-    frontend-tests:
-      root: "apps/web/"
-      run: pnpm exec vp test --run --coverage

@@ -190,7 +190,9 @@ mise run build   # the web UI into apps/server/.../static, served at /ui
 mise provides every tool (node, pnpm, uv, lefthook, `sfw`, fastchess); Python comes from uv.
 Add dependencies with `sfw uv add --package <distribution> <dependency>` (root dev tools:
 `sfw uv add --group dev <tool>`) and `sfw pnpm add <pkg>` in `apps/web`. Pushing to `main`
-checks, builds and deploys `jev-chess-app` (`.github/workflows/deploy.yml`).
+runs `mise run check`, `mise run test` and `mise run deploy` (`.github/workflows/deploy.yml`),
+which deploys `jev-chess-app`. The pre-push hook runs `mise run test`; the pre-commit hook checks
+only the staged files.
 
 The image builds from the uv workspace and its lockfile (`langgraph.json` `source.kind = "uv"`).
 langgraph-cli 0.4.31 copies only the root `pyproject.toml` before `uv export`, so

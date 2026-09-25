@@ -24,5 +24,6 @@ pre-commit:
 
 pre-push:
   commands:
+    # Python and web tests; pre-commit stays on staged files so it stays fast.
     tests:
-      run: uv run --all-packages pytest -q
+      run: mise run test

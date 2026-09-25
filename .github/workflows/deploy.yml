@@ -25,22 +25,17 @@ jobs:
           install: true
           cache: true
 
+      # `mise run setup`, but failing on a stale uv.lock and without git hooks.
       - name: Install
         run: |
           uv sync --all-packages --all-groups --locked
           pnpm --dir apps/web install --frozen-lockfile
 
-      - name: Check and test
-        run: |
-          uv run --all-packages ruff format --check libs apps
-          uv run --all-packages ruff check libs apps
-          uv run --all-packages ty check
-          uv run --all-packages pytest -q
-          pnpm --dir apps/web exec vp check
-          pnpm --dir apps/web exec vp test --run --coverage
+      - name: Check
+        run: mise run check
 
-      - name: Build the web UI into the server package
-        run: pnpm --dir apps/web exec vp build
+      - name: Test
+        run: mise run test
 
       # `langgraph deploy` re-sends the env file as the revision's secrets on every deploy, so
       # the file must carry the full runtime set or a redeploy could drop them.
@@ -53,7 +48,8 @@ jobs:
           TYPESAFE_API_KEY=${{ secrets.LC_GATEWAY_KEY }}
           EOF
 
-      - name: Build image and deploy to LangSmith
+      # Builds the web UI into the server package, then the image, then deploys.
+      - name: Build and deploy to LangSmith
         env:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
-        run: uv run --all-packages langgraph deploy --no-remote --name jev-chess-app --deployment-type dev --no-input
+        run: mise run deploy -- --no-input
