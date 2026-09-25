@@ -163,19 +163,19 @@ classes, so CSS can restyle them.
 
 ### Install the CLI without cloning
 
-Before PyPI, only uv can install it: it resolves the unpublished sibling packages from the same
-commit (pip would look for them on PyPI). The repository is private, so git needs credentials;
-never put a token in the URL, because uv stores it in tool receipts.
+The packages aren't on PyPI, so only uv can install it: it resolves the sibling packages from
+the same commit (pip would look for them on PyPI).
 
 ```sh
 uvx --env-file /absolute/path/to/.env \
-  --from "git+ssh://git@github.com/darieldatoon/jev-chess#subdirectory=libs/cli" lcchess play
-uv tool install "git+ssh://git@github.com/darieldatoon/jev-chess#subdirectory=libs/cli"
+  --from "git+https://github.com/darieldatoon/jev-chess#subdirectory=libs/cli" lcchess play
+uv tool install "git+https://github.com/darieldatoon/jev-chess#subdirectory=libs/cli"
 ```
 
 ## Environment
 
-Two LangSmith orgs: traces go to one, every model call goes through the other's LLM Gateway.
+Traces go to a LangSmith workspace and every model call goes through a LangSmith LLM Gateway
+(the two may be in different orgs).
 Copy `.env.example` to `.env` and fill it in; `LC_GATEWAY_KEY` in your shell supplies the
 gateway key. Commands that make model calls load it explicitly (`uv run --env-file .env ...`);
 `langgraph dev` reads it through `langgraph.json`. The app refuses to start unless
@@ -197,9 +197,9 @@ mise run build   # the web UI into apps/server/.../static, served at /ui
 
 mise provides every tool (node, pnpm, uv, lefthook, `sfw`, fastchess); Python comes from uv.
 Add dependencies with `sfw uv add --package <distribution> <dependency>` (root dev tools:
-`sfw uv add --group dev <tool>`) and `sfw pnpm add <pkg>` in `apps/web`. Pushing to `main`
-runs `mise run check`, `mise run test` and `mise run deploy` (`.github/workflows/deploy.yml`),
-which deploys `jev-chess-app`. The pre-push hook runs `mise run test`; the pre-commit hook checks
+`sfw uv add --group dev <tool>`) and `sfw pnpm add <pkg>` in `apps/web`. Pull requests
+run `mise run check` and `mise run test` (`.github/workflows/ci.yml`). Pushing to `main` runs
+both and then `mise run deploy` (`.github/workflows/deploy.yml`), which deploys `jev-chess-app`. The pre-push hook runs `mise run test`; the pre-commit hook checks
 only the staged files.
 
 The image builds from the uv workspace and its lockfile (`langgraph.json` `source.kind = "uv"`).
@@ -225,3 +225,7 @@ Check a build locally with `uv run --all-packages langgraph build -t langchain-c
   `full`, so seeing earlier bare `MOVE:` turns didn't make it terser. System 1 played no moves in
   the `full` games of that sample, so the imitation risk from System 1's bare turns is still
   unmeasured.
+
+## License
+
+[MIT](LICENSE)

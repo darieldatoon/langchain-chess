@@ -15,6 +15,10 @@ build/
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+*.crt
+credentials.json
 
 .DS_Store
 
@@ -30,7 +34,7 @@ htmlcov/
 # local dev server state (langgraph dev)
 /.langgraph_api/
 
-# fastchess match output (mise run uci-match)
+# fastchess match output (mise run test:uci)
 /.uci-match/
 
 # pytest-textual-snapshot failure report
