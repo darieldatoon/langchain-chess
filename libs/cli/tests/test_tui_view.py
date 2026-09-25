@@ -3,7 +3,6 @@ import chess
 from langchain_chess_cli.options import AgentOptions
 from langchain_chess_cli.tui.view import (
     board_of,
-    board_text,
     cost_text,
     describe_options,
     move_list,
@@ -16,17 +15,6 @@ BLACK_TO_MOVE = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
 
 def call(cost, complete=True):
     return {"cost_usd": cost, "cost_complete": complete}
-
-
-def test_board_text_orientation_and_highlight():
-    board = chess.Board()
-    white = board_text(board, white_bottom=True, last_move="e2e4").splitlines()
-    assert white[0].startswith("8 ")
-    assert white[-1].strip().startswith("a")
-    assert "on yellow" in white[6]
-    black = board_text(board, white_bottom=False, last_move=None).splitlines()
-    assert black[0].startswith("1 ")
-    assert "on yellow" not in "".join(black)
 
 
 def test_cost_text():

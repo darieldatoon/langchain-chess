@@ -1,5 +1,6 @@
 import asyncio
 
+import chess
 from langgraph.checkpoint.memory import InMemorySaver
 from textual.widgets import Input, Static
 
@@ -26,6 +27,7 @@ async def settle(app, pilot):
 
 async def play(pilot, move):
     pilot.app.query_one("#move", Input).focus()
+    await pilot.pause()
     for key in move:
         await pilot.press(key)
     await pilot.press("enter")
@@ -70,7 +72,7 @@ async def test_playing_white_and_the_move_list():
 
 
 async def test_input_is_blocked_on_the_agents_move_and_while_it_thinks():
-    app, _model = app_with(["MOVE: e5"], delay=0.3)
+    app, _model = app_with(["MOVE: e5"], delay=1.5)
     async with app.run_test() as pilot:
         await play(pilot, "e4")
         await pilot.pause(0.05)
@@ -79,7 +81,11 @@ async def test_input_is_blocked_on_the_agents_move_and_while_it_thinks():
         await settle(app, pilot)
         assert app.values["moves"] == ["e2e4", "e7e5"]
         assert app.query_one("#move", Input).value == ""
+        app.query_one("#move", Input).focus()
+        await pilot.pause()
         await pilot.press("enter")  # an empty line is ignored
+        await settle(app, pilot)
+        assert app.values["moves"] == ["e2e4", "e7e5"]
 
 
 async def test_a_new_game_ignores_late_events_from_the_previous_one():
@@ -141,3 +147,33 @@ async def test_a_late_failure_from_the_previous_game_is_ignored():
         await settle(app, pilot)
         assert app.failed is None
         assert "Your move." in text(app, "status")
+
+
+async def test_moves_by_clicking_the_board():
+    from langchain_chess_cli.tui.board import ChessBoard
+
+    app, _model = app_with(["MOVE: e5"])
+    async with app.run_test(size=(140, 45)) as pilot:
+        board = app.query_one("#board", ChessBoard)
+        for square in ("e2", "e4"):
+            x, y = board.geometry.origin(chess.parse_square(square))
+            await pilot.click("#board", offset=(x + 1, y + 1))
+            await pilot.pause()
+        await settle(app, pilot)
+        assert app.values["moves"] == ["e2e4", "e7e5"]
+        assert board.state.last_move == (chess.E7, chess.E5)
+        assert board.state.interactive
+
+
+async def test_typing_on_the_board_fills_the_input():
+    app, _model = app_with(["MOVE: e5"])
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        for key in "e4":
+            await pilot.press(key)
+            await pilot.pause()
+        assert app.query_one("#move", Input).value == "e4"
+        await pilot.press("enter")
+        await settle(app, pilot)
+        assert app.values["moves"] == ["e2e4", "e7e5"]
+        assert app.focused is app.query_one("#board")

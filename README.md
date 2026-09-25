@@ -146,8 +146,12 @@ mise run uci-match   # two SemIf-only games under fastchess
 mise run play -- --side black   # uv run --all-packages --env-file .env lcchess play ...
 ```
 
-Type moves in SAN or UCI. `ctrl+s` starts as Black, `ctrl+r` retries a failed move, `ctrl+n`
-starts a new game, `ctrl+f` switches sides.
+Click a piece and then its target, or move the cursor with the arrow keys and press Enter (or
+Space) on the piece and again on the target; the legal targets are marked. Or just type a move
+in SAN or UCI and press Enter. Pieces are drawn larger as the terminal grows (the block-art
+pieces are chess-tui's). `ctrl+s` starts as Black, `ctrl+r` retries a failed move, `ctrl+n`
+starts a new game, `ctrl+f` switches sides. Board colours are `chess-board--*` component
+classes, so CSS can restyle them.
 
 ### Install the CLI without cloning
 

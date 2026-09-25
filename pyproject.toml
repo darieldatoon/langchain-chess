@@ -20,6 +20,7 @@ dev = [
     "pytest-cov>=7",
     "langgraph-cli[inmem]==0.4.31",
     "httpx>=0.28.1",
+    "pytest-textual-snapshot>=1.0.0",
 ]
 
 [tool.uv]

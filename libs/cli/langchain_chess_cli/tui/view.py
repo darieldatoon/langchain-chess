@@ -9,11 +9,6 @@ from langchain_chess import turn_cost
 from langchain_chess.rules import result_text
 from langchain_chess_cli.options import AgentOptions
 
-PIECES = {
-    "K": "♔", "Q": "♕", "R": "♖", "B": "♗", "N": "♘", "P": "♙",
-    "k": "♚", "q": "♛", "r": "♜", "b": "♝", "n": "♞", "p": "♟",
-}  # fmt: skip
-
 SOURCES = {
     "external": "you",
     "llm": "LLM",
@@ -27,29 +22,6 @@ def board_of(values: Mapping[str, Any]) -> chess.Board:
     for uci in values.get("moves") or ():
         board.push_uci(uci)
     return board
-
-
-def board_text(board: chess.Board, *, white_bottom: bool, last_move: str | None) -> str:
-    """Rich markup: ranks and files labelled, the last move's squares highlighted."""
-    marked: set[int] = set()
-    if last_move:
-        move = chess.Move.from_uci(last_move)
-        marked = {move.from_square, move.to_square}
-    ranks = range(7, -1, -1) if white_bottom else range(8)
-    files = list(range(8)) if white_bottom else list(range(7, -1, -1))
-    lines = []
-    for rank in ranks:
-        cells = []
-        for file in files:
-            square = chess.square(file, rank)
-            piece = board.piece_at(square)
-            glyph = PIECES[piece.symbol()] if piece else "·"
-            light = (rank + file) % 2 == 1
-            style = "on yellow" if square in marked else ("on grey30" if light else "on grey15")
-            cells.append(f"[{style}] {glyph} [/]")
-        lines.append(f"{rank + 1} " + "".join(cells))
-    lines.append("  " + "".join(f" {chess.FILE_NAMES[f]} " for f in files))
-    return "\n".join(lines)
 
 
 def source_label(source: str) -> str:
