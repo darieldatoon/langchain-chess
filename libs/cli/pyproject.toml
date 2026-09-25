@@ -1,0 +1,26 @@
+[project]
+name = "langchain-chess-cli"
+version = "0.1.0"
+description = "Play langchain-chess agents as a UCI engine or in the terminal"
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+authors = [{ name = "Dariel Dato-on" }]
+dependencies = [
+    "langchain-chess[systemone]",
+    "langchain-openai>=1.6.2",
+    "rich>=15",
+    "textual>=6",
+    "typer>=0.27",
+]
+
+[project.scripts]
+lcchess = "langchain_chess_cli.main:app"
+
+[build-system]
+requires = ["uv_build>=0.12,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "langchain_chess_cli"
+module-root = ""

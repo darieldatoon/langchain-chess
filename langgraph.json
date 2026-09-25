@@ -2,15 +2,22 @@
   "$schema": "https://langgra.ph/schema.json",
   "python_version": "3.13",
   "image_distro": "wolfi",
-  "dependencies": ["."],
+  "source": {
+    "kind": "uv",
+    "root": ".",
+    "package": "langchain-chess-server"
+  },
+  "dockerfile_lines": [
+    "ADD libs/chess/pyproject.toml /tmp/uv_export/project/libs/chess/pyproject.toml",
+    "ADD libs/systemone/pyproject.toml /tmp/uv_export/project/libs/systemone/pyproject.toml",
+    "ADD libs/cli/pyproject.toml /tmp/uv_export/project/libs/cli/pyproject.toml",
+    "ADD apps/server/pyproject.toml /tmp/uv_export/project/apps/server/pyproject.toml"
+  ],
   "graphs": {
-    "game": "./src/jev_chess/graphs/game.py:make_game_graph",
-    "jev": "./src/jev_chess/graphs/policies.py:make_jev_graph",
-    "llm": "./src/jev_chess/graphs/policies.py:make_llm_graph",
-    "hybrid": "./src/jev_chess/graphs/policies.py:make_hybrid_graph"
+    "chess": "./apps/server/langchain_chess_server/graph.py:make_graph"
   },
   "env": ".env",
   "http": {
-    "app": "./src/jev_chess/server/app.py:app"
+    "app": "./apps/server/langchain_chess_server/app.py:app"
   }
 }

@@ -1,10 +1,11 @@
-# Build context for `langgraph build` / `langgraph deploy --no-remote`. The Python package
-# and the Vite build output under src/jev_chess/server/static are all the image needs.
-# Docker semantics only: a gitignored static/ still gets in, which is what CI relies on.
+# Build context for `langgraph build` / `langgraph deploy --no-remote`. The uv workspace (libs/,
+# apps/server/, the lockfile) and the web build under apps/server/langchain_chess_server/static
+# are all the image needs. Docker semantics only: a gitignored static/ still gets in, which is
+# what CI relies on.
 .git/
 .venv/
-node_modules/
-__pycache__/
+**/node_modules/
+**/__pycache__/
 .pytest_cache/
 .ruff_cache/
 .coverage
@@ -17,14 +18,11 @@ htmlcov/
 *.key
 *.crt
 credentials.json
-runs/
-data/
-engines/
 plans/
 docs/
-tests/
-frontend/
-*.jsonl
-*.pb.gz
+**/tests/
+apps/web/
+.uci-match/
+.langgraph_api/
 .DS_Store
 .github/

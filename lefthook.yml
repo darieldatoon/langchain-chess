@@ -1,20 +1,20 @@
 # Hooks for both halves. The lefthook binary comes from mise (`mise install`); the frontend
-# commands live in frontend/lefthook.yml and run with that directory as root.
+# commands live in apps/web/lefthook.yml and run with that directory as root.
 extends:
-  - frontend/lefthook.yml
+  - apps/web/lefthook.yml
 
 pre-commit:
   parallel: true
   commands:
     ruff-format:
       glob: "*.py"
-      run: uv run ruff format --check {staged_files}
+      run: uv run --all-packages ruff format --check {staged_files}
     ruff-lint:
       glob: "*.py"
-      run: uv run ruff check {staged_files}
+      run: uv run --all-packages ruff check {staged_files}
     ty:
       glob: "*.py"
-      run: uv run ty check
+      run: uv run --all-packages ty check
     secrets:
       # patterns require a key body so this file's own regex never matches itself
       run: |
@@ -24,5 +24,6 @@ pre-commit:
 
 pre-push:
   commands:
+    # Python and web tests; pre-commit stays on staged files so it stays fast.
     tests:
-      run: uv run pytest -q
+      run: mise run test

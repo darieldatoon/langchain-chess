@@ -1,0 +1,25 @@
+[project]
+name = "langchain-chess"
+version = "0.1.0"
+description = "Chess agents built on LangChain's create_agent, shaped by middleware"
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+authors = [{ name = "Dariel Dato-on" }]
+dependencies = [
+    "chess>=1.11.2,<2",
+    "genai-prices==0.1.9",
+    "langchain>=1.4.2,<1.5",
+    "langchain-core>=1.6.4,<2",
+]
+
+[project.optional-dependencies]
+systemone = ["langchain-chess-systemone"]
+
+[build-system]
+requires = ["uv_build>=0.12,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "langchain_chess"
+module-root = ""

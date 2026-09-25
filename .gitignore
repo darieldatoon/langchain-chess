@@ -15,18 +15,10 @@ build/
 .env
 .env.*
 !.env.example
-
-# experiment outputs
-runs/
-*.jsonl
-data/positions/*.epd
-data/positions/*.pgn
-data/openings/*.pgn
-data/openings/*.epd
-
-# engines and weights (install via brew / download script)
-/engines/
-*.pb.gz
+*.pem
+*.key
+*.crt
+credentials.json
 
 .DS_Store
 
@@ -35,9 +27,15 @@ data/openings/*.epd
 .coverage.*
 htmlcov/
 
-# frontend build output lives inside the Python package so the image can serve it; CI builds it
-/src/jev_chess/server/static/
-/frontend/coverage/
+# the web build lives inside the server package so the image can serve it; CI builds it
+/apps/server/langchain_chess_server/static/
+/apps/web/coverage/
 
 # local dev server state (langgraph dev)
 /.langgraph_api/
+
+# fastchess match output (mise run test:uci)
+/.uci-match/
+
+# pytest-textual-snapshot failure report
+/snapshot_report.html

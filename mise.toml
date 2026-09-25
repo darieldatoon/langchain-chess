@@ -1,40 +1,105 @@
-# One toolchain file for both halves of the repo. `mise trust && mise install && mise run setup`.
+# One toolchain file for the whole repo. `mise trust && mise install && mise run setup`.
+# Python comes from uv (.python-version), not mise.
 
 [tools]
 node = "24"
 pnpm = "12"
 uv = "0.12"
 lefthook = "2"
+"github:SocketDev/sfw-free" = { version = "1.15.2", bin = "sfw" }
+"github:Disservin/fastchess" = "v1.8.2-alpha"
 
 [tasks.setup]
-description = "Install Python and frontend dependencies, then git hooks"
+description = "Install Python and web dependencies, then git hooks"
 run = [
-  "uv sync --all-groups",
-  "pnpm --dir frontend install --frozen-lockfile",
+  "uv sync --all-packages --all-groups",
+  "pnpm --dir apps/web install --frozen-lockfile",
   "lefthook install",
 ]
 
-[tasks.dev]
-description = "Agent Server (Studio) on :2024 and Vite dev server on :5173"
-run = "uv run langgraph dev --no-browser & pnpm --dir frontend exec vp dev; kill %1"
+[tasks."dev:web"]
+description = "Agent Server (Studio) on :2024 and the web UI on :5173/ui/ ($LANGGRAPH_PORT, $WEB_PORT)"
+alias = "dev"
+# langgraph dev silently moves to a random port when its port is taken, while the UI would keep
+# calling the old one: check first, and point the UI at the same port. Vite prints its URL first
+# and langgraph dev's startup logs bury it, so the URLs are printed again once both are up.
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+port="${LANGGRAPH_PORT:-2024}"
+web_port="${WEB_PORT:-5173}"
+for p in "$port" "$web_port"; do
+  # Both loopbacks: Vite listens on ::1 only.
+  if (exec 3<>"/dev/tcp/127.0.0.1/$p") 2>/dev/null || (exec 3<>"/dev/tcp/::1/$p") 2>/dev/null; then
+    echo "error: port $p is already in use; stop that server or set LANGGRAPH_PORT / WEB_PORT" >&2
+    exit 1
+  fi
+done
+uv run --all-packages langgraph dev --no-browser --port "$port" &
+server=$!
+(
+  until curl -sf "http://127.0.0.1:$port/ok" >/dev/null \
+    && curl -sf "http://localhost:$web_port/ui/" >/dev/null; do
+    sleep 0.5
+  done
+  printf '\n  ♟  Web UI:  http://localhost:%s/ui/\n' "$web_port"
+  printf '     API:     http://127.0.0.1:%s\n' "$port"
+  printf '     Studio:  https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:%s\n\n' "$port"
+) &
+announcer=$!
+trap 'kill "$announcer" "$server" 2>/dev/null || true' EXIT
+VITE_API_URL="http://localhost:$port" pnpm --dir apps/web exec vp dev --port "$web_port" --strictPort
+'''
+
+[tasks."dev:tui"]
+description = "Play the agent in the terminal (Textual); pass lcchess play options after --"
+run = "uv run --all-packages --env-file .env lcchess play"
+
+[tasks."dev:uci"]
+description = "Run the agent as a UCI engine on stdin/stdout; pass lcchess uci options after --"
+run = "uv run --all-packages --env-file .env lcchess uci"
 
 [tasks.check]
-description = "Lint, format check, and type check both halves"
+description = "Format check, lint and type check, Python and web"
 run = [
-  "uv run ruff format --check src tests",
-  "uv run ruff check src tests",
-  "uv run ty check",
-  "pnpm --dir frontend exec vp check",
+  "uv run --all-packages ruff format --check libs apps",
+  "uv run --all-packages ruff check libs apps",
+  "uv run --all-packages ty check",
+  "pnpm --dir apps/web exec vp check",
 ]
 
 [tasks.test]
-description = "Python and frontend tests with 100% coverage gates"
-run = ["uv run pytest -q", "pnpm --dir frontend exec vp test --run --coverage"]
+description = "Python and web tests with 100% coverage gates"
+run = ["uv run --all-packages pytest -q", "pnpm --dir apps/web exec vp test --run --coverage"]
+
+[tasks."test:live"]
+description = "The live tests against the real LLM Gateway (costs a few cents)"
+run = "uv run --all-packages --env-file .env pytest -m live --no-cov -q"
 
 [tasks.build]
-description = "Build the UI into the Python package so the image can serve it under /ui"
-run = "pnpm --dir frontend exec vp build"
+description = "Build the web UI into the server package so the image can serve it under /ui"
+run = "pnpm --dir apps/web exec vp build"
 
 [tasks.deploy]
 description = "Build the UI, then build and push the image to LangSmith Deployments"
-run = ["mise run build", "uv run langgraph deploy --no-remote --name jev-chess-app --deployment-type dev"]
+run = [
+  "mise run build",
+  "uv run --all-packages langgraph deploy --no-remote --name jev-chess-app --deployment-type dev",
+]
+
+[tasks."test:uci"]
+description = "Smoke match under fastchess: SemIf-only lcchess against itself with another seed"
+# Runs inside .uci-match/ (gitignored): fastchess writes its config.json to the working directory.
+run = [
+  '''mkdir -p .uci-match && cd .uci-match && fastchess \
+    -engine name=semif-seed1 cmd=uv args="run --all-packages --env-file ../.env lcchess uci --policy systemone --seed 1" \
+    -engine name=semif-seed2 cmd=uv args="run --all-packages --env-file ../.env lcchess uci --policy systemone --seed 2" \
+    -each proto=uci st=3 timemargin=2000 \
+    -rounds 1 -games 2 -maxmoves 60 -autosaveinterval 0 \
+    -pgnout file=games.pgn append=false \
+    -log file=fastchess.log level=warn append=false engine=true''',
+  # Every game ends with a result, by the rules or the move cap: no forfeits.
+  '''cd .uci-match && test "$(grep -cE '^\[Result "(1-0|0-1|1/2-1/2)"\]' games.pgn)" = 2 \
+    && ! grep -E '^\[Termination' games.pgn | grep -vE '"(normal|adjudication)"' \
+    && echo "test:uci: 2 games finished, no forfeits"''',
+]

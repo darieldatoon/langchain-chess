@@ -1,28 +1,15 @@
-[project]
-name = "jev-chess"
-version = "0.1.0"
-description = "System 1 vs System 2 chess: Jev, reasoning LLMs, and a confidence-gated hybrid, graded by Stockfish"
-readme = "README.md"
-requires-python = ">=3.13"
-license = "MIT"
-authors = [{ name = "Dariel Datoon" }]
-dependencies = [
-    "chess>=1.11",
-    "langgraph>=1.2",
-    "langchain-core>=1.6",
-    "langchain-openai>=1.6",
-    "langchain-typesafe>=0.0.1a3",
-    "langsmith>=0.13",
-    "pydantic>=2.13",
-    "typer>=0.27",
-    "rich>=15",
-    "pydantic-settings>=2.10",
-    "langchain>=1.4",
-    "fastapi>=0.141.1",
-]
+# Virtual workspace root: no package of its own. Members are listed explicitly because a glob
+# over apps/ would include apps/web, which has no pyproject.toml.
+[tool.uv.workspace]
+members = ["libs/chess", "libs/systemone", "libs/cli", "apps/server"]
 
-[project.scripts]
-jev-chess = "jev_chess.cli:app"
+# `workspace = true` for every member is what lets `uvx --from git+…#subdirectory=libs/cli`
+# resolve the unpublished siblings from the same commit.
+[tool.uv.sources]
+langchain-chess = { workspace = true }
+langchain-chess-systemone = { workspace = true }
+langchain-chess-cli = { workspace = true }
+langchain-chess-server = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -31,25 +18,26 @@ dev = [
     "pytest>=9.1",
     "pytest-asyncio>=1.4",
     "pytest-cov>=7",
-    "langgraph-cli[inmem]>=0.4.31",
+    "langgraph-cli[inmem]==0.4.31",
     "httpx>=0.28.1",
+    "pytest-textual-snapshot>=1.0.0",
 ]
 
-[build-system]
-requires = ["uv_build>=0.12"]
-build-backend = "uv_build"
+[tool.uv]
+# langchain-typesafe is still an alpha release
+prerelease = "if-necessary"
 
 [tool.ruff]
 line-length = 100
 target-version = "py313"
-src = ["src", "tests"]
+src = ["libs/chess", "libs/systemone", "libs/cli", "apps/server"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N", "SIM", "RUF", "PT", "TCH", "ANN"]
 ignore = ["ANN401"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["ANN"]
+"**/tests/**" = ["ANN", "TC"]
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -58,25 +46,35 @@ docstring-code-format = true
 python-version = "3.13"
 
 [tool.ty.src]
-include = ["src", "tests"]
+include = ["libs", "apps/server"]
+
+# Tests build state and requests from loose dict literals; the packages stay strict.
+[[tool.ty.overrides]]
+include = ["**/tests/**"]
+rules = { invalid-argument-type = "ignore", invalid-assignment = "ignore", not-subscriptable = "ignore", unresolved-attribute = "ignore", invalid-key = "ignore" }
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["libs/chess/tests", "libs/systemone/tests", "libs/cli/tests", "apps/server/tests"]
 asyncio_mode = "auto"
 markers = [
-    "live: hits real APIs or engines (deselect with -m 'not live')",
+    "live: hits the real LLM Gateway (run with -m live --no-cov)",
 ]
-addopts = "-m 'not live' --cov=jev_chess --cov-report=term-missing --cov-fail-under=100"
+addopts = [
+    "-m", "not live",
+    "--import-mode=importlib",
+    "--cov=langchain_chess",
+    "--cov=langchain_chess_systemone",
+    "--cov=langchain_chess_cli",
+    "--cov=langchain_chess_server",
+    "--cov-report=term-missing",
+    "--cov-fail-under=100",
+]
 
 [tool.coverage.run]
-source = ["jev_chess"]
 branch = true
 
 [tool.coverage.report]
 fail_under = 100
 show_missing = true
+skip_covered = true
 exclude_also = ["if TYPE_CHECKING:", "@overload"]
-
-[tool.uv]
-# langchain-typesafe is still an alpha release
-prerelease = "if-necessary"

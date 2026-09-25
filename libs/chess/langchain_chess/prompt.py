@@ -1,0 +1,127 @@
+"""What the model reads: the system prompt, the position block, deltas and the model view. Pure.
+
+The wording is ported from the jev-chess LLM policy, where it is known to work. Change it only
+deliberately, with rendered-prompt tests.
+"""
+
+import copy
+from collections.abc import Sequence
+from typing import Literal
+
+import chess
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage
+
+from langchain_chess.position import ascii_board, movetext, san_list
+from langchain_chess.rules import legal_ucis, side
+from langchain_chess.state import TurnRecord
+
+type Memory = Literal["none", "full", "summarize"]
+
+SYSTEM_PROMPT = (
+    "You are a strong chess player. You will be shown a game in progress and asked for your "
+    "next move. Think as deeply as you need, then end your reply with exactly one line of the "
+    "form `MOVE: <move>` where <move> is in standard algebraic notation (for example "
+    "`MOVE: Nf3`, `MOVE: exd5`, `MOVE: O-O`, `MOVE: e8=Q`). Play only legal moves."
+)
+
+_REASONING_BLOCKS = frozenset({"reasoning", "thinking", "redacted_thinking"})
+
+
+def render_position(
+    start_fen: str,
+    sans: Sequence[str],
+    board: chess.Board,
+    allowed: Sequence[str],
+    candidates: Sequence[str] | None,
+    *,
+    show_legal_moves: bool,
+) -> str:
+    """The trailing human message appended to every move request. Never stored."""
+    lines = [
+        f"Moves so far: {movetext(start_fen, sans) or '(none, this is the first move)'}",
+        f"FEN: {board.fen()}",
+        "Board (ranks 8 to 1, uppercase is White):",
+        f"```\n{ascii_board(board)}\n```",
+        f"{side(board.turn).capitalize()} to move.",
+    ]
+    if board.is_check():
+        lines.append("You are in check.")
+    # Effective candidates are computed here, so a later hard restriction never leaves stale ones.
+    effective = [uci for uci in candidates or () if uci in allowed]
+    if effective:
+        lines.append(
+            "Suggested candidates: "
+            + ", ".join(san_list(board, effective))
+            + ". These are suggested candidates; you may play any allowed move."
+        )
+    if set(allowed) != set(legal_ucis(board)):
+        lines.append("Only these moves are permitted: " + ", ".join(san_list(board, allowed)) + ".")
+    elif show_legal_moves:
+        lines.append("Legal moves: " + ", ".join(san_list(board, allowed)))
+    lines.append("Reply with your analysis, then the final line `MOVE: <move>`.")
+    return "\n".join(lines)
+
+
+def delta_text(
+    start_fen: str, sans: Sequence[str], first: int, to_move: chess.Color, *, had_moves: bool
+) -> str:
+    """The human message that opens a position-command turn."""
+    if not had_moves:
+        return f"New game. You are {side(to_move).capitalize()}."
+    if first < len(sans):
+        return movetext(start_fen, sans, first=first)
+    return f"Your move as {side(to_move).capitalize()}."
+
+
+def feedback_text(board: chess.Board, allowed: Sequence[str], reason: str, *, empty: bool) -> str:
+    why = (
+        "your reply had no text, so the output budget was probably spent on reasoning"
+        if empty
+        else f"that move was rejected: {reason}"
+    )
+    return (
+        f"Try again, {why}. Choose from: {', '.join(san_list(board, allowed))}. "
+        "Keep the reply short and end with `MOVE: <move>`."
+    )
+
+
+def _without_reasoning(message: AnyMessage) -> AnyMessage:
+    if not isinstance(message, AIMessage) or isinstance(message.content, str):
+        return message
+    kept = [
+        block
+        for block in message.content
+        if not (isinstance(block, dict) and block.get("type") in _REASONING_BLOCKS)
+    ]
+    return message.model_copy(update={"content": kept})
+
+
+def model_view(
+    messages: Sequence[AnyMessage], turns: Sequence[TurnRecord], memory: Memory
+) -> list[AnyMessage]:
+    """Stored messages to what the model sees, before the trailing position message.
+
+    Only the current turn's latest failed attempt is shown, with all of its feedback still in
+    state. Earlier turns' reasoning blocks are stripped (stored messages keep them for tracing).
+    Returns deep copies, so wrappers that mutate messages can't reach state.
+    """
+    current = turns[-1]
+    rejected = current["rejected_message_ids"]
+    hidden = set(rejected[:-1])
+    if memory == "none":
+        opened = current["opened_message_id"]
+        start = next((i for i, m in enumerate(messages) if m.id == opened), len(messages))
+        window = list(messages[start:])
+    else:
+        hidden |= {
+            mid
+            for turn in turns[:-1]
+            for mid in (*turn["rejected_message_ids"], *turn["feedback_message_ids"])
+        }
+        window = list(messages)
+    keep_reasoning = set(rejected[-1:])
+    return [
+        copy.deepcopy(m if m.id in keep_reasoning else _without_reasoning(m))
+        for m in window
+        if m.id not in hidden and isinstance(m, HumanMessage | AIMessage)
+    ]
