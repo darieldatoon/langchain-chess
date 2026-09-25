@@ -32,3 +32,6 @@ htmlcov/
 
 # fastchess match output (mise run uci-match)
 /.uci-match/
+
+# pytest-textual-snapshot failure report
+/snapshot_report.html

@@ -42,7 +42,7 @@ def test_the_gateway_chat_model(env):
     settings = GatewaySettings()
     model = chat_model(ChessContext(reasoning_effort="low"), settings)
     assert isinstance(model, ChatOpenAI)
-    assert model.model_name == "anthropic/claude-opus-5"
+    assert model.model_name == "anthropic/claude-opus-5-5"
     assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
     assert model.max_tokens == 32000
     assert model.reasoning_effort == "low"

@@ -147,6 +147,6 @@ def test_the_recorder_prices_llm_calls_on_the_server(client: SyncLangGraphClient
     assert ply["source"] == "llm"
     llm = [c for c in out["turns"][0]["calls"] if c["kind"] == "llm"]
     assert llm
-    assert llm[-1]["model"] == "anthropic:claude-opus-5"
+    assert llm[-1]["model"] == "anthropic:claude-opus-5-5"
     assert llm[-1]["cost_usd"] is not None
     assert llm[-1]["cost_usd"] > 0

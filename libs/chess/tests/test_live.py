@@ -18,7 +18,7 @@ GATEWAY = "https://gateway.smith.langchain.com/v1"
 
 def opus():
     return init_chat_model(
-        "langsmith:anthropic/claude-opus-5",
+        "langsmith:anthropic/claude-opus-5-5",
         base_url=GATEWAY,
         api_key=os.environ["LANGSMITH_GATEWAY_API_KEY"],
         reasoning_effort="low",
@@ -42,7 +42,7 @@ async def test_a_few_opus_moves_are_played_and_priced():
     llm_turns = [t for t in out["turns"] if t["status"] == "committed"]
     for turn in llm_turns:
         call = turn["calls"][-1]
-        assert call["model"] == "anthropic:claude-opus-5"
+        assert call["model"] == "anthropic:claude-opus-5-5"
         assert call["input_tokens"] > 0
         assert call["cost_usd"] is not None
         assert call["cost_usd"] > 0

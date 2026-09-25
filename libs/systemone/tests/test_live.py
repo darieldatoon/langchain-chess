@@ -42,7 +42,7 @@ async def test_jev_ranks_every_move_in_one_request_and_is_priced():
 
 async def test_a_hybrid_move():
     opus = init_chat_model(
-        "langsmith:anthropic/claude-opus-5",
+        "langsmith:anthropic/claude-opus-5-5",
         base_url="https://gateway.smith.langchain.com/v1",
         api_key=os.environ["LANGSMITH_GATEWAY_API_KEY"],
         reasoning_effort="low",

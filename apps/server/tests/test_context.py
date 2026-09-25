@@ -24,7 +24,7 @@ def test_defaults():
     context = resolve_context(ChessContext)
     assert (context.policy, context.model, context.systemone_model) == (
         "hybrid",
-        "claude-opus-5",
+        "claude-opus-5-5",
         "semif-qwen3.5-4b",
     )
     assert context.draw_claims == "auto"

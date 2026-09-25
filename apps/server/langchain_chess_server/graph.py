@@ -23,7 +23,10 @@ MAX_TOKENS = 32000
 """The output cap covers reasoning too; 8000 ran out mid-game at medium effort."""
 
 # The gateway's ChatOpenAI has no profile, and a fractional summarization trigger needs one.
-PROFILES: dict[str, dict[str, Any]] = {"claude-opus-5": {"max_input_tokens": 1_000_000}}
+PROFILES: dict[str, dict[str, Any]] = {
+    "claude-opus-5": {"max_input_tokens": 1_000_000},
+    "claude-opus-5-5": {"max_input_tokens": 1_000_000},
+}
 
 
 def chat_model(context: ChessContext, settings: GatewaySettings) -> BaseChatModel:

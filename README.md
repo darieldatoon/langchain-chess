@@ -26,7 +26,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langchain_chess import create_chess_agent
 
 agent = create_chess_agent(
-    init_chat_model("langsmith:anthropic/claude-opus-5", reasoning_effort="low"),
+    init_chat_model("langsmith:anthropic/claude-opus-5-5", reasoning_effort="low"),
     checkpointer=InMemorySaver(),
 )
 config = {"configurable": {"thread_id": "game-1"}}

@@ -39,10 +39,10 @@ class ChessContext:
         str,
         _knob(
             "init_chat_model spec. Bare names route through the LLM Gateway "
-            "(`claude-opus-5`, `gpt-5.6-sol`).",
+            "(`claude-opus-5-5`, `gpt-5.6-sol`).",
             "model",
         ),
-    ] = "claude-opus-5"
+    ] = "claude-opus-5-5"
     reasoning_effort: Annotated[
         ReasoningEffort, _knob("Reasoning effort passed to the model.", "model")
     ] = "medium"

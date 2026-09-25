@@ -25,7 +25,7 @@ def test_the_cli_chat_model_uses_the_environment(monkeypatch):
     monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
     monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "lsv2_test")
     model = default_model(AgentOptions(reasoning_effort="low"))
-    assert model.model_name == "anthropic/claude-opus-5"
+    assert model.model_name == "anthropic/claude-opus-5-5"
     assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
     assert model.profile == {"max_input_tokens": 1_000_000}
     assert chat_model("gpt-5.6-sol", "low").profile is None

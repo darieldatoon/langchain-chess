@@ -62,7 +62,7 @@ TriggerOption = Annotated[
 @app.command()
 def uci(
     policy: PolicyOption = "hybrid",
-    model: ModelOption = "claude-opus-5",
+    model: ModelOption = "claude-opus-5-5",
     reasoning_effort: EffortOption = "medium",
     systemone_model: SystemOneOption = "semif-qwen3.5-4b",
     threshold: ThresholdOption = 0.9,
@@ -119,7 +119,7 @@ SideOption = Annotated[Literal["white", "black"], typer.Option(help="The side yo
 def play(
     side: SideOption = "white",
     policy: PolicyOption = "hybrid",
-    model: ModelOption = "claude-opus-5",
+    model: ModelOption = "claude-opus-5-5",
     reasoning_effort: EffortOption = "medium",
     systemone_model: SystemOneOption = "semif-qwen3.5-4b",
     threshold: ThresholdOption = 0.9,

@@ -25,7 +25,7 @@ class AgentOptions:
     """Mirrors the server's context knobs, with the same defaults."""
 
     policy: Policy = "hybrid"
-    model: str = "claude-opus-5"
+    model: str = "claude-opus-5-5"
     reasoning_effort: ReasoningEffort = "medium"
     show_legal_moves: bool = True
     memory: Memory = "none"
