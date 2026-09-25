@@ -3,6 +3,7 @@
 from functools import lru_cache
 from typing import Any
 
+from langchain.agents.middleware import SummarizationMiddleware
 from langchain.chat_models import init_chat_model
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.runnables import RunnableConfig
@@ -12,6 +13,7 @@ from langgraph.types import Checkpointer
 from langgraph_sdk.runtime import ServerRuntime
 
 from langchain_chess import create_chess_agent, resolve_model_spec
+from langchain_chess.middleware.summarization import CHESS_SUMMARY_PROMPT, DEFAULT_KEEP
 from langchain_chess.models import GATEWAY_PREFIX
 from langchain_chess_server.context import ChessContext, resolve_context
 from langchain_chess_server.settings import GatewaySettings
@@ -41,6 +43,20 @@ def chat_model(context: ChessContext, settings: GatewaySettings) -> BaseChatMode
 @lru_cache(maxsize=8)
 def _classifier(model: str, api_key: str, base_url: str) -> TypeSafeClassifier:
     return TypeSafeClassifier(model=model, api_key=api_key, base_url=base_url, timeout=15.0)
+
+
+def summarization(
+    model: BaseChatModel | None, trigger_tokens: int | None
+) -> SummarizationMiddleware | None:
+    """An absolute trigger for models without a profile; None keeps the fractional default."""
+    if model is None or trigger_tokens is None:
+        return None
+    return SummarizationMiddleware(
+        model,
+        trigger=("tokens", trigger_tokens),
+        keep=DEFAULT_KEEP,
+        summary_prompt=CHESS_SUMMARY_PROMPT,
+    )
 
 
 def systemone(context: ChessContext, settings: GatewaySettings) -> SystemOneMiddleware:
@@ -78,11 +94,13 @@ def build_agent(
 ) -> CompiledStateGraph:
     model = None if context.policy == "systemone" else chat_model(context, settings)
     middleware = [] if context.policy == "llm" else [systemone(context, settings)]
+    memory = "none" if model is None else context.memory
     return create_chess_agent(
         model,
         middleware=middleware,
         show_legal_moves=context.show_legal_moves,
-        memory="none",
+        memory=memory,
+        summarization=summarization(model, context.summary_trigger_tokens),
         draw_claims=context.draw_claims,
         seed=context.seed,
         context_schema=ChessContext,

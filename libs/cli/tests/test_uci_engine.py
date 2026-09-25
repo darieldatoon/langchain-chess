@@ -288,7 +288,9 @@ async def test_setoption_rebuilds_when_idle_and_rejects_bad_values():
         "setoption name Nope value 1",
         "setoption name ReasoningEffort value extreme",
         "setoption name Model",
+        "setoption name Memory value full",
     )
+    assert h.engine.options.memory == "full"
     assert h.engine.options.policy == "llm"
     assert h.engine.options.threshold == 0.5
     assert h.engine.options.model == ""
@@ -299,7 +301,7 @@ async def test_setoption_rebuilds_when_idle_and_rejects_bad_values():
         "unknown option: Nope",
         "invalid value for ReasoningEffort: expected one of low, medium, high",
     ]
-    assert len(factory.builds) == 4
+    assert len(factory.builds) == 5
 
 
 async def test_stop_when_idle_unknown_commands_and_blank_lines():

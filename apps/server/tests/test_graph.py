@@ -73,3 +73,18 @@ def test_the_classifier_is_cached_per_model(env):
     b = graph_module._classifier("semif-qwen3.5-4b", "k", "https://gateway.smith.langchain.com")
     assert a is b
     assert a.base_url == "https://gateway.smith.langchain.com"
+
+
+def test_summarize_through_the_real_model_factory(fake_systemone):
+    from langchain_chess import ChessContractError
+
+    settings = GatewaySettings()
+    agent = build_agent(ChessContext(memory="summarize"), settings)
+    assert "SummarizationMiddleware.before_model" in nodes(agent)
+    with pytest.raises(ChessContractError, match="summary_trigger_tokens"):
+        build_agent(ChessContext(memory="summarize", model="gpt-5.6-sol"), settings)
+    trigger = ChessContext(memory="summarize", model="gpt-5.6-sol", summary_trigger_tokens=50_000)
+    assert "SummarizationMiddleware.before_model" in nodes(build_agent(trigger, settings))
+    alone = build_agent(ChessContext(policy="systemone", memory="summarize"), settings)
+    assert "SummarizationMiddleware.before_model" not in nodes(alone)
+    assert build_agent(ChessContext(memory="full"), settings) is not None

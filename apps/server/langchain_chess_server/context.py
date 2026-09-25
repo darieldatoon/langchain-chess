@@ -13,7 +13,7 @@ from pydantic import Field, TypeAdapter
 
 type Policy = Literal["llm", "systemone", "hybrid"]
 type ReasoningEffort = Literal["low", "medium", "high"]
-type Memory = Literal["none"]
+type Memory = Literal["none", "full", "summarize"]
 
 
 def _knob(description: str, *nodes: str) -> Any:
@@ -49,7 +49,11 @@ class ChessContext:
     show_legal_moves: Annotated[bool, _knob("List the legal moves in the prompt.", "model")] = True
     memory: Annotated[
         Memory,
-        _knob("How much of the game's conversation the model sees each turn.", "model"),
+        _knob(
+            "What the model sees of earlier turns: none, the full conversation, or a running "
+            "summary. Ignored for `systemone`.",
+            "model",
+        ),
     ] = "none"
     systemone_model: Annotated[
         str,

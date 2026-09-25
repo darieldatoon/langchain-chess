@@ -4,7 +4,7 @@
 export type Side = "white" | "black";
 export type PolicyKind = "llm" | "systemone" | "hybrid";
 export type ReasoningEffort = "low" | "medium" | "high";
-export type Memory = "none";
+export type Memory = "none" | "full" | "summarize";
 export type GateSignal = "margin" | "confidence";
 export type DescriptionStyle = "rich" | "terse";
 export type DrawClaims = "auto" | "never";

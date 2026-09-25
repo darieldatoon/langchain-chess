@@ -42,6 +42,12 @@ const EFFORTS: SelectOption<ReasoningEffort>[] = [
 ];
 const MEMORIES: SelectOption<Memory>[] = [
   { value: "none", label: "None", description: "Each turn sees only the current position" },
+  { value: "full", label: "Full", description: "The whole game's conversation, every turn" },
+  {
+    value: "summarize",
+    label: "Summarize",
+    description: "The conversation, summarized as it grows",
+  },
 ];
 const DRAW_CLAIMS: SelectOption<DrawClaims>[] = [
   { value: "auto", label: "Auto", description: "Threefold and fifty-move draws end the game" },
@@ -124,14 +130,18 @@ export function SettingsPanel({ open, settings, onSave, onClose }: Props) {
               onChange={(v) => set("draw_claims", v)}
             />
           </Field>
-          <Field id="memory" label="Memory" hint="Only “None” exists for now.">
+          <Field
+            id="memory"
+            label="Memory"
+            hint={usesModel ? "What the model sees of earlier turns." : "System 1 has no memory."}
+          >
             <Select
               aria-label="Memory"
               size="md"
               value={ctx.memory}
               options={MEMORIES}
               hideSearch
-              disabled
+              disabled={!usesModel}
               onChange={(v) => set("memory", v)}
             />
           </Field>

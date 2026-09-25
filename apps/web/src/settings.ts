@@ -44,7 +44,7 @@ export const CONTEXT_CHECKS: { [K in keyof ChessContext]: Check<ChessContext[K]>
   model: isName,
   reasoning_effort: oneOf("low", "medium", "high"),
   show_legal_moves: isBool,
-  memory: oneOf("none"),
+  memory: oneOf("none", "full", "summarize"),
   systemone_model: oneOf("semif-qwen3.5-4b", "typesafe/jev-latest"),
   style: oneOf("rich", "terse"),
   with_eval: isBool,

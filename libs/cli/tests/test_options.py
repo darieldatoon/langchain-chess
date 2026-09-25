@@ -29,3 +29,24 @@ def test_the_cli_chat_model_uses_the_environment(monkeypatch):
     assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
     assert model.profile == {"max_input_tokens": 1_000_000}
     assert chat_model("gpt-5.6-sol", "low").profile is None
+
+
+def test_summarize_through_the_cli_model_factory(monkeypatch):
+    import pytest
+
+    from langchain_chess import ChessContractError
+
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "lsv2_test")
+    saver = InMemorySaver()
+    agent = build_agent(AgentOptions(memory="summarize"), draw_claims="auto", checkpointer=saver)
+    assert "SummarizationMiddleware.before_model" in nodes(agent)
+    profileless = AgentOptions(memory="summarize", model="gpt-5.6-sol")
+    with pytest.raises(ChessContractError, match="summary_trigger_tokens"):
+        build_agent(profileless, draw_claims="auto", checkpointer=saver)
+    trigger = AgentOptions(memory="summarize", model="gpt-5.6-sol", summary_trigger_tokens=9000)
+    agent = build_agent(trigger, draw_claims="auto", checkpointer=saver)
+    assert "SummarizationMiddleware.before_model" in nodes(agent)
+    alone = AgentOptions(policy="systemone", memory="summarize")
+    agent = build_agent(alone, draw_claims="auto", checkpointer=saver)
+    assert "SummarizationMiddleware.before_model" not in nodes(agent)

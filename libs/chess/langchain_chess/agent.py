@@ -15,6 +15,7 @@ from langchain_chess.contract import guard
 from langchain_chess.errors import ChessContractError
 from langchain_chess.middleware.core import ChessCore
 from langchain_chess.middleware.forced_move import ForcedMoveMiddleware
+from langchain_chess.middleware.summarization import ChessSummarization
 from langchain_chess.prompt import SYSTEM_PROMPT, Memory
 from langchain_chess.recorder import CallRecorder
 from langchain_chess.rules import DrawClaims
@@ -41,10 +42,18 @@ class NoModel(BaseChatModel):
 def _summarizer(
     model: str | BaseChatModel | None,
     summarization: SummarizationMiddleware | None,
+    *,
+    recorder: CallRecorder,
     max_retries: int,
-) -> AgentMiddleware[Any, Any, Any]:
-    msg = "memory='summarize' is not available yet"
-    raise NotImplementedError(msg)
+) -> ChessSummarization:
+    if model is None:
+        msg = "memory='summarize' needs a model"
+        raise ChessContractError(msg)
+    if summarization is not None:
+        return ChessSummarization.from_middleware(
+            summarization, recorder=recorder, max_retries=max_retries
+        )
+    return ChessSummarization(model, recorder=recorder, max_retries=max_retries)
 
 
 def create_chess_agent(
@@ -93,7 +102,7 @@ def create_chess_agent(
     stack.extend(guarded)
     if memory == "summarize":
         # Last, so it runs only right before an actual LLM call.
-        stack.append(_summarizer(model, summarization, max_retries))
+        stack.append(_summarizer(model, summarization, recorder=recorder, max_retries=max_retries))
 
     graph = create_agent(
         model or NoModel(),

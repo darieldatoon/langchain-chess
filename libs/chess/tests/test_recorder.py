@@ -44,11 +44,6 @@ def test_forced_move_can_be_turned_off():
     assert out["plies"][0]["source"] == "llm"
 
 
-def test_summarize_is_not_available_yet():
-    with pytest.raises(NotImplementedError):
-        create_chess_agent(ScriptedModel(script=[]), memory="summarize")
-
-
 def test_scripted_model_runs_out():
     with pytest.raises(AssertionError, match="script exhausted"):
         ScriptedModel(script=[]).invoke("hi")

@@ -90,10 +90,12 @@ describe("SettingsPanel", () => {
     expect(onSave.mock.calls[0][0].context.policy).toBe("hybrid");
   });
 
-  it("shows only the sections the chosen policy uses, with memory always disabled", () => {
-    open();
-    expect(screen.getByLabelText("Memory")).toBeDisabled();
-    change("Memory", "none");
+  it("shows only the sections the chosen policy uses; System 1 alone has no memory", () => {
+    const { onSave } = open();
+    expect(screen.getByLabelText("Memory")).not.toBeDisabled();
+    change("Memory", "summarize");
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(onSave.mock.calls[0][0].context.memory).toBe("summarize");
     change("Opponent", "llm");
     expect(screen.queryByLabelText("Threshold")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Move Descriptions")).not.toBeInTheDocument();

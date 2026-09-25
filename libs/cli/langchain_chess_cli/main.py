@@ -50,6 +50,13 @@ SeedOption = Annotated[int, typer.Option(help="Seeds System 1's tournament and f
 LegalOption = Annotated[bool, typer.Option(help="List the legal moves in the prompt.")]
 EvalOption = Annotated[bool, typer.Option(help="Ask System 1 to score the position.")]
 NoulsOption = Annotated[bool, typer.Option(help="Ask System 1 about calculation and tactics.")]
+MemoryOption = Annotated[
+    Literal["none", "full", "summarize"],
+    typer.Option(help="What the model sees of earlier turns."),
+]
+TriggerOption = Annotated[
+    int | None, typer.Option(min=1, help="Summarize at this many tokens (profileless models).")
+]
 
 
 @app.command()
@@ -68,6 +75,8 @@ def uci(
     show_legal_moves: LegalOption = True,
     with_eval: EvalOption = False,
     with_nouls: NoulsOption = False,
+    memory: MemoryOption = "none",
+    summary_trigger_tokens: TriggerOption = None,
 ) -> None:
     """Run as a UCI engine on stdin/stdout. Only protocol output goes to stdout."""
     from langchain_chess_cli.uci.engine import Engine, run
@@ -88,6 +97,8 @@ def uci(
         show_legal_moves=show_legal_moves,
         with_eval=with_eval,
         with_nouls=with_nouls,
+        memory=memory,
+        summary_trigger_tokens=summary_trigger_tokens,
     )
 
     def factory(agent_options: AgentOptions, checkpointer: Checkpointer) -> CompiledStateGraph:
@@ -121,6 +132,8 @@ def play(
     show_legal_moves: LegalOption = True,
     with_eval: EvalOption = False,
     with_nouls: NoulsOption = False,
+    memory: MemoryOption = "none",
+    summary_trigger_tokens: TriggerOption = None,
 ) -> None:
     """Play a game in the terminal (Textual)."""
     from langgraph.checkpoint.memory import InMemorySaver
@@ -142,6 +155,8 @@ def play(
         show_legal_moves=show_legal_moves,
         with_eval=with_eval,
         with_nouls=with_nouls,
+        memory=memory,
+        summary_trigger_tokens=summary_trigger_tokens,
     )
 
     def factory() -> CompiledStateGraph:

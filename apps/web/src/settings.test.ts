@@ -89,7 +89,7 @@ describe("sanitizeContext", () => {
       model: "  ",
       reasoning_effort: "max",
       show_legal_moves: "yes",
-      memory: "full",
+      memory: "forever",
       systemone_model: "jev-latest",
       style: 1,
       with_eval: 1,

@@ -4,18 +4,20 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal
 
+from langchain.agents.middleware import SummarizationMiddleware
 from langchain_core.language_models.chat_models import BaseChatModel
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Checkpointer
 
 from langchain_chess import create_chess_agent
+from langchain_chess.middleware.summarization import CHESS_SUMMARY_PROMPT, DEFAULT_KEEP
 from langchain_chess.rules import DrawClaims
 from langchain_chess_cli.models import chat_model
 from langchain_chess_systemone import SystemOneMiddleware
 
 type Policy = Literal["llm", "systemone", "hybrid"]
 type ReasoningEffort = Literal["low", "medium", "high"]
-type Memory = Literal["none"]
+type Memory = Literal["none", "full", "summarize"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,11 +74,21 @@ def build_agent(
                 has_model=not alone,
             )
         )
+    model = None if alone else model_factory(options)
+    summarization = None
+    if model is not None and options.summary_trigger_tokens is not None:
+        summarization = SummarizationMiddleware(
+            model,
+            trigger=("tokens", options.summary_trigger_tokens),
+            keep=DEFAULT_KEEP,
+            summary_prompt=CHESS_SUMMARY_PROMPT,
+        )
     return create_chess_agent(
-        None if alone else model_factory(options),
+        model,
         middleware=middleware,
         show_legal_moves=options.show_legal_moves,
-        memory="none",
+        memory="none" if model is None else options.memory,
+        summarization=summarization,
         draw_claims=draw_claims,
         seed=options.seed,
         checkpointer=checkpointer,
