@@ -4,7 +4,8 @@ import { fenOrStart, replay } from "./chess";
 import { commandKey, createCommandIds } from "./commands";
 import type { MoveEntry } from "./format";
 import { isPending, lastPolicyPly, liveAnalysis, turnOf } from "./selectors";
-import { apiUrl, configurableOf, saveSide } from "./settings";
+import { apiUrl, configurableOf } from "./settings";
+import { saveGame } from "./storage";
 import type { ChessContext, ChessValues, Outcome, Ply, Side, TurnRecord } from "./types";
 
 export const CHESS_GRAPH = "chess";
@@ -56,7 +57,7 @@ export interface Game {
 
 const NO_MOVES: string[] = [];
 
-/** One `useStream` on the `chess` graph; one thread is one game. */
+/** One `useStream` on the `chess` graph; one thread is one game, played with one context. */
 export function useGame(apiKey: string, context: ChessContext, humanSide: Side): Game {
   const [threadId, setThreadId] = useState<string | null>(() => threadFromUrl());
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
@@ -78,7 +79,7 @@ export function useGame(apiKey: string, context: ChessContext, humanSide: Side):
     onThreadId: (id) => {
       // A replaced game's stream can still report its thread late; it must not rebind the page.
       if (!mounted.current) return;
-      saveSide(id, humanSide);
+      saveGame(id, { side: humanSide, context });
       setThreadId(id);
       writeThreadToUrl(id);
     },

@@ -1,20 +1,8 @@
-import { DEFAULT_CONTEXT, type ChessContext, type Side } from "./types";
-
-export interface Settings {
-  apiKey: string;
-  context: ChessContext;
-}
-
-const KEY = "langchain-chess:settings";
-/** Read only while KEY is absent: the jev-chess UI stored its settings here. */
-export const LEGACY_KEY = "jev-chess:settings";
-const SIDE_PREFIX = "langchain-chess:side:";
-
-export const DEFAULT_SETTINGS: Settings = { apiKey: "", context: DEFAULT_CONTEXT };
+import { DEFAULT_CONTEXT, type ChessContext } from "./types";
 
 type Check<T> = (value: unknown) => value is T;
 
-const oneOf =
+export const oneOf =
   <T extends string>(...values: readonly T[]): Check<T> =>
   (value): value is T =>
     typeof value === "string" && (values as readonly string[]).includes(value);
@@ -75,41 +63,8 @@ export function sanitizeContext(stored: unknown): ChessContext {
   );
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-export function loadSettings(storage: Storage = window.localStorage): Settings {
-  const raw = storage.getItem(KEY) ?? storage.getItem(LEGACY_KEY);
-  if (!raw) return DEFAULT_SETTINGS;
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    const record = isRecord(parsed) ? parsed : {};
-    return {
-      apiKey: typeof record.apiKey === "string" ? record.apiKey : "",
-      context: sanitizeContext(record.context),
-    };
-  } catch {
-    return DEFAULT_SETTINGS;
-  }
-}
-
-export function saveSettings(settings: Settings, storage: Storage = window.localStorage): void {
-  storage.setItem(KEY, JSON.stringify(settings));
-}
-
-/** The human's side is adapter state, not graph state: one entry per thread. */
-export function loadSide(threadId: string | null, storage: Storage = window.localStorage): Side {
-  if (!threadId) return "white";
-  return storage.getItem(SIDE_PREFIX + threadId) === "black" ? "black" : "white";
-}
-
-export function saveSide(
-  threadId: string,
-  side: Side,
-  storage: Storage = window.localStorage,
-): void {
-  storage.setItem(SIDE_PREFIX + threadId, side);
 }
 
 export const DEV_API_URL = "http://localhost:2024";
@@ -131,10 +86,6 @@ export function configurableOf(context: ChessContext): Record<string, unknown> {
 }
 
 /** Select reports `undefined` on deselect; keep the previous value in that case. */
-export function withKnob<K extends keyof ChessContext>(
-  context: ChessContext,
-  key: K,
-  value: ChessContext[K] | undefined,
-): ChessContext {
-  return value === undefined ? context : { ...context, [key]: value };
+export function withKnob<T, K extends keyof T>(values: T, key: K, value: T[K] | undefined): T {
+  return value === undefined ? values : { ...values, [key]: value };
 }

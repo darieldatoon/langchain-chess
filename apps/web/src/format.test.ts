@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   costText,
   describeError,
+  isAuthError,
   isBusyRejection,
   isAtBottom,
   lastMoveStyles,
@@ -11,6 +12,7 @@ import {
   parseKnob,
   parseNullableKnob,
   percent,
+  resultHeadline,
   seconds,
   sliderValue,
   sourceClass,
@@ -133,6 +135,29 @@ describe("status", () => {
     expect(describeError(new Error("boom"))).toBe("boom");
     expect(describeError("plain")).toBe("plain");
     expect(describeError({ detail: "x" })).toBe('{"detail":"x"}');
+  });
+
+  it("recognises only auth failures by status or message", () => {
+    const http = (status: number, message: string) =>
+      Object.assign(new Error(`HTTP ${status}: ${message}`), { status });
+    expect(isAuthError(http(401, "Unauthorized"))).toBe(true);
+    expect(isAuthError(Object.assign(new Error("denied"), { status: 403 }))).toBe(true);
+    expect(isAuthError(new Error("Forbidden"))).toBe(true);
+    expect(isAuthError("401 Unauthorised")).toBe(true);
+    expect(isAuthError(http(500, "Internal Server Error"))).toBe(false);
+    expect(isAuthError(new Error("provider 4013 overloaded"))).toBe(false);
+    expect(isAuthError(new Error("Failed to fetch"))).toBe(false);
+    expect(isAuthError(undefined)).toBe(false);
+    expect(isAuthError(null)).toBe(false);
+  });
+});
+
+describe("resultHeadline", () => {
+  it("reads the result from the human's side", () => {
+    const mate = { kind: "checkmate", winner: "white" } as const;
+    expect(resultHeadline(mate, "white")).toBe("You won");
+    expect(resultHeadline(mate, "black")).toBe("You lost");
+    expect(resultHeadline({ kind: "draw", reason: "stalemate" }, "black")).toBe("Draw");
   });
 });
 

@@ -20,6 +20,10 @@ export function sideToMove(fen: string): Side {
   return fen.split(" ")[1] === "b" ? "black" : "white";
 }
 
+export function opposite(side: Side): Side {
+  return side === "white" ? "black" : "white";
+}
+
 export function fullmoveNumber(fen: string): number {
   const n = Number(fen.split(" ")[5]);
   return Number.isInteger(n) && n > 0 ? n : 1;

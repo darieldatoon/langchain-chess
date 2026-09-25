@@ -1,4 +1,4 @@
-import { fullmoveNumber, sideToMove } from "./chess";
+import { fullmoveNumber, opposite, sideToMove } from "./chess";
 import type { TurnCost } from "./selectors";
 import type { DrawReason, Outcome, Side, StageResult } from "./types";
 
@@ -94,7 +94,6 @@ const DRAW_REASONS: Record<DrawReason, string> = {
 };
 
 const colour = (side: Side) => (side === "white" ? "White" : "Black");
-const other = (side: Side): Side => (side === "white" ? "black" : "white");
 const score = (winner: Side) => (winner === "white" ? "1-0" : "0-1");
 
 export function outcomeLine(outcome: Outcome): string {
@@ -104,8 +103,14 @@ export function outcomeLine(outcome: Outcome): string {
     case "draw":
       return `Draw by ${DRAW_REASONS[outcome.reason]}. 1/2-1/2`;
     case "resignation":
-      return `${colour(other(outcome.winner))} resigns after repeated illegal moves. ${score(outcome.winner)}`;
+      return `${colour(opposite(outcome.winner))} resigns after repeated illegal moves. ${score(outcome.winner)}`;
   }
+}
+
+/** The result from the human's side of the board. */
+export function resultHeadline(outcome: Outcome, humanSide: Side): string {
+  if (outcome.kind === "draw") return "Draw";
+  return outcome.winner === humanSide ? "You won" : "You lost";
 }
 
 export interface StatusInput {
@@ -137,6 +142,17 @@ export function standingLine(stages: readonly StageResult[], amongFinalists: boo
 /** The SDK's refusal of a second submit while a run is in flight (`multitaskStrategy: "reject"`). */
 export function isBusyRejection(error: unknown): boolean {
   return error instanceof Error && error.message.includes("a run is already in flight");
+}
+
+const AUTH_STATUSES = new Set([401, 403]);
+const AUTH_TEXT = /\b40[13]\b|unauthori[sz]ed|forbidden/i;
+
+/** The server refused the request's credentials: the SDK's HTTPError carries `status`. */
+export function isAuthError(error: unknown): boolean {
+  const text = describeError(error);
+  if (text === null) return false;
+  const status = (error as { status?: unknown }).status;
+  return (typeof status === "number" && AUTH_STATUSES.has(status)) || AUTH_TEXT.test(text);
 }
 
 export function describeError(error: unknown): string | null {

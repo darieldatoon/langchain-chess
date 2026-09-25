@@ -1,7 +1,8 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { configurableOf, loadSide } from "./settings";
+import { configurableOf } from "./settings";
+import { loadGame } from "./storage";
 import { fake, lastOptions, resetFake } from "./test/fakeStream";
 import { AFTER_E4, E4_E5, turn } from "./test/fixtures";
 import { DEFAULT_CONTEXT, START_FEN } from "./types";
@@ -108,13 +109,14 @@ describe("useGame", () => {
     ]);
   });
 
-  it("persists the side once the thread is known", () => {
-    const { result } = renderHook(() => useGame("", DEFAULT_CONTEXT, "black"));
+  it("pins the side and context to the thread once it is known", () => {
+    const context = { ...DEFAULT_CONTEXT, policy: "llm" as const };
+    const { result } = renderHook(() => useGame("", context, "black"));
     const options = lastOptions.current as { onThreadId: (id: string) => void };
     act(() => options.onThreadId("thread-9"));
     expect(result.current.threadId).toBe("thread-9");
     expect(threadFromUrl()).toBe("thread-9");
-    expect(loadSide("thread-9")).toBe("black");
+    expect(loadGame("thread-9")).toEqual({ side: "black", context });
   });
 
   it("ignores a thread reported after the game was replaced", () => {
@@ -123,7 +125,7 @@ describe("useGame", () => {
     unmount();
     options.onThreadId("late");
     expect(threadFromUrl()).toBeNull();
-    expect(window.localStorage.getItem("langchain-chess:side:late")).toBeNull();
+    expect(window.localStorage.getItem("langchain-chess:game:late")).toBeNull();
   });
 
   it("clears the optimistic move once the run settles, even on failure", async () => {

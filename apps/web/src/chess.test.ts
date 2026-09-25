@@ -3,6 +3,7 @@ import {
   fenOrStart,
   fullmoveNumber,
   isOwnPiece,
+  opposite,
   replay,
   sanAt,
   sideToMove,
@@ -37,6 +38,8 @@ describe("helpers", () => {
   it("reads the side to move", () => {
     expect(sideToMove(START_FEN)).toBe("white");
     expect(sideToMove("8/8/8/8/8/8/8/8 b - - 0 1")).toBe("black");
+    expect(opposite("white")).toBe("black");
+    expect(opposite("black")).toBe("white");
   });
 
   it("matches piece colour to side", () => {
