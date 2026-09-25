@@ -3,7 +3,6 @@ import { DEFAULT_SETUP, type Setup } from "./setup";
 import {
   APP_KEY,
   DEFAULT_APP_SETTINGS,
-  JEV_SETTINGS_KEY,
   LEGACY_SETTINGS_KEY,
   loadAppSettings,
   loadGame,
@@ -32,8 +31,8 @@ describe("setup storage", () => {
     expect(loadSetup()).toEqual(setup);
   });
 
-  it("migrates the old global settings, preferring the newer key", () => {
-    store(JEV_SETTINGS_KEY, {
+  it("migrates the old global settings", () => {
+    store(LEGACY_SETTINGS_KEY, {
       apiKey: "old",
       context: { policy: "jev", human_side: "black", model: "gpt-5.6-sol", k: 3 },
     });

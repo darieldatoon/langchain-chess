@@ -1,7 +1,6 @@
 """What the model reads: the system prompt, the position block, deltas and the model view. Pure.
 
-The wording is ported from the jev-chess LLM policy, where it is known to work. Change it only
-deliberately, with rendered-prompt tests.
+Change the wording only deliberately, with rendered-prompt tests.
 """
 
 import copy

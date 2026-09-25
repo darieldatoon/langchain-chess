@@ -17,8 +17,6 @@ export const APP_KEY = "langchain-chess:app";
 const GAME_PREFIX = "langchain-chess:game:";
 /** Read only while the keys above are absent: one global settings blob held key and knobs. */
 export const LEGACY_SETTINGS_KEY = "langchain-chess:settings";
-/** Read only while LEGACY_SETTINGS_KEY is absent too: the jev-chess UI's settings. */
-export const JEV_SETTINGS_KEY = "jev-chess:settings";
 /** Side-only game entries from before a game pinned its context. */
 const LEGACY_SIDE_PREFIX = "langchain-chess:side:";
 
@@ -38,7 +36,7 @@ function parse(raw: string | null): unknown {
 }
 
 function legacySettings(storage: Storage): Record<string, unknown> | null {
-  const stored = parse(storage.getItem(LEGACY_SETTINGS_KEY) ?? storage.getItem(JEV_SETTINGS_KEY));
+  const stored = parse(storage.getItem(LEGACY_SETTINGS_KEY));
   return isRecord(stored) ? stored : null;
 }
 

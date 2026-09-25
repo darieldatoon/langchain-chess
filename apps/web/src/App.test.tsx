@@ -158,7 +158,7 @@ describe("new game", () => {
 
   it("migrates the old settings into the setup and the API key into app settings", async () => {
     window.localStorage.setItem(
-      "jev-chess:settings",
+      "langchain-chess:settings",
       JSON.stringify({
         apiKey: "lsv2_old",
         context: { policy: "random", human_side: "black", k: 4, model: "gpt-5.6-sol" },
