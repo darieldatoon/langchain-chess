@@ -124,7 +124,7 @@ Server's port is taken, rather than letting the UI talk to another project's ser
 ### UCI engine
 
 ```sh
-uv run --all-packages --env-file .env lcchess uci --policy systemone
+mise run uci -- --policy systemone   # uv run --all-packages --env-file .env lcchess uci ...
 mise run uci-match   # two SemIf-only games under fastchess
 ```
 
@@ -143,7 +143,7 @@ mise run uci-match   # two SemIf-only games under fastchess
 ### Terminal UI
 
 ```sh
-uv run --all-packages --env-file .env lcchess play --side black
+mise run play -- --side black   # uv run --all-packages --env-file .env lcchess play ...
 ```
 
 Type moves in SAN or UCI. `ctrl+s` starts as Black, `ctrl+r` retries a failed move, `ctrl+n`

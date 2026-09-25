@@ -35,6 +35,14 @@ trap 'kill "$server" 2>/dev/null || true' EXIT
 VITE_API_URL="http://localhost:$port" pnpm --dir apps/web exec vp dev
 '''
 
+[tasks.play]
+description = "Play the agent in the terminal (Textual); pass lcchess play options after --"
+run = "uv run --all-packages --env-file .env lcchess play"
+
+[tasks.uci]
+description = "Run the agent as a UCI engine on stdin/stdout; pass lcchess uci options after --"
+run = "uv run --all-packages --env-file .env lcchess uci"
+
 [tasks.check]
 description = "Format check, lint and type check, Python and web"
 run = [
