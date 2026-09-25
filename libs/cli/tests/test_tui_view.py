@@ -66,11 +66,19 @@ def test_ply_details_with_systemone():
     text = ply_details(values)
     assert "e5 by LLM (m)" in text
     assert "illegal attempts: 2" in text
-    assert "System 1 suggested (margin 0.20 vs 0.90 among finalists)" in text
+    assert "System 1 suggested; its top moves:" in text
     assert "  e5 60%" in text
-    played = {**meta, "status": "played", "finalist_conditional": False, "shortlist": []}
+    played = {
+        **meta,
+        "status": "played",
+        "shortlist": [],
+        "top": [{"uci": "e7e5", "probability": 0.97}],
+    }
     values["plies"][1]["meta"] = {"SystemOneMiddleware": played}
-    assert "System 1 played (margin 0.20 vs 0.90)" in ply_details(values)
+    values["plies"][1]["uci"] = "e7e5"
+    text = ply_details(values)
+    assert "System 1 played; its top moves:" in text
+    assert " ▸e5 97%" in text  # the move played is marked
     skipped = {"status": "skipped", "error": "down"}
     values["plies"][1]["meta"] = {"SystemOneMiddleware": skipped}
     assert "System 1 skipped: down" in ply_details(values)

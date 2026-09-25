@@ -10,7 +10,8 @@ interface Props {
   humanSide: Side;
   lastMove: string | null;
   locked: boolean;
-  onMove: (uci: string, fenAfter: string) => void;
+  /** Absent for a board that only shows a position. */
+  onMove?: (uci: string, fenAfter: string) => void;
 }
 
 // react-chessboard takes style objects, so board colours are CSS variables defined per theme
@@ -19,7 +20,7 @@ const light = { backgroundColor: "var(--board-light)" };
 const dark = { backgroundColor: "var(--board-dark)" };
 
 export function Board({ fen, orientation, humanSide, lastMove, locked, onMove }: Props) {
-  const canMove = !locked && sideToMove(fen) === humanSide;
+  const canMove = onMove !== undefined && !locked && sideToMove(fen) === humanSide;
   // Click-to-move: the first click selects one of the human's pieces, the second moves it.
   const [selected, setSelected] = useState<string | null>(null);
   const squareStyles = useMemo(() => {
@@ -32,7 +33,7 @@ export function Board({ fen, orientation, humanSide, lastMove, locked, onMove }:
   const move = (from: string, to: string): boolean => {
     const attempt = tryMove(fen, from, to);
     if (!attempt) return false;
-    onMove(attempt.uci, attempt.fen);
+    onMove?.(attempt.uci, attempt.fen);
     return true;
   };
 

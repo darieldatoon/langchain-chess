@@ -86,28 +86,35 @@ describe("PlyDetails", () => {
     expect(screen.getByText(/Make a move/)).toBeInTheDocument();
   });
 
-  it("shows a System 1 move: source, model, cost, gate, and where it stood", () => {
+  it("streams the opponent's reasoning while it thinks, in place of the last reply", async () => {
+    renderWithProviders(<PlyDetails reply={reply()} live="Weighing **Nf6**" />);
+    expect(screen.getByLabelText("thinking")).toHaveTextContent("Reasoning");
+    expect(await screen.findByText("Nf6", { selector: ".markdown strong" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("last reply")).not.toBeInTheDocument();
+  });
+
+  it("shows a System 1 move: source, model, cost, and its top moves with the played one marked", () => {
     details(reply());
     expect(screen.getByText("System 1 played")).toBeInTheDocument();
     expect(screen.getByText("semif-qwen3.5-4b")).toBeInTheDocument();
     expect(screen.getByText("240 ms")).toBeInTheDocument();
     expect(screen.getByText("$0.0001")).toBeInTheDocument();
-    expect(screen.getByText(/margin 0.92 vs threshold 0.90, System 1 played/)).toBeInTheDocument();
-    expect(screen.getByText(/System 1 ranked #1 at 95%/)).toBeInTheDocument();
-    expect(screen.queryByLabelText("system 1 candidates")).not.toBeInTheDocument();
-    expect(screen.queryByText("Show LLM reply")).not.toBeInTheDocument();
+    expect(screen.getByText("System 1's top moves")).toBeInTheDocument();
+    expect(screen.getByLabelText("e5 (played) probability")).toHaveAttribute("aria-valuenow", "95");
+    expect(screen.getByLabelText("c5 probability")).toHaveAttribute("aria-valuenow", "3");
+    expect(screen.queryByText(/Gate/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /reasoning/ })).not.toBeInTheDocument();
   });
 
-  it("shows an LLM move with System 1's shortlist, turn cost, and the markdown reply", async () => {
+  it("shows an LLM move with turn cost, System 1's top moves, and the reasoning open", async () => {
     const meta = systemOne({
       status: "shortlist",
-      shortlist: [
+      shortlist: [{ uci: "b8c6", probability: 0.55 }],
+      top: [
         { uci: "b8c6", probability: 0.55 },
         { uci: "g8f6", probability: 0.3 },
       ],
       followed: true,
-      signal: 0.25,
-      finalist_conditional: true,
       played_move_result: [{ round: 2, heat: null, rank: 1, probability: 0.55, bye: false }],
     });
     const calls = [
@@ -137,40 +144,44 @@ describe("PlyDetails", () => {
     expect(screen.getByLabelText("$0.201+ (incomplete estimate)")).toBeInTheDocument();
     expect(screen.getByText("900")).toBeInTheDocument();
     expect(screen.getByText("1")).toBeInTheDocument();
-    expect(screen.getByText(/System 1 suggested 2, the LLM followed/)).toBeInTheDocument();
-    expect(screen.getByText(/ranked #1 at 55% among finalists/)).toBeInTheDocument();
-    expect(screen.getByText("Candidates, probabilities among finalists")).toBeInTheDocument();
-    expect(screen.getByLabelText("system 1 candidates")).toHaveTextContent("Nc6");
-    expect(screen.getByLabelText("Nf6 probability among finalists")).toHaveAttribute(
+    expect(screen.getByLabelText("Nc6 (played) probability")).toHaveAttribute(
       "aria-valuenow",
-      "30",
+      "55",
     );
-    fireEvent.click(screen.getByRole("button", { name: "Show LLM reply" }));
+    expect(screen.getByLabelText("Nf6 probability")).toHaveAttribute("aria-valuenow", "30");
     expect(await screen.findByRole("heading", { level: 2, name: "Plan" })).toBeInTheDocument();
     expect(screen.getByText("Nc6", { selector: ".markdown strong" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Hide LLM reply" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hide reasoning" }));
     expect(screen.queryByRole("heading", { level: 2, name: "Plan" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Show reasoning" }));
+    expect(await screen.findByRole("heading", { level: 2, name: "Plan" })).toBeInTheDocument();
   });
 
-  it("says when the LLM went off the shortlist, without probabilities among finalists", () => {
-    const meta = systemOne({
-      status: "shortlist",
-      shortlist: [{ uci: "g8f6", probability: 0.6 }],
-      followed: false,
-      played_move_result: null,
-    });
-    details(reply({ source: "llm", uci: "b8c6", san: "Nc6" }, meta));
-    expect(screen.getByText(/the LLM went its own way/)).toBeInTheDocument();
-    expect(screen.getByText("Candidates, probabilities")).toBeInTheDocument();
+  it("adds the played move below the top moves when it reached the final", () => {
+    const top = [{ uci: "g8f6", probability: 0.6 }];
+    const final = { round: 1, heat: null, rank: 4, probability: 0.05, bye: false };
+    details(reply({ uci: "b8c6", san: "Nc6" }, systemOne({ top, played_move_result: [final] })));
+    expect(screen.getByLabelText("system 1 moves")).toHaveTextContent("…");
+    expect(screen.getByLabelText("Nc6 (played) probability")).toHaveAttribute("aria-valuenow", "5");
+  });
+
+  it("leaves out a played move that went out in a heat, got a bye, or was never ranked", () => {
+    const top = [{ uci: "g8f6", probability: 0.6 }];
+    const heat = { round: 1, heat: 2, rank: 5, probability: 0.02, bye: false };
+    const bye = { round: 1, heat: null, rank: 1, probability: 1, bye: true };
+    for (const result of [[heat], [bye], null]) {
+      details(reply({ uci: "b8c6", san: "Nc6" }, systemOne({ top, played_move_result: result })));
+    }
+    expect(screen.queryByText("…")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Nc6/)).not.toBeInTheDocument();
+  });
+
+  it("falls back to the shortlist for older games, and shows nothing without either", () => {
+    const shortlist = [{ uci: "g8f6", probability: 0.6 }];
+    details(reply({}, systemOne({ top: undefined, shortlist })));
     expect(screen.getByLabelText("Nf6 probability")).toBeInTheDocument();
-    expect(screen.queryByText(/Played move/)).not.toBeInTheDocument();
-  });
-
-  it("omits the verdict detail and the gate line when the signal is missing", () => {
-    details(reply({}, systemOne({ status: "shortlist", followed: null })));
-    expect(screen.getByText(/System 1 suggested 0\./)).toBeInTheDocument();
-    details(reply({ san: "Qh5" }, systemOne({ signal: null })));
-    expect(screen.getAllByText(/Gate:/)).toHaveLength(1);
+    details(reply({}, systemOne({ top: undefined, played_move_result: null })));
+    expect(screen.getAllByLabelText("system 1 moves")).toHaveLength(1);
   });
 
   it("shows why System 1 was skipped", () => {

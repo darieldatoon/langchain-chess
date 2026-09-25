@@ -122,9 +122,10 @@ logs.
 The web UI starts with a New game dialog: pick a side (White, Random or Black), a System 1
 (SemIf by default, Jev, or none) and an LLM (Claude Opus 5.5 by default, another preset, a custom
 model spec, or none); Advanced holds the other `chess` context knobs. Each game keeps the setup it
-started with, one thread per game (the thread id stays in the URL), and shows System 1
-candidates, the gate, analysis and cost per move. After a game, Rematch swaps colours. The gear
-holds app settings only: the LangSmith API key for a deployed server.
+started with, one thread per game (the thread id stays in the URL), and shows System 1's
+top moves, the reasoning and the cost per move. The dialog can't be dismissed until a game is
+on the board. After a game, Rematch swaps colours. The gear holds app settings only: the
+LangSmith API key for a deployed server.
 Studio's chat view plays too: type `go` or a move. The task refuses to start if either port is
 taken, rather than letting the UI talk to another project's server.
 

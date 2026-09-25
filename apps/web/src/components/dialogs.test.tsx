@@ -16,6 +16,7 @@ vi.mock("@langchain/macaw-components/Slider", async () =>
 function open(initial: Setup = DEFAULT_SETUP, canCancel = false) {
   const onPlay = vi.fn();
   const onClose = vi.fn();
+  const onOpenSettings = vi.fn();
   render(
     <NewGameDialog
       open
@@ -23,9 +24,10 @@ function open(initial: Setup = DEFAULT_SETUP, canCancel = false) {
       canCancel={canCancel}
       onPlay={onPlay}
       onClose={onClose}
+      onOpenSettings={onOpenSettings}
     />,
   );
-  return { onPlay, onClose };
+  return { onPlay, onClose, onOpenSettings };
 }
 
 const change = (label: string, value: string) =>
@@ -36,7 +38,7 @@ const advanced = () => fireEvent.click(screen.getByRole("button", { name: "Advan
 
 describe("NewGameDialog", () => {
   it("plays the default matchup as White, with no way to cancel without a game", () => {
-    const { onPlay } = open();
+    const { onPlay, onClose, onOpenSettings } = open();
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "White" })).toBeChecked();
     expect(matchup()).toHaveTextContent(
@@ -44,6 +46,10 @@ describe("NewGameDialog", () => {
     );
     expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
     fireEvent.click(play());
     expect(onPlay).toHaveBeenCalledWith(DEFAULT_SETUP, DEFAULT_CONTEXT);
   });
@@ -54,8 +60,11 @@ describe("NewGameDialog", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Black" }));
     fireEvent.click(play());
     expect(onPlay.mock.calls[0][0].side).toBe("black");
+    expect(screen.queryByRole("button", { name: "Settings" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(onClose).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(2);
   });
 
   it("derives the policy from the pickers and disables Play when both are None", () => {

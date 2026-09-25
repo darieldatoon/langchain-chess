@@ -9,7 +9,6 @@ import { ThinkingState } from "@langchain/macaw-components/ThinkingState";
 import { GearSixIcon } from "@phosphor-icons/react/dist/ssr/GearSix";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { opposite, sideToMove } from "./chess";
-import { Analysis } from "./components/Analysis";
 import { AppSettingsDialog } from "./components/AppSettingsDialog";
 import { Board } from "./components/Board";
 import { MoveList } from "./components/MoveList";
@@ -27,7 +26,7 @@ import {
   saveSetup,
   type AppSettings,
 } from "./storage";
-import type { ChessContext, Side } from "./types";
+import { START_FEN, type ChessContext, type Side } from "./types";
 import { threadFromUrl, useGame, writeThreadToUrl } from "./useGame";
 
 /** One game on screen: its pinned side and context. */
@@ -58,17 +57,21 @@ export default function App({ random = Math.random }: Props) {
   });
   const [overlay, setOverlay] = useState<Overlay>(() => (seat ? null : "new-game"));
 
-  const close = useCallback(() => setOverlay(null), []);
+  // With no game on screen the New game dialog is the page, so closing anything returns to it.
+  const close = useCallback(() => setOverlay(seat ? null : "new-game"), [seat]);
   const openNewGame = useCallback(() => setOverlay("new-game"), []);
   const openSettings = useCallback(() => setOverlay("settings"), []);
 
   // Also persists a key migrated from the old settings on first load.
   useEffect(() => saveAppSettings(app), [app]);
 
-  const onSaveApp = useCallback((next: AppSettings) => {
-    setApp(next);
-    setOverlay(null);
-  }, []);
+  const onSaveApp = useCallback(
+    (next: AppSettings) => {
+      setApp(next);
+      close();
+    },
+    [close],
+  );
 
   const play = useCallback(
     (next: Setup, context: ChessContext) => {
@@ -123,14 +126,7 @@ export default function App({ random = Math.random }: Props) {
             onOpenSettings={openSettings}
           />
         ) : (
-          <Card intent="neutral" className="flex flex-col items-start gap-space-3">
-            <Text variant="body" color="secondary">
-              No game in progress.
-            </Text>
-            <Button color="primary" size="md" onClick={openNewGame}>
-              Set up a game
-            </Button>
-          </Card>
+          <EmptyTable />
         )}
       </div>
 
@@ -141,6 +137,7 @@ export default function App({ random = Math.random }: Props) {
         canCancel={seat !== null}
         onPlay={play}
         onClose={close}
+        onOpenSettings={openSettings}
       />
       <AppSettingsDialog
         key={overlay === "settings" ? "settings-open" : "settings-closed"}
@@ -150,6 +147,24 @@ export default function App({ random = Math.random }: Props) {
         onClose={close}
       />
     </div>
+  );
+}
+
+/** The board before the first game, behind the New game dialog. */
+function EmptyTable() {
+  return (
+    <main className="grid items-start gap-space-5 lg:grid-cols-[minmax(320px,640px)_minmax(280px,1fr)]">
+      <Card intent="neutral" className="flex flex-col gap-space-3">
+        <Board fen={START_FEN} orientation="white" humanSide="white" lastMove={null} locked />
+        <Text variant="body" color="secondary">
+          Choose a side and an opponent to start.
+        </Text>
+      </Card>
+      <aside className="flex flex-col gap-space-4">
+        <PlyDetails reply={null} />
+        <MoveList entries={[]} startFen={START_FEN} />
+      </aside>
+    </main>
   );
 }
 
@@ -262,14 +277,6 @@ function Table({ apiKey, seat, onRematch, onNewGame, onOpenSettings }: TableProp
               )}
             </div>
           )}
-          {game.liveAnalysis && (
-            <div
-              aria-label="live analysis"
-              className="markdown max-h-60 overflow-auto rounded-md bg-surface-level-3 p-space-3"
-            >
-              <Analysis text={game.liveAnalysis} />
-            </div>
-          )}
           {notice && (
             <Banner
               key={notice}
@@ -288,7 +295,7 @@ function Table({ apiKey, seat, onRematch, onNewGame, onOpenSettings }: TableProp
           )}
         </Card>
         <aside className="flex flex-col gap-space-4">
-          <PlyDetails reply={game.lastReply} />
+          <PlyDetails reply={game.lastReply} live={game.liveAnalysis} />
           <MoveList entries={game.entries} startFen={game.startFen} />
           <Card intent="neutral" className="flex flex-col gap-space-2" aria-label="opponent">
             <Text variant="h4" as="h2" color="secondary">

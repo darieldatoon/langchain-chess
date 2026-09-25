@@ -33,6 +33,9 @@ from langchain_chess_systemone.types import (
     Tournament,
 )
 
+TOP_MOVES = 5
+"""How many of System 1's best moves the telemetry keeps for display."""
+
 
 class FrozenDecision(TypedDict):
     turn_id: str
@@ -267,6 +270,7 @@ class SystemOneMiddleware(ChessMiddleware):
         meta = SystemOneMeta(
             status=frozen["status"],
             model=frozen["model"],
+            top=frozen["ranking"][:TOP_MOVES],
             shortlist=frozen["shortlist"],
             followed=None
             if skipped or by_systemone

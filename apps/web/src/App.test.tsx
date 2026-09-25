@@ -125,12 +125,15 @@ describe("new game", () => {
     expect(dialog()).not.toBeInTheDocument();
   });
 
-  it("can be dismissed without a game, leaving a way back to it", async () => {
+  it("stays open over a locked board until a game starts, with a way to settings", async () => {
     render(<App />);
+    expect(board()).toHaveAttribute("data-position", START_FEN);
+    expect(board()).toHaveAttribute("data-draggable", "false");
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
-    expect(dialog()).not.toBeInTheDocument();
-    expect(screen.getByText("No game in progress.")).toBeInTheDocument();
-    await click("Set up a game");
+    expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
+    await click("Settings");
+    expect(screen.getByRole("dialog", { name: "Settings" })).toBeInTheDocument();
+    await click("Cancel");
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
   });
 
@@ -490,9 +493,10 @@ describe("the game screen", () => {
     render(<App />);
     expect(screen.getByText("Opponent is thinking")).toBeInTheDocument();
     // Plain text until the lazy Markdown renderer has loaded.
-    expect(screen.getByLabelText("live analysis")).toHaveTextContent("**e5** mirrors the centre.");
+    expect(screen.getByLabelText("thinking")).toHaveTextContent("**e5** mirrors the centre.");
     expect(await screen.findByText("e5", { selector: "strong" })).toBeInTheDocument();
-    expect(screen.getByLabelText("live analysis")).toHaveTextContent("e5 mirrors the centre.");
+    expect(screen.getByLabelText("thinking")).toHaveTextContent("e5 mirrors the centre.");
+    expect(screen.queryByLabelText("last reply")).not.toBeInTheDocument();
     expect(board()).toHaveAttribute("data-draggable", "false");
   });
 
@@ -546,7 +550,7 @@ describe("the game screen", () => {
     expect(board()).toHaveAttribute("data-position", START_FEN);
     expect(board()).toHaveAttribute("data-orientation", "black");
     expect(screen.queryByText("Opponent is thinking")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("live analysis")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("thinking")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("result")).not.toBeInTheDocument();
     expect(screen.getByText("No moves yet.")).toBeInTheDocument();
     expect(button("Start")).toBeInTheDocument();

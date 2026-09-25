@@ -87,13 +87,11 @@ def ply_details(values: Mapping[str, Any]) -> str:
         if meta["status"] == "skipped":
             lines.append(f"System 1 skipped: {meta['error']}")
         else:
-            among = " among finalists" if meta["finalist_conditional"] else ""
             verb = "played" if meta["status"] == "played" else "suggested"
-            signal = meta["signal"]
-            gate = f"{meta['gate']} {signal:.2f} vs {meta['threshold_used']:.2f}"
-            lines.append(f"System 1 {verb} ({gate}{among})")
-            for move in meta["shortlist"]:
-                lines.append(f"  {_san(board, move['uci'])} {move['probability']:.0%}")
+            lines.append(f"System 1 {verb}; its top moves:")
+            for move in meta.get("top") or meta["shortlist"]:
+                marker = "▸" if move["uci"] == ply["uci"] else " "
+                lines.append(f" {marker}{_san(board, move['uci'])} {move['probability']:.0%}")
     return "\n".join(lines)
 
 

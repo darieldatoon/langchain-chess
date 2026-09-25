@@ -17,7 +17,6 @@ import {
   sliderValue,
   sourceClass,
   sourceLabel,
-  standingLine,
   statusLine,
   type MoveEntry,
 } from "./format";
@@ -114,17 +113,6 @@ describe("status", () => {
     expect(statusLine({ ...base, fen: AFTER_E4, moveCount: 1, humanSide: "black" })).toBe(
       "Your move.",
     );
-  });
-
-  it("places the played move in System 1's ranking", () => {
-    const stage = { round: 1, heat: null, rank: 2, probability: 0.3, bye: false };
-    expect(standingLine([], false)).toMatch(/Not among/);
-    expect(standingLine([stage], false)).toBe("System 1 ranked #2 at 30%.");
-    expect(standingLine([stage], true)).toBe("System 1 ranked #2 at 30% among finalists.");
-    expect(standingLine([{ ...stage, heat: 3, round: 2, rank: 4 }], true)).toBe(
-      "Out in round 2, heat 3: ranked #4 at 30% in its heat.",
-    );
-    expect(standingLine([{ ...stage, bye: true }], true)).toBe("Bye in round 1.");
   });
 
   it("describes errors", () => {

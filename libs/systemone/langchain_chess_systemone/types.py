@@ -50,6 +50,8 @@ class SystemOneMeta(TypedDict):
 
     status: DecisionStatus
     model: str
+    top: list[RankedMove]
+    """System 1's highest-ranked moves, whoever played; after a tournament, finalists only."""
     shortlist: list[RankedMove]
     followed: bool | None
     """Whether the LLM played a shortlisted move. None when SystemOne played it, or skipped."""

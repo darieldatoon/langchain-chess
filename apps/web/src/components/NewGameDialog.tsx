@@ -30,6 +30,8 @@ interface Props {
   canCancel: boolean;
   onPlay: (setup: Setup, context: ChessContext) => void;
   onClose: () => void;
+  /** Without a game the dialog can't be dismissed, so it offers the way to app settings. */
+  onOpenSettings: () => void;
 }
 
 const SIDES: { value: SideChoice; label: string; icon: React.ReactNode }[] = [
@@ -56,7 +58,14 @@ const LLMS: SelectOption<LlmChoice>[] = [
   { value: "custom", label: "Custom model…", description: "Any model spec" },
 ];
 
-export function NewGameDialog({ open, initial, canCancel, onPlay, onClose }: Props) {
+export function NewGameDialog({
+  open,
+  initial,
+  canCancel,
+  onPlay,
+  onClose,
+  onOpenSettings,
+}: Props) {
   const [setup, setSetup] = useState(initial);
   const [advanced, setAdvanced] = useState(false);
   const pick =
@@ -68,7 +77,7 @@ export function NewGameDialog({ open, initial, canCancel, onPlay, onClose }: Pro
   const matchup = matchupOf(setup);
 
   return (
-    <Dialog open={open} onOpenChange={() => onClose()}>
+    <Dialog open={open} onOpenChange={() => canCancel && onClose()}>
       <DialogContent
         title="New game"
         description="Choose your colour and the opponent."
@@ -175,9 +184,19 @@ export function NewGameDialog({ open, initial, canCancel, onPlay, onClose }: Pro
           </div>
 
           <div className="flex justify-end gap-space-2 border-t border-subtle pt-space-4">
-            {canCancel && (
+            {canCancel ? (
               <Button variant="outlined" color="secondary" size="md" onClick={onClose}>
                 Cancel
+              </Button>
+            ) : (
+              <Button
+                variant="plain"
+                color="secondary"
+                size="md"
+                className="mr-auto"
+                onClick={onOpenSettings}
+              >
+                Settings
               </Button>
             )}
             {matchup.ok ? (

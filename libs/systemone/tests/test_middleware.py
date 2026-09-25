@@ -199,6 +199,12 @@ async def test_threshold_zero_without_a_model_plays_the_top_move(run, cfg):
     assert meta["status"] == "played"
     assert meta["followed"] is None
     assert meta["played_move_result"][0]["rank"] == 1
+    # Shown even though System 1 played: its whole ranking, best first.
+    assert [(m["uci"], m["probability"]) for m in meta["top"]] == [
+        ("e2e4", 0.6),
+        ("d2d4", 0.25),
+        ("g1f3", 0.15),
+    ]
 
 
 async def test_a_confident_ranking_plays_and_skips_the_model(run, cfg):
@@ -263,6 +269,8 @@ async def test_tournament_candidates_are_finalists_only(run, cfg):
         m["uci"] for m in meta["shortlist"] if m["uci"] in finalists
     ]
     assert len(meta["shortlist"]) == 16
+    assert len(meta["top"]) == 5
+    assert all(m["uci"] in finalists for m in meta["top"])
     assert meta["threshold_used"] == 1.0
     castle = "e1g1"
     if castle not in finalists:

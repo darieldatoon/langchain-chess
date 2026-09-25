@@ -57,6 +57,10 @@ export function systemOne(overrides: Partial<SystemOneMeta> = {}): SystemOneMeta
     status: "played",
     model: "semif-qwen3.5-4b",
     shortlist: [],
+    top: [
+      { uci: "e7e5", probability: 0.95 },
+      { uci: "c7c5", probability: 0.03 },
+    ],
     followed: null,
     gate: "margin",
     signal: 0.92,

@@ -6,17 +6,9 @@ import { Text } from "@langchain/macaw-components/Text";
 import { Tooltip } from "@langchain/macaw-components/Tooltip";
 import { useState } from "react";
 import { sanAt } from "../chess";
-import {
-  costText,
-  percent,
-  seconds,
-  sourceClass,
-  sourceLabel,
-  standingLine,
-  type SourceClass,
-} from "../format";
+import { costText, percent, seconds, sourceClass, sourceLabel, type SourceClass } from "../format";
 import { systemOneMeta, turnCost } from "../selectors";
-import type { SystemOneMeta } from "../types";
+import type { RankedMove, SystemOneMeta } from "../types";
 import type { Reply } from "../useGame";
 import { Analysis } from "./Analysis";
 
@@ -29,8 +21,26 @@ const BADGE_COLORS: Record<SourceClass, "primary" | "special" | "secondary" | "w
     other: "warning",
   };
 
-export function PlyDetails({ reply }: { reply: Reply | null }) {
-  const [showReply, setShowReply] = useState(false);
+interface Props {
+  reply: Reply | null;
+  /** The opponent's reasoning as it streams, while it thinks; it replaces the last reply. */
+  live?: string | null;
+}
+
+export function PlyDetails({ reply, live = null }: Props) {
+  const [showReasoning, setShowReasoning] = useState(true);
+  if (live !== null) {
+    return (
+      <Card intent="neutral" className="flex flex-col gap-space-3" aria-label="thinking">
+        <Text variant="h4" as="h2" color="secondary">
+          Reasoning
+        </Text>
+        <div className="markdown max-h-80 overflow-auto rounded-md bg-surface-level-3 p-space-3">
+          <Analysis text={live} />
+        </div>
+      </Card>
+    );
+  }
   if (!reply) {
     return (
       <Card intent="neutral" className="flex flex-col gap-space-3">
@@ -89,11 +99,11 @@ export function PlyDetails({ reply }: { reply: Reply | null }) {
             color="secondary"
             size="sm"
             className="self-start"
-            onClick={() => setShowReply((s) => !s)}
+            onClick={() => setShowReasoning((s) => !s)}
           >
-            {showReply ? "Hide LLM reply" : "Show LLM reply"}
+            {showReasoning ? "Hide reasoning" : "Show reasoning"}
           </Button>
-          {showReply && (
+          {showReasoning && (
             <div className="markdown max-h-80 overflow-auto rounded-md bg-surface-level-3 p-space-3">
               <Analysis text={ply.analysis} />
             </div>
@@ -102,21 +112,6 @@ export function PlyDetails({ reply }: { reply: Reply | null }) {
       )}
     </Card>
   );
-}
-
-function gateLine(meta: SystemOneMeta): string | null {
-  if (meta.signal === null || meta.threshold_used === null) return null;
-  const verdict =
-    meta.status === "played"
-      ? "System 1 played"
-      : `System 1 suggested ${meta.shortlist.length}${
-          meta.followed === null
-            ? ""
-            : meta.followed
-              ? ", the LLM followed"
-              : ", the LLM went its own way"
-        }`;
-  return `Gate: ${meta.gate} ${meta.signal.toFixed(2)} vs threshold ${meta.threshold_used.toFixed(2)}, ${verdict}.`;
 }
 
 function SystemOne({
@@ -135,46 +130,51 @@ function SystemOne({
       </Text>
     );
   }
-  const gate = gateLine(meta);
-  const among = meta.finalist_conditional ? " among finalists" : "";
+  // Older games recorded only the shortlist handed to the LLM.
+  const top = meta.top ?? meta.shortlist;
+  const played = meta.played_move_result?.at(-1);
+  // The move played stays visible even outside the top moves, unless it never reached the final.
+  const extra: RankedMove | null =
+    !top.some((m) => m.uci === playedUci) && played && played.heat === null && !played.bye
+      ? { uci: playedUci, probability: played.probability }
+      : null;
+  if (top.length === 0) return null;
   return (
-    <div className="flex flex-col gap-space-2">
-      {gate && (
-        <Text variant="sm" color="tertiary">
-          {gate}
-        </Text>
-      )}
-      {meta.played_move_result && (
-        <Text variant="sm" color="tertiary">
-          Played move: {standingLine(meta.played_move_result, meta.finalist_conditional)}
-        </Text>
-      )}
-      {meta.shortlist.length > 0 && (
-        <div className="flex flex-col gap-space-2" aria-label="system 1 candidates">
-          <Text variant="xs" color="tertiary">
-            Candidates, probabilities{among}
+    <div className="flex flex-col gap-space-2" aria-label="system 1 moves">
+      <Text variant="xs" color="tertiary">
+        System 1&apos;s top moves
+      </Text>
+      {top.map((move) => (
+        <MoveBar key={move.uci} move={move} played={move.uci === playedUci} fen={fenBefore} />
+      ))}
+      {extra && (
+        <>
+          <Text variant="xs" color="tertiary" aria-hidden>
+            …
           </Text>
-          {meta.shortlist.map((c) => {
-            const san = sanAt(fenBefore, c.uci);
-            return (
-              <div key={c.uci} className="grid grid-cols-[6ch_1fr_5ch] items-center gap-space-2">
-                <Text variant="sm" as="span" className="font-mono">
-                  {san}
-                </Text>
-                <ProgressBar
-                  value={Math.round(c.probability * 100)}
-                  size="sm"
-                  color={c.uci === playedUci ? "success" : "brand"}
-                  aria-label={`${san} probability${among}`}
-                />
-                <Text variant="sm" color="tertiary" as="span" className="text-right font-mono">
-                  {percent(c.probability)}
-                </Text>
-              </div>
-            );
-          })}
-        </div>
+          <MoveBar move={extra} played fen={fenBefore} />
+        </>
       )}
+    </div>
+  );
+}
+
+function MoveBar({ move, played, fen }: { move: RankedMove; played: boolean; fen: string }) {
+  const san = sanAt(fen, move.uci);
+  return (
+    <div className="grid grid-cols-[6ch_1fr_5ch] items-center gap-space-2">
+      <Text variant="sm" as="span" weight={played ? "semibold" : undefined} className="font-mono">
+        {san}
+      </Text>
+      <ProgressBar
+        value={Math.round(move.probability * 100)}
+        size="sm"
+        color={played ? "success" : "brand"}
+        aria-label={`${san} ${played ? "(played) " : ""}probability`}
+      />
+      <Text variant="sm" color="tertiary" as="span" className="text-right font-mono">
+        {percent(move.probability)}
+      </Text>
     </div>
   );
 }

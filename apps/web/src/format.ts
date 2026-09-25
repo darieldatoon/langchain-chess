@@ -1,6 +1,6 @@
 import { fullmoveNumber, opposite, sideToMove } from "./chess";
 import type { TurnCost } from "./selectors";
-import type { DrawReason, Outcome, Side, StageResult } from "./types";
+import type { DrawReason, Outcome, Side } from "./types";
 
 export function money(usd: number): string {
   return usd < 0.01 ? `$${usd.toFixed(4)}` : `$${usd.toFixed(3)}`;
@@ -130,15 +130,6 @@ export function statusLine(game: StatusInput): string {
 }
 
 /** Where System 1 ranked the played move: its last stage, or where a tournament knocked it out. */
-export function standingLine(stages: readonly StageResult[], amongFinalists: boolean): string {
-  const last = stages.at(-1);
-  if (!last) return "Not among System 1's options.";
-  if (last.bye) return `Bye in round ${last.round}.`;
-  const at = `ranked #${last.rank} at ${percent(last.probability)}`;
-  if (last.heat === null) return `System 1 ${at}${amongFinalists ? " among finalists" : ""}.`;
-  return `Out in round ${last.round}, heat ${last.heat}: ${at} in its heat.`;
-}
-
 /** The SDK's refusal of a second submit while a run is in flight (`multitaskStrategy: "reject"`). */
 export function isBusyRejection(error: unknown): boolean {
   return error instanceof Error && error.message.includes("a run is already in flight");

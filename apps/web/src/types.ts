@@ -137,6 +137,8 @@ export interface RankedMove {
 export interface SystemOneMeta {
   status: "played" | "shortlist" | "skipped";
   model: string;
+  /** System 1's best moves whoever played; absent on games recorded before it existed. */
+  top?: RankedMove[];
   shortlist: RankedMove[];
   followed: boolean | null;
   gate: GateSignal;
