@@ -6,15 +6,17 @@ import { Slider } from "@langchain/macaw-components/Slider";
 import { Switch } from "@langchain/macaw-components/Switch";
 import { Text } from "@langchain/macaw-components/Text";
 import { useState } from "react";
-import { sliderValue } from "../format";
-import { withKnob, type Settings } from "../settings";
+import { parseKnob, parseNullableKnob, sliderValue } from "../format";
+import { CONTEXT_CHECKS, withKnob, type Settings } from "../settings";
 import type {
+  ChessContext,
   DescriptionStyle,
+  DrawClaims,
   GateSignal,
-  PlayContext,
+  Memory,
   PolicyKind,
   ReasoningEffort,
-  Side,
+  SystemOneModel,
 } from "../types";
 
 interface Props {
@@ -28,20 +30,26 @@ const POLICIES: SelectOption<PolicyKind>[] = [
   {
     value: "hybrid",
     label: "Hybrid",
-    description: "Jev moves when sure, the LLM decides otherwise",
+    description: "System 1 plays when sure and suggests candidates otherwise",
   },
-  { value: "jev", label: "Jev Only", description: "System 1: one typed decision per move" },
-  { value: "llm", label: "LLM Only", description: "System 2: a reasoning model picks every move" },
-  { value: "random", label: "Random", description: "A uniform random legal move" },
-];
-const SIDES: SelectOption<Side>[] = [
-  { value: "white", label: "White" },
-  { value: "black", label: "Black" },
+  { value: "systemone", label: "System 1 Only", description: "One ranked decision per move" },
+  { value: "llm", label: "LLM Only", description: "A reasoning model picks every move" },
 ];
 const EFFORTS: SelectOption<ReasoningEffort>[] = [
   { value: "low", label: "Low" },
   { value: "medium", label: "Medium" },
   { value: "high", label: "High" },
+];
+const MEMORIES: SelectOption<Memory>[] = [
+  { value: "none", label: "None", description: "Each turn sees only the current position" },
+];
+const DRAW_CLAIMS: SelectOption<DrawClaims>[] = [
+  { value: "auto", label: "Auto", description: "Threefold and fifty-move draws end the game" },
+  { value: "never", label: "Never", description: "Only forced draws end the game" },
+];
+const SYSTEMONE_MODELS: SelectOption<SystemOneModel>[] = [
+  { value: "semif-qwen3.5-4b", label: "semif-qwen3.5-4b" },
+  { value: "typesafe/jev-latest", label: "typesafe/jev-latest" },
 ];
 const STYLES: SelectOption<DescriptionStyle>[] = [
   { value: "rich", label: "Rich", description: "Captures, checks, exchange results" },
@@ -49,16 +57,26 @@ const STYLES: SelectOption<DescriptionStyle>[] = [
 ];
 const GATES: SelectOption<GateSignal>[] = [
   { value: "margin", label: "Margin", description: "Top-1 minus top-2 probability" },
-  { value: "confidence", label: "Confidence", description: "Jev's Choice confidence" },
+  { value: "confidence", label: "Confidence", description: "System 1's Choice confidence" },
 ];
 
 export function SettingsPanel({ open, settings, onSave, onClose }: Props) {
   const [apiKey, setApiKey] = useState(settings.apiKey);
-  const [ctx, setCtx] = useState<PlayContext>(settings.context);
-  const set = <K extends keyof PlayContext>(key: K, value: PlayContext[K]) =>
-    setCtx((c) => ({ ...c, [key]: value }));
-  const usesLlm = ctx.policy === "llm" || ctx.policy === "hybrid";
-  const usesJev = ctx.policy === "jev" || ctx.policy === "hybrid";
+  const [ctx, setCtx] = useState<ChessContext>(settings.context);
+  const set = <K extends keyof ChessContext>(key: K, value: ChessContext[K] | undefined) =>
+    setCtx((c) => withKnob(c, key, value));
+  const number = (key: "k" | "seed") => ({
+    value: ctx[key],
+    isValid: (v: string) => parseKnob(v, CONTEXT_CHECKS[key]) !== undefined,
+    onChange: (v: string) => set(key, parseKnob(v, CONTEXT_CHECKS[key])),
+  });
+  const nullable = (key: "tournament_threshold" | "top_p" | "summary_trigger_tokens") => ({
+    value: ctx[key],
+    isValid: (v: string) => parseNullableKnob(v, CONTEXT_CHECKS[key]) !== undefined,
+    onChange: (v: string) => set(key, parseNullableKnob(v, CONTEXT_CHECKS[key])),
+  });
+  const usesModel = ctx.policy !== "systemone";
+  const usesSystemOne = ctx.policy !== "llm";
 
   return (
     <Pane
@@ -93,29 +111,40 @@ export function SettingsPanel({ open, settings, onSave, onClose }: Props) {
               value={ctx.policy}
               options={POLICIES}
               hideSearch
-              onChange={(v) => setCtx((c) => withKnob(c, "policy", v))}
+              onChange={(v) => set("policy", v)}
             />
           </Field>
-          <Field id="side" label="You Play" hint="Applies to the next new game.">
+          <Field id="draw-claims" label="Draw Claims">
             <Select
-              aria-label="You Play"
+              aria-label="Draw Claims"
               size="md"
-              value={ctx.human_side}
-              options={SIDES}
+              value={ctx.draw_claims}
+              options={DRAW_CLAIMS}
               hideSearch
-              onChange={(v) => setCtx((c) => withKnob(c, "human_side", v))}
+              onChange={(v) => set("draw_claims", v)}
+            />
+          </Field>
+          <Field id="memory" label="Memory" hint="Only “None” exists for now.">
+            <Select
+              aria-label="Memory"
+              size="md"
+              value={ctx.memory}
+              options={MEMORIES}
+              hideSearch
+              disabled
+              onChange={(v) => set("memory", v)}
             />
           </Field>
         </Section>
 
-        {usesLlm && (
+        {usesModel && (
           <Section title="LLM">
             <Input
               id="model"
               size="md"
               label="Model"
               value={ctx.model}
-              onChange={(v) => set("model", v)}
+              onChange={(v) => set("model", v.trim() === "" ? undefined : v)}
               hintText="Bare names route through the LLM Gateway; openai:gpt-5.6-sol goes direct."
             />
             <Field id="effort" label="Reasoning Effort">
@@ -125,21 +154,37 @@ export function SettingsPanel({ open, settings, onSave, onClose }: Props) {
                 value={ctx.reasoning_effort}
                 options={EFFORTS}
                 hideSearch
-                onChange={(v) => setCtx((c) => withKnob(c, "reasoning_effort", v))}
+                onChange={(v) => set("reasoning_effort", v)}
               />
             </Field>
-            {ctx.policy === "llm" && (
-              <Switch
-                label="List legal moves in the prompt"
-                checked={ctx.include_legal_moves}
-                onChange={(v) => set("include_legal_moves", v)}
-              />
-            )}
+            <Switch
+              label="List legal moves in the prompt"
+              checked={ctx.show_legal_moves}
+              onChange={(v) => set("show_legal_moves", v)}
+            />
+            <NumberField
+              id="summary-trigger"
+              label="Summary Trigger Tokens"
+              {...nullable("summary_trigger_tokens")}
+              placeholder="From the model profile"
+              hintText="Empty uses the model's profile."
+              min={1}
+            />
           </Section>
         )}
 
-        {usesJev && (
-          <Section title="Jev">
+        {usesSystemOne && (
+          <Section title="System 1">
+            <Field id="systemone-model" label="System 1 Model">
+              <Select
+                aria-label="System 1 Model"
+                size="md"
+                value={ctx.systemone_model}
+                options={SYSTEMONE_MODELS}
+                hideSearch
+                onChange={(v) => set("systemone_model", v)}
+              />
+            </Field>
             <Field id="style" label="Move Descriptions">
               <Select
                 aria-label="Move Descriptions"
@@ -147,7 +192,7 @@ export function SettingsPanel({ open, settings, onSave, onClose }: Props) {
                 value={ctx.style}
                 options={STYLES}
                 hideSearch
-                onChange={(v) => setCtx((c) => withKnob(c, "style", v))}
+                onChange={(v) => set("style", v)}
               />
             </Field>
             <Switch
@@ -160,6 +205,13 @@ export function SettingsPanel({ open, settings, onSave, onClose }: Props) {
               checked={ctx.with_nouls}
               onChange={(v) => set("with_nouls", v)}
             />
+            <NumberField
+              id="seed"
+              label="Seed"
+              {...number("seed")}
+              hintText="Seeds the tournament shuffle."
+              step={1}
+            />
           </Section>
         )}
 
@@ -168,7 +220,7 @@ export function SettingsPanel({ open, settings, onSave, onClose }: Props) {
             <Field
               id="threshold"
               label="Threshold"
-              hint="0 is Jev alone, 1 hands every move to the LLM."
+              hint="0 lets System 1 play every move, 1 hands every move to the LLM."
               trailing={
                 <Text variant="sm" as="span" className="font-mono" data-testid="threshold-value">
                   {ctx.threshold.toFixed(2)}
@@ -184,6 +236,16 @@ export function SettingsPanel({ open, settings, onSave, onClose }: Props) {
                 onChange={(v) => set("threshold", sliderValue(v))}
               />
             </Field>
+            <NumberField
+              id="tournament-threshold"
+              label="Tournament Threshold"
+              {...nullable("tournament_threshold")}
+              placeholder="Same as threshold"
+              hintText="Used after a tournament. Empty uses the threshold."
+              min={0}
+              max={1}
+              step={0.05}
+            />
             <Field id="gate" label="Signal">
               <Select
                 aria-label="Signal"
@@ -191,18 +253,19 @@ export function SettingsPanel({ open, settings, onSave, onClose }: Props) {
                 value={ctx.gate}
                 options={GATES}
                 hideSearch
-                onChange={(v) => setCtx((c) => withKnob(c, "gate", v))}
+                onChange={(v) => set("gate", v)}
               />
             </Field>
-            <Input
-              id="k"
-              size="md"
-              type="number"
-              label="Shortlist Size"
-              value={String(ctx.k)}
-              onChange={(v) => set("k", Number(v))}
-              min={1}
-              max={20}
+            <NumberField id="k" label="Shortlist Size" {...number("k")} min={1} max={255} />
+            <NumberField
+              id="top-p"
+              label="Top-p"
+              {...nullable("top_p")}
+              placeholder="Off"
+              hintText="Cut the shortlist at this probability mass instead. Empty uses the size."
+              min={0}
+              max={1}
+              step={0.05}
             />
           </Section>
         )}
@@ -263,5 +326,42 @@ function Field({
         </Text>
       )}
     </div>
+  );
+}
+
+/**
+ * Keeps its own text so a half-typed number ("0.", "") stays editable; the knob only takes
+ * valid values, and the field flags the rest.
+ */
+function NumberField({
+  value,
+  isValid,
+  onChange,
+  ...rest
+}: {
+  id: string;
+  label: string;
+  value: number | null;
+  isValid: (text: string) => boolean;
+  onChange: (text: string) => void;
+  hintText?: string;
+  placeholder?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+}) {
+  const [draft, setDraft] = useState(value === null ? "" : String(value));
+  return (
+    <Input
+      {...rest}
+      size="md"
+      type="number"
+      value={draft}
+      isError={!isValid(draft)}
+      onChange={(v) => {
+        setDraft(v);
+        onChange(v);
+      }}
+    />
   );
 }

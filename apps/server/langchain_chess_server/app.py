@@ -1,9 +1,9 @@
-"""Serves the built React UI and its configuration schema next to the graph API.
+"""Serves the built web UI and its settings schema next to the graph API.
 
 Mounted under `/ui`, never `/`: custom routes shadow the server's own, and `/` is its health
-check while `/threads`, `/runs`, `/assistants` are what the UI talks to. The static directory
-is the Vite build output, produced in CI right before `langgraph deploy`; it is absent in a
-plain checkout, so the mount is conditional and `/ui/config` still answers.
+check. The static directory is the Vite build output, produced in CI right before
+`langgraph deploy`; it is absent in a plain checkout, so the mount is conditional and
+`/ui/config` still answers.
 """
 
 from dataclasses import asdict
@@ -15,24 +15,23 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import TypeAdapter
 
-from jev_chess.graphs.context import PlayContext
+from langchain_chess_server.context import ChessContext
 
 STATIC_DIR = Path(__file__).parent / "static"
-GRAPH_IDS = ("game", "jev", "llm", "hybrid")
+GRAPH_ID = "chess"
 
 
 def ui_config() -> dict[str, Any]:
-    """What the UI needs to build its settings form: schema, defaults, graph ids."""
+    """What the UI needs to build its settings form: schema, defaults, the graph id."""
     return {
-        "graphs": list(GRAPH_IDS),
-        "game_graph": "game",
-        "schema": TypeAdapter(PlayContext).json_schema(),
-        "defaults": asdict(PlayContext()),
+        "graph": GRAPH_ID,
+        "schema": TypeAdapter(ChessContext).json_schema(),
+        "defaults": asdict(ChessContext()),
     }
 
 
 def create_app(static_dir: Path | None = STATIC_DIR) -> FastAPI:
-    app = FastAPI(title="jev-chess ui", docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(title="langchain-chess ui", docs_url=None, redoc_url=None, openapi_url=None)
 
     @app.get("/ui/config")
     def config() -> dict[str, Any]:

@@ -1,10 +1,13 @@
 import { useStream } from "@langchain/react";
-import { useCallback, useMemo, useState } from "react";
-import { fenOrStart } from "./chess";
-import { apiUrl, configurableOf } from "./settings";
-import type { GameState, PlayContext, PlyView, Side, Status } from "./types";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { fenOrStart, replay } from "./chess";
+import { commandKey, createCommandIds } from "./commands";
+import type { MoveEntry } from "./format";
+import { isPending, lastPolicyPly, liveAnalysis, turnOf } from "./selectors";
+import { apiUrl, configurableOf, saveSide } from "./settings";
+import type { ChessContext, ChessValues, Outcome, Ply, Side, TurnRecord } from "./types";
 
-export const GAME_GRAPH = "game";
+export const CHESS_GRAPH = "chess";
 const THREAD_PARAM = "thread";
 
 export function threadFromUrl(search: string = window.location.search): string | null {
@@ -18,91 +21,151 @@ export function writeThreadToUrl(threadId: string | null, history: History = win
   history.replaceState(null, "", url);
 }
 
-export interface Game {
+export interface PendingMove {
+  uci: string;
   fen: string;
-  history: string[];
-  plies: PlyView[];
-  status: Status;
-  result: string | null;
+}
+
+/** The latest opponent ply with its turn and the position it was chosen from. */
+export interface Reply {
+  ply: Ply;
+  turn: TurnRecord | null;
+  fenBefore: string;
+}
+
+export interface Game {
+  startFen: string;
+  fen: string;
+  moves: string[];
+  entries: MoveEntry[];
+  outcome: Outcome | null;
   error: string | null;
-  player: string;
   humanSide: Side;
-  lastPolicyPly: PlyView | null;
+  lastReply: Reply | null;
+  liveAnalysis: string | null;
+  pendingTurn: boolean;
   isThinking: boolean;
   isLoading: boolean;
   streamError: unknown;
   threadId: string | null;
-  pendingFen: string | null;
+  pendingMove: PendingMove | null;
   play: (uci: string, fenAfter: string) => Promise<void>;
   start: () => Promise<void>;
-  newGame: () => void;
+  retry: () => Promise<void>;
 }
 
-/** One `useStream` on the `game` graph; a new game is a new thread. */
-export function useGame(apiKey: string, context: PlayContext): Game {
-  const [threadId, setThreadId] = useState<string | null>(() => threadFromUrl());
-  const [pendingFen, setPendingFen] = useState<string | null>(null);
+const NO_MOVES: string[] = [];
 
-  const stream = useStream<GameState>({
+/** One `useStream` on the `chess` graph; one thread is one game. */
+export function useGame(apiKey: string, context: ChessContext, humanSide: Side): Game {
+  const [threadId, setThreadId] = useState<string | null>(() => threadFromUrl());
+  const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
+  const [commandId] = useState(() => createCommandIds());
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  const stream = useStream<ChessValues>({
     apiUrl: apiUrl(),
     apiKey: apiKey || undefined,
-    assistantId: GAME_GRAPH,
+    assistantId: CHESS_GRAPH,
     threadId,
     onThreadId: (id) => {
+      // A replaced game's stream can still report its thread late; it must not rebind the page.
+      if (!mounted.current) return;
+      saveSide(id, humanSide);
       setThreadId(id);
       writeThreadToUrl(id);
     },
   });
 
   const values = stream.values;
+  const startFen = fenOrStart(values.start_fen);
+  const moves = values.moves ?? NO_MOVES;
+  const plies = useMemo(() => values.plies ?? [], [values.plies]);
+  const turns = useMemo(() => values.turns ?? [], [values.turns]);
+  const position = useMemo(() => replay(startFen, moves), [startFen, moves]);
+
+  const lastReply = useMemo((): Reply | null => {
+    const ply = lastPolicyPly(plies);
+    if (!ply) return null;
+    return {
+      ply,
+      turn: turnOf(ply, turns),
+      fenBefore: replay(startFen, moves.slice(0, ply.ply)).fen,
+    };
+  }, [plies, turns, startFen, moves]);
+
+  const entries = useMemo(
+    () =>
+      moves.map((uci, i) => ({
+        ply: i,
+        san: plies[i]?.san ?? position.sans[i] ?? uci,
+        source: plies[i]?.source ?? "external",
+      })),
+    [moves, plies, position],
+  );
+
   const configurable = useMemo(() => configurableOf(context), [context]);
 
-  const submit = useCallback(
-    (input: { move?: string }) => stream.submit(input, { config: { configurable } }),
+  const send = useCallback(
+    (input: ChessValues) =>
+      stream.submit(input, { config: { configurable }, multitaskStrategy: "reject" }),
     [stream, configurable],
+  );
+
+  const command = useCallback(
+    (content: string) =>
+      send({
+        messages: [
+          { type: "human", id: commandId(commandKey(threadId, moves.length, content)), content },
+        ],
+      }),
+    [send, commandId, threadId, moves.length],
   );
 
   // Optimistic board: show the human's move until the run settles, success or error.
   const play = useCallback(
     async (uci: string, fenAfter: string) => {
-      setPendingFen(fenAfter);
+      setPendingMove({ uci, fen: fenAfter });
       try {
-        await submit({ move: uci });
+        await command(uci);
       } finally {
-        setPendingFen(null);
+        setPendingMove(null);
       }
     },
-    [submit],
+    [command],
   );
 
-  const start = useCallback(() => submit({}), [submit]);
+  const start = useCallback(() => command("go"), [command]);
+  // Empty input resumes the pending turn; a fresh `go` would be rejected while one is pending.
+  const retry = useCallback(() => send({}), [send]);
 
-  const newGame = useCallback(() => {
-    setPendingFen(null);
-    setThreadId(null);
-    writeThreadToUrl(null);
-  }, []);
-
-  const plies = values.plies ?? [];
-  const lastPolicyPly = [...plies].reverse().find((p) => p.source !== "human") ?? null;
+  const isThinking = stream.isLoading;
 
   return {
-    fen: fenOrStart(values.fen),
-    history: values.history ?? [],
-    plies,
-    status: values.status ?? "playing",
-    result: values.result ?? null,
+    startFen,
+    fen: position.fen,
+    moves,
+    entries,
+    outcome: values.outcome ?? null,
     error: values.error ?? null,
-    player: values.player ?? "",
-    humanSide: values.human_side ?? context.human_side,
-    lastPolicyPly,
-    isThinking: stream.isLoading,
-    isLoading: stream.isLoading || stream.isThreadLoading,
+    humanSide,
+    lastReply,
+    liveAnalysis: isThinking ? liveAnalysis(stream.messages, turns, plies) : null,
+    pendingTurn: isPending(turns),
+    isThinking,
+    isLoading: isThinking || stream.isThreadLoading,
     streamError: stream.error,
     threadId,
-    pendingFen,
+    pendingMove,
     play,
     start,
-    newGame,
+    retry,
   };
 }

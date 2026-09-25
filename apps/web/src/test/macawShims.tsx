@@ -11,16 +11,19 @@ export function selectShim() {
       options,
       value,
       onChange,
+      disabled,
       "aria-label": label,
     }: {
       options: readonly Option[];
       value?: string;
       onChange: (v: string | undefined) => void;
+      disabled?: boolean;
       "aria-label"?: string;
     }) => (
       <select
         aria-label={label}
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value === "" ? undefined : e.target.value)}
       >
         <option value="">(none)</option>

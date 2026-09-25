@@ -2,9 +2,16 @@
   "$schema": "https://langgra.ph/schema.json",
   "python_version": "3.13",
   "image_distro": "wolfi",
-  "source": { "kind": "uv", "root": ".", "package": "langchain-chess-server" },
+  "source": {
+    "kind": "uv",
+    "root": ".",
+    "package": "langchain-chess-server"
+  },
   "graphs": {
     "chess": "./apps/server/langchain_chess_server/graph.py:make_graph"
   },
-  "env": ".env"
+  "env": ".env",
+  "http": {
+    "app": "./apps/server/langchain_chess_server/app.py:app"
+  }
 }

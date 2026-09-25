@@ -1,158 +1,150 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vite-plus/test";
-import {
-  isAtBottom,
-  lastMoveStyles,
-  sliderValue,
-  money,
-  pairs,
-  seconds,
-  sourceClass,
-  sourceLabel,
-} from "../format";
-import { DEFAULT_CONTEXT, START_FEN, type PlyView } from "../types";
+import type { MoveEntry } from "../format";
+import { AFTER_E4, call, E4_E5, ply, systemOne, turn } from "../test/fixtures";
+import { renderWithProviders } from "../test/renderApp";
+import { START_FEN, type Ply, type SystemOneMeta } from "../types";
+import type { Reply } from "../useGame";
 import { Board } from "./Board";
 import { MoveList } from "./MoveList";
 import { PlyDetails } from "./PlyDetails";
-import { renderWithProviders } from "../test/renderApp";
 import { ThemeToggle } from "./ThemeToggle";
 
-const human: PlyView = {
-  ply: 1,
-  side: "white",
-  san: "e4",
-  uci: "e2e4",
-  source: "human",
-  model: "human",
-  latency_ms: 0,
-};
-const jev: PlyView = {
-  ply: 2,
-  side: "black",
-  san: "e5",
-  uci: "e7e5",
-  source: "jev",
-  model: "jev-latest",
-  latency_ms: 240,
-  cost_usd: 0.00006,
-  jev_margin: 0.92,
-  jev_confidence: 0.8,
-  jev_top: [
-    { uci: "e7e5", san: "e5", probability: 0.9 },
-    { uci: "c7c5", san: "c5", probability: 0.1 },
-  ],
-};
-const llm: PlyView = {
-  ...jev,
-  ply: 4,
-  san: "Nc6",
-  uci: "b8c6",
-  source: "llm",
-  model: "claude-opus-5",
-  latency_ms: 8200,
-  cost_usd: 0.245,
-  reasoning_tokens: 900,
-  illegal_attempts: 1,
-  escalated: true,
-  jev_margin: 0.1,
-  raw_reply: "## Plan\n\nDevelop the knight.\n\nMOVE: **Nc6**",
-};
-
-describe("format helpers", () => {
-  it("pairs plies into rows and classes them by source", () => {
-    expect(pairs([])).toEqual([]);
-    expect(pairs([human, jev, { ...human, ply: 3, san: "Nf3" }])).toHaveLength(2);
-    expect(sourceClass(undefined)).toBe("");
-    expect(sourceClass("fallback_jev")).toBe("fallback");
-    expect(sourceClass("llm")).toBe("llm");
-  });
-
-  it("formats money, time, and labels", () => {
-    expect(money(undefined)).toBe("n/a");
-    expect(money(0.00006)).toBe("$0.0001");
-    expect(money(0.245)).toBe("$0.245");
-    expect(seconds(240)).toBe("240 ms");
-    expect(seconds(8200)).toBe("8.2 s");
-    expect(sourceLabel("jev")).toBe("Jev played");
-    expect(sourceLabel("llm")).toBe("LLM chose");
-    expect(sourceLabel("fallback_jev")).toBe("LLM failed, Jev played");
-    expect(sourceLabel("fallback_random")).toBe("LLM failed, random move");
-    expect(sourceLabel("engine")).toBe("Engine");
-    expect(sourceLabel("other")).toBe("other");
-  });
-
-  it("highlights the last move squares", () => {
-    expect(lastMoveStyles(null)).toEqual({});
-    expect(lastMoveStyles("e2")).toEqual({});
-    expect(Object.keys(lastMoveStyles("e2e4"))).toEqual(["e2", "e4"]);
-  });
-
-  it("takes the first slider value from a range", () => {
-    expect(sliderValue(0.4)).toBe(0.4);
-    expect(sliderValue([0.2, 0.8])).toBe(0.2);
-  });
-
-  it("detects the bottom within tolerance", () => {
-    expect(isAtBottom({ scrollTop: 92, scrollHeight: 200, clientHeight: 100 })).toBe(true);
-    expect(isAtBottom({ scrollTop: 40, scrollHeight: 200, clientHeight: 100 })).toBe(false);
-  });
-});
+const e4: MoveEntry = { ply: 0, san: "e4", source: "external" };
+const e5: MoveEntry = { ply: 1, san: "e5", source: "systemone" };
+const nf3: MoveEntry = { ply: 2, san: "Nf3", source: "llm" };
+const nc6: MoveEntry = { ply: 3, san: "Nc6", source: "forced" };
 
 describe("MoveList", () => {
-  it("renders an empty hint and rows, including a row without a white move", () => {
-    const { rerender } = render(<MoveList plies={[]} />);
+  it("renders an empty hint and rows coloured by source", () => {
+    const { rerender } = render(<MoveList entries={[]} startFen={START_FEN} />);
     expect(screen.getByText("No moves yet.")).toBeInTheDocument();
-    rerender(<MoveList plies={[human, jev, { ...human, ply: 3, san: "Nf3" }]} />);
+    rerender(
+      <MoveList
+        entries={[e4, e5, nf3, nc6, { ply: 4, san: "Bb5", source: "book" }]}
+        startFen={START_FEN}
+      />,
+    );
+    expect(screen.getByText("e4")).not.toHaveClass("bg-brand-subtle");
     expect(screen.getByText("e5")).toHaveClass("bg-brand-subtle");
-    expect(screen.getByText("Nf3")).toBeInTheDocument();
-    rerender(<MoveList plies={[{ ...jev, source: "fallback_jev" }]} />);
-    expect(screen.getByText("e5")).toHaveClass("bg-error-subtle");
+    expect(screen.getByText("Nf3")).toHaveClass("bg-purple");
+    expect(screen.getByText("Nc6")).toHaveClass("bg-surface-level-3");
+    expect(screen.getByText("Bb5")).toHaveClass("bg-warning-subtle");
+    expect(screen.getByText("3.")).toBeInTheDocument();
+  });
+
+  it("numbers a black-to-move root from its fullmove number", () => {
+    render(<MoveList entries={[{ ...e5, ply: 0 }]} startFen={AFTER_E4} />);
     expect(screen.getByText("1.")).toBeInTheDocument();
+    expect(screen.getByText("…")).toBeInTheDocument();
   });
 
   it("follows new moves while at the bottom and holds after a manual scroll up", () => {
-    const { rerender } = render(<MoveList plies={[human]} />);
+    const { rerender } = render(<MoveList entries={[e4]} startFen={START_FEN} />);
     const list = screen.getByLabelText("move list");
     Object.defineProperty(list, "scrollHeight", { value: 400, configurable: true });
     Object.defineProperty(list, "clientHeight", { value: 100, configurable: true });
-    rerender(<MoveList plies={[human, jev]} />);
+    rerender(<MoveList entries={[e4, e5]} startFen={START_FEN} />);
     expect(list.scrollTop).toBe(400);
     list.scrollTop = 10;
     fireEvent.scroll(list);
-    rerender(<MoveList plies={[human, jev, { ...human, ply: 3, san: "Nf3" }]} />);
+    rerender(<MoveList entries={[e4, e5, nf3]} startFen={START_FEN} />);
     expect(list.scrollTop).toBe(10);
     list.scrollTop = 300;
     fireEvent.scroll(list);
-    rerender(
-      <MoveList plies={[human, jev, { ...human, ply: 3, san: "Nf3" }, { ...jev, ply: 4 }]} />,
-    );
+    rerender(<MoveList entries={[e4, e5, nf3, nc6]} startFen={START_FEN} />);
     expect(list.scrollTop).toBe(400);
   });
 });
 
+const s1Reply = E4_E5.plies[1];
+
+function reply(
+  overrides: Partial<Ply> = {},
+  meta?: SystemOneMeta,
+  extra: Partial<Reply> = {},
+): Reply {
+  return {
+    ply: {
+      ...s1Reply,
+      ...overrides,
+      ...(meta ? { meta: { SystemOneMiddleware: { ...meta } } } : {}),
+    },
+    turn: E4_E5.turns[0],
+    fenBefore: AFTER_E4,
+    ...extra,
+  };
+}
+
+function details(r: Reply | null) {
+  return renderWithProviders(<PlyDetails reply={r} />);
+}
+
 describe("PlyDetails", () => {
-  it("shows a hint without a ply", () => {
-    render(<PlyDetails ply={null} context={DEFAULT_CONTEXT} />);
+  it("shows a hint without a reply", () => {
+    details(null);
     expect(screen.getByText(/Make a move/)).toBeInTheDocument();
   });
 
-  it("shows Jev telemetry with the gate line for the hybrid", () => {
-    render(<PlyDetails ply={jev} context={DEFAULT_CONTEXT} />);
-    expect(screen.getByText("Jev played")).toBeInTheDocument();
-    expect(screen.getByText(/margin 0.92 vs threshold 0.90/)).toBeInTheDocument();
-    expect(screen.getByText(/Jev was sure enough/)).toBeInTheDocument();
-    expect(screen.getByLabelText("jev candidates").children).toHaveLength(2);
-    expect(screen.getByLabelText("e5 probability")).toHaveAttribute("aria-valuenow", "90");
+  it("shows a System 1 move: source, model, cost, gate, and where it stood", () => {
+    details(reply());
+    expect(screen.getByText("System 1 played")).toBeInTheDocument();
+    expect(screen.getByText("semif-qwen3.5-4b")).toBeInTheDocument();
+    expect(screen.getByText("240 ms")).toBeInTheDocument();
+    expect(screen.getByText("$0.0001")).toBeInTheDocument();
+    expect(screen.getByText(/margin 0.92 vs threshold 0.90, System 1 played/)).toBeInTheDocument();
+    expect(screen.getByText(/System 1 ranked #1 at 95%/)).toBeInTheDocument();
+    expect(screen.queryByLabelText("system 1 candidates")).not.toBeInTheDocument();
     expect(screen.queryByText("Show LLM reply")).not.toBeInTheDocument();
   });
 
-  it("shows LLM telemetry, toggles the markdown reply, and uses the confidence gate", () => {
-    render(<PlyDetails ply={llm} context={{ ...DEFAULT_CONTEXT, gate: "confidence" }} />);
+  it("shows an LLM move with System 1's shortlist, turn cost, and the markdown reply", () => {
+    const meta = systemOne({
+      status: "shortlist",
+      shortlist: [
+        { uci: "b8c6", probability: 0.55 },
+        { uci: "g8f6", probability: 0.3 },
+      ],
+      followed: true,
+      signal: 0.25,
+      finalist_conditional: true,
+      played_move_result: [{ round: 2, heat: null, rank: 1, probability: 0.55, bye: false }],
+    });
+    const calls = [
+      call({ kind: "systemone", cost_usd: 0.001 }),
+      call({ cost_usd: 0.2, reasoning_tokens: 900 }),
+      call({ cost_usd: null }),
+    ];
+    details(
+      reply(
+        {
+          ply: 3,
+          uci: "b8c6",
+          san: "Nc6",
+          source: "llm",
+          model: "anthropic:claude-opus-5",
+          latency_ms: 8200,
+          analysis: "## Plan\n\nDevelop the knight.\n\nMOVE: **Nc6**",
+        },
+        meta,
+        {
+          turn: turn({ calls, illegal_attempts: 1 }),
+          fenBefore: "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",
+        },
+      ),
+    );
     expect(screen.getByText("LLM chose")).toBeInTheDocument();
-    expect(screen.getByText(/confidence 0.80/)).toBeInTheDocument();
-    expect(screen.getByText(/escalated to the LLM/)).toBeInTheDocument();
+    expect(screen.getByLabelText("$0.201+ (incomplete estimate)")).toBeInTheDocument();
     expect(screen.getByText("900")).toBeInTheDocument();
     expect(screen.getByText("1")).toBeInTheDocument();
+    expect(screen.getByText(/System 1 suggested 2, the LLM followed/)).toBeInTheDocument();
+    expect(screen.getByText(/ranked #1 at 55% among finalists/)).toBeInTheDocument();
+    expect(screen.getByText("Candidates, probabilities among finalists")).toBeInTheDocument();
+    expect(screen.getByLabelText("system 1 candidates")).toHaveTextContent("Nc6");
+    expect(screen.getByLabelText("Nf6 probability among finalists")).toHaveAttribute(
+      "aria-valuenow",
+      "30",
+    );
     fireEvent.click(screen.getByRole("button", { name: "Show LLM reply" }));
     expect(screen.getByRole("heading", { level: 2, name: "Plan" })).toBeInTheDocument();
     expect(screen.getByText("Nc6", { selector: ".markdown strong" })).toBeInTheDocument();
@@ -160,23 +152,42 @@ describe("PlyDetails", () => {
     expect(screen.queryByRole("heading", { level: 2, name: "Plan" })).not.toBeInTheDocument();
   });
 
-  it("uses a plain badge for engine moves", () => {
-    render(
-      <PlyDetails
-        ply={{ ...jev, source: "engine", model: "random", jev_top: undefined }}
-        context={DEFAULT_CONTEXT}
-      />,
-    );
-    expect(screen.getByText("Engine")).toBeInTheDocument();
+  it("says when the LLM went off the shortlist, without probabilities among finalists", () => {
+    const meta = systemOne({
+      status: "shortlist",
+      shortlist: [{ uci: "g8f6", probability: 0.6 }],
+      followed: false,
+      played_move_result: null,
+    });
+    details(reply({ source: "llm", uci: "b8c6", san: "Nc6" }, meta));
+    expect(screen.getByText(/the LLM went its own way/)).toBeInTheDocument();
+    expect(screen.getByText("Candidates, probabilities")).toBeInTheDocument();
+    expect(screen.getByLabelText("Nf6 probability")).toBeInTheDocument();
+    expect(screen.queryByText(/Played move/)).not.toBeInTheDocument();
   });
 
-  it("hides the gate line outside the hybrid or without a signal", () => {
-    render(<PlyDetails ply={jev} context={{ ...DEFAULT_CONTEXT, policy: "jev" }} />);
-    expect(screen.queryByText(/threshold/)).not.toBeInTheDocument();
-    render(
-      <PlyDetails ply={{ ...llm, jev_margin: null, jev_top: [] }} context={DEFAULT_CONTEXT} />,
-    );
-    expect(screen.queryByText(/threshold/)).not.toBeInTheDocument();
+  it("omits the verdict detail and the gate line when the signal is missing", () => {
+    details(reply({}, systemOne({ status: "shortlist", followed: null })));
+    expect(screen.getByText(/System 1 suggested 0\./)).toBeInTheDocument();
+    details(reply({ san: "Qh5" }, systemOne({ signal: null })));
+    expect(screen.getAllByText(/Gate:/)).toHaveLength(1);
+  });
+
+  it("shows why System 1 was skipped", () => {
+    details(reply({ source: "llm" }, systemOne({ status: "skipped", error: "timeout" })));
+    expect(screen.getByText("System 1 skipped: timeout")).toBeInTheDocument();
+    details(reply({ source: "llm" }, systemOne({ status: "skipped", error: null })));
+    expect(screen.getByText(/no reason given/)).toBeInTheDocument();
+  });
+
+  it("shows forced and unknown sources, and a dash without a turn or model", () => {
+    details(reply({ source: "forced", meta: {} }, undefined, { turn: null }));
+    expect(screen.getByText("Forced move")).toBeInTheDocument();
+    expect(screen.getAllByText("—")).toHaveLength(1);
+    details(reply({ source: "book", model: null, meta: {} }, undefined, { turn: turn() }));
+    expect(screen.getByText("book")).toBeInTheDocument();
+    expect(screen.getAllByText("—")).toHaveLength(3);
+    expect(ply().source).toBe("external");
   });
 });
 

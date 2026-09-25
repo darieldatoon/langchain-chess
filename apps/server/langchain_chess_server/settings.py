@@ -1,37 +1,24 @@
-"""Environment settings for the imperative shell, via pydantic-settings.
+"""Gateway settings and the org rules the app enforces, via pydantic-settings.
 
-Both classes read the shell first and `.env` second. `env_ignore_empty` matters: the
-`.env` template sets `LANGSMITH_GATEWAY_API_KEY=${LC_GATEWAY_KEY}`, which expands to ""
-when the shell variable is missing. Treating "" as unset makes that a hard validation
-error instead of langchain-core silently falling back to the tracing key and routing
-model calls to the wrong org.
+Settings read the shell first and `.env` second. `env_ignore_empty` matters: the `.env`
+template sets `LANGSMITH_GATEWAY_API_KEY=${LC_GATEWAY_KEY}`, which expands to "" when the shell
+variable is missing. Treating "" as unset makes that a validation error, instead of
+langchain-core silently falling back to the tracing key and routing calls to the wrong org.
 """
-
-from pathlib import Path
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 GATEWAY_HOST = "gateway.smith.langchain.com"
 
-_COMMON = SettingsConfigDict(
-    env_file=".env",
-    env_file_encoding="utf-8",
-    env_ignore_empty=True,
-    extra="ignore",
-)
-
-
-class EngineSettings(BaseSettings):
-    model_config = _COMMON
-
-    stockfish_path: str | None = None
-    lc0_path: str | None = None
-    maia_weights_dir: Path = Path("engines/maia")
-
 
 class GatewaySettings(BaseSettings):
-    model_config = _COMMON
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_ignore_empty=True,
+        extra="ignore",
+    )
 
     langsmith_gateway: bool = Field(validation_alias="LANGSMITH_GATEWAY")
     langsmith_gateway_api_key: SecretStr = Field(validation_alias="LANGSMITH_GATEWAY_API_KEY")
@@ -53,6 +40,7 @@ class GatewaySettings(BaseSettings):
     @classmethod
     def _base_url_must_be_gateway(cls, url: str) -> str:
         if GATEWAY_HOST not in url:
-            msg = f"TYPESAFE_BASE_URL must point at {GATEWAY_HOST}/typesafe, got {url!r}"
+            msg = f"TYPESAFE_BASE_URL must point at the gateway root https://{GATEWAY_HOST}"
+            msg += f", got {url!r}"
             raise ValueError(msg)
         return url

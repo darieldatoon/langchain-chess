@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vite-plus/test";
-import { fenOrStart, isOwnPiece, sideToMove, tryMove } from "./chess";
+import {
+  fenOrStart,
+  fullmoveNumber,
+  isOwnPiece,
+  replay,
+  sanAt,
+  sideToMove,
+  tryMove,
+} from "./chess";
 import { START_FEN } from "./types";
 
 const PROMO = "8/P6k/8/8/8/8/8/K7 w - - 0 1";
@@ -39,6 +47,34 @@ describe("helpers", () => {
 
   it("falls back to the start position", () => {
     expect(fenOrStart(undefined)).toBe(START_FEN);
+    expect(fenOrStart("")).toBe(START_FEN);
     expect(fenOrStart("x")).toBe("x");
+  });
+
+  it("reads the fullmove number, defaulting to 1", () => {
+    expect(fullmoveNumber(START_FEN)).toBe(1);
+    expect(fullmoveNumber("8/8/8/8/8/8/8/K6k b - - 3 42")).toBe(42);
+    expect(fullmoveNumber("8/8/8/8/8/8/8/K6k w - -")).toBe(1);
+  });
+});
+
+describe("replay", () => {
+  it("replays UCI moves, promotions included, and reports SAN", () => {
+    expect(replay(START_FEN, ["e2e4", "e7e5", "g1f3"])).toEqual({
+      fen: "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",
+      sans: ["e4", "e5", "Nf3"],
+    });
+    expect(replay(PROMO, ["a7a8n"]).sans).toEqual(["a8=N"]);
+  });
+
+  it("stops at the first move it can't play", () => {
+    const result = replay(START_FEN, ["e2e4", "e2e4", "e7e5"]);
+    expect(result.sans).toEqual(["e4"]);
+    expect(result.fen).toBe("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1");
+  });
+
+  it("names a move at a position, or echoes the UCI when it is illegal there", () => {
+    expect(sanAt(START_FEN, "g1f3")).toBe("Nf3");
+    expect(sanAt(START_FEN, "e7e5")).toBe("e7e5");
   });
 });

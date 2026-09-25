@@ -1,46 +1,81 @@
-import type { PlyView, Side, Status } from "./types";
+import { fullmoveNumber, sideToMove } from "./chess";
+import type { TurnCost } from "./selectors";
+import type { DrawReason, Outcome, Side, StageResult } from "./types";
 
-export function money(usd: number | null | undefined): string {
-  if (usd == null) return "n/a";
+export function money(usd: number): string {
   return usd < 0.01 ? `$${usd.toFixed(4)}` : `$${usd.toFixed(3)}`;
+}
+
+export interface CostText {
+  text: string;
+  /** Some call was unpriced or approximated, so the total is a lower bound. */
+  incomplete: boolean;
+}
+
+export function costText(cost: TurnCost | null): CostText {
+  if (!cost) return { text: "—", incomplete: false };
+  return cost.complete
+    ? { text: money(cost.usd), incomplete: false }
+    : { text: `${money(cost.usd)}+`, incomplete: true };
 }
 
 export function seconds(ms: number): string {
   return ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${Math.round(ms)} ms`;
 }
 
+export function percent(probability: number): string {
+  return `${(probability * 100).toFixed(0)}%`;
+}
+
 export function sourceLabel(source: string): string {
   switch (source) {
-    case "jev":
-      return "Jev played";
+    case "external":
+      return "Human";
     case "llm":
       return "LLM chose";
-    case "fallback_jev":
-      return "LLM failed, Jev played";
-    case "fallback_random":
-      return "LLM failed, random move";
-    case "engine":
-      return "Engine";
+    case "systemone":
+      return "System 1 played";
+    case "forced":
+      return "Forced move";
     default:
       return source;
   }
 }
 
-export function sourceClass(source: string | undefined): string {
-  if (!source) return "";
-  return source.startsWith("fallback") ? "fallback" : source;
+export type SourceClass = "external" | "llm" | "systemone" | "forced" | "other";
+
+export function sourceClass(source: string): SourceClass {
+  switch (source) {
+    case "external":
+    case "llm":
+    case "systemone":
+    case "forced":
+      return source;
+    default:
+      return "other";
+  }
 }
 
-export type MoveRow = [number, PlyView | undefined, PlyView | undefined];
+export interface MoveEntry {
+  ply: number;
+  san: string;
+  source: string;
+}
 
-export function pairs(plies: PlyView[]): MoveRow[] {
-  const out: MoveRow[] = [];
-  const byPly = new Map(plies.map((p) => [p.ply, p]));
-  const last = plies.length ? Math.max(...plies.map((p) => p.ply)) : 0;
-  for (let ply = 1; ply <= last; ply += 2) {
-    out.push([(ply + 1) / 2, byPly.get(ply), byPly.get(ply + 1)]);
-  }
-  return out;
+export type MoveRow = [number, MoveEntry | undefined, MoveEntry | undefined];
+
+/** Rows numbered from the root FEN, which may have Black to move and any fullmove number. */
+export function pairs(entries: readonly MoveEntry[], startFen: string): MoveRow[] {
+  const first = fullmoveNumber(startFen);
+  const offset = sideToMove(startFen) === "black" ? 1 : 0;
+  const rows: MoveRow[] = [];
+  entries.forEach((entry, i) => {
+    const slot = i + offset;
+    const row = Math.floor(slot / 2);
+    rows[row] ??= [first + row, undefined, undefined];
+    rows[row][slot % 2 === 0 ? 1 : 2] = entry;
+  });
+  return rows;
 }
 
 export function lastMoveStyles(uci: string | null): Record<string, React.CSSProperties> {
@@ -49,24 +84,54 @@ export function lastMoveStyles(uci: string | null): Record<string, React.CSSProp
   return { [uci.slice(0, 2)]: highlight, [uci.slice(2, 4)]: highlight };
 }
 
+const DRAW_REASONS: Record<DrawReason, string> = {
+  stalemate: "stalemate",
+  insufficient_material: "insufficient material",
+  threefold: "threefold repetition",
+  fivefold: "fivefold repetition",
+  fifty_moves: "the fifty-move rule",
+  seventyfive_moves: "the seventy-five-move rule",
+};
+
+const colour = (side: Side) => (side === "white" ? "White" : "Black");
+const other = (side: Side): Side => (side === "white" ? "black" : "white");
+const score = (winner: Side) => (winner === "white" ? "1-0" : "0-1");
+
+export function outcomeLine(outcome: Outcome): string {
+  switch (outcome.kind) {
+    case "checkmate":
+      return `Checkmate, ${colour(outcome.winner)} wins. ${score(outcome.winner)}`;
+    case "draw":
+      return `Draw by ${DRAW_REASONS[outcome.reason]}. 1/2-1/2`;
+    case "resignation":
+      return `${colour(other(outcome.winner))} resigns after repeated illegal moves. ${score(outcome.winner)}`;
+  }
+}
+
 export interface StatusInput {
-  status: Status;
-  result: string | null;
-  history: string[];
+  outcome: Outcome | null;
+  fen: string;
+  moveCount: number;
   humanSide: Side;
+  pending: boolean;
 }
 
 export function statusLine(game: StatusInput): string {
-  if (game.status === "checkmate") return `Checkmate. ${game.result}`;
-  if (game.status === "stalemate") return "Stalemate. Draw.";
-  if (game.status === "draw") return "Draw.";
-  if (game.status === "max_plies") return "Move limit reached. Called a draw.";
-  if (game.history.length === 0) {
-    return game.humanSide === "white" ? "Your move." : "Press Start and the opponent opens.";
-  }
-  return game.humanSide === (game.history.length % 2 === 0 ? "white" : "black")
-    ? "Your move."
+  if (game.outcome) return outcomeLine(game.outcome);
+  if (game.humanSide === sideToMove(game.fen)) return "Your move.";
+  return game.moveCount === 0 && !game.pending
+    ? "Press Start and the opponent opens."
     : "Opponent to move.";
+}
+
+/** Where System 1 ranked the played move: its last stage, or where a tournament knocked it out. */
+export function standingLine(stages: readonly StageResult[], amongFinalists: boolean): string {
+  const last = stages.at(-1);
+  if (!last) return "Not among System 1's options.";
+  if (last.bye) return `Bye in round ${last.round}.`;
+  const at = `ranked #${last.rank} at ${percent(last.probability)}`;
+  if (last.heat === null) return `System 1 ${at}${amongFinalists ? " among finalists" : ""}.`;
+  return `Out in round ${last.round}, heat ${last.heat}: ${at} in its heat.`;
 }
 
 export function describeError(error: unknown): string | null {
@@ -88,4 +153,18 @@ export function isAtBottom(el: {
 /** Macaw's Slider reports a range as an array; the threshold is a single value. */
 export function sliderValue(value: number | number[]): number {
   return Array.isArray(value) ? value[0] : value;
+}
+
+/** A number field's text as a knob value; `undefined` (keep the previous value) when invalid. */
+export function parseKnob(text: string, valid: (value: unknown) => boolean): number | undefined {
+  const value = Number(text);
+  return text.trim() !== "" && valid(value) ? value : undefined;
+}
+
+/** Like `parseKnob`, but an empty field clears a nullable knob. */
+export function parseNullableKnob(
+  text: string,
+  valid: (value: unknown) => boolean,
+): number | null | undefined {
+  return text.trim() === "" ? null : parseKnob(text, valid);
 }

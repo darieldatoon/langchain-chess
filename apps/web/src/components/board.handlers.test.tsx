@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { START_FEN } from "../types";
 import { Board } from "./Board";
@@ -9,6 +9,8 @@ interface Captured {
     square: string;
     isSparePiece: boolean;
   }) => boolean;
+  onSquareClick?: (args: { piece: { pieceType: string } | null; square: string }) => void;
+  squareStyles?: Record<string, unknown>;
   onPieceDrop?: (args: {
     piece: { pieceType: string };
     sourceSquare: string;
@@ -91,5 +93,39 @@ describe("Board handlers", () => {
     expect(onMove).not.toHaveBeenCalled();
     expect(drop({ piece: { pieceType: "wP" }, sourceSquare: "e2", targetSquare: "e4" })).toBe(true);
     expect(onMove).toHaveBeenCalledWith("e2e4", expect.stringContaining(" b KQkq - 0 1"));
+  });
+
+  it("moves by clicking a piece and then its target", () => {
+    const onMove = vi.fn();
+    const board = (locked = false) => (
+      <Board
+        fen={START_FEN}
+        orientation="white"
+        humanSide="white"
+        lastMove={null}
+        locked={locked}
+        onMove={onMove}
+      />
+    );
+    const { rerender } = render(board());
+    const click = (square: string, pieceType?: string) =>
+      act(() =>
+        captured.options?.onSquareClick?.({ piece: pieceType ? { pieceType } : null, square }),
+      );
+    click("e7", "bP"); // not the human's piece: nothing selected
+    click("e4");
+    expect(onMove).not.toHaveBeenCalled();
+    click("e2", "wP");
+    expect(captured.options?.squareStyles).toHaveProperty("e2");
+    click("e5"); // illegal target: the selection clears
+    expect(captured.options?.squareStyles).not.toHaveProperty("e2");
+    click("e2", "wP");
+    click("e4");
+    expect(onMove).toHaveBeenCalledWith("e2e4", expect.stringContaining("4P3"));
+    click("g1", "wN");
+    rerender(board(true));
+    click("f3");
+    expect(onMove).toHaveBeenCalledTimes(1);
+    expect(captured.options?.squareStyles).not.toHaveProperty("g1");
   });
 });
