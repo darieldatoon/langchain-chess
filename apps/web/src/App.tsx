@@ -8,6 +8,7 @@ import { Text } from "@langchain/macaw-components/Text";
 import { ThinkingState } from "@langchain/macaw-components/ThinkingState";
 import { GearSixIcon } from "@phosphor-icons/react/dist/ssr/GearSix";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { checkApiKey, type KeyCheck } from "./auth";
 import { opposite, sideToMove } from "./chess";
 import { AppSettingsDialog } from "./components/AppSettingsDialog";
 import { Board } from "./components/Board";
@@ -17,6 +18,7 @@ import { PlyDetails } from "./components/PlyDetails";
 import { ResultCard } from "./components/ResultCard";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { describeError, isAuthError, isBusyRejection, statusLine } from "./format";
+import { apiUrl } from "./settings";
 import { changedKnobs, opponentLabel, resolveSide, type GameRecord, type Setup } from "./setup";
 import {
   loadAppSettings,
@@ -37,7 +39,13 @@ interface Seat extends GameRecord {
   autoStart: boolean;
 }
 
-type Overlay = "new-game" | "settings" | null;
+/** Settings opened from New game go back to it; `draft` holds the picks not yet played. */
+type Overlay =
+  | { kind: "new-game"; draft: Setup | null }
+  | { kind: "settings"; back: Overlay }
+  | null;
+
+const NEW_GAME: Overlay = { kind: "new-game", draft: null };
 
 function nextSeat(previous: Seat | null, side: Side, context: ChessContext): Seat {
   return { number: (previous?.number ?? 0) + 1, side, context, autoStart: side === "black" };
@@ -46,21 +54,32 @@ function nextSeat(previous: Seat | null, side: Side, context: ChessContext): Sea
 interface Props {
   /** Resolves a Random side; injectable so tests are deterministic. */
   random?: () => number;
+  /** Asks the server about a key before a game starts; injectable so tests need no server. */
+  checkKey?: (apiKey: string) => Promise<KeyCheck>;
 }
 
-export default function App({ random = Math.random }: Props) {
+const serverCheck = (apiKey: string) => checkApiKey(apiUrl(), apiKey);
+
+export default function App({ random = Math.random, checkKey = serverCheck }: Props) {
   const [app, setApp] = useState<AppSettings>(() => loadAppSettings());
   const [setup, setSetup] = useState<Setup>(() => loadSetup());
   const [seat, setSeat] = useState<Seat | null>(() => {
     const threadId = threadFromUrl();
     return threadId ? { number: 0, autoStart: false, ...loadGame(threadId) } : null;
   });
-  const [overlay, setOverlay] = useState<Overlay>(() => (seat ? null : "new-game"));
+  const [overlay, setOverlay] = useState<Overlay>(() => (seat ? null : NEW_GAME));
 
-  // With no game on screen the New game dialog is the page, so closing anything returns to it.
-  const close = useCallback(() => setOverlay(seat ? null : "new-game"), [seat]);
-  const openNewGame = useCallback(() => setOverlay("new-game"), []);
-  const openSettings = useCallback(() => setOverlay("settings"), []);
+  // With no game on screen the New game dialog is the page: it can't be closed, and the header's
+  // Settings is out of reach behind it, so a null `back` always means the game on screen.
+  const closeNewGame = useCallback(() => setOverlay(null), []);
+  const settingsBack = overlay?.kind === "settings" ? overlay.back : null;
+  const closeSettings = useCallback(() => setOverlay(settingsBack), [settingsBack]);
+  const openNewGame = useCallback(() => setOverlay(NEW_GAME), []);
+  const openSettings = useCallback(() => setOverlay({ kind: "settings", back: null }), []);
+  const openSettingsFromNewGame = useCallback(
+    (draft: Setup) => setOverlay({ kind: "settings", back: { kind: "new-game", draft } }),
+    [],
+  );
 
   // Also persists a key migrated from the old settings on first load.
   useEffect(() => saveAppSettings(app), [app]);
@@ -68,9 +87,9 @@ export default function App({ random = Math.random }: Props) {
   const onSaveApp = useCallback(
     (next: AppSettings) => {
       setApp(next);
-      close();
+      closeSettings();
     },
-    [close],
+    [closeSettings],
   );
 
   const play = useCallback(
@@ -131,20 +150,21 @@ export default function App({ random = Math.random }: Props) {
       </div>
 
       <NewGameDialog
-        key={overlay === "new-game" ? "new-game-open" : "new-game-closed"}
-        open={overlay === "new-game"}
-        initial={setup}
+        key={overlay?.kind === "new-game" ? "new-game-open" : "new-game-closed"}
+        open={overlay?.kind === "new-game"}
+        initial={(overlay?.kind === "new-game" && overlay.draft) || setup}
         canCancel={seat !== null}
         onPlay={play}
-        onClose={close}
-        onOpenSettings={openSettings}
+        onClose={closeNewGame}
+        onOpenSettings={openSettingsFromNewGame}
+        checkKey={() => checkKey(app.apiKey)}
       />
       <AppSettingsDialog
-        key={overlay === "settings" ? "settings-open" : "settings-closed"}
-        open={overlay === "settings"}
+        key={overlay?.kind === "settings" ? "settings-open" : "settings-closed"}
+        open={overlay?.kind === "settings"}
         settings={app}
         onSave={onSaveApp}
-        onClose={close}
+        onClose={closeSettings}
       />
     </div>
   );

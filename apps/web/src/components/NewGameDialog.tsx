@@ -1,3 +1,4 @@
+import { Banner } from "@langchain/macaw-components/Banner";
 import { Button } from "@langchain/macaw-components/Button";
 import { Dialog, DialogContent } from "@langchain/macaw-components/Dialog";
 import { Input } from "@langchain/macaw-components/Input";
@@ -9,7 +10,8 @@ import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr/CaretRight";
 import { CrownIcon } from "@phosphor-icons/react/dist/ssr/Crown";
 import { ShuffleIcon } from "@phosphor-icons/react/dist/ssr/Shuffle";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { keyCheckMessage, type KeyCheck } from "../auth";
 import { withKnob } from "../settings";
 import {
   matchupLine,
@@ -30,8 +32,10 @@ interface Props {
   canCancel: boolean;
   onPlay: (setup: Setup, context: ChessContext) => void;
   onClose: () => void;
-  /** Without a game the dialog can't be dismissed, so it offers the way to app settings. */
-  onOpenSettings: () => void;
+  /** Hands over the unsaved picks so they survive the trip to settings and back. */
+  onOpenSettings: (draft: Setup) => void;
+  /** Runs on Play; the game starts only once the server accepts the key. */
+  checkKey: () => Promise<KeyCheck>;
 }
 
 const SIDES: { value: SideChoice; label: string; icon: React.ReactNode }[] = [
@@ -65,9 +69,12 @@ export function NewGameDialog({
   onPlay,
   onClose,
   onOpenSettings,
+  checkKey,
 }: Props) {
   const [setup, setSetup] = useState(initial);
   const [advanced, setAdvanced] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [keyProblem, setKeyProblem] = useState<Exclude<KeyCheck, { kind: "ok" }> | null>(null);
   const pick =
     <K extends keyof Setup>(key: K) =>
     (value: Setup[K] | undefined) =>
@@ -75,6 +82,26 @@ export function NewGameDialog({
   const setKnob: SetKnob = (key, value) =>
     setSetup((s) => ({ ...s, knobs: withKnob(s.knobs, key, value) }));
   const matchup = matchupOf(setup);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  const play = async (context: ChessContext) => {
+    setChecking(true);
+    setKeyProblem(null);
+    const check = await checkKey();
+    // Cancelled or sent to settings mid-check: a late answer must not start a game.
+    if (!mounted.current) return;
+    setChecking(false);
+    if (check.kind === "ok") onPlay(setup, context);
+    else setKeyProblem(check);
+  };
+  const problem = keyProblem && keyCheckMessage(keyProblem);
 
   return (
     <Dialog open={open} onOpenChange={() => canCancel && onClose()}>
@@ -183,24 +210,48 @@ export function NewGameDialog({
             )}
           </div>
 
+          {problem && (
+            <Banner
+              intent="warning"
+              title={problem.title}
+              action={
+                <Button
+                  variant="plain"
+                  size="sm"
+                  color="primary"
+                  onClick={() => onOpenSettings(setup)}
+                >
+                  Open settings
+                </Button>
+              }
+            >
+              {problem.body}
+            </Banner>
+          )}
+
           <div className="flex justify-end gap-space-2 border-t border-subtle pt-space-4">
-            {canCancel ? (
+            <Button
+              variant="plain"
+              color="secondary"
+              size="md"
+              className="mr-auto"
+              onClick={() => onOpenSettings(setup)}
+            >
+              Settings
+            </Button>
+            {canCancel && (
               <Button variant="outlined" color="secondary" size="md" onClick={onClose}>
                 Cancel
               </Button>
-            ) : (
-              <Button
-                variant="plain"
-                color="secondary"
-                size="md"
-                className="mr-auto"
-                onClick={onOpenSettings}
-              >
-                Settings
-              </Button>
             )}
             {matchup.ok ? (
-              <Button color="primary" size="md" onClick={() => onPlay(setup, matchup.context)}>
+              <Button
+                color="primary"
+                size="md"
+                loading={checking}
+                disabled={checking}
+                onClick={() => void play(matchup.context)}
+              >
                 Play
               </Button>
             ) : (

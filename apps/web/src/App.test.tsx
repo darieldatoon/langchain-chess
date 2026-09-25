@@ -2,6 +2,7 @@ import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { act, fireEvent, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import App from "./App";
+import { checkApiKey, type KeyCheck } from "./auth";
 import { DEFAULT_SETUP } from "./setup";
 import { APP_KEY, loadGame, loadSetup, saveAppSettings, saveGame, saveSetup } from "./storage";
 import { fake, lastOptions, optionsLog, resetFake } from "./test/fakeStream";
@@ -49,6 +50,11 @@ vi.mock("react-chessboard", () => ({
       ))}
     </div>
   ),
+}));
+const keyCheck = vi.hoisted(() => ({ result: { kind: "ok" } as KeyCheck }));
+vi.mock("./auth", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./auth")>()),
+  checkApiKey: vi.fn(() => Promise.resolve(keyCheck.result)),
 }));
 vi.mock("@langchain/react", async () => (await import("./test/fakeStream")).useStreamMock());
 vi.mock("@langchain/macaw-components/Select", async () =>
@@ -98,6 +104,8 @@ function reportThread(threadId: string) {
 }
 
 beforeEach(() => {
+  keyCheck.result = { kind: "ok" };
+  vi.mocked(checkApiKey).mockClear();
   resetFake();
   window.history.replaceState(null, "", "/");
 });
@@ -401,6 +409,42 @@ describe("app settings and auth", () => {
     change("LangSmith API Key", "other");
     await click("Cancel");
     expect(lastOptions.current).toMatchObject({ apiKey: "lsv2_saved" });
+  });
+});
+
+describe("key check on Play", () => {
+  it("keeps the modal up on a missing key, then plays with the key saved from settings", async () => {
+    keyCheck.result = { kind: "missing" };
+    render(<App />);
+    fireEvent.click(screen.getByRole("radio", { name: "Black" }));
+    await click("Play");
+    expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
+    expect(screen.getByText("LangSmith API key needed")).toBeInTheDocument();
+    expect(fake.submit).not.toHaveBeenCalled();
+
+    await click("Open settings");
+    change("LangSmith API Key", "lsv2_new");
+    keyCheck.result = { kind: "ok" };
+    await click("Save");
+    expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Black" })).toBeChecked();
+    expect(screen.queryByText("LangSmith API key needed")).not.toBeInTheDocument();
+
+    await click("Play");
+    expect(checkApiKey).toHaveBeenLastCalledWith(expect.any(String), "lsv2_new");
+    expect(dialog()).not.toBeInTheDocument();
+    expect(board()).toHaveAttribute("data-orientation", "black");
+  });
+
+  it("returns to the game, not the modal, from settings opened in the header", async () => {
+    onThread("abc");
+    render(<App />);
+    await click("New game");
+    await click("Settings");
+    await click("Cancel");
+    expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
+    await click("Cancel");
+    expect(dialog()).not.toBeInTheDocument();
   });
 });
 

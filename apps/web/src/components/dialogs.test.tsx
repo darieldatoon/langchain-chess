@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import type { KeyCheck } from "../auth";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { DEFAULT_SETUP, type Setup } from "../setup";
 import { DEFAULT_CONTEXT } from "../types";
@@ -13,10 +14,11 @@ vi.mock("@langchain/macaw-components/Slider", async () =>
   (await import("../test/macawShims")).sliderShim(),
 );
 
-function open(initial: Setup = DEFAULT_SETUP, canCancel = false) {
+function open(initial: Setup = DEFAULT_SETUP, canCancel = false, check: KeyCheck = { kind: "ok" }) {
   const onPlay = vi.fn();
   const onClose = vi.fn();
   const onOpenSettings = vi.fn();
+  const checkKey = vi.fn(() => Promise.resolve(check));
   render(
     <NewGameDialog
       open
@@ -25,19 +27,24 @@ function open(initial: Setup = DEFAULT_SETUP, canCancel = false) {
       onPlay={onPlay}
       onClose={onClose}
       onOpenSettings={onOpenSettings}
+      checkKey={checkKey}
     />,
   );
-  return { onPlay, onClose, onOpenSettings };
+  return { onPlay, onClose, onOpenSettings, checkKey };
 }
 
 const change = (label: string, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 const play = () => screen.getByRole("button", { name: "Play" });
+const clickPlay = () =>
+  act(async () => {
+    fireEvent.click(play());
+  });
 const matchup = () => screen.getByLabelText("matchup");
 const advanced = () => fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
 
 describe("NewGameDialog", () => {
-  it("plays the default matchup as White, with no way to cancel without a game", () => {
+  it("plays the default matchup as White, with no way to cancel without a game", async () => {
     const { onPlay, onClose, onOpenSettings } = open();
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "White" })).toBeChecked();
@@ -48,26 +55,68 @@ describe("NewGameDialog", () => {
     expect(screen.queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     expect(onClose).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("radio", { name: "Black" }));
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
-    expect(onOpenSettings).toHaveBeenCalledTimes(1);
-    fireEvent.click(play());
+    expect(onOpenSettings).toHaveBeenCalledWith({ ...DEFAULT_SETUP, side: "black" });
+    fireEvent.click(screen.getByRole("radio", { name: "White" }));
+    await clickPlay();
     expect(onPlay).toHaveBeenCalledWith(DEFAULT_SETUP, DEFAULT_CONTEXT);
   });
 
-  it("picks a side, and cancels back to the game on screen", () => {
+  it("picks a side, and cancels back to the game on screen", async () => {
     const { onPlay, onClose } = open(DEFAULT_SETUP, true);
     fireEvent.click(screen.getByRole("radio", { name: "Random" }));
     fireEvent.click(screen.getByRole("radio", { name: "Black" }));
-    fireEvent.click(play());
+    await clickPlay();
     expect(onPlay.mock.calls[0][0].side).toBe("black");
-    expect(screen.queryByRole("button", { name: "Settings" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(onClose).toHaveBeenCalledTimes(1);
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(2);
   });
 
-  it("derives the policy from the pickers and disables Play when both are None", () => {
+  it("offers Settings even when there is a game to cancel back to", () => {
+    const { onOpenSettings } = open(DEFAULT_SETUP, true);
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(onOpenSettings).toHaveBeenCalledWith(DEFAULT_SETUP);
+  });
+
+  it.each<[KeyCheck, string]>([
+    [{ kind: "missing" }, "LangSmith API key needed"],
+    [{ kind: "rejected" }, "API key rejected"],
+    [{ kind: "unreachable", message: "Failed to fetch" }, "Failed to fetch"],
+  ])("holds the game back when the key check fails: %o", async (check, text) => {
+    const { onPlay, onOpenSettings, checkKey } = open(DEFAULT_SETUP, false, check);
+    await clickPlay();
+    expect(checkKey).toHaveBeenCalledTimes(1);
+    expect(onPlay).not.toHaveBeenCalled();
+    expect(screen.getByText(text)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open settings" }));
+    expect(onOpenSettings).toHaveBeenCalledWith(DEFAULT_SETUP);
+  });
+
+  it("does not start a game when closed before the key check answers", async () => {
+    let answer: (check: KeyCheck) => void = () => {};
+    const onPlay = vi.fn();
+    const view = render(
+      <NewGameDialog
+        open
+        initial={DEFAULT_SETUP}
+        canCancel
+        onPlay={onPlay}
+        onClose={() => {}}
+        onOpenSettings={() => {}}
+        checkKey={() => new Promise((resolve) => (answer = resolve))}
+      />,
+    );
+    fireEvent.click(play());
+    expect(play()).toBeDisabled();
+    view.unmount();
+    await act(async () => answer({ kind: "ok" }));
+    expect(onPlay).not.toHaveBeenCalled();
+  });
+
+  it("derives the policy from the pickers and disables Play when both are None", async () => {
     const { onPlay } = open();
     change("LLM", "none");
     expect(matchup()).toHaveTextContent("SemIf plays every move.");
@@ -76,24 +125,24 @@ describe("NewGameDialog", () => {
     expect(play()).toBeDisabled();
     change("LLM", "gpt-5.6-sol");
     expect(matchup()).toHaveTextContent("GPT-5.6 Sol plays every move.");
-    fireEvent.click(play());
+    await clickPlay();
     expect(onPlay.mock.calls[0][1]).toMatchObject({ policy: "llm", model: "gpt-5.6-sol" });
     change("System 1", "typesafe/jev-latest");
-    fireEvent.click(play());
+    await clickPlay();
     expect(onPlay.mock.calls[1][1]).toMatchObject({
       policy: "hybrid",
       systemone_model: "typesafe/jev-latest",
     });
   });
 
-  it("keeps a picker's value when the select reports a deselect", () => {
+  it("keeps a picker's value when the select reports a deselect", async () => {
     const { onPlay } = open();
     change("LLM", "");
-    fireEvent.click(play());
+    await clickPlay();
     expect(onPlay.mock.calls[0][1].model).toBe("claude-opus-5-5");
   });
 
-  it("takes any model spec as a custom LLM, and needs one to play", () => {
+  it("takes any model spec as a custom LLM, and needs one to play", async () => {
     const { onPlay } = open();
     expect(screen.queryByLabelText("Model Spec")).not.toBeInTheDocument();
     change("LLM", "custom");
@@ -103,7 +152,7 @@ describe("NewGameDialog", () => {
     expect(matchup()).toHaveTextContent(
       "SemIf plays confident moves; openai:gpt-5.6-sol decides the rest.",
     );
-    fireEvent.click(play());
+    await clickPlay();
     expect(onPlay).toHaveBeenCalledWith(
       expect.objectContaining({ llm: "custom", customModel: "openai:gpt-5.6-sol" }),
       expect.objectContaining({ policy: "hybrid", model: "openai:gpt-5.6-sol" }),
@@ -139,7 +188,7 @@ describe("NewGameDialog", () => {
     expect(screen.queryByLabelText("Seed")).not.toBeInTheDocument();
   });
 
-  it("edits every knob and plays with them", () => {
+  it("edits every knob and plays with them", async () => {
     const { onPlay } = open();
     advanced();
     expect(screen.queryByLabelText("Summary Trigger Tokens")).not.toBeInTheDocument();
@@ -158,7 +207,7 @@ describe("NewGameDialog", () => {
     fireEvent.click(screen.getByRole("switch", { name: "List legal moves in the prompt" }));
     fireEvent.click(screen.getByRole("switch", { name: "Ask for a position Score" }));
     fireEvent.click(screen.getByRole("switch", { name: "Ask the Noul questions" }));
-    fireEvent.click(play());
+    await clickPlay();
     expect(onPlay.mock.calls[0][1]).toEqual({
       ...DEFAULT_CONTEXT,
       memory: "summarize",
@@ -178,7 +227,7 @@ describe("NewGameDialog", () => {
     });
   });
 
-  it("clears nullable knobs, keeps valid values over invalid text, and flags it", () => {
+  it("clears nullable knobs, keeps valid values over invalid text, and flags it", async () => {
     const { onPlay } = open({
       ...DEFAULT_SETUP,
       knobs: { ...DEFAULT_SETUP.knobs, top_p: 0.5, tournament_threshold: 0.6 },
@@ -190,7 +239,7 @@ describe("NewGameDialog", () => {
     change("Shortlist Size", "0");
     expect(screen.getByLabelText("Shortlist Size")).toHaveValue(0);
     expect(screen.getByLabelText("Shortlist Size")).toHaveAttribute("aria-invalid", "true");
-    fireEvent.click(play());
+    await clickPlay();
     const context = onPlay.mock.calls[0][1];
     expect(context.top_p).toBeNull();
     expect(context.tournament_threshold).toBeNull();
