@@ -172,14 +172,25 @@ uvx --env-file /absolute/path/to/.env \
 uv tool install "git+https://github.com/darieldatoon/langchain-chess#subdirectory=libs/cli"
 ```
 
+The default model, `langsmith:anthropic/claude-opus-5-5`, goes through the LLM Gateway. To use a
+bare name such as `--model claude-opus-5-5` with your own `ANTHROPIC_API_KEY`, install the
+provider's extra:
+
+```sh
+uv tool install "langchain-chess-cli[anthropic] @ git+https://github.com/darieldatoon/langchain-chess#subdirectory=libs/cli"
+```
+
 ## Environment
 
-Traces go to a LangSmith workspace and every model call goes through a LangSmith LLM Gateway
-(the two may be in different orgs).
+Traces go to a LangSmith workspace. Models are `init_chat_model` specs: the default
+`langsmith:<provider>/<model>` goes through a LangSmith LLM Gateway (which may be in a different
+org). A bare name or `provider:model` uses that provider's package and key, or the gateway's
+passthrough when `LANGSMITH_GATEWAY=true`. System 1 needs `TYPESAFE_API_KEY` and
+`TYPESAFE_BASE_URL`.
 Copy `.env.example` to `.env` and fill it in; `LC_GATEWAY_KEY` in your shell supplies the
 gateway key. Commands that make model calls load it explicitly (`uv run --env-file .env ...`);
-`langgraph dev` reads it through `langgraph.json`. The app refuses to start unless
-`LANGSMITH_GATEWAY` is true, the gateway key is set, and `TYPESAFE_BASE_URL` is the gateway root.
+`langgraph dev` reads it through `langgraph.json`. The app refuses to start on a key that is set
+but empty, which is what the template's `${LC_GATEWAY_KEY}` expands to when it is missing.
 
 ## Development
 

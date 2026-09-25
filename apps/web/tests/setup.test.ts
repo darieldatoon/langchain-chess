@@ -13,8 +13,8 @@ import {
   sectionsOf,
   setupFromContext,
   type Setup,
-} from "./setup";
-import { DEFAULT_CONTEXT, type ChessContext } from "./types";
+} from "../src/setup";
+import { DEFAULT_CONTEXT, type ChessContext } from "../src/types";
 
 const setup = (overrides: Partial<Setup> = {}): Setup => ({ ...DEFAULT_SETUP, ...overrides });
 
@@ -31,14 +31,16 @@ describe("matchupOf", () => {
       policy: "systemone",
       systemone_model: "semif-qwen3.5-4b",
     });
-    expect(contextOf(setup({ systemOne: "none", llm: "gpt-5.6-sol" }))).toMatchObject({
+    expect(
+      contextOf(setup({ systemOne: "none", llm: "langsmith:openai/gpt-5.6-sol" })),
+    ).toMatchObject({
       policy: "llm",
-      model: "gpt-5.6-sol",
+      model: "langsmith:openai/gpt-5.6-sol",
     });
     expect(contextOf(setup({ systemOne: "typesafe/jev-latest" }))).toMatchObject({
       policy: "hybrid",
       systemone_model: "typesafe/jev-latest",
-      model: "claude-opus-5-5",
+      model: "langsmith:anthropic/claude-opus-5-5",
     });
   });
 
@@ -93,11 +95,11 @@ describe("matchup wording", () => {
       opponentLabel({
         ...DEFAULT_CONTEXT,
         policy: "llm",
-        model: "claude-opus-5",
+        model: "langsmith:anthropic/claude-opus-5",
         reasoning_effort: "high",
       }),
     ).toBe("Claude Opus 5 · high");
-    expect(modelName("gpt-5.6-sol")).toBe("GPT-5.6 Sol");
+    expect(modelName("langsmith:openai/gpt-5.6-sol")).toBe("GPT-5.6 Sol");
     expect(modelName("openai:gpt-5.6-sol")).toBe("openai:gpt-5.6-sol");
   });
 
@@ -182,10 +184,12 @@ describe("sanitizeSetup", () => {
 
 describe("setupFromContext", () => {
   it("maps the old policy and models onto the pickers", () => {
-    expect(setupFromContext({ policy: "hybrid", model: "claude-opus-5" })).toMatchObject({
+    expect(
+      setupFromContext({ policy: "hybrid", model: "langsmith:anthropic/claude-opus-5" }),
+    ).toMatchObject({
       side: "white",
       systemOne: "semif-qwen3.5-4b",
-      llm: "claude-opus-5",
+      llm: "langsmith:anthropic/claude-opus-5",
       customModel: "",
     });
     expect(

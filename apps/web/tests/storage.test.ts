@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { DEFAULT_SETUP, type Setup } from "./setup";
+import { DEFAULT_SETUP, type Setup } from "../src/setup";
 import {
   APP_KEY,
   DEFAULT_APP_SETTINGS,
@@ -11,8 +11,8 @@ import {
   saveGame,
   saveSetup,
   SETUP_KEY,
-} from "./storage";
-import { DEFAULT_CONTEXT } from "./types";
+} from "../src/storage";
+import { DEFAULT_CONTEXT } from "../src/types";
 
 const store = (key: string, value: unknown) =>
   window.localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
@@ -34,11 +34,11 @@ describe("setup storage", () => {
   it("migrates the old global settings", () => {
     store(LEGACY_SETTINGS_KEY, {
       apiKey: "old",
-      context: { policy: "jev", human_side: "black", model: "gpt-5.6-sol", k: 3 },
+      context: { policy: "jev", human_side: "black", model: "langsmith:openai/gpt-5.6-sol", k: 3 },
     });
     expect(loadSetup()).toEqual({
       ...DEFAULT_SETUP,
-      llm: "gpt-5.6-sol",
+      llm: "langsmith:openai/gpt-5.6-sol",
       knobs: { ...DEFAULT_SETUP.knobs, k: 3 },
     });
     store(LEGACY_SETTINGS_KEY, { context: { policy: "systemone", model: "my-model" } });

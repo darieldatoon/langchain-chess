@@ -1,14 +1,14 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vite-plus/test";
-import type { MoveEntry } from "../format";
-import { AFTER_E4, call, E4_E5, ply, systemOne, turn } from "../test/fixtures";
-import { renderWithProviders } from "../test/renderApp";
-import { START_FEN, type Ply, type SystemOneMeta } from "../types";
-import type { Reply } from "../useGame";
-import { Board } from "./Board";
-import { MoveList } from "./MoveList";
-import { PlyDetails } from "./PlyDetails";
-import { ThemeToggle } from "./ThemeToggle";
+import type { MoveEntry } from "../../src/format";
+import { AFTER_E4, call, E4_E5, ply, systemOne, turn } from "../support/fixtures";
+import { renderWithProviders } from "../support/renderApp";
+import { START_FEN, type Ply, type SystemOneMeta } from "../../src/types";
+import type { Reply } from "../../src/useGame";
+import { Board } from "../../src/components/Board";
+import { MoveList } from "../../src/components/MoveList";
+import { PlyDetails } from "../../src/components/PlyDetails";
+import { ThemeToggle } from "../../src/components/ThemeToggle";
 
 const e4: MoveEntry = { ply: 0, san: "e4", source: "external" };
 const e5: MoveEntry = { ply: 1, san: "e5", source: "systemone" };

@@ -55,9 +55,9 @@ const SYSTEM_ONES: SelectOption<SystemOneChoice>[] = [
 ];
 
 const LLMS: SelectOption<LlmChoice>[] = [
-  { value: "claude-opus-5-5", label: "Claude Opus 5.5" },
-  { value: "claude-opus-5", label: "Claude Opus 5" },
-  { value: "gpt-5.6-sol", label: "GPT-5.6 Sol" },
+  { value: "langsmith:anthropic/claude-opus-5-5", label: "Claude Opus 5.5" },
+  { value: "langsmith:anthropic/claude-opus-5", label: "Claude Opus 5" },
+  { value: "langsmith:openai/gpt-5.6-sol", label: "GPT-5.6 Sol" },
   { value: "none", label: "None", description: "System 1 plays alone" },
   { value: "custom", label: "Custom model…", description: "Any model spec" },
 ];

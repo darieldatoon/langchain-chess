@@ -1,6 +1,6 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { describe, expect, it } from "vite-plus/test";
-import { commandKey, createCommandIds } from "./commands";
+import { commandKey, createCommandIds } from "../src/commands";
 import {
   isPending,
   lastPolicyPly,
@@ -9,8 +9,8 @@ import {
   textOf,
   turnCost,
   turnOf,
-} from "./selectors";
-import { call, E4_E5, ply, systemOne, turn } from "./test/fixtures";
+} from "../src/selectors";
+import { call, E4_E5, ply, systemOne, turn } from "./support/fixtures";
 
 describe("turnCost", () => {
   it("is null when no call is priced", () => {

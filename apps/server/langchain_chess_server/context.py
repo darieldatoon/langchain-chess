@@ -38,11 +38,11 @@ class ChessContext:
     model: Annotated[
         str,
         _knob(
-            "init_chat_model spec. Bare names route through the LLM Gateway "
-            "(`claude-opus-5-5`, `gpt-5.6-sol`).",
+            "init_chat_model spec: `langsmith:<provider>/<model>` for the LLM Gateway, "
+            "or `provider:model` and bare names with that provider's package installed.",
             "model",
         ),
-    ] = "claude-opus-5-5"
+    ] = "langsmith:anthropic/claude-opus-5-5"
     reasoning_effort: Annotated[
         ReasoningEffort, _knob("Reasoning effort passed to the model.", "model")
     ] = "medium"

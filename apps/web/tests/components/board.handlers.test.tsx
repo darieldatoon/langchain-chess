@@ -1,7 +1,7 @@
 import { act, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vite-plus/test";
-import { START_FEN } from "../types";
-import { Board } from "./Board";
+import { START_FEN } from "../../src/types";
+import { Board } from "../../src/components/Board";
 
 interface Captured {
   canDragPiece?: (args: {

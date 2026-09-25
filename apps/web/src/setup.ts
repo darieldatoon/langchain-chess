@@ -6,7 +6,11 @@ import { DEFAULT_CONTEXT, type ChessContext, type Side, type SystemOneModel } fr
 export type SideChoice = Side | "random";
 export type SystemOneChoice = SystemOneModel | "none";
 
-export const LLM_PRESETS = ["claude-opus-5-5", "claude-opus-5", "gpt-5.6-sol"] as const;
+export const LLM_PRESETS = [
+  "langsmith:anthropic/claude-opus-5-5",
+  "langsmith:anthropic/claude-opus-5",
+  "langsmith:openai/gpt-5.6-sol",
+] as const;
 export type LlmPreset = (typeof LLM_PRESETS)[number];
 export type LlmChoice = LlmPreset | "custom" | "none";
 
@@ -33,7 +37,7 @@ export function knobsOf(context: ChessContext): Knobs {
 export const DEFAULT_SETUP: Setup = {
   side: "white",
   systemOne: DEFAULT_CONTEXT.systemone_model,
-  llm: "claude-opus-5-5",
+  llm: "langsmith:anthropic/claude-opus-5-5",
   customModel: "",
   knobs: knobsOf(DEFAULT_CONTEXT),
 };
@@ -44,9 +48,9 @@ export const SYSTEM_ONE_NAMES: Record<SystemOneModel, string> = {
 };
 
 export const LLM_NAMES: Record<LlmPreset, string> = {
-  "claude-opus-5-5": "Claude Opus 5.5",
-  "claude-opus-5": "Claude Opus 5",
-  "gpt-5.6-sol": "GPT-5.6 Sol",
+  "langsmith:anthropic/claude-opus-5-5": "Claude Opus 5.5",
+  "langsmith:anthropic/claude-opus-5": "Claude Opus 5",
+  "langsmith:openai/gpt-5.6-sol": "GPT-5.6 Sol",
 };
 
 const isPreset = oneOf(...LLM_PRESETS);

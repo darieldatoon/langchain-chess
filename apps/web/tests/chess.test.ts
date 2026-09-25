@@ -8,8 +8,8 @@ import {
   sanAt,
   sideToMove,
   tryMove,
-} from "./chess";
-import { START_FEN } from "./types";
+} from "../src/chess";
+import { START_FEN } from "../src/types";
 
 const PROMO = "8/P6k/8/8/8/8/8/K7 w - - 0 1";
 

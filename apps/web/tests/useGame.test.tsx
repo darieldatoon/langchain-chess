@@ -1,14 +1,14 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { configurableOf } from "./settings";
-import { loadGame } from "./storage";
-import { fake, lastOptions, resetFake } from "./test/fakeStream";
-import { AFTER_E4, E4_E5, turn } from "./test/fixtures";
-import { DEFAULT_CONTEXT, START_FEN } from "./types";
-import { threadFromUrl, useGame, writeThreadToUrl } from "./useGame";
+import { configurableOf } from "../src/settings";
+import { loadGame } from "../src/storage";
+import { fake, lastOptions, resetFake } from "./support/fakeStream";
+import { AFTER_E4, E4_E5, turn } from "./support/fixtures";
+import { DEFAULT_CONTEXT, START_FEN } from "../src/types";
+import { threadFromUrl, useGame, writeThreadToUrl } from "../src/useGame";
 
-vi.mock("@langchain/react", async () => (await import("./test/fakeStream")).useStreamMock());
+vi.mock("@langchain/react", async () => (await import("./support/fakeStream")).useStreamMock());
 
 const REJECT = { multitaskStrategy: "reject" };
 

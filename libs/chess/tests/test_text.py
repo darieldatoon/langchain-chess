@@ -2,7 +2,7 @@ import chess
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
-from langchain_chess.models import canonical_model, model_identity, resolve_model_spec
+from langchain_chess.models import canonical_model, model_identity
 from langchain_chess.parse import parse_move, text_of
 from langchain_chess.position import movetext
 from langchain_chess.prompt import delta_text, feedback_text, model_view, render_position
@@ -48,15 +48,6 @@ def test_parse_move_reasons():
     castle = chess.Board("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1")
     assert parse_move(castle, "MOVE: 0-0-0")[0] == chess.Move.from_uci("e1c1")
     assert parse_move(castle, "MOVE: o-o.")[0] == chess.Move.from_uci("e1g1")
-
-
-def test_model_specs():
-    assert resolve_model_spec("claude-opus-5") == "langsmith:anthropic/claude-opus-5"
-    assert resolve_model_spec("gpt-5.6-sol") == "langsmith:openai/gpt-5.6-sol"
-    assert resolve_model_spec("o3") == "langsmith:openai/o3"
-    assert resolve_model_spec("openai:gpt-5.6-sol") == "openai:gpt-5.6-sol"
-    with pytest.raises(ValueError, match="cannot infer"):
-        resolve_model_spec("llama")
 
 
 def test_model_identity_prefers_the_gateway_prefix():

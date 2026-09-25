@@ -29,7 +29,10 @@ def test_the_cli_chat_model_uses_the_environment(monkeypatch):
     assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
     assert model.profile == {"max_input_tokens": 1_000_000}
     assert model.get_name() == "claude-opus-5-5"
-    assert chat_model("gpt-5.6-sol", "low").profile is None
+    assert chat_model("langsmith:openai/gpt-5.6-sol", "low").profile is None
+    bare = chat_model("gpt-5.6-sol", "low")
+    assert bare.openai_api_base == "https://gateway.smith.langchain.com/openai/v1"
+    assert bare.get_name() == "gpt-5.6-sol"
 
 
 def test_summarize_through_the_cli_model_factory(monkeypatch):
@@ -42,10 +45,12 @@ def test_summarize_through_the_cli_model_factory(monkeypatch):
     saver = InMemorySaver()
     agent = build_agent(AgentOptions(memory="summarize"), draw_claims="auto", checkpointer=saver)
     assert "SummarizationMiddleware.before_model" in nodes(agent)
-    profileless = AgentOptions(memory="summarize", model="gpt-5.6-sol")
+    profileless = AgentOptions(memory="summarize", model="langsmith:openai/gpt-5.6-sol")
     with pytest.raises(ChessContractError, match="summary_trigger_tokens"):
         build_agent(profileless, draw_claims="auto", checkpointer=saver)
-    trigger = AgentOptions(memory="summarize", model="gpt-5.6-sol", summary_trigger_tokens=9000)
+    trigger = AgentOptions(
+        memory="summarize", model="langsmith:openai/gpt-5.6-sol", summary_trigger_tokens=9000
+    )
     agent = build_agent(trigger, draw_claims="auto", checkpointer=saver)
     assert "SummarizationMiddleware.before_model" in nodes(agent)
     alone = AgentOptions(policy="systemone", memory="summarize")
@@ -64,7 +69,7 @@ def test_run_config_names_the_trace_by_surface_and_records_every_knob():
     assert metadata["draw_claims"] == "auto"
     assert {k: metadata[k] for k in ("policy", "model", "k", "seed")} == {
         "policy": "llm",
-        "model": "claude-opus-5-5",
+        "model": "langsmith:anthropic/claude-opus-5-5",
         "k": 7,
         "seed": 0,
     }

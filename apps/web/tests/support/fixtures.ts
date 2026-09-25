@@ -1,4 +1,4 @@
-import type { Call, Ply, SystemOneMeta, TurnRecord } from "../types";
+import type { Call, Ply, SystemOneMeta, TurnRecord } from "../../src/types";
 
 export function call(overrides: Partial<Call> = {}): Call {
   return {

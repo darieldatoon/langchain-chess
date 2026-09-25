@@ -19,10 +19,10 @@ import {
   sourceLabel,
   statusLine,
   type MoveEntry,
-} from "./format";
-import { CONTEXT_CHECKS } from "./settings";
-import { AFTER_E4 } from "./test/fixtures";
-import { START_FEN, type Side } from "./types";
+} from "../src/format";
+import { CONTEXT_CHECKS } from "../src/settings";
+import { AFTER_E4 } from "./support/fixtures";
+import { START_FEN, type Side } from "../src/types";
 
 const entry = (ply: number, san: string, source = "external"): MoveEntry => ({ ply, san, source });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vite-plus/test";
-import { checkApiKey, keyCheckMessage } from "./auth";
+import { checkApiKey, keyCheckMessage } from "../src/auth";
 
 const answering = (status: number) => vi.fn(() => Promise.resolve(new Response(null, { status })));
 

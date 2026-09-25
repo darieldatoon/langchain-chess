@@ -1,17 +1,17 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import type { KeyCheck } from "../auth";
+import type { KeyCheck } from "../../src/auth";
 import { describe, expect, it, vi } from "vite-plus/test";
-import { DEFAULT_SETUP, type Setup } from "../setup";
-import { DEFAULT_CONTEXT } from "../types";
-import { AppSettingsDialog } from "./AppSettingsDialog";
-import { NewGameDialog } from "./NewGameDialog";
-import { ResultCard } from "./ResultCard";
+import { DEFAULT_SETUP, type Setup } from "../../src/setup";
+import { DEFAULT_CONTEXT } from "../../src/types";
+import { AppSettingsDialog } from "../../src/components/AppSettingsDialog";
+import { NewGameDialog } from "../../src/components/NewGameDialog";
+import { ResultCard } from "../../src/components/ResultCard";
 
 vi.mock("@langchain/macaw-components/Select", async () =>
-  (await import("../test/macawShims")).selectShim(),
+  (await import("../support/macawShims")).selectShim(),
 );
 vi.mock("@langchain/macaw-components/Slider", async () =>
-  (await import("../test/macawShims")).sliderShim(),
+  (await import("../support/macawShims")).sliderShim(),
 );
 
 function open(initial: Setup = DEFAULT_SETUP, canCancel = false, check: KeyCheck = { kind: "ok" }) {
@@ -123,10 +123,13 @@ describe("NewGameDialog", () => {
     change("System 1", "none");
     expect(matchup()).toHaveTextContent("Pick a System 1, an LLM, or both.");
     expect(play()).toBeDisabled();
-    change("LLM", "gpt-5.6-sol");
+    change("LLM", "langsmith:openai/gpt-5.6-sol");
     expect(matchup()).toHaveTextContent("GPT-5.6 Sol plays every move.");
     await clickPlay();
-    expect(onPlay.mock.calls[0][1]).toMatchObject({ policy: "llm", model: "gpt-5.6-sol" });
+    expect(onPlay.mock.calls[0][1]).toMatchObject({
+      policy: "llm",
+      model: "langsmith:openai/gpt-5.6-sol",
+    });
     change("System 1", "typesafe/jev-latest");
     await clickPlay();
     expect(onPlay.mock.calls[1][1]).toMatchObject({
@@ -139,7 +142,7 @@ describe("NewGameDialog", () => {
     const { onPlay } = open();
     change("LLM", "");
     await clickPlay();
-    expect(onPlay.mock.calls[0][1].model).toBe("claude-opus-5-5");
+    expect(onPlay.mock.calls[0][1].model).toBe("langsmith:anthropic/claude-opus-5-5");
   });
 
   it("takes any model spec as a custom LLM, and needs one to play", async () => {
@@ -178,7 +181,7 @@ describe("NewGameDialog", () => {
     expect(screen.getByText(/gate and shortlist apply when an LLM plays too/)).toBeInTheDocument();
     expect(screen.getByLabelText("Move Descriptions")).toBeInTheDocument();
 
-    change("LLM", "claude-opus-5");
+    change("LLM", "langsmith:anthropic/claude-opus-5");
     change("System 1", "none");
     expect(screen.queryByLabelText("Move Descriptions")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Reasoning Effort")).toBeInTheDocument();

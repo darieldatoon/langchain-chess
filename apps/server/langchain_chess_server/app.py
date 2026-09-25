@@ -42,6 +42,8 @@ def create_app(static_dir: Path | None = STATIC_DIR) -> FastAPI:
         return RedirectResponse(url="/ui/")
 
     if static_dir is not None and static_dir.is_dir():
+        # Not `app.frontend()`: its routes are low priority, so the Agent Server's own `/ui`
+        # mount (langgraph_api/api/ui.py) answers first and the UI never loads.
         app.mount("/ui", StaticFiles(directory=static_dir, html=True), name="ui")
     else:
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { apiUrl, configurableOf, DEV_API_URL, sanitizeContext, withKnob } from "./settings";
-import { DEFAULT_CONTEXT } from "./types";
+import { apiUrl, configurableOf, DEV_API_URL, sanitizeContext, withKnob } from "../src/settings";
+import { DEFAULT_CONTEXT } from "../src/types";
 
 describe("sanitizeContext", () => {
   it("validates every knob's type and range", () => {

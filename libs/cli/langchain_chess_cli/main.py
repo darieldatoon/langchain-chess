@@ -24,7 +24,7 @@ PolicyOption = Annotated[
     typer.Option(help="llm: the model alone; systemone: System 1 alone; hybrid: both."),
 ]
 ModelOption = Annotated[
-    str, typer.Option(help="Chat model: a bare name routes through the LLM Gateway.")
+    str, typer.Option(help="init_chat_model spec; a bare name needs its provider's package.")
 ]
 EffortOption = Annotated[
     Literal["low", "medium", "high"], typer.Option(help="Reasoning effort for the model.")
@@ -62,7 +62,7 @@ TriggerOption = Annotated[
 @app.command()
 def uci(
     policy: PolicyOption = "hybrid",
-    model: ModelOption = "claude-opus-5-5",
+    model: ModelOption = "langsmith:anthropic/claude-opus-5-5",
     reasoning_effort: EffortOption = "medium",
     systemone_model: SystemOneOption = "semif-qwen3.5-4b",
     threshold: ThresholdOption = 0.9,
@@ -118,7 +118,7 @@ SideOption = Annotated[Literal["white", "black"], typer.Option(help="The side yo
 def play(
     side: SideOption = "white",
     policy: PolicyOption = "hybrid",
-    model: ModelOption = "claude-opus-5-5",
+    model: ModelOption = "langsmith:anthropic/claude-opus-5-5",
     reasoning_effort: EffortOption = "medium",
     systemone_model: SystemOneOption = "semif-qwen3.5-4b",
     threshold: ThresholdOption = 0.9,

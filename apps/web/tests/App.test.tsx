@@ -1,15 +1,15 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { act, fireEvent, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import App from "./App";
-import { checkApiKey, type KeyCheck } from "./auth";
-import { DEFAULT_SETUP } from "./setup";
-import { APP_KEY, loadGame, loadSetup, saveAppSettings, saveGame, saveSetup } from "./storage";
-import { fake, lastOptions, optionsLog, resetFake } from "./test/fakeStream";
-import { AFTER_E4, E4_E5, ply, turn } from "./test/fixtures";
-import { WEB_TRACE } from "./useGame";
-import { renderWithProviders as render } from "./test/renderApp";
-import { DEFAULT_CONTEXT, START_FEN, type ChessContext, type Side } from "./types";
+import App from "../src/App";
+import { checkApiKey, type KeyCheck } from "../src/auth";
+import { DEFAULT_SETUP } from "../src/setup";
+import { APP_KEY, loadGame, loadSetup, saveAppSettings, saveGame, saveSetup } from "../src/storage";
+import { fake, lastOptions, optionsLog, resetFake } from "./support/fakeStream";
+import { AFTER_E4, E4_E5, ply, turn } from "./support/fixtures";
+import { WEB_TRACE } from "../src/useGame";
+import { renderWithProviders as render } from "./support/renderApp";
+import { DEFAULT_CONTEXT, START_FEN, type ChessContext, type Side } from "../src/types";
 
 interface BoardOptions {
   position: string;
@@ -53,22 +53,22 @@ vi.mock("react-chessboard", () => ({
   ),
 }));
 const keyCheck = vi.hoisted(() => ({ result: { kind: "ok" } as KeyCheck }));
-vi.mock("./auth", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("./auth")>()),
+vi.mock("../src/auth", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/auth")>()),
   checkApiKey: vi.fn(() => Promise.resolve(keyCheck.result)),
 }));
-vi.mock("@langchain/react", async () => (await import("./test/fakeStream")).useStreamMock());
+vi.mock("@langchain/react", async () => (await import("./support/fakeStream")).useStreamMock());
 vi.mock("@langchain/macaw-components/Select", async () =>
-  (await import("./test/macawShims")).selectShim(),
+  (await import("./support/macawShims")).selectShim(),
 );
 vi.mock("@langchain/macaw-components/Slider", async () =>
-  (await import("./test/macawShims")).sliderShim(),
+  (await import("./support/macawShims")).sliderShim(),
 );
 
 const LLM_HIGH: ChessContext = {
   ...DEFAULT_CONTEXT,
   policy: "llm",
-  model: "claude-opus-5",
+  model: "langsmith:anthropic/claude-opus-5",
   reasoning_effort: "high",
 };
 
@@ -174,17 +174,26 @@ describe("new game", () => {
       "langchain-chess:settings",
       JSON.stringify({
         apiKey: "lsv2_old",
-        context: { policy: "random", human_side: "black", k: 4, model: "gpt-5.6-sol" },
+        context: {
+          policy: "random",
+          human_side: "black",
+          k: 4,
+          model: "langsmith:openai/gpt-5.6-sol",
+        },
       }),
     );
     render(<App />);
-    expect(screen.getByLabelText("LLM")).toHaveValue("gpt-5.6-sol");
+    expect(screen.getByLabelText("LLM")).toHaveValue("langsmith:openai/gpt-5.6-sol");
     expect(window.localStorage.getItem(APP_KEY)).toContain("lsv2_old");
     await click("Play");
     expect(board()).toHaveAttribute("data-orientation", "white");
     expect(lastOptions.current).toMatchObject({ apiKey: "lsv2_old" });
     await click("drop e2e4");
-    expect(lastConfigurable()).toEqual({ ...DEFAULT_CONTEXT, k: 4, model: "gpt-5.6-sol" });
+    expect(lastConfigurable()).toEqual({
+      ...DEFAULT_CONTEXT,
+      k: 4,
+      model: "langsmith:openai/gpt-5.6-sol",
+    });
   });
 
   it("resolves Random through the injected source", async () => {
@@ -206,12 +215,12 @@ describe("new game", () => {
 
 describe("a game's own setup", () => {
   it("pins the context: a later setup never reaches this game, and a reload restores it", async () => {
-    saveSetup({ ...DEFAULT_SETUP, systemOne: "none", llm: "claude-opus-5" });
+    saveSetup({ ...DEFAULT_SETUP, systemOne: "none", llm: "langsmith:anthropic/claude-opus-5" });
     const view = await playFromModal();
     reportThread("t-1");
     expect(loadGame("t-1")).toEqual({
       side: "white",
-      context: { ...DEFAULT_CONTEXT, policy: "llm", model: "claude-opus-5" },
+      context: { ...DEFAULT_CONTEXT, policy: "llm", model: "langsmith:anthropic/claude-opus-5" },
     });
 
     // Changing the last setup, in the modal or in storage, leaves the game on screen alone.
@@ -220,7 +229,10 @@ describe("a game's own setup", () => {
     await click("Cancel");
     saveSetup({ ...DEFAULT_SETUP, llm: "none" });
     await click("drop e2e4");
-    expect(lastConfigurable()).toMatchObject({ policy: "llm", model: "claude-opus-5" });
+    expect(lastConfigurable()).toMatchObject({
+      policy: "llm",
+      model: "langsmith:anthropic/claude-opus-5",
+    });
 
     // A new game takes the new setup; the old one keeps its own.
     await click("New game");
@@ -235,7 +247,10 @@ describe("a game's own setup", () => {
     window.history.replaceState(null, "", "?thread=t-1");
     render(<App />);
     await click("drop e2e4");
-    expect(lastConfigurable()).toMatchObject({ policy: "llm", model: "claude-opus-5" });
+    expect(lastConfigurable()).toMatchObject({
+      policy: "llm",
+      model: "langsmith:anthropic/claude-opus-5",
+    });
   });
 
   it("restores the side and context for a thread on reload", async () => {
@@ -363,7 +378,7 @@ describe("after the game", () => {
   });
 
   it("opens the modal pre-filled with the last setup from the result card", async () => {
-    saveSetup({ ...DEFAULT_SETUP, llm: "gpt-5.6-sol" });
+    saveSetup({ ...DEFAULT_SETUP, llm: "langsmith:openai/gpt-5.6-sol" });
     onThread("t-1");
     fake.threads["t-1"] = {
       values: { ...E4_E5, outcome: { kind: "draw", reason: "threefold" } },
@@ -376,7 +391,7 @@ describe("after the game", () => {
       );
     });
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
-    expect(screen.getByLabelText("LLM")).toHaveValue("gpt-5.6-sol");
+    expect(screen.getByLabelText("LLM")).toHaveValue("langsmith:openai/gpt-5.6-sol");
   });
 });
 

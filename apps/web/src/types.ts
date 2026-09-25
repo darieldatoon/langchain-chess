@@ -32,7 +32,7 @@ export interface ChessContext {
 
 export const DEFAULT_CONTEXT: ChessContext = {
   policy: "hybrid",
-  model: "claude-opus-5-5",
+  model: "langsmith:anthropic/claude-opus-5-5",
   reasoning_effort: "medium",
   show_legal_moves: true,
   memory: "none",

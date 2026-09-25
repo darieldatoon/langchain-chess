@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 
-vi.mock("./App.tsx", () => ({ default: () => <p>app</p> }));
+vi.mock("../src/App.tsx", () => ({ default: () => <p>app</p> }));
 
 describe("main", () => {
   it("does nothing without #root, and mounts the app when it exists", async () => {
     vi.resetModules();
-    const without = await import("./main.tsx");
+    const without = await import("../src/main.tsx");
     expect(document.body.textContent).toBe("");
 
     const root = document.createElement("div");
@@ -19,7 +19,7 @@ describe("main", () => {
     second.id = "root";
     document.body.appendChild(second);
     vi.resetModules();
-    await import("./main.tsx");
+    await import("../src/main.tsx");
     await vi.waitFor(() => expect(second.textContent).toBe("app"));
     second.remove();
   });

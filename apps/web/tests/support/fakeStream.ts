@@ -1,5 +1,5 @@
 import { vi, type Mock } from "vite-plus/test";
-import type { ChessValues, Message } from "../types";
+import type { ChessValues, Message } from "../../src/types";
 
 /** Shared stand-in for `useStream`; each test file installs it with `vi.mock` so it is hoisted. */
 export function useStreamMock() {

@@ -1,46 +1,43 @@
-"""Gateway settings and the org rules the app enforces, via pydantic-settings.
+"""Server settings, via pydantic-settings.
 
-Settings read the shell first and `.env` second. `env_ignore_empty` matters: the `.env`
-template sets `LANGSMITH_GATEWAY_API_KEY=${LC_GATEWAY_KEY}`, which expands to "" when the shell
-variable is missing. Treating "" as unset makes that a validation error, instead of
-langchain-core silently falling back to the tracing key and routing calls to the wrong org.
+Settings read the shell first and `.env` second. Model credentials are not here: they are the
+providers' own env vars (or `LANGSMITH_GATEWAY*`), read by the chat model itself.
+
+A key that is set but empty is an error, not unset. The `.env` template sets
+`LANGSMITH_GATEWAY_API_KEY=${LC_GATEWAY_KEY}`, which expands to "" when the shell variable is
+missing, and langchain-core would then silently fall back to the tracing key.
 """
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-GATEWAY_HOST = "gateway.smith.langchain.com"
 
-
-class GatewaySettings(BaseSettings):
+class ServerSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        env_ignore_empty=True,
         extra="ignore",
     )
 
-    langsmith_gateway: bool = Field(validation_alias="LANGSMITH_GATEWAY")
-    langsmith_gateway_api_key: SecretStr = Field(validation_alias="LANGSMITH_GATEWAY_API_KEY")
-    gateway_url: str = Field(
-        default=f"https://{GATEWAY_HOST}", validation_alias="LANGSMITH_GATEWAY_URL"
+    # Read only to reject a blank value; the chat model reads the variable itself.
+    langsmith_gateway_api_key: SecretStr | None = Field(
+        default=None, validation_alias="LANGSMITH_GATEWAY_API_KEY"
     )
-    typesafe_api_key: SecretStr = Field(validation_alias="TYPESAFE_API_KEY")
-    typesafe_base_url: str = Field(validation_alias="TYPESAFE_BASE_URL")
+    typesafe_api_key: SecretStr | None = Field(default=None, validation_alias="TYPESAFE_API_KEY")
+    typesafe_base_url: str | None = Field(default=None, validation_alias="TYPESAFE_BASE_URL")
 
-    @field_validator("langsmith_gateway")
+    @field_validator("langsmith_gateway_api_key", "typesafe_api_key", "typesafe_base_url")
     @classmethod
-    def _gateway_must_be_on(cls, on: bool) -> bool:
-        if not on:
-            msg = "LANGSMITH_GATEWAY must be true; all model calls go through the LLM Gateway"
+    def _not_blank(cls, value: SecretStr | str | None) -> SecretStr | str | None:
+        text = value.get_secret_value() if isinstance(value, SecretStr) else value
+        if text is not None and not text.strip():
+            msg = "is set but empty; unset it or give it a value"
             raise ValueError(msg)
-        return on
+        return value
 
-    @field_validator("typesafe_base_url")
-    @classmethod
-    def _base_url_must_be_gateway(cls, url: str) -> str:
-        if GATEWAY_HOST not in url:
-            msg = f"TYPESAFE_BASE_URL must point at the gateway root https://{GATEWAY_HOST}"
-            msg += f", got {url!r}"
+    def typesafe(self) -> tuple[str, str]:
+        """(api key, base URL) for System 1; only the policies that run it need them."""
+        if self.typesafe_api_key is None or self.typesafe_base_url is None:
+            msg = "System 1 needs TYPESAFE_API_KEY and TYPESAFE_BASE_URL"
             raise ValueError(msg)
-        return url
+        return self.typesafe_api_key.get_secret_value(), self.typesafe_base_url
