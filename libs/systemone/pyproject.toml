@@ -18,6 +18,3 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "langchain_chess_systemone"
 module-root = ""
-
-[tool.uv.sources]
-langchain-chess = { workspace = true }

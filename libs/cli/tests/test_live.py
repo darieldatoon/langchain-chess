@@ -7,7 +7,8 @@ from textual.widgets import Input
 from langchain_chess_cli.options import AgentOptions, build_agent
 from langchain_chess_cli.tui.app import ChessApp
 
-pytestmark = pytest.mark.live
+# One loop for the run: langchain-openai caches its async client across tests.
+pytestmark = [pytest.mark.live, pytest.mark.asyncio(loop_scope="session")]
 
 
 async def test_a_short_tui_game_against_the_hybrid():

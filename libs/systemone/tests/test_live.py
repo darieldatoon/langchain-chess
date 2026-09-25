@@ -11,7 +11,8 @@ from langchain_chess import create_chess_agent
 from langchain_chess.testing import position
 from langchain_chess_systemone import GatewayRanker, RankRequest, SystemOneMiddleware
 
-pytestmark = pytest.mark.live
+# One loop for the run: langchain-openai caches its async client across tests.
+pytestmark = [pytest.mark.live, pytest.mark.asyncio(loop_scope="session")]
 
 ITALIAN = "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"
 OPTIONS = tuple(m.uci() for m in chess.Board(ITALIAN).legal_moves)

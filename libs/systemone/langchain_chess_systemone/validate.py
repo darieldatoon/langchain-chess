@@ -11,6 +11,14 @@ from collections.abc import Mapping, Sequence
 from langchain_chess_systemone.types import Candidate, ChoiceResult
 
 SUM_TOLERANCE = 1e-3
+ROUNDING = 0.01
+"""Jev rounds every probability to 2 decimals, so its sum can miss 1 by up to half a unit per
+option (0.99 was seen live over 33 options)."""
+
+
+def _tolerance(values: Sequence[float]) -> float:
+    rounded = all(abs(p / ROUNDING - round(p / ROUNDING)) < 1e-6 for p in values)
+    return max(SUM_TOLERANCE, ROUNDING / 2 * len(values)) if rounded else SUM_TOLERANCE
 
 
 class MalformedChoice(ValueError):  # noqa: N818
@@ -30,7 +38,7 @@ def validate_choice(
         msg = "probabilities must be finite and within [0, 1]"
         raise MalformedChoice(msg)
     total = sum(values)
-    if abs(total - 1.0) > SUM_TOLERANCE:
+    if abs(total - 1.0) > _tolerance(values):
         msg = f"probabilities sum to {total:.6f}, not 1"
         raise MalformedChoice(msg)
     if not (math.isfinite(confidence) and 0.0 <= confidence <= 1.0):

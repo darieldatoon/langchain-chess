@@ -7,6 +7,12 @@
     "root": ".",
     "package": "langchain-chess-server"
   },
+  "dockerfile_lines": [
+    "ADD libs/chess/pyproject.toml /tmp/uv_export/project/libs/chess/pyproject.toml",
+    "ADD libs/systemone/pyproject.toml /tmp/uv_export/project/libs/systemone/pyproject.toml",
+    "ADD libs/cli/pyproject.toml /tmp/uv_export/project/libs/cli/pyproject.toml",
+    "ADD apps/server/pyproject.toml /tmp/uv_export/project/apps/server/pyproject.toml"
+  ],
   "graphs": {
     "chess": "./apps/server/langchain_chess_server/graph.py:make_graph"
   },

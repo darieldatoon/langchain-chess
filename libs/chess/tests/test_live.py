@@ -10,7 +10,8 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langchain_chess import create_chess_agent, turn_cost
 from langchain_chess.testing import human
 
-pytestmark = pytest.mark.live
+# One loop for the run: langchain-openai caches its async client across tests.
+pytestmark = [pytest.mark.live, pytest.mark.asyncio(loop_scope="session")]
 
 GATEWAY = "https://gateway.smith.langchain.com/v1"
 
