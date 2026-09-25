@@ -18,22 +18,37 @@ run = [
 ]
 
 [tasks."dev:web"]
-description = "Agent Server (Studio) on :2024 (or $LANGGRAPH_PORT) and the web UI on :5173/ui/"
+description = "Agent Server (Studio) on :2024 and the web UI on :5173/ui/ ($LANGGRAPH_PORT, $WEB_PORT)"
 alias = "dev"
 # langgraph dev silently moves to a random port when its port is taken, while the UI would keep
-# calling the old one: check first, and point the UI at the same port.
+# calling the old one: check first, and point the UI at the same port. Vite prints its URL first
+# and langgraph dev's startup logs bury it, so the URLs are printed again once both are up.
 run = '''
 #!/usr/bin/env bash
 set -euo pipefail
 port="${LANGGRAPH_PORT:-2024}"
-if (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; then
-  echo "error: port $port is already in use; stop that server or set LANGGRAPH_PORT" >&2
-  exit 1
-fi
+web_port="${WEB_PORT:-5173}"
+for p in "$port" "$web_port"; do
+  # Both loopbacks: Vite listens on ::1 only.
+  if (exec 3<>"/dev/tcp/127.0.0.1/$p") 2>/dev/null || (exec 3<>"/dev/tcp/::1/$p") 2>/dev/null; then
+    echo "error: port $p is already in use; stop that server or set LANGGRAPH_PORT / WEB_PORT" >&2
+    exit 1
+  fi
+done
 uv run --all-packages langgraph dev --no-browser --port "$port" &
 server=$!
-trap 'kill "$server" 2>/dev/null || true' EXIT
-VITE_API_URL="http://localhost:$port" pnpm --dir apps/web exec vp dev
+(
+  until curl -sf "http://127.0.0.1:$port/ok" >/dev/null \
+    && curl -sf "http://localhost:$web_port/ui/" >/dev/null; do
+    sleep 0.5
+  done
+  printf '\n  ♟  Web UI:  http://localhost:%s/ui/\n' "$web_port"
+  printf '     API:     http://127.0.0.1:%s\n' "$port"
+  printf '     Studio:  https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:%s\n\n' "$port"
+) &
+announcer=$!
+trap 'kill "$announcer" "$server" 2>/dev/null || true' EXIT
+VITE_API_URL="http://localhost:$port" pnpm --dir apps/web exec vp dev --port "$web_port" --strictPort
 '''
 
 [tasks."dev:tui"]
