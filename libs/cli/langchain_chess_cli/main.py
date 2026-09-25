@@ -101,8 +101,50 @@ def uci(
     asyncio.run(run(Engine(factory, options, out=out)))
 
 
+SideOption = Annotated[Literal["white", "black"], typer.Option(help="The side you play.")]
+
+
 @app.command()
-def play() -> None:
-    """Play a game in the terminal."""
-    typer.echo("not implemented yet", err=True)
-    raise typer.Exit(1)
+def play(
+    side: SideOption = "white",
+    policy: PolicyOption = "hybrid",
+    model: ModelOption = "claude-opus-5",
+    reasoning_effort: EffortOption = "medium",
+    systemone_model: SystemOneOption = "semif-qwen3.5-4b",
+    threshold: ThresholdOption = 0.9,
+    tournament_threshold: TournamentOption = None,
+    k: KOption = 5,
+    top_p: TopPOption = None,
+    gate: GateOption = "margin",
+    style: StyleOption = "rich",
+    seed: SeedOption = 0,
+    show_legal_moves: LegalOption = True,
+    with_eval: EvalOption = False,
+    with_nouls: NoulsOption = False,
+) -> None:
+    """Play a game in the terminal (Textual)."""
+    from langgraph.checkpoint.memory import InMemorySaver
+
+    from langchain_chess_cli.tui.app import ChessApp
+
+    options = AgentOptions(
+        policy=policy,
+        model=model,
+        reasoning_effort=reasoning_effort,
+        systemone_model=systemone_model,
+        threshold=threshold,
+        tournament_threshold=tournament_threshold,
+        k=k,
+        top_p=top_p,
+        gate=gate,
+        style=style,
+        seed=seed,
+        show_legal_moves=show_legal_moves,
+        with_eval=with_eval,
+        with_nouls=with_nouls,
+    )
+
+    def factory() -> CompiledStateGraph:
+        return build_agent(options, draw_claims="auto", checkpointer=InMemorySaver())
+
+    ChessApp(factory, options, side=side).run()

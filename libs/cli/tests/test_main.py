@@ -12,8 +12,19 @@ def test_help_lists_commands():
     assert "play" in result.output
 
 
-def test_play_is_a_placeholder():
-    assert CliRunner().invoke(app, ["play"]).exit_code == 1
+def test_play_runs_the_tui(monkeypatch):
+    import langchain_chess_cli.tui.app as tui
+
+    ran = []
+
+    def fake_run(self):
+        ran.append((self.side, self.options.policy, self.agent.name))
+
+    monkeypatch.setattr(tui.ChessApp, "run", fake_run)
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
+    result = CliRunner().invoke(app, ["play", "--side", "black", "--policy", "systemone"])
+    assert result.exit_code == 0, result.output
+    assert ran == [("black", "systemone", "chess")]
 
 
 def test_uci_speaks_the_protocol(monkeypatch):
