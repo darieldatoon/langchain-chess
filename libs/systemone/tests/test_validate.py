@@ -1,0 +1,40 @@
+import math
+
+import pytest
+
+from langchain_chess_systemone.validate import MalformedChoice, validate_choice
+
+OPTIONS = ("e2e4", "d2d4", "g1f3")
+
+
+def test_ranks_ties_by_option_order_and_fills_missing_labels():
+    result = validate_choice(OPTIONS, {"d2d4": 0.5, "g1f3": 0.5}, 0.3)
+    assert [(c.uci, c.probability) for c in result.ranked] == [
+        ("d2d4", 0.5),
+        ("g1f3", 0.5),
+        ("e2e4", 0.0),
+    ]
+    assert result.confidence == 0.3
+
+
+def test_small_drift_is_renormalized():
+    result = validate_choice(OPTIONS, {"e2e4": 0.6, "d2d4": 0.25, "g1f3": 0.1505}, 0.5)
+    assert math.isclose(sum(c.probability for c in result.ranked), 1.0)
+
+
+@pytest.mark.parametrize(
+    ("probabilities", "confidence", "match"),
+    [
+        ({"e2e4": 1.2, "d2d4": -0.2}, 0.5, "within"),
+        ({"e2e4": float("nan"), "d2d4": 1.0}, 0.5, "within"),
+        ({"e2e4": 0.0, "d2d4": 0.0}, 0.5, "sum to"),
+        ({"e2e4": 6.0, "d2d4": 2.5, "g1f3": 1.5}, 0.5, "within"),
+        ({"e2e4": 0.5, "d2d4": 0.4}, 0.5, "sum to"),
+        ({"e2e4": 1.0, "a2a3": 0.0}, 0.5, "not options"),
+        ({"e2e4": 1.0}, float("nan"), "confidence"),
+        ({"e2e4": 1.0}, 1.5, "confidence"),
+    ],
+)
+def test_malformed_choices(probabilities, confidence, match):
+    with pytest.raises(MalformedChoice, match=match):
+        validate_choice(OPTIONS, probabilities, confidence)

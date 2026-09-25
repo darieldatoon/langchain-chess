@@ -47,6 +47,11 @@ python-version = "3.13"
 [tool.ty.src]
 include = ["libs", "apps/server"]
 
+# Tests build state and requests from loose dict literals; the packages stay strict.
+[[tool.ty.overrides]]
+include = ["**/tests/**"]
+rules = { invalid-argument-type = "ignore", invalid-assignment = "ignore", not-subscriptable = "ignore", unresolved-attribute = "ignore", invalid-key = "ignore" }
+
 [tool.pytest.ini_options]
 testpaths = ["libs/chess/tests", "libs/systemone/tests", "libs/cli/tests", "apps/server/tests"]
 asyncio_mode = "auto"
