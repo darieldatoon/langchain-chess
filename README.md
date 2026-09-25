@@ -113,13 +113,13 @@ system_one_alone = create_chess_agent(
 
 ```sh
 mise run dev   # langgraph dev on :2024 (Studio) and the web UI on :5173/ui/
+LANGGRAPH_PORT=2034 mise run dev   # when 2024 is taken
 ```
 
 The web UI plays a game per thread (the thread id stays in the URL), with System 1 candidates,
 the gate, analysis and cost per move. Settings map to the `chess` graph's context knobs.
-Studio's chat view plays too: type `go` or a move. If port 2024 is taken, run
-`uv run --all-packages langgraph dev --port <p>` and start the UI with
-`VITE_API_URL=http://localhost:<p>`.
+Studio's chat view plays too: type `go` or a move. The task refuses to start if the Agent
+Server's port is taken, rather than letting the UI talk to another project's server.
 
 ### UCI engine
 

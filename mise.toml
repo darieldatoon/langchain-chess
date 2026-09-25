@@ -18,8 +18,22 @@ run = [
 ]
 
 [tasks.dev]
-description = "Agent Server (Studio) on :2024 and Vite dev server on :5173"
-run = "uv run --all-packages langgraph dev --no-browser & pnpm --dir apps/web exec vp dev; kill %1"
+description = "Agent Server (Studio) on :2024 (or $LANGGRAPH_PORT) and the web UI on :5173/ui/"
+# langgraph dev silently moves to a random port when its port is taken, while the UI would keep
+# calling the old one: check first, and point the UI at the same port.
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+port="${LANGGRAPH_PORT:-2024}"
+if (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; then
+  echo "error: port $port is already in use; stop that server or set LANGGRAPH_PORT" >&2
+  exit 1
+fi
+uv run --all-packages langgraph dev --no-browser --port "$port" &
+server=$!
+trap 'kill "$server" 2>/dev/null || true' EXIT
+VITE_API_URL="http://localhost:$port" pnpm --dir apps/web exec vp dev
+'''
 
 [tasks.check]
 description = "Format check, lint and type check, Python and web"
