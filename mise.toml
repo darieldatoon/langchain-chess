@@ -17,8 +17,9 @@ run = [
   "lefthook install",
 ]
 
-[tasks.dev]
+[tasks."dev:web"]
 description = "Agent Server (Studio) on :2024 (or $LANGGRAPH_PORT) and the web UI on :5173/ui/"
+alias = "dev"
 # langgraph dev silently moves to a random port when its port is taken, while the UI would keep
 # calling the old one: check first, and point the UI at the same port.
 run = '''
@@ -35,11 +36,11 @@ trap 'kill "$server" 2>/dev/null || true' EXIT
 VITE_API_URL="http://localhost:$port" pnpm --dir apps/web exec vp dev
 '''
 
-[tasks.play]
+[tasks."dev:tui"]
 description = "Play the agent in the terminal (Textual); pass lcchess play options after --"
 run = "uv run --all-packages --env-file .env lcchess play"
 
-[tasks.uci]
+[tasks."dev:uci"]
 description = "Run the agent as a UCI engine on stdin/stdout; pass lcchess uci options after --"
 run = "uv run --all-packages --env-file .env lcchess uci"
 
@@ -56,6 +57,10 @@ run = [
 description = "Python and web tests with 100% coverage gates"
 run = ["uv run --all-packages pytest -q", "pnpm --dir apps/web exec vp test --run --coverage"]
 
+[tasks."test:live"]
+description = "The live tests against the real LLM Gateway (costs a few cents)"
+run = "uv run --all-packages --env-file .env pytest -m live --no-cov -q"
+
 [tasks.build]
 description = "Build the web UI into the server package so the image can serve it under /ui"
 run = "pnpm --dir apps/web exec vp build"
@@ -67,7 +72,7 @@ run = [
   "uv run --all-packages langgraph deploy --no-remote --name jev-chess-app --deployment-type dev",
 ]
 
-[tasks.uci-match]
+[tasks."test:uci"]
 description = "Smoke match under fastchess: SemIf-only lcchess against itself with another seed"
 # Runs inside .uci-match/ (gitignored): fastchess writes its config.json to the working directory.
 run = [
@@ -81,5 +86,5 @@ run = [
   # Every game ends with a result, by the rules or the move cap: no forfeits.
   '''cd .uci-match && test "$(grep -cE '^\[Result "(1-0|0-1|1/2-1/2)"\]' games.pgn)" = 2 \
     && ! grep -E '^\[Termination' games.pgn | grep -vE '"(normal|adjudication)"' \
-    && echo "uci-match: 2 games finished, no forfeits"''',
+    && echo "test:uci: 2 games finished, no forfeits"''',
 ]

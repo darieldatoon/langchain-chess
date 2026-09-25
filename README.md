@@ -112,8 +112,8 @@ system_one_alone = create_chess_agent(
 ### Web app and Studio
 
 ```sh
-mise run dev   # langgraph dev on :2024 (Studio) and the web UI on :5173/ui/
-LANGGRAPH_PORT=2034 mise run dev   # when 2024 is taken
+mise run dev:web   # langgraph dev on :2024 (Studio) and the web UI on :5173/ui/ (alias: dev)
+LANGGRAPH_PORT=2034 mise run dev:web   # when 2024 is taken
 ```
 
 The web UI plays a game per thread (the thread id stays in the URL), with System 1 candidates,
@@ -124,8 +124,8 @@ Server's port is taken, rather than letting the UI talk to another project's ser
 ### UCI engine
 
 ```sh
-mise run uci -- --policy systemone   # uv run --all-packages --env-file .env lcchess uci ...
-mise run uci-match   # two SemIf-only games under fastchess
+mise run dev:uci -- --policy systemone   # uv run --all-packages --env-file .env lcchess uci ...
+mise run test:uci   # two SemIf-only games under fastchess
 ```
 
 - Options: `Model`, `ReasoningEffort`, `SystemOneModel`, `Policy`, `Threshold`, `K`, `Memory`,
@@ -143,7 +143,7 @@ mise run uci-match   # two SemIf-only games under fastchess
 ### Terminal UI
 
 ```sh
-mise run play -- --side black   # uv run --all-packages --env-file .env lcchess play ...
+mise run dev:tui -- --side black   # uv run --all-packages --env-file .env lcchess play ...
 ```
 
 Click a piece and then its target, or move the cursor with the arrow keys and press Enter (or
@@ -179,9 +179,13 @@ gateway key. Commands that make model calls load it explicitly (`uv run --env-fi
 mise trust && mise install && mise run setup   # tools, dependencies, git hooks
 mise run check   # ruff, ty, and the web lint and type checks
 mise run test    # pytest and Vitest, both at 100% line and branch coverage
-uv run --all-packages --env-file .env pytest -m live --no-cov -q   # against the real gateway
+mise run test:live   # the live tests against the real gateway
 mise run build   # the web UI into apps/server/.../static, served at /ui
 ```
+
+`mise tasks` lists every task: `dev:web` (alias `dev`), `dev:tui`, `dev:uci`, `test`,
+`test:live`, `test:uci`, and the rest. Options after `--` pass through, as in
+`mise run dev:tui -- --side black`.
 
 mise provides every tool (node, pnpm, uv, lefthook, `sfw`, fastchess); Python comes from uv.
 Add dependencies with `sfw uv add --package <distribution> <dependency>` (root dev tools:
