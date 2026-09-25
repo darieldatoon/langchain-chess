@@ -1,40 +1,46 @@
-# One toolchain file for both halves of the repo. `mise trust && mise install && mise run setup`.
+# One toolchain file for the whole repo. `mise trust && mise install && mise run setup`.
+# Python comes from uv (.python-version), not mise.
 
 [tools]
 node = "24"
 pnpm = "12"
 uv = "0.12"
 lefthook = "2"
+"github:SocketDev/sfw-free" = { version = "1.15.2", bin = "sfw" }
+"github:Disservin/fastchess" = "v1.8.2-alpha"
 
 [tasks.setup]
-description = "Install Python and frontend dependencies, then git hooks"
+description = "Install Python and web dependencies, then git hooks"
 run = [
-  "uv sync --all-groups",
-  "pnpm --dir frontend install --frozen-lockfile",
+  "uv sync --all-packages --all-groups",
+  "pnpm --dir apps/web install --frozen-lockfile",
   "lefthook install",
 ]
 
 [tasks.dev]
 description = "Agent Server (Studio) on :2024 and Vite dev server on :5173"
-run = "uv run langgraph dev --no-browser & pnpm --dir frontend exec vp dev; kill %1"
+run = "uv run --all-packages langgraph dev --no-browser & pnpm --dir apps/web exec vp dev; kill %1"
 
 [tasks.check]
-description = "Lint, format check, and type check both halves"
+description = "Format check, lint and type check, Python and web"
 run = [
-  "uv run ruff format --check src tests",
-  "uv run ruff check src tests",
-  "uv run ty check",
-  "pnpm --dir frontend exec vp check",
+  "uv run --all-packages ruff format --check libs apps",
+  "uv run --all-packages ruff check libs apps",
+  "uv run --all-packages ty check",
+  "pnpm --dir apps/web exec vp check",
 ]
 
 [tasks.test]
-description = "Python and frontend tests with 100% coverage gates"
-run = ["uv run pytest -q", "pnpm --dir frontend exec vp test --run --coverage"]
+description = "Python and web tests with 100% coverage gates"
+run = ["uv run --all-packages pytest -q", "pnpm --dir apps/web exec vp test --run --coverage"]
 
 [tasks.build]
-description = "Build the UI into the Python package so the image can serve it under /ui"
-run = "pnpm --dir frontend exec vp build"
+description = "Build the web UI into the server package so the image can serve it under /ui"
+run = "pnpm --dir apps/web exec vp build"
 
 [tasks.deploy]
 description = "Build the UI, then build and push the image to LangSmith Deployments"
-run = ["mise run build", "uv run langgraph deploy --no-remote --name jev-chess-app --deployment-type dev"]
+run = [
+  "mise run build",
+  "uv run --all-packages langgraph deploy --no-remote --name jev-chess-app --deployment-type dev",
+]

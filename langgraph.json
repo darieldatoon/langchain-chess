@@ -2,15 +2,9 @@
   "$schema": "https://langgra.ph/schema.json",
   "python_version": "3.13",
   "image_distro": "wolfi",
-  "dependencies": ["."],
+  "source": { "kind": "uv", "root": ".", "package": "langchain-chess-server" },
   "graphs": {
-    "game": "./src/jev_chess/graphs/game.py:make_game_graph",
-    "jev": "./src/jev_chess/graphs/policies.py:make_jev_graph",
-    "llm": "./src/jev_chess/graphs/policies.py:make_llm_graph",
-    "hybrid": "./src/jev_chess/graphs/policies.py:make_hybrid_graph"
+    "chess": "./apps/server/langchain_chess_server/graph.py:make_graph"
   },
-  "env": ".env",
-  "http": {
-    "app": "./src/jev_chess/server/app.py:app"
-  }
+  "env": ".env"
 }

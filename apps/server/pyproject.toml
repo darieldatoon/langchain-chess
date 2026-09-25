@@ -1,0 +1,27 @@
+[project]
+name = "langchain-chess-server"
+version = "0.1.0"
+description = "The langchain-chess Agent Server app: the `chess` graph and the web UI"
+requires-python = ">=3.13"
+license = "MIT"
+authors = [{ name = "Dariel Dato-on" }]
+classifiers = ["Private :: Do Not Upload"]
+dependencies = [
+    "fastapi>=0.141.1",
+    "langchain-chess",
+    "langchain-chess-systemone",
+    "langchain-openai>=1.6.2",
+    "pydantic-settings>=2.10",
+]
+
+[build-system]
+requires = ["uv_build>=0.12,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "langchain_chess_server"
+module-root = ""
+
+[tool.uv.sources]
+langchain-chess = { workspace = true }
+langchain-chess-systemone = { workspace = true }

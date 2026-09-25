@@ -27,20 +27,20 @@ jobs:
 
       - name: Install
         run: |
-          uv sync --all-groups
-          pnpm --dir frontend install --frozen-lockfile
+          uv sync --all-packages --all-groups --locked
+          pnpm --dir apps/web install --frozen-lockfile
 
       - name: Check and test
         run: |
-          uv run ruff format --check src tests
-          uv run ruff check src tests
-          uv run ty check
-          uv run pytest -q
-          pnpm --dir frontend exec vp check
-          pnpm --dir frontend exec vp test --run --coverage
+          uv run --all-packages ruff format --check libs apps
+          uv run --all-packages ruff check libs apps
+          uv run --all-packages ty check
+          uv run --all-packages pytest -q
+          pnpm --dir apps/web exec vp check
+          pnpm --dir apps/web exec vp test --run --coverage
 
-      - name: Build UI into the Python package
-        run: pnpm --dir frontend exec vp build
+      - name: Build the web UI into the server package
+        run: pnpm --dir apps/web exec vp build
 
       # `langgraph deploy` re-sends the env file as the revision's secrets on every deploy, so
       # the file must carry the full runtime set or a redeploy could drop them.
@@ -49,11 +49,11 @@ jobs:
           cat > .env <<EOF
           LANGSMITH_GATEWAY=true
           LANGSMITH_GATEWAY_API_KEY=${{ secrets.LC_GATEWAY_KEY }}
-          TYPESAFE_BASE_URL=https://gateway.smith.langchain.com/typesafe
+          TYPESAFE_BASE_URL=https://gateway.smith.langchain.com
           TYPESAFE_API_KEY=${{ secrets.LC_GATEWAY_KEY }}
           EOF
 
       - name: Build image and deploy to LangSmith
         env:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
-        run: uv run langgraph deploy --no-remote --name jev-chess-app --deployment-type dev --no-input
+        run: uv run --all-packages langgraph deploy --no-remote --name jev-chess-app --deployment-type dev --no-input
