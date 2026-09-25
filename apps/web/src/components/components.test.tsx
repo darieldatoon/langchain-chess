@@ -98,7 +98,7 @@ describe("PlyDetails", () => {
     expect(screen.queryByText("Show LLM reply")).not.toBeInTheDocument();
   });
 
-  it("shows an LLM move with System 1's shortlist, turn cost, and the markdown reply", () => {
+  it("shows an LLM move with System 1's shortlist, turn cost, and the markdown reply", async () => {
     const meta = systemOne({
       status: "shortlist",
       shortlist: [
@@ -146,7 +146,7 @@ describe("PlyDetails", () => {
       "30",
     );
     fireEvent.click(screen.getByRole("button", { name: "Show LLM reply" }));
-    expect(screen.getByRole("heading", { level: 2, name: "Plan" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: "Plan" })).toBeInTheDocument();
     expect(screen.getByText("Nc6", { selector: ".markdown strong" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Hide LLM reply" }));
     expect(screen.queryByRole("heading", { level: 2, name: "Plan" })).not.toBeInTheDocument();

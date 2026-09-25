@@ -5,7 +5,6 @@ import { ProgressBar } from "@langchain/macaw-components/ProgressBar";
 import { Text } from "@langchain/macaw-components/Text";
 import { Tooltip } from "@langchain/macaw-components/Tooltip";
 import { useState } from "react";
-import Markdown from "react-markdown";
 import { sanAt } from "../chess";
 import {
   costText,
@@ -19,6 +18,7 @@ import {
 import { systemOneMeta, turnCost } from "../selectors";
 import type { SystemOneMeta } from "../types";
 import type { Reply } from "../useGame";
+import { Analysis } from "./Analysis";
 
 const BADGE_COLORS: Record<SourceClass, "primary" | "special" | "secondary" | "warning" | "plain"> =
   {
@@ -95,7 +95,7 @@ export function PlyDetails({ reply }: { reply: Reply | null }) {
           </Button>
           {showReply && (
             <div className="markdown max-h-80 overflow-auto rounded-md bg-surface-level-3 p-space-3">
-              <Markdown>{ply.analysis}</Markdown>
+              <Analysis text={ply.analysis} />
             </div>
           )}
         </div>

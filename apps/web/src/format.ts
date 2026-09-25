@@ -134,6 +134,11 @@ export function standingLine(stages: readonly StageResult[], amongFinalists: boo
   return `Out in round ${last.round}, heat ${last.heat}: ${at} in its heat.`;
 }
 
+/** The SDK's refusal of a second submit while a run is in flight (`multitaskStrategy: "reject"`). */
+export function isBusyRejection(error: unknown): boolean {
+  return error instanceof Error && error.message.includes("a run is already in flight");
+}
+
 export function describeError(error: unknown): string | null {
   if (!error) return null;
   if (error instanceof Error) return error.message;

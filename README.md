@@ -179,7 +179,7 @@ gateway key. Commands that make model calls load it explicitly (`uv run --env-fi
 mise trust && mise install && mise run setup   # tools, dependencies, git hooks
 mise run check   # ruff, ty, and the web lint and type checks
 mise run test    # pytest and Vitest, both at 100% line and branch coverage
-mise run test:live   # the live tests against the real gateway
+mise run test:live   # the live tests against the real gateway, a real `langgraph dev` included
 mise run build   # the web UI into apps/server/.../static, served at /ui
 ```
 

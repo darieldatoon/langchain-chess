@@ -138,6 +138,23 @@ describe("App", () => {
     expect(ids[1]).toBe(ids[0]);
   });
 
+  it("drops a submit refused as busy and shows any other submit failure", async () => {
+    withKey();
+    const busy = new Error(
+      "submit() rejected: a run is already in flight and multitaskStrategy is 'reject'.",
+    );
+    fake.submit = vi.fn(() => Promise.reject(busy));
+    render(<App />);
+    await click("drop e2e4");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    fake.submit = vi.fn(() => Promise.reject(new Error("Failed to fetch")));
+    await click("drop e2e4");
+    expect(screen.getByRole("status")).toHaveTextContent("Failed to fetch");
+    fake.submit = vi.fn(() => Promise.resolve());
+    await click("drop e2e4");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
   it("shows the optimistic move until the run settles", async () => {
     withKey();
     let finish: () => void = () => {};
@@ -232,7 +249,7 @@ describe("App", () => {
     expect(optionsLog.at(-1)).toMatchObject({ threadId: "abc" });
   });
 
-  it("streams the live analysis while the opponent thinks", () => {
+  it("streams the live analysis while the opponent thinks", async () => {
     withKey();
     resetFake({ moves: ["e2e4"], plies: [ply()], turns: [turn({ status: "pending" })] }, [
       new HumanMessage({ id: "msg-1", content: "e2e4" }),
@@ -241,6 +258,9 @@ describe("App", () => {
     fake.isLoading = true;
     render(<App />);
     expect(screen.getByText("Opponent is thinking")).toBeInTheDocument();
+    // Plain text until the lazy Markdown renderer has loaded.
+    expect(screen.getByLabelText("live analysis")).toHaveTextContent("**e5** mirrors the centre.");
+    expect(await screen.findByText("e5", { selector: "strong" })).toBeInTheDocument();
     expect(screen.getByLabelText("live analysis")).toHaveTextContent("e5 mirrors the centre.");
     expect(board()).toHaveAttribute("data-draggable", "false");
   });

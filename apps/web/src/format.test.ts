@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   costText,
   describeError,
+  isBusyRejection,
   isAtBottom,
   lastMoveStyles,
   money,
@@ -125,6 +126,9 @@ describe("status", () => {
   });
 
   it("describes errors", () => {
+    expect(isBusyRejection(new Error("submit() rejected: a run is already in flight"))).toBe(true);
+    expect(isBusyRejection(new Error("Failed to fetch"))).toBe(false);
+    expect(isBusyRejection("a run is already in flight")).toBe(false);
     expect(describeError(undefined)).toBeNull();
     expect(describeError(new Error("boom"))).toBe("boom");
     expect(describeError("plain")).toBe("plain");

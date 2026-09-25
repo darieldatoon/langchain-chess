@@ -9,14 +9,14 @@ import { Text } from "@langchain/macaw-components/Text";
 import { ThinkingState } from "@langchain/macaw-components/ThinkingState";
 import { GearSixIcon } from "@phosphor-icons/react/dist/ssr/GearSix";
 import { useCallback, useEffect, useState } from "react";
-import Markdown from "react-markdown";
 import { sideToMove } from "./chess";
+import { Analysis } from "./components/Analysis";
 import { Board } from "./components/Board";
 import { MoveList } from "./components/MoveList";
 import { PlyDetails } from "./components/PlyDetails";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { ThemeToggle } from "./components/ThemeToggle";
-import { describeError, statusLine } from "./format";
+import { describeError, isBusyRejection, statusLine } from "./format";
 import { loadSettings, loadSide, saveSettings, type Settings } from "./settings";
 import type { ChessContext, Side } from "./types";
 import { threadFromUrl, useGame, writeThreadToUrl } from "./useGame";
@@ -119,6 +119,8 @@ export default function App() {
 function Table({ settings, side }: { settings: Settings; side: Side }) {
   const game = useGame(settings.apiKey, settings.context, side);
   const [dismissed, setDismissed] = useState<string | null>(null);
+  // Run failures arrive on the stream; this holds a submit that failed before it got there.
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const over = game.outcome !== null;
   const opponentToMove = sideToMove(game.fen) !== game.humanSide;
@@ -129,12 +131,16 @@ function Table({ settings, side }: { settings: Settings; side: Side }) {
   const boardFen = game.pendingMove?.fen ?? game.fen;
   const lastMove = game.pendingMove?.uci ?? game.moves.at(-1) ?? null;
   const notice = game.error && game.error !== dismissed ? game.error : null;
-  const streamError = describeError(game.streamError);
+  const streamError = submitError ?? describeError(game.streamError);
 
   // Every new command re-arms the notice, so a repeated rejection shows again.
   const issue = (run: () => Promise<void>) => {
     setDismissed(null);
-    void run();
+    setSubmitError(null);
+    run().catch((error: unknown) => {
+      // A second command while one is in flight is dropped: the first one's answer is coming.
+      if (!isBusyRejection(error)) setSubmitError(describeError(error));
+    });
   };
 
   return (
@@ -183,7 +189,7 @@ function Table({ settings, side }: { settings: Settings; side: Side }) {
             aria-label="live analysis"
             className="markdown max-h-60 overflow-auto rounded-md bg-surface-level-3 p-space-3"
           >
-            <Markdown>{game.liveAnalysis}</Markdown>
+            <Analysis text={game.liveAnalysis} />
           </div>
         )}
         {notice && (
