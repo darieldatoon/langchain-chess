@@ -44,3 +44,20 @@ run = [
   "mise run build",
   "uv run --all-packages langgraph deploy --no-remote --name jev-chess-app --deployment-type dev",
 ]
+
+[tasks.uci-match]
+description = "Smoke match under fastchess: SemIf-only lcchess against itself with another seed"
+# Runs inside .uci-match/ (gitignored): fastchess writes its config.json to the working directory.
+run = [
+  '''mkdir -p .uci-match && cd .uci-match && fastchess \
+    -engine name=semif-seed1 cmd=uv args="run --all-packages --env-file ../.env lcchess uci --policy systemone --seed 1" \
+    -engine name=semif-seed2 cmd=uv args="run --all-packages --env-file ../.env lcchess uci --policy systemone --seed 2" \
+    -each proto=uci st=3 timemargin=2000 \
+    -rounds 1 -games 2 -maxmoves 60 -autosaveinterval 0 \
+    -pgnout file=games.pgn append=false \
+    -log file=fastchess.log level=warn append=false engine=true''',
+  # Every game ends with a result, by the rules or the move cap: no forfeits.
+  '''cd .uci-match && test "$(grep -cE '^\[Result "(1-0|0-1|1/2-1/2)"\]' games.pgn)" = 2 \
+    && ! grep -E '^\[Termination' games.pgn | grep -vE '"(normal|adjudication)"' \
+    && echo "uci-match: 2 games finished, no forfeits"''',
+]
