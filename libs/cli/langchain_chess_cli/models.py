@@ -24,7 +24,12 @@ PROFILES: dict[str, dict[str, Any]] = {
 
 def chat_model(model: str, reasoning_effort: str) -> BaseChatModel:
     spec = resolve_model_spec(model)
-    kwargs: dict[str, Any] = {"reasoning_effort": reasoning_effort, "max_tokens": MAX_TOKENS}
+    kwargs: dict[str, Any] = {
+        "reasoning_effort": reasoning_effort,
+        "max_tokens": MAX_TOKENS,
+        # The trace span's name; through the gateway every vendor would read as `ChatOpenAI`.
+        "name": model,
+    }
     if (profile := PROFILES.get(model_identity(spec)[1])) is not None:
         kwargs["profile"] = profile
     return init_chat_model(spec, **kwargs)

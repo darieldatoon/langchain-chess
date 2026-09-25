@@ -23,8 +23,8 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Checkpointer
 
 from langchain_chess.parse import text_of
-from langchain_chess.rules import fingerprint
-from langchain_chess_cli.options import AgentOptions
+from langchain_chess.rules import DrawClaims, fingerprint
+from langchain_chess_cli.options import AgentOptions, run_config
 from langchain_chess_cli.uci.clock import deadline_ms
 from langchain_chess_cli.uci.completion import RunStatus, SearchResult, complete, root_moves
 from langchain_chess_cli.uci.protocol import (
@@ -46,6 +46,8 @@ type Output = Callable[[str], None]
 
 NAME = "langchain-chess"
 AUTHOR = "Dariel Dato-on"
+DRAW_CLAIMS: DrawClaims = "never"
+"""The GUI adjudicates draws."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -176,7 +178,7 @@ class Engine:
         return f"uci-{uuid.uuid4()}"
 
     def _config(self) -> RunnableConfig:
-        return {"configurable": {"thread_id": self._thread}}
+        return run_config("uci", self._thread, self._options, draw_claims=DRAW_CLAIMS)
 
     def _info(self, text: str) -> None:
         for line in filter(str.strip, text.splitlines()):

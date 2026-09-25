@@ -65,6 +65,11 @@ EVAL_QUESTION = "eval"
 CALCULATION_QUESTION = "needs_calculation"
 TACTICS_QUESTION = "tactics_present"
 
+# Trace span names: one request ranks every option, or a tournament sends heats then a final.
+RANK_RUN = "systemone.rank"
+HEATS_RUN = "systemone.heats"
+FINAL_RUN = "systemone.final"
+
 # Deliberately no value ordering here (Dariel, 2026-09-21): sacrifices are sometimes right,
 # and a stated preference would make the ranking an echo of the prompt.
 MOVE_INSTRUCTIONS = (
@@ -219,6 +224,11 @@ def _noul(response: ClassifierResponse, name: str) -> float | None:
     return answer.noul if isinstance(answer, NoulAnswer) else None
 
 
+def tournament_run_name(batch: Batch) -> str:
+    # Not `spec.heat`: the final lists only the finalists, so it is flagged as a heat too.
+    return FINAL_RUN if any(spec.name == FINAL for spec in batch.choices) else HEATS_RUN
+
+
 def parse_answers(batch: Batch, response: ClassifierResponse) -> Answers:
     """Validate every Choice against its own options. Raises `MalformedChoice`."""
     choices: dict[str, ChoiceResult] = {}
@@ -309,13 +319,13 @@ class GatewayRanker:
             msg = f"malformed {self.model} response: {e}"
             raise RankingFailed(msg, calls) from e
 
-    def _ask(self, position: _Position, batch: Batch, calls: list[Call]) -> Answers:
+    def _ask(self, position: _Position, batch: Batch, calls: list[Call], run_name: str) -> Answers:
         request = self._request(position, batch)
         attempt = 0
         while True:
             at = datetime.now(UTC)
             try:
-                response = self.client.invoke(request)
+                response = self.client.invoke(request, {"run_name": run_name})
             except TRANSIENT_ERRORS as e:
                 attempt += 1
                 if attempt >= self.max_attempts:
@@ -327,13 +337,15 @@ class GatewayRanker:
                 raise RankingFailed(f"{self.model} failed: {e}", calls) from e
             return self._answers(batch, response, at, calls)
 
-    async def _aask(self, position: _Position, batch: Batch, calls: list[Call]) -> Answers:
+    async def _aask(
+        self, position: _Position, batch: Batch, calls: list[Call], run_name: str
+    ) -> Answers:
         request = self._request(position, batch)
         attempt = 0
         while True:
             at = datetime.now(UTC)
             try:
-                response = await self.client.ainvoke(request)
+                response = await self.client.ainvoke(request, {"run_name": run_name})
             except TRANSIENT_ERRORS as e:
                 attempt += 1
                 if attempt >= self.max_attempts:
@@ -387,10 +399,12 @@ class GatewayRanker:
         position = _position(request, self.history_plies)
         calls: list[Call] = []
         if len(request.options) <= self.max_options:
-            answers = self._ask(position, self._single(request), calls)
+            answers = self._ask(position, self._single(request), calls, RANK_RUN)
             return self._distribution(answers.choices[FINAL], answers.aux, None, calls, started)
         steps = plan(request.options, self.max_options, request.seed)
-        result = drive(steps, lambda batch: self._ask(position, batch, calls))
+        result = drive(
+            steps, lambda batch: self._ask(position, batch, calls, tournament_run_name(batch))
+        )
         return self._distribution(result.final, result.aux, result.tournament, calls, started)
 
     async def arank(self, request: RankRequest) -> MoveDistribution:
@@ -400,8 +414,10 @@ class GatewayRanker:
         position = _position(request, self.history_plies)
         calls: list[Call] = []
         if len(request.options) <= self.max_options:
-            answers = await self._aask(position, self._single(request), calls)
+            answers = await self._aask(position, self._single(request), calls, RANK_RUN)
             return self._distribution(answers.choices[FINAL], answers.aux, None, calls, started)
         steps = plan(request.options, self.max_options, request.seed)
-        result = await adrive(steps, lambda batch: self._aask(position, batch, calls))
+        result = await adrive(
+            steps, lambda batch: self._aask(position, batch, calls, tournament_run_name(batch))
+        )
         return self._distribution(result.final, result.aux, result.tournament, calls, started)

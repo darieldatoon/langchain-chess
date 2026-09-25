@@ -7,6 +7,7 @@ import { DEFAULT_SETUP } from "./setup";
 import { APP_KEY, loadGame, loadSetup, saveAppSettings, saveGame, saveSetup } from "./storage";
 import { fake, lastOptions, optionsLog, resetFake } from "./test/fakeStream";
 import { AFTER_E4, E4_E5, ply, turn } from "./test/fixtures";
+import { WEB_TRACE } from "./useGame";
 import { renderWithProviders as render } from "./test/renderApp";
 import { DEFAULT_CONTEXT, START_FEN, type ChessContext, type Side } from "./types";
 
@@ -123,7 +124,11 @@ describe("new game", () => {
     await click("drop e2e4");
     expect(fake.submit).toHaveBeenCalledWith(
       { messages: [{ type: "human", id: expect.any(String), content: "e2e4" }] },
-      { config: { configurable: DEFAULT_CONTEXT }, multitaskStrategy: "reject" },
+      {
+        config: { configurable: DEFAULT_CONTEXT, ...WEB_TRACE },
+        metadata: { surface: "web" },
+        multitaskStrategy: "reject",
+      },
     );
   });
 
@@ -271,7 +276,11 @@ describe("playing Black", () => {
     expect(fake.submit).toHaveBeenCalledTimes(1);
     expect(fake.submit).toHaveBeenLastCalledWith(
       { messages: [{ type: "human", id: expect.any(String), content: "go" }] },
-      { config: { configurable: DEFAULT_CONTEXT }, multitaskStrategy: "reject" },
+      {
+        config: { configurable: DEFAULT_CONTEXT, ...WEB_TRACE },
+        metadata: { surface: "web" },
+        multitaskStrategy: "reject",
+      },
     );
 
     fake.values = {
@@ -311,7 +320,11 @@ describe("playing Black", () => {
     await click("Retry");
     expect(fake.submit).toHaveBeenCalledWith(
       {},
-      { config: { configurable: DEFAULT_CONTEXT }, multitaskStrategy: "reject" },
+      {
+        config: { configurable: DEFAULT_CONTEXT, ...WEB_TRACE },
+        metadata: { surface: "web" },
+        multitaskStrategy: "reject",
+      },
     );
   });
 });

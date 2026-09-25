@@ -47,8 +47,10 @@ def test_the_gateway_chat_model(env):
     assert model.max_tokens == 32000
     assert model.reasoning_effort == "low"
     assert model.profile == {"max_input_tokens": 1_000_000}
+    assert model.get_name() == "claude-opus-5-5"
     other = chat_model(ChessContext(model="gpt-5.6-sol"), settings)
     assert other.profile is None
+    assert other.get_name() == "gpt-5.6-sol"
 
 
 def test_a_direct_spec_still_goes_through_the_gateway(env):

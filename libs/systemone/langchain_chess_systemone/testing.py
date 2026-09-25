@@ -107,6 +107,7 @@ class FakeTypeSafeClient:
     model: str = "semif-qwen3.5-4b"
     errors: list[BaseException] = field(default_factory=list)
     requests: list[ClassifierRequest] = field(default_factory=list)
+    run_names: list[str | None] = field(default_factory=list)
 
     def _respond(self, request: ClassifierRequest) -> ClassifierResponse:
         self.requests.append(request)
@@ -145,7 +146,9 @@ class FakeTypeSafeClient:
         )
 
     def invoke(self, input: ClassifierRequest, config: Any = None) -> ClassifierResponse:
+        self.run_names.append((config or {}).get("run_name"))
         return self._respond(input)
 
     async def ainvoke(self, input: ClassifierRequest, config: Any = None) -> ClassifierResponse:
+        self.run_names.append((config or {}).get("run_name"))
         return self._respond(input)

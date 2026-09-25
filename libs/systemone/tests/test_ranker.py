@@ -49,6 +49,7 @@ async def test_a_single_ranking(rank):
     assert call["model"] == "typesafe:semif-qwen3.5-4b"
     assert call["input_tokens"] is None
     assert call["cost_usd"] is None
+    assert client.run_names == ["systemone.rank"]
     sent = client.requests[0]
     assert list(sent["questions"]) == ["move"]
     assert "Only some" not in sent["questions"]["move"].instructions
@@ -93,6 +94,7 @@ async def test_more_options_than_the_cap_run_a_tournament(rank):
         ranker(client, with_eval=True, with_nouls=True), rank_request(options=LEGAL)
     )
     assert len(client.requests) == 2
+    assert client.run_names == ["systemone.heats", "systemone.final"]
     heats, final = client.requests
     assert list(heats["questions"]) == ["heat_1_1", "heat_1_2"]
     assert set(final["questions"]) == {"move", "eval", "needs_calculation", "tactics_present"}

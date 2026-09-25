@@ -51,7 +51,11 @@ describe("useGame", () => {
     await act(() => result.current.play("e2e4", AFTER_E4));
     expect(fake.submit).toHaveBeenCalledWith(
       { messages: [{ type: "human", id: expect.any(String), content: "e2e4" }] },
-      { config: { configurable: configurableOf(context) }, ...REJECT },
+      {
+        config: { configurable: configurableOf(context), run_name: "chess-web", tags: ["web"] },
+        metadata: { surface: "web" },
+        ...REJECT,
+      },
     );
     expect(result.current.pendingMove).toBeNull();
   });

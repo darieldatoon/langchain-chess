@@ -9,6 +9,8 @@ import { saveGame } from "./storage";
 import type { ChessContext, ChessValues, Outcome, Ply, Side, TurnRecord } from "./types";
 
 export const CHESS_GRAPH = "chess";
+/** The trace name and tags. `run_name` is missing from the SDK's `Config` type; the server honours it. */
+export const WEB_TRACE = { run_name: "chess-web", tags: ["web"] };
 const THREAD_PARAM = "thread";
 
 export function threadFromUrl(search: string = window.location.search): string | null {
@@ -116,7 +118,11 @@ export function useGame(apiKey: string, context: ChessContext, humanSide: Side):
 
   const send = useCallback(
     (input: ChessValues) =>
-      stream.submit(input, { config: { configurable }, multitaskStrategy: "reject" }),
+      stream.submit(input, {
+        config: { configurable, ...WEB_TRACE },
+        metadata: { surface: "web" },
+        multitaskStrategy: "reject",
+      }),
     [stream, configurable],
   );
 

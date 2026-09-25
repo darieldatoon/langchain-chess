@@ -34,6 +34,8 @@ def chat_model(context: ChessContext, settings: GatewaySettings) -> BaseChatMode
     kwargs: dict[str, Any] = {
         "reasoning_effort": context.reasoning_effort,
         "max_tokens": MAX_TOKENS,
+        # The trace span's name; through the gateway every vendor would read as `ChatOpenAI`.
+        "name": context.model,
     }
     if spec.startswith(GATEWAY_PREFIX):
         kwargs["base_url"] = f"{settings.gateway_url}/v1"

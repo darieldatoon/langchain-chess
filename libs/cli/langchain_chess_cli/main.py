@@ -79,7 +79,7 @@ def uci(
     summary_trigger_tokens: TriggerOption = None,
 ) -> None:
     """Run as a UCI engine on stdin/stdout. Only protocol output goes to stdout."""
-    from langchain_chess_cli.uci.engine import Engine, run
+    from langchain_chess_cli.uci.engine import DRAW_CLAIMS, Engine, run
 
     logging.basicConfig(stream=sys.stderr, level=logging.WARNING)
     options = AgentOptions(
@@ -102,8 +102,7 @@ def uci(
     )
 
     def factory(agent_options: AgentOptions, checkpointer: Checkpointer) -> CompiledStateGraph:
-        # The GUI adjudicates draws.
-        return build_agent(agent_options, draw_claims="never", checkpointer=checkpointer)
+        return build_agent(agent_options, draw_claims=DRAW_CLAIMS, checkpointer=checkpointer)
 
     def out(line: str) -> None:
         sys.stdout.write(line + "\n")
@@ -138,7 +137,7 @@ def play(
     """Play a game in the terminal (Textual)."""
     from langgraph.checkpoint.memory import InMemorySaver
 
-    from langchain_chess_cli.tui.app import ChessApp
+    from langchain_chess_cli.tui.app import DRAW_CLAIMS, ChessApp
 
     options = AgentOptions(
         policy=policy,
@@ -160,6 +159,6 @@ def play(
     )
 
     def factory() -> CompiledStateGraph:
-        return build_agent(options, draw_claims="auto", checkpointer=InMemorySaver())
+        return build_agent(options, draw_claims=DRAW_CLAIMS, checkpointer=InMemorySaver())
 
     ChessApp(factory, options, side=side).run()

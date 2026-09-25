@@ -1,11 +1,12 @@
 """The agent a CLI adapter plays with, built from its options."""
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Literal
 
 from langchain.agents.middleware import SummarizationMiddleware
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Checkpointer
 
@@ -18,6 +19,7 @@ from langchain_chess_systemone import SystemOneMiddleware
 type Policy = Literal["llm", "systemone", "hybrid"]
 type ReasoningEffort = Literal["low", "medium", "high"]
 type Memory = Literal["none", "full", "summarize"]
+type Surface = Literal["tui", "uci"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,3 +96,15 @@ def build_agent(
         checkpointer=checkpointer,
         name="chess",
     )
+
+
+def run_config(
+    surface: Surface, thread_id: str, options: AgentOptions, *, draw_claims: DrawClaims
+) -> RunnableConfig:
+    """Names and tags the trace by surface; the knobs go in metadata, as on server traces."""
+    return {
+        "configurable": {"thread_id": thread_id},
+        "run_name": f"chess-{surface}",
+        "tags": [surface],
+        "metadata": {"surface": surface, **asdict(options), "draw_claims": draw_claims},
+    }

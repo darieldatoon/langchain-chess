@@ -20,7 +20,8 @@ from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widgets import Footer, Header, Input, Static
 
 from langchain_chess.parse import text_of
-from langchain_chess_cli.options import AgentOptions
+from langchain_chess.rules import DrawClaims
+from langchain_chess_cli.options import AgentOptions, run_config
 from langchain_chess_cli.tui.board import ChessBoard
 from langchain_chess_cli.tui.view import (
     board_of,
@@ -34,6 +35,8 @@ if TYPE_CHECKING:
     from langchain_core.runnables import RunnableConfig
 
 type Side = Literal["white", "black"]
+
+DRAW_CLAIMS: DrawClaims = "auto"
 
 
 class ChessApp(App[None]):
@@ -192,7 +195,7 @@ class ChessApp(App[None]):
         self.run_worker(self._invoke(payload, self.generation, self.thread))
 
     async def _invoke(self, payload: dict[str, Any], generation: int, thread: str) -> None:
-        config: RunnableConfig = {"configurable": {"thread_id": thread}}
+        config: RunnableConfig = run_config("tui", thread, self.options, draw_claims=DRAW_CLAIMS)
         try:
             async for mode, chunk in self.agent.astream(
                 payload, config, stream_mode=["messages", "values"]
