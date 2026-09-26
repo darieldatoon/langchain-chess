@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@langchain/macaw-components": "catalog:",
+    "@phosphor-icons/react": "catalog:",
     "chess.js": "catalog:",
     "react-chessboard": "catalog:",
     "react-markdown": "catalog:"

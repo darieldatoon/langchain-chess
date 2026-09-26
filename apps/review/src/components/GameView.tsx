@@ -1,6 +1,5 @@
 import { Banner } from "@langchain/macaw-components/Banner";
 import { Button } from "@langchain/macaw-components/Button";
-import { IconButton } from "@langchain/macaw-components/IconButton";
 import { Card } from "@langchain/macaw-components/Card";
 import { Text } from "@langchain/macaw-components/Text";
 import {
@@ -10,6 +9,7 @@ import {
 } from "@langchain/macaw-components/utils/chartColors";
 import {
   Board,
+  BoardControls,
   fenOrStart,
   MoveList,
   outcomeLine,
@@ -19,14 +19,10 @@ import {
   type ChessValues,
   type MoveEntry,
   type Side,
+  usePlyKeys,
 } from "@langchain-chess/chess-ui";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react/dist/ssr/ArrowSquareOut";
-import { ArrowsDownUpIcon } from "@phosphor-icons/react/dist/ssr/ArrowsDownUp";
-import { CaretDoubleLeftIcon } from "@phosphor-icons/react/dist/ssr/CaretDoubleLeft";
-import { CaretDoubleRightIcon } from "@phosphor-icons/react/dist/ssr/CaretDoubleRight";
-import { CaretLeftIcon } from "@phosphor-icons/react/dist/ssr/CaretLeft";
-import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr/CaretRight";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Game } from "../games";
 import { EvalBar } from "./EvalBar";
 import { EvalGraph } from "./EvalGraph";
@@ -39,13 +35,6 @@ interface Props {
 }
 
 const NO_MOVES: string[] = [];
-
-const STEPS: Record<string, (index: number, last: number) => number> = {
-  ArrowLeft: (i) => i - 1,
-  ArrowRight: (i) => i + 1,
-  Home: () => 0,
-  End: (_, last) => last,
-};
 
 export function GameView({ game, values, onOpenRun }: Props) {
   const startFen = fenOrStart(values.start_fen);
@@ -68,24 +57,9 @@ export function GameView({ game, values, onOpenRun }: Props) {
     quality: review?.plies[i]?.quality,
   }));
 
-  const go = (next: number) => setIndex(Math.max(0, Math.min(last, next)));
+  const go = useCallback((next: number) => setIndex(Math.max(0, Math.min(last, next))), [last]);
 
-  // On the window, not the view: the board's drag layer takes arrow keys from focused squares.
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const step = STEPS[event.key];
-      if (
-        !step ||
-        (event.target instanceof Element &&
-          event.target.closest("input, textarea, [role=combobox]"))
-      )
-        return;
-      event.preventDefault();
-      setIndex((i) => Math.max(0, Math.min(last, step(i, last))));
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [last]);
+  usePlyKeys(index, last, go);
 
   const ply = index > 0 ? plies[index - 1] : undefined;
   const grade = index > 0 ? review?.plies[index - 1] : undefined;
@@ -127,68 +101,25 @@ export function GameView({ game, values, onOpenRun }: Props) {
               />
             </div>
           </div>
-          <div className="flex items-center justify-between gap-space-2">
-            <div className="flex items-center gap-space-1">
-              <IconButton
-                icon={CaretDoubleLeftIcon}
-                label="First move"
-                size="sm"
-                variant="outlined"
-                color="secondary"
-                onClick={() => go(0)}
-                disabled={index === 0}
-              />
-              <IconButton
-                icon={CaretLeftIcon}
-                label="Previous move"
-                size="sm"
-                variant="outlined"
-                color="secondary"
-                onClick={() => go(index - 1)}
-                disabled={index === 0}
-              />
-              <IconButton
-                icon={CaretRightIcon}
-                label="Next move"
-                size="sm"
-                variant="outlined"
-                color="secondary"
-                onClick={() => go(index + 1)}
-                disabled={index === last}
-              />
-              <IconButton
-                icon={CaretDoubleRightIcon}
-                label="Last move"
-                size="sm"
-                variant="outlined"
-                color="secondary"
-                onClick={() => go(last)}
-                disabled={index === last}
-              />
-            </div>
-            <Text variant="sm" color="secondary" className="truncate">
+          <BoardControls
+            index={index}
+            last={last}
+            onGo={go}
+            onFlip={() => setOrientation((o) => (o === "white" ? "black" : "white"))}
+          >
+            <Text variant="sm" color="secondary" className="min-w-0 flex-1 truncate text-center">
               {values.outcome ? outcomeLine(values.outcome) : "In progress"}
             </Text>
-            <div className="flex items-center gap-space-1">
-              <IconButton
-                icon={ArrowsDownUpIcon}
-                label="Flip board"
-                size="sm"
-                variant="plain"
-                color="secondary"
-                onClick={() => setOrientation((o) => (o === "white" ? "black" : "white"))}
-              />
-              <Button
-                variant="outlined"
-                color="secondary"
-                size="sm"
-                rightDecorator={ArrowSquareOutIcon}
-                onClick={() => onOpenRun(grade?.run_id ?? game.lastRunId)}
-              >
-                Open trace
-              </Button>
-            </div>
-          </div>
+            <Button
+              variant="outlined"
+              color="secondary"
+              size="sm"
+              rightDecorator={ArrowSquareOutIcon}
+              onClick={() => onOpenRun(grade?.run_id ?? game.lastRunId)}
+            >
+              Open trace
+            </Button>
+          </BoardControls>
         </Card>
         {review ? (
           <>

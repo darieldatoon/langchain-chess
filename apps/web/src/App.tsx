@@ -10,13 +10,16 @@ import { GearSixIcon } from "@phosphor-icons/react/dist/ssr/GearSix";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Board,
+  BoardControls,
   MoveList,
   opposite,
   PlyDetails,
+  replay,
   sideToMove,
   START_FEN,
   type ChessContext,
   type Side,
+  usePlyKeys,
 } from "@langchain-chess/chess-ui";
 import { checkApiKey, type KeyCheck } from "./auth";
 import { AppSettingsDialog } from "./components/AppSettingsDialog";
@@ -214,8 +217,24 @@ function Table({ apiKey, seat, onRematch, onNewGame, onOpenSettings }: TableProp
   // A pending turn means a run failed mid-turn: only an empty submit resumes it.
   const canRetry = !over && idle && game.pendingTurn;
   const canGo = !over && idle && !game.pendingTurn && opponentToMove;
-  const boardFen = game.pendingMove?.fen ?? game.fen;
-  const lastMove = game.pendingMove?.uci ?? game.moves.at(-1) ?? null;
+  // Null follows the game; a number is an earlier position the player stepped back to. A move
+  // arriving meanwhile leaves them there: Last (or End) comes back.
+  const [viewed, setViewed] = useState<number | null>(null);
+  const [orientation, setOrientation] = useState<Side>(game.humanSide);
+  const last = game.moves.length;
+  const live = viewed === null || viewed >= last;
+  const index = live ? last : viewed;
+  const go = useCallback(
+    (next: number) => setViewed(next >= last ? null : Math.max(0, next)),
+    [last],
+  );
+  usePlyKeys(index, last, go);
+  const boardFen = live
+    ? (game.pendingMove?.fen ?? game.fen)
+    : replay(game.startFen, game.moves.slice(0, index)).fen;
+  const lastMove = live
+    ? (game.pendingMove?.uci ?? game.moves.at(-1) ?? null)
+    : (game.moves[index - 1] ?? null);
   const notice = game.error && game.error !== dismissed ? game.error : null;
   const failure = submitError ?? game.streamError;
   const failureText = describeError(failure);
@@ -257,11 +276,19 @@ function Table({ apiKey, seat, onRematch, onNewGame, onOpenSettings }: TableProp
         <Card intent="neutral" className="flex flex-col gap-space-3">
           <Board
             fen={boardFen}
-            orientation={game.humanSide}
+            orientation={orientation}
             humanSide={game.humanSide}
             lastMove={lastMove}
-            locked={game.isLoading || over || game.pendingTurn || game.pendingMove !== null}
+            locked={
+              !live || game.isLoading || over || game.pendingTurn || game.pendingMove !== null
+            }
             onMove={(uci, fen) => issue(() => game.play(uci, fen))}
+          />
+          <BoardControls
+            index={index}
+            last={last}
+            onGo={go}
+            onFlip={() => setOrientation((o) => opposite(o))}
           />
           {game.outcome ? (
             <ResultCard
@@ -321,7 +348,12 @@ function Table({ apiKey, seat, onRematch, onNewGame, onOpenSettings }: TableProp
         </Card>
         <aside className="flex flex-col gap-space-4">
           <PlyDetails reply={game.lastReply} live={game.liveAnalysis} />
-          <MoveList entries={game.entries} startFen={game.startFen} />
+          <MoveList
+            entries={game.entries}
+            startFen={game.startFen}
+            selected={index - 1}
+            onSelect={(ply) => go(ply + 1)}
+          />
           <Card intent="neutral" className="flex flex-col gap-space-2" aria-label="opponent">
             <Text variant="h4" as="h2" color="secondary">
               Opponent
