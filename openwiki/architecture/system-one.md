@@ -1,13 +1,22 @@
 ---
 type: architecture component
-title: "System 1: SystemOneMiddleware, ranker and tournament"
-description: How SystemOneMiddleware ranks the allowed moves with a System 1 classifier (SemIf or Jev via GatewayRanker), gates on margin or confidence to either play the top move or suggest a shortlist, runs a seeded tournament for more options than one request holds, and behaves when ranking fails with and without an LLM.
+title: System 1 (SystemOneMiddleware)
+description: How SystemOneMiddleware ranks the allowed moves with a System 1 classifier (SemIf or Jev via the TypeSafeClassifier-backed GatewayRanker), gates on margin or confidence to either play the top move or suggest a shortlist, runs a seeded tournament when there are more options than one request holds (16 for SemIf), keeps the graph shape with NoSystemOne, and behaves when ranking fails with and without an LLM.
 tags: [systemone, middleware, ranker, tournament, semif, jev, gate, typesafe]
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T13:04:36.303Z
 sources:
+  - id: openwiki-source-b9886f4aee6bc16bdaea61ff
+    resource: repo://apps/server/langchain_chess_server/app.py
+  - id: openwiki-source-72cff634549a72fbc164bc15
+    resource: repo://apps/server/langchain_chess_server/clients.py
   - id: openwiki-source-65aad166aa88a58cc7a8319a
     resource: repo://apps/server/langchain_chess_server/context.py
   - id: openwiki-source-c9b903d37e22daedc4499a4b
     resource: repo://apps/server/langchain_chess_server/graph.py
+  - id: openwiki-source-e3b0d2af80ee0702b2be4a6b
+    resource: repo://apps/server/langchain_chess_server/settings.py
   - id: openwiki-source-595fa5f62bc6bdbfd212eed8
     resource: repo://libs/cli/langchain_chess_cli/options.py
   - id: openwiki-source-20ebabb38d27c2e3522a9062
@@ -32,13 +41,10 @@ sources:
     resource: repo://libs/systemone/tests/test_tournament.py
   - id: openwiki-source-fd0e9360c0eb5b2cec5ea440
     resource: repo://packages/chess-ui/src/types.ts
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T05:03:34.528Z
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
 ---
 
-# System 1: SystemOneMiddleware, ranker and tournament
+# System 1 (SystemOneMiddleware)
 
 `libs/systemone` puts a fast "System 1" classifier in front of the chess LLM. Each turn,
 `SystemOneMiddleware` asks a ranker for a probability distribution over the moves that are
@@ -47,7 +53,7 @@ proposes its top move and the LLM never runs. If not, it writes a soft **shortli
 candidates into the prompt, and the LLM may still play any allowed move. The package depends on
 `libs/chess` and never the other way round (see
 [package map](package-map.md)). It uses only the public middleware contract: `position`,
-`propose`, `candidates`, `fallback_move`, `ply_meta` and `turn_calls` (see
+`propose`, `candidates`, `fallback_move`, `ply_meta`, `turn_calls` and `turn_latency_ms` (see
 [middleware contract](../concepts/middleware-contract.md)).
 
 The main pieces:
@@ -55,10 +61,11 @@ The main pieces:
 | Piece | Role |
 |---|---|
 | `SystemOneMiddleware` (`middleware.py`) | Builds the rank request, applies the gate, freezes the decision for the turn, replays it, and emits telemetry. |
+| `NoSystemOne` (`middleware.py`) | A do-nothing stand-in with the same node name and state schema, used when System 1 is switched off but the graph shape must stay fixed. |
 | `GatewayRanker` (`ranker.py`) | Turns a `RankRequest` into one or more `TypeSafeClassifier` requests to the LLM Gateway's System 1 route. Validates the answers and records one `Call` per request. |
 | `describe.py` | Board-verified move facts (captures, check and mate, static exchange, attacked or defended squares), rendered as Choice option criteria. |
 | `tournament.py` | A pure, seeded knockout plan for more options than one Choice can hold, driven by `drive`/`adrive`. |
-| `validate.py` | Per-Choice validation and renormalization of returned probabilities. |
+| `validate.py` | Per-Choice validation and normalization of returned probabilities. |
 | `testing.py` | `FakeRanker` and `FakeTypeSafeClient`. The fake client enforces SemIf's 2–16 options per Choice and 32 questions per request. |
 
 ## The decision flow
@@ -103,10 +110,14 @@ The request sent to the gateway has two parts:
   Its criteria map each UCI option to a deterministic description from `describe_moves`. The
   instructions ask for "the strongest legal move". They deliberately state no value
   preferences, so the ranking does not simply echo the prompt. Heats and the final also append
-  "Only some of the legal moves are listed". When enabled, the final request also carries a
-  `Score` (`eval`, seven rungs from Black winning to White winning) and two `Noul`s
+  "Only some of the legal moves are listed". When enabled, the single or final request also
+  carries a `Score` (`eval`, seven rungs from Black winning to White winning) and two `Noul`s
   (`needs_calculation`, `tactics_present`). These are telemetry only and never affect the
   gate.
+
+The async path builds the request (including the move descriptions, which can take most of a
+second in a crowded position) in a worker thread via `asyncio.to_thread`, so it stays off the
+event loop.
 
 ### Move descriptions
 
@@ -127,8 +138,9 @@ same string. The `terse` style keeps only the SAN plus the first tactical phrase
 - **Threshold.** The default is `0.9`. After a tournament, `tournament_threshold` replaces it
   when set; otherwise `threshold` applies. A final over fewer moves inflates the margin, and
   SemIf's confidence depends on the option count, so a tournament gets its own threshold. The
-  applied value is recorded as `threshold_used`. The measurements behind the defaults are in the
-  README's [Decisions and measurements](../../README.md#decisions-and-measurements) section.
+  applied value is recorded as `threshold_used`. Design decisions and measurements are
+  collected in [docs/decisions.md](../../docs/decisions.md). At the time of writing that file
+  does not yet record numbers behind the `0.9` default or the tournament threshold.
 - **Plays** when `threshold < 1.0 and signal >= threshold`. So `threshold=0` always plays
   (System 1 alone) and `threshold=1` never plays (a pure pruner), even for a distribution
   of 1.0/0.0.
@@ -139,8 +151,11 @@ same string. The `terse` style keeps only the SAN plus the first tactical phrase
   `top_p`, still capped at `k`. The shortlist goes into `candidates`, which the prompt renders
   as "Suggested candidates: … you may play any allowed move". A one-move shortlist is still a
   suggestion, not a forced move.
-- In both cases System 1's top move is written as `fallback_move`. The UCI adapter plays it as
-  `bestmove` after a cancellation or failure (see `libs/cli/langchain_chess_cli/uci/completion.py`).
+- In both cases System 1's top move is written as `fallback_move`. The UCI adapter
+  (`libs/cli/langchain_chess_cli/uci/completion.py`) uses it as `bestmove` after a cancellation
+  or execution failure, but only when the last turn belongs to that search and the move is in
+  the search's root pool (legal moves within `searchmoves`). Otherwise the adapter picks a seeded
+  random move from the pool, or the null move `0000` if the pool is empty.
 
 Argument validation fails fast in the constructor: `k` must be within 1..255, `top_p` within
 (0, 1], and both thresholds within [0, 1].
@@ -159,17 +174,29 @@ a failed commit without a second ranking call. The general pattern is described 
 [middleware contract](../concepts/middleware-contract.md) and the
 [turn lifecycle](turn-lifecycle.md).
 
+## NoSystemOne
+
+`NoSystemOne` has `SystemOneMiddleware`'s name and `SystemOneState` schema, but its
+`before_model`/`abefore_model` return nothing. The server's graph factory must build the same
+nodes, edges and state schema for every call (a setting may switch a node off but never remove
+it), so it uses `NoSystemOne` for `policy="llm"` and in `shape()`, the credential-free graph
+used for reads, updates and introspection. A test checks that a graph with `NoSystemOne` has the
+same topology as one with `SystemOneMiddleware`, and that the LLM then plays with empty ply meta.
+The CLI does not need a fixed topology and simply leaves the middleware out for `llm`.
+
 ## GatewayRanker
 
 `GatewayRanker(model, style, with_eval, with_nouls, max_options, client, history_plies=6,
-timeout_s=15.0, max_attempts=3)` wraps a `TypeSafeClassifier`. By default the client is built
-on first use, so building a graph needs no credentials. The server passes in a cached client
-built with `TYPESAFE_API_KEY`/`TYPESAFE_BASE_URL` settings and a 15 s timeout
-(`apps/server/langchain_chess_server/graph.py`).
+timeout_s=15.0, max_attempts=3)` wraps a `TypeSafeClassifier` (anything matching the small
+`Classifier` protocol with `invoke`/`ainvoke`, so tests can inject a fake). With no `client`, a
+`TypeSafeClassifier(model, timeout=timeout_s)` is built on first use, so building a graph needs
+no credentials. The 15 s timeout is short on purpose: System 1 answers in well under a second,
+so a long call is treated as a stalled connection and retried.
 
 - **Models and caps.** `semif-*` models get 16 options per Choice and `typesafe/jev-*` models
-  get 255. Unknown models default to 16, which costs at most an extra round. The server
-  documents `semif-qwen3.5-4b` (the default) and `typesafe/jev-latest` (experiments only).
+  get 255. Unknown models default to 16, which costs at most an extra round. `max_options`
+  must be within 2..255. The server documents `semif-qwen3.5-4b` (the default) and
+  `typesafe/jev-latest`.
 - **One option** returns a local distribution (probability 1, confidence 1) with no request
   and no `Call`. Under the default threshold this makes System 1 play a move that has been
   narrowed to one option. Under `threshold=1` the LLM still plays it.
@@ -180,13 +207,17 @@ built with `TYPESAFE_API_KEY`/`TYPESAFE_BASE_URL` settings and a 15 s timeout
   server error. The ranker makes up to `max_attempts=3` attempts in total, sleeping
   `min(4.0, 0.5 * 2**n)` seconds between them (0.5 s, then 1 s). Any other exception, such as
   a 422 validation error, fails immediately. Exhaustion and hard errors both raise
-  `RankingFailed`, carrying the `Call`s of the requests that completed before the failure.
+  `RankingFailed`, carrying the `Call`s of the requests that completed before the failure and
+  `elapsed_ms`, the time the ranking ran before failing.
 - **Validation.** `validate_choice` rejects labels that were not options, and probabilities
-  that are non-finite or outside [0, 1]. It also rejects a sum that misses 1 beyond tolerance
-  (1e-3, or `0.005 × n` when every value is rounded to two decimals, as Jev's are) and a
-  confidence outside [0, 1]. Missing labels count as 0. Small drift is renormalized, and ties
-  are broken by option order. Without this, an unnormalized 6.0/2.5/1.5 would give a margin of
-  3.5. A malformed answer raises `RankingFailed("malformed …")`, but its `Call` is kept.
+  that are non-finite or outside [0, 1]. It also rejects an all-zero sum, a sum that misses 1
+  beyond tolerance (1e-3, or `0.005 × n` when every value is rounded to two decimals, as Jev's
+  are) and a confidence outside [0, 1]. Missing labels count as 0, and ties are broken by
+  option order. Probabilities are only ever scaled **down** (divided by `max(total, 1)`): a sum
+  slightly above 1 is normalized, but a rounded-away shortfall is left as is, because scaling it
+  up would inflate the top move and the margin (0.85 plus 32 zeros would become 1.0). Without
+  validation, an unnormalized 6.0/2.5/1.5 would give a margin of 3.5. A malformed answer raises
+  `RankingFailed("malformed …")`, but its `Call` is kept.
 - **Cost.** Each request records a `Call` of kind `systemone` with provider `typesafe` and
   model `typesafe:<model>`. SemIf returns no token usage, so its calls have `cost_usd=None` and
   the turn's cost is incomplete. Jev returns usage and is priced (see
@@ -221,26 +252,33 @@ each, then a 16-move final.
 | Situation | With an LLM (`has_model=True`, hybrid) | Without an LLM (`has_model=False`, System 1 alone) |
 |---|---|---|
 | Transient error, recovered within 3 attempts | Normal decision | Normal decision |
-| Exhausted retries, hard error, or malformed answer | Status `skipped`, with `error` recorded. No candidates or fallback are written, and the LLM chooses unaided. Completed calls stay on the turn. | `RankingFailed` propagates from `before_model`. The run fails and the turn stays `pending`. |
+| Exhausted retries, hard error, or malformed answer | Status `skipped`, with `error` and the elapsed time recorded. No candidates or fallback are written, and the LLM chooses unaided. Completed calls stay on the turn. | `RankingFailed` propagates from `before_model`. The run fails and the turn stays `pending`. |
 | Heats succeed but the final fails | `skipped`; the heat call is kept | Run fails |
 
-In the server and CLI, `policy="systemone"` builds the middleware with `threshold=0.0`,
+## Wiring: server and CLI
+
+In both surfaces, `policy="systemone"` builds the middleware with `threshold=0.0`,
 `tournament_threshold=0.0` and `has_model=False`, so System 1 alone always plays when ranking
-succeeds. `policy="llm"` omits the middleware entirely. `hybrid` (the default) uses the context
-knobs `gate`, `threshold`, `tournament_threshold`, `k`, `top_p`, `style`, `with_eval`,
-`with_nouls` and `systemone_model`.
+succeeds. `hybrid` (the default) uses the knobs `gate`, `threshold`, `tournament_threshold`,
+`k`, `top_p`, `style`, `with_eval`, `with_nouls` and `systemone_model`. For `policy="llm"` the
+server installs `NoSystemOne` and the CLI omits the middleware.
 
 The two surfaces wire the ranker differently:
 
 - **Server** (`apps/server/langchain_chess_server/graph.py`). `systemone()` builds a
   `GatewayRanker` itself, passing `style`, `with_eval` and `with_nouls` plus a
-  `TypeSafeClassifier` from an `lru_cache`d factory keyed by model, API key and base URL (15 s
-  timeout). It hands that ranker to `SystemOneMiddleware`, which receives only the gate,
-  threshold, `k`, `top_p` and `has_model` knobs. Graphs built for the same System 1 model and
-  credentials therefore share one client. The knobs are declared on `ChessContext`
-  (`context.py`). `systemone_model` is documented as `semif-qwen3.5-4b` (the default) or
-  `typesafe/jev-latest`. `with_eval` and `with_nouls` default to `False` and are described as
-  telemetry.
+  `TypeSafeClassifier` built with the `TYPESAFE_API_KEY`/`TYPESAFE_BASE_URL` settings. It hands
+  that ranker to `SystemOneMiddleware`, which receives only the gate, threshold, `k`, `top_p`
+  and `has_model` knobs. `ServerSettings.typesafe()` raises if either setting is missing, so
+  only the policies that run System 1 need them. Each classifier gets its sync and async HTTP
+  clients from `POOL` (`clients.py`): one per-process `httpx2.Client`/`httpx2.AsyncClient` pair
+  with a 15 s timeout, created lazily under a lock on first use. All graphs built in the process
+  share the pair. The FastAPI app's lifespan (`app.py`), which the Agent Server merges with its
+  own, calls `POOL.aclose()` on shutdown. After that, the next `get()` creates a fresh pair. The
+  pool lives in its own module, always imported by package name, because langgraph loads
+  `graph.py` from its file path under a generated module name, and a pool kept there would exist
+  once per copy. The knobs are declared on `ChessContext` (`context.py`). `with_eval` and
+  `with_nouls` default to `False` and are described as telemetry.
 - **CLI** (`libs/cli/langchain_chess_cli/options.py`). It passes `style`, `with_eval` and
   `with_nouls` straight to `SystemOneMiddleware`. With no `ranker`, the middleware builds its
   own `GatewayRanker`, whose client is created lazily on first use.
@@ -257,25 +295,29 @@ The two surfaces wire the ranker differently:
 - `error`, `latency_ms`, and the optional `eval_score`, `needs_calculation` and
   `tactics_present`
 
-`turn_calls` contributes the frozen decision's `Call`s to the turn. These TypedDicts are
-mirrored by hand in `packages/chess-ui/src/types.ts`, so keep them in step.
+`latency_ms` is the ranker's wall time for the whole ranking. It is 0.0 for a local one-option
+distribution, and for a skipped decision it is the time the ranking ran before failing
+(`RankingFailed.elapsed_ms`). All telemetry is read from the frozen decision, so replays report
+the first ranking's values. `turn_calls` contributes the frozen decision's `Call`s to the turn,
+and `turn_latency_ms` contributes the same ranking time once. Retries therefore never count it
+twice: a System 1 move's ply and turn latency equal the ranking time, and a hybrid turn adds it
+to the model time. These TypedDicts are mirrored by hand in `packages/chess-ui/src/types.ts`, so
+keep them in step.
 
 ## Tests that matter
 
 - `tests/test_middleware.py`: gate edges (`threshold` 0 and 1, confident play skips the model),
   replay never re-gates, monotone replay under later narrowing, tournament threshold, malformed
-  distributions leading to `skipped` with a model and a pending turn without one, and failed
-  finals keeping heat calls.
+  distributions leading to `skipped` with a model and a pending turn without one, a rounded-away
+  Jev shortfall that cannot clear the margin gate, failed finals keeping heat calls,
+  `NoSystemOne` keeping the topology, and ranking latency counted once (including on skip).
 - `tests/test_ranker.py`: run names (`systemone.rank`, `systemone.heats`, `systemone.final`),
-  one-option local ranking, transient retry and exhaustion carrying completed calls, immediate
-  failure on other errors, Jev pricing versus unpriced SemIf.
+  one-option local ranking, async descriptions off the event loop, transient retry and
+  exhaustion carrying completed calls, immediate failure on other errors (with `elapsed_ms`),
+  Jev pricing versus unpriced SemIf, and lazy default client construction.
 - `tests/test_tournament.py`: balanced heats, quotas, byes, recursion at small caps, 32-question
   chunking, seeded shuffle, and the final always fitting.
 - `tests/test_live.py`: opt-in (`-m live`) runs against the real gateway. These cost money.
-
-Measured choices, such as the default model and why rich descriptions are the default, are
-recorded in the README's
-[Decisions and measurements](../../README.md#decisions-and-measurements) section.
 
 ## Runtime evidence
 
@@ -302,4 +344,3 @@ The consolidated findings live in [runtime behavior](../operations/runtime-behav
   - How often do positions exceed 16 allowed moves and so pay for two sequential requests?
   - Do transient-error retries or the `skipped` path fire at all in production?
   - How much of a turn's wall time does System 1 add next to the LLM call?
-ll time does System 1 add next to the LLM call?

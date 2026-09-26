@@ -1,18 +1,16 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { DEFAULT_SETUP, type Setup } from "../src/setup";
 import {
   APP_KEY,
+  browserStorage,
   DEFAULT_APP_SETTINGS,
   LEGACY_SETTINGS_KEY,
   loadAppSettings,
-  loadGame,
   loadSetup,
   saveAppSettings,
-  saveGame,
   saveSetup,
   SETUP_KEY,
 } from "../src/storage";
-import { DEFAULT_CONTEXT } from "@langchain-chess/chess-ui";
 
 const store = (key: string, value: unknown) =>
   window.localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
@@ -67,6 +65,7 @@ describe("app settings storage", () => {
     expect(loadAppSettings()).toEqual(DEFAULT_APP_SETTINGS);
     store(LEGACY_SETTINGS_KEY, { apiKey: "lsv2_old", context: {} });
     expect(loadAppSettings()).toEqual({ apiKey: "lsv2_old" });
+    expect(window.localStorage.getItem(APP_KEY)).toBe('{"apiKey":"lsv2_old"}');
     saveAppSettings({ apiKey: "" });
     expect(window.localStorage.getItem(APP_KEY)).toBe('{"apiKey":""}');
     expect(loadAppSettings()).toEqual({ apiKey: "" });
@@ -77,18 +76,45 @@ describe("app settings storage", () => {
   });
 });
 
-describe("game storage", () => {
-  it("pins a side and context per thread", () => {
-    const context = { ...DEFAULT_CONTEXT, policy: "llm" as const, threshold: 0.3 };
-    saveGame("t-1", { side: "black", context });
-    expect(loadGame("t-1")).toEqual({ side: "black", context });
-    expect(loadGame("t-2")).toEqual({ side: "white", context: DEFAULT_CONTEXT });
+describe("unavailable storage", () => {
+  it("reads defaults and reports every write as lost where the browser blocks storage", () => {
+    const blocked = vi.spyOn(window, "localStorage", "get").mockImplementation(() => {
+      throw new DOMException("The operation is insecure.", "SecurityError");
+    });
+    try {
+      expect(browserStorage()).toBeNull();
+      expect(loadSetup()).toEqual(DEFAULT_SETUP);
+      expect(loadAppSettings()).toEqual(DEFAULT_APP_SETTINGS);
+      expect(saveSetup(DEFAULT_SETUP)).toBe(false);
+      expect(saveAppSettings({ apiKey: "k" })).toBe(false);
+    } finally {
+      blocked.mockRestore();
+    }
   });
 
-  it("reads the side of a thread from before games pinned their context", () => {
-    store("langchain-chess:side:old", "black");
-    expect(loadGame("old")).toEqual({ side: "black", context: DEFAULT_CONTEXT });
-    store("langchain-chess:side:odd", "purple");
-    expect(loadGame("odd").side).toBe("white");
+  it("reads defaults where storage is handed over but every call on it throws", () => {
+    const insecure = () => {
+      throw new DOMException("The operation is insecure.", "SecurityError");
+    };
+    const read = vi.spyOn(Storage.prototype, "getItem").mockImplementation(insecure);
+    try {
+      expect(browserStorage()).toBeNull();
+    } finally {
+      read.mockRestore();
+    }
+    const broken = { getItem: insecure, setItem: insecure } as unknown as Storage;
+    expect(loadSetup(broken)).toEqual(DEFAULT_SETUP);
+    expect(loadAppSettings(broken)).toEqual(DEFAULT_APP_SETTINGS);
+  });
+
+  it("reports a write that doesn't fit", () => {
+    const full = {
+      getItem: () => null,
+      setItem: () => {
+        throw new DOMException("Quota exceeded", "QuotaExceededError");
+      },
+    } as unknown as Storage;
+    expect(saveSetup(DEFAULT_SETUP, full)).toBe(false);
+    expect(saveSetup(DEFAULT_SETUP)).toBe(true);
   });
 });

@@ -11,14 +11,28 @@ from typing import Annotated, Any, Literal, Union, cast, get_args, get_origin, g
 from langchain_core.runnables import RunnableConfig
 from pydantic import Field, TypeAdapter
 
+from langchain_chess_systemone.ranker import CHOICE_LIMIT
+
 type Policy = Literal["llm", "systemone", "hybrid"]
 type ReasoningEffort = Literal["low", "medium", "high"]
 type Memory = Literal["none", "summarize"]
 
 
-def _knob(description: str, *nodes: str) -> Any:
+def _knob(
+    description: str,
+    *nodes: str,
+    gt: float | None = None,
+    ge: float | None = None,
+    le: float | None = None,
+) -> Any:
     """`langgraph_nodes` tells Studio which nodes a knob affects, so it highlights them."""
-    return Field(description=description, json_schema_extra={"langgraph_nodes": list(nodes)})
+    return Field(
+        description=description,
+        json_schema_extra={"langgraph_nodes": list(nodes)},
+        gt=gt,
+        ge=ge,
+        le=le,
+    )
 
 
 _SYSTEMONE = "SystemOneMiddleware.before_model"
@@ -90,6 +104,8 @@ class ChessContext:
             "System 1 plays when the gate signal is at least this. 0 always plays; 1 never "
             "does (a pure pruner).",
             _SYSTEMONE,
+            ge=0.0,
+            le=1.0,
         ),
     ] = 0.9
     tournament_threshold: Annotated[
@@ -98,12 +114,21 @@ class ChessContext:
             "Threshold after a tournament (more options than one System 1 request holds). "
             "Empty uses `threshold`.",
             _SYSTEMONE,
+            ge=0.0,
+            le=1.0,
         ),
     ] = None
-    k: Annotated[int, _knob("Candidates suggested to the model.", _SYSTEMONE)] = 5
+    k: Annotated[
+        int, _knob("Candidates suggested to the model.", _SYSTEMONE, ge=1, le=CHOICE_LIMIT)
+    ] = 5
     top_p: Annotated[
         float | None,
-        _knob("Cut the suggestions at this probability mass instead of a fixed k.", _SYSTEMONE),
+        _knob(
+            "Cut the suggestions at this probability mass instead of a fixed k.",
+            _SYSTEMONE,
+            gt=0.0,
+            le=1.0,
+        ),
     ] = None
     draw_claims: Annotated[
         Literal["auto", "never"],

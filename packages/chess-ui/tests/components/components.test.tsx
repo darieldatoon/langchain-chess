@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vite-plus/test";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { MoveEntry } from "../../src/format";
 import { AFTER_E4, call, E4_E5, ply, systemOne, turn } from "../../src/testing";
 import { renderWithProviders } from "../support/renderApp";
@@ -253,17 +254,58 @@ describe("PlyDetails", () => {
 });
 
 describe("Board", () => {
-  it("renders the position", () => {
-    render(
+  const pieceOn = (square: string) =>
+    document.querySelector(`[data-square="${square}"] [data-piece]`)?.getAttribute("data-piece");
+  const clickSquare = (square: string) =>
+    fireEvent.click(document.querySelector(`[data-square="${square}"]`)!);
+
+  /** The board as an app drives it: each move it reports becomes the next position. */
+  function Played({ start, onMove }: { start: string; onMove: (uci: string) => void }) {
+    const [fen, setFen] = useState(start);
+    return (
       <Board
-        fen={START_FEN}
+        fen={fen}
         orientation="white"
         humanSide="white"
-        lastMove="e2e4"
+        lastMove={null}
         locked={false}
-        onMove={vi.fn()}
-      />,
+        onMove={(uci, after) => {
+          onMove(uci);
+          setFen(after);
+        }}
+      />
     );
-    expect(document.body).toBeTruthy();
+  }
+
+  // jsdom lays nothing out; the move animation needs a square width.
+  beforeEach(() => {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 0, 40, 40),
+    );
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it("draws the position and plays a move by clicking two squares", async () => {
+    const onMove = vi.fn();
+    renderWithProviders(<Played start={START_FEN} onMove={onMove} />);
+    expect(pieceOn("e1")).toBe("wK");
+    expect(pieceOn("d8")).toBe("bQ");
+    expect(pieceOn("e4")).toBeUndefined();
+    clickSquare("e2");
+    clickSquare("e4");
+    expect(onMove).toHaveBeenCalledWith("e2e4");
+    await waitFor(() => expect(pieceOn("e4")).toBe("wP"));
+    expect(pieceOn("e2")).toBeUndefined();
+  });
+
+  it("promotes a pawn to the piece chosen", async () => {
+    const onMove = vi.fn();
+    renderWithProviders(<Played start="8/k1P5/2K5/8/8/8/8/8 w - - 0 1" onMove={onMove} />);
+    clickSquare("c7");
+    clickSquare("c8");
+    expect(onMove).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Promote to rook" }));
+    expect(onMove).toHaveBeenCalledWith("c7c8r");
+    await waitFor(() => expect(pieceOn("c8")).toBe("wR"));
   });
 });

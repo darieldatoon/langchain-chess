@@ -57,6 +57,24 @@ def test_bad_values_fail_validation():
         resolve_context(ChessContext, {"configurable": {"policy": "jev"}})
 
 
+@pytest.mark.parametrize(
+    ("knob", "bad", "edge"),
+    [
+        ("k", 0, 1),
+        ("k", 256, 255),
+        ("threshold", -0.1, 0.0),
+        ("threshold", 1.1, 1.0),
+        ("tournament_threshold", 2, 1.0),
+        ("top_p", 0.0, 1.0),
+        ("top_p", -1, 0.01),
+    ],
+)
+def test_numeric_knobs_are_bounded(knob, bad, edge):
+    with pytest.raises(ValidationError, match=knob):
+        resolve_context(ChessContext, {"configurable": {knob: bad}})
+    assert getattr(resolve_context(ChessContext, {"configurable": {knob: edge}}), knob) == edge
+
+
 def test_admits_none():
     assert _admits_none(int | None)
     assert not _admits_none(int)

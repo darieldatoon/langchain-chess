@@ -1,7 +1,7 @@
 import { START_FEN, type ChessValues, type Quality } from "@langchain-chess/chess-ui";
 import { ply, turn } from "@langchain-chess/chess-ui/testing";
 import type { Game } from "../../src/games";
-import { GRADER, REVIEW_KEY, type Eval, type GameReview } from "../../src/review";
+import { GRADER, REVIEW_KEY, type Eval, type GameReview, type Grading } from "../../src/review";
 
 /** Scholar's mate: White's queen and bishop mate on f7; Black's 3...Nf6?? allows it. */
 export const MOVES = ["e2e4", "e7e5", "d1h5", "b8c6", "f1c4", "g8f6", "h5f7"];
@@ -64,6 +64,12 @@ export function review(overrides: Partial<GameReview> = {}): GameReview {
   };
 }
 
+export const UNGRADED: Grading = { status: "ungraded" };
+
+export function graded(overrides: Partial<GameReview> = {}): Grading {
+  return { status: "graded", review: review(overrides) };
+}
+
 export function game(overrides: Partial<Game> = {}): Game {
   return {
     threadId: "thread-1",
@@ -72,7 +78,7 @@ export function game(overrides: Partial<Game> = {}): Game {
     turns: 4,
     matchup: "claude-opus-5-5 + semif-qwen3.5-4b",
     values: values(),
-    review: review(),
+    grading: graded(),
     ...overrides,
   };
 }

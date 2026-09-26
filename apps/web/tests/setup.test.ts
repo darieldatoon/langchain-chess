@@ -2,19 +2,20 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   changedKnobs,
   DEFAULT_SETUP,
+  gameOf,
   knobsOf,
   matchupLine,
   matchupOf,
   modelName,
   opponentLabel,
   resolveSide,
-  sanitizeGame,
   sanitizeSetup,
   sectionsOf,
   setupFromContext,
   type Setup,
 } from "../src/setup";
 import { DEFAULT_CONTEXT, type ChessContext } from "@langchain-chess/chess-ui";
+import { E4_E5, ply, turn } from "@langchain-chess/chess-ui/testing";
 
 const setup = (overrides: Partial<Setup> = {}): Setup => ({ ...DEFAULT_SETUP, ...overrides });
 
@@ -63,7 +64,12 @@ describe("matchupOf", () => {
       ok: false,
       reason: "Checking whether GLM-5.3 Flash can summarize…",
     });
+    expect(matchupOf(summarizing, "unknown")).toEqual({
+      ok: false,
+      reason: "Couldn't check whether GLM-5.3 Flash can summarize.",
+    });
     expect(matchupOf(setup(), "checking")).toMatchObject({ ok: true });
+    expect(matchupOf(setup(), "unknown")).toMatchObject({ ok: true });
     const alone = { ...summarizing, llm: "none" as const };
     expect(matchupOf(alone, "checking")).toMatchObject({ ok: true });
   });
@@ -222,14 +228,49 @@ describe("setupFromContext", () => {
 });
 
 describe("games", () => {
-  it("sanitizes a stored game record", () => {
-    const context = { ...DEFAULT_CONTEXT, policy: "llm" as const, k: 9 };
-    expect(sanitizeGame({ side: "black", context })).toEqual({ side: "black", context });
-    expect(sanitizeGame({ side: "random", context: { k: -1 } })).toEqual({
+  const recorded = { ...DEFAULT_CONTEXT, policy: "llm" as const, k: 9 };
+  const E4_AS_BLACK = {
+    moves: ["e2e4"],
+    plies: [ply({ source: "llm", turn_id: "turn-1" })],
+    turns: [turn({ ply: 0 })],
+  };
+
+  it("reads the context from the thread and the human's side from its external moves", () => {
+    expect(gameOf({ ...E4_E5, setup: recorded }, null)).toEqual({
+      side: "white",
+      context: recorded,
+    });
+    const black = {
+      moves: ["e2e4", "e7e5"],
+      plies: [E4_AS_BLACK.plies[0], ply({ ply: 1, side: "black", uci: "e7e5", san: "e5" })],
+      setup: recorded,
+    };
+    expect(gameOf(black, null)).toEqual({ side: "black", context: recorded });
+  });
+
+  it("before the human's first move, gives them the side the opponent didn't open with", () => {
+    expect(gameOf({ ...E4_AS_BLACK, setup: recorded }, null)?.side).toBe("black");
+    // The opponent's first turn is open but has no move yet.
+    const opening = { moves: [], plies: [], turns: [turn({ status: "pending", ply: null })] };
+    expect(gameOf({ ...opening, setup: recorded }, null)?.side).toBe("black");
+    const blackToMove = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1";
+    expect(gameOf({ ...opening, start_fen: blackToMove, setup: recorded }, null)?.side).toBe(
+      "white",
+    );
+  });
+
+  it("plays a new game with its picks until the thread records them", () => {
+    const chosen = { side: "white" as const, context: recorded };
+    expect(gameOf({}, chosen)).toEqual(chosen);
+    expect(gameOf({ setup: DEFAULT_CONTEXT }, chosen)).toEqual({
       side: "white",
       context: DEFAULT_CONTEXT,
     });
-    expect(sanitizeGame(null)).toEqual({ side: "white", context: DEFAULT_CONTEXT });
+  });
+
+  it("knows no game for a thread without a readable setup", () => {
+    expect(gameOf(E4_E5, null)).toBeNull();
+    expect(gameOf({ ...E4_E5, setup: { ...recorded, k: -1 } }, null)).toBeNull();
   });
 
   it("splits a context into its knobs", () => {

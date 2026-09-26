@@ -18,6 +18,7 @@ from typing import Any, TextIO, cast
 
 import chess
 from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Checkpointer
@@ -26,7 +27,13 @@ from langchain_chess.parse import text_of
 from langchain_chess.rules import DrawClaims, fingerprint
 from langchain_chess_cli.options import AgentOptions, run_config
 from langchain_chess_cli.uci.clock import deadline_ms
-from langchain_chess_cli.uci.completion import RunStatus, SearchResult, complete, root_moves
+from langchain_chess_cli.uci.completion import (
+    RunStatus,
+    SearchResult,
+    complete,
+    info_lines,
+    root_moves,
+)
 from langchain_chess_cli.uci.protocol import (
     Go,
     IsReady,
@@ -157,7 +164,7 @@ class Engine:
         options: AgentOptions | None = None,
         *,
         out: Output,
-        checkpointer: Checkpointer | None = None,
+        checkpointer: BaseCheckpointSaver | None = None,
     ) -> None:
         self._factory = factory
         self._options = options or AgentOptions()
@@ -187,14 +194,25 @@ class Engine:
         return run_config("uci", self._thread, self._options, draw_claims=DRAW_CLAIMS)
 
     def _info(self, text: str) -> None:
-        for line in filter(str.strip, text.splitlines()):
-            self._out(f"info string {line}")
+        for line in info_lines(text):
+            self._out(line)
 
     def _apply_queued(self) -> None:
-        if self._queued:
-            self._options = dataclasses.replace(self._options, **self._queued)
-            self._queued = {}
-            self._agent = self._factory(self._options, self._checkpointer)
+        if not self._queued:
+            return
+        options = dataclasses.replace(self._options, **self._queued)
+        self._queued = {}
+        try:
+            agent = self._factory(options, self._checkpointer)
+        except Exception as e:  # the options and the agent change together, or not at all
+            self._info(f"options not applied: {e}")
+            return
+        self._options, self._agent = options, agent
+
+    async def _replace_thread(self) -> None:
+        """Only with no search outstanding: nothing can reopen the old game, so drop it."""
+        old, self._thread = self._thread, self._new_thread()
+        await self._checkpointer.adelete_thread(old)
 
     # ---- commands -----------------------------------------------------------------------------
 
@@ -216,7 +234,7 @@ class Engine:
                 self._set_option(name, value)
             case UciNewGame():
                 await self._retire()
-                self._thread = self._new_thread()
+                await self._replace_thread()
             case Position() as position:
                 self._position = position
             case Go() as go:
@@ -254,17 +272,18 @@ class Engine:
 
     async def _thread_extends(self, position: Position) -> bool:
         values = (await self._agent.aget_state(self._config())).values
-        moves = list(values.get("moves") or [])
-        if not moves:
+        root = values.get("start_fen")
+        if root is None:
             return True
-        same_root = _normal_fen(position.start_fen) == _normal_fen(values["start_fen"])
+        moves = list(values.get("moves") or [])
+        same_root = _normal_fen(position.start_fen) == _normal_fen(root)
         return same_root and list(position.moves[: len(moves)]) == moves
 
     async def _start(self, go: Go) -> None:
         position = self._position
         if not await self._thread_extends(position):
             # A takeback or a new game without `ucinewgame`: start a new thread.
-            self._thread = self._new_thread()
+            await self._replace_thread()
         restrict = None
         if go.searchmoves is not None:
             legal = set(root_moves(position.start_fen, position.moves, None))

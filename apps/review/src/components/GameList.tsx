@@ -4,6 +4,7 @@ import { SkeletonRows } from "@langchain/macaw-components/Skeleton";
 import { Text } from "@langchain/macaw-components/Text";
 import { cn } from "@langchain/macaw-components/utils/cn";
 import { resultText, type Game } from "../games";
+import type { Grading } from "../review";
 
 interface Props {
   games: readonly Game[];
@@ -54,7 +55,6 @@ function GameRow({
   current: boolean;
   onSelect: (threadId: string) => void;
 }) {
-  const accuracy = game.review?.accuracy;
   const plies = game.values?.moves?.length ?? 0;
   return (
     <button
@@ -80,15 +80,26 @@ function GameRow({
         </Text>
         <Text
           variant="xs"
-          color={accuracy ? "secondary" : "tertiary"}
+          color={game.grading.status === "graded" ? "secondary" : "tertiary"}
           as="span"
           className="shrink-0 whitespace-nowrap"
         >
-          {accuracy
-            ? `${accuracy.white?.toFixed(0) ?? "–"} / ${accuracy.black?.toFixed(0) ?? "–"}`
-            : "Not graded"}
+          {gradeText(game.grading)}
         </Text>
       </span>
     </button>
   );
+}
+
+function gradeText(grading: Grading): string {
+  switch (grading.status) {
+    case "graded": {
+      const { white, black } = grading.review.accuracy;
+      return `${white?.toFixed(0) ?? "–"} / ${black?.toFixed(0) ?? "–"}`;
+    }
+    case "invalid":
+      return "Unreadable review";
+    case "ungraded":
+      return "Not graded";
+  }
 }

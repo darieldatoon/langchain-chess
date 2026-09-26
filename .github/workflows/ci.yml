@@ -3,8 +3,13 @@ name: ci
 on:
   pull_request:
     paths-ignore: ["**/*.md", "plans/**", "openwiki/**"]
-  # deploy.yml calls this, so the checks a merge deploys behind are these same checks.
+  # The deploy workflows call this, so the checks a merge deploys behind are these same checks.
   workflow_call:
+    inputs:
+      ref:
+        description: The exact commit to check; empty checks the triggering one.
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -22,6 +27,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ inputs.ref }}
 
       - uses: ./.github/actions/setup
         with:
@@ -40,6 +46,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ inputs.ref }}
 
       - uses: ./.github/actions/setup
         with:

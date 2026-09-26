@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { KeyCheck } from "../../src/auth";
+import type { ModelLimit } from "../../src/modelLimit";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { DEFAULT_SETUP, type Setup } from "../../src/setup";
 import { DEFAULT_CONTEXT } from "@langchain-chess/chess-ui";
@@ -14,13 +15,13 @@ vi.mock("@langchain/macaw-components/Slider", async () =>
   (await import("../support/macawShims")).sliderShim(),
 );
 
-const KNOWN = 968000;
+const KNOWN: ModelLimit = { kind: "known", tokens: 968000 };
 
 function open(
   initial: Setup = DEFAULT_SETUP,
   canCancel = false,
   check: KeyCheck = { kind: "ok" },
-  limits: Record<string, number | null> = {},
+  limits: Record<string, ModelLimit> = {},
 ) {
   const onPlay = vi.fn();
   const onClose = vi.fn();
@@ -131,6 +132,51 @@ describe("NewGameDialog", () => {
     view.unmount();
     await act(async () => answer({ kind: "ok" }));
     expect(onPlay).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["invalid", "0"],
+    ["valid but different", "3"],
+  ])("does not play stale picks edited to %s while the key check runs", async (_, k) => {
+    let answer: (check: KeyCheck) => void = () => {};
+    const onPlay = vi.fn();
+    render(
+      <NewGameDialog
+        open
+        initial={DEFAULT_SETUP}
+        canCancel={false}
+        onPlay={onPlay}
+        onClose={() => {}}
+        onOpenSettings={() => {}}
+        checkKey={() => new Promise((resolve) => (answer = resolve))}
+        modelLimit={() => Promise.resolve(KNOWN)}
+      />,
+    );
+    advanced();
+    fireEvent.click(play());
+    change("Shortlist Size", k);
+    await act(async () => answer({ kind: "ok" }));
+    expect(onPlay).not.toHaveBeenCalled();
+  });
+
+  it("still reports a key problem found for picks edited meanwhile", async () => {
+    let answer: (check: KeyCheck) => void = () => {};
+    render(
+      <NewGameDialog
+        open
+        initial={DEFAULT_SETUP}
+        canCancel={false}
+        onPlay={() => {}}
+        onClose={() => {}}
+        onOpenSettings={() => {}}
+        checkKey={() => new Promise((resolve) => (answer = resolve))}
+        modelLimit={() => Promise.resolve(KNOWN)}
+      />,
+    );
+    fireEvent.click(play());
+    fireEvent.click(screen.getByRole("radio", { name: "Black" }));
+    await act(async () => answer({ kind: "missing" }));
+    expect(screen.getByText("LangSmith API key needed")).toBeInTheDocument();
   });
 
   it("derives the policy from the pickers and disables Play when both are None", async () => {
@@ -271,7 +317,7 @@ describe("NewGameDialog", () => {
       summarizing as Setup,
       false,
       { kind: "ok" },
-      { [glm]: null },
+      { [glm]: { kind: "none" } },
     );
     expect(matchup()).toHaveTextContent("Checking whether GLM-5.3 Flash can summarize…");
     expect(play()).toBeDisabled();
@@ -294,7 +340,7 @@ describe("NewGameDialog", () => {
   });
 
   it("ignores a late limit for a model no longer picked", async () => {
-    const answers: ((tokens: number | null) => void)[] = [];
+    const answers: ((limit: ModelLimit) => void)[] = [];
     const summarizing = {
       ...DEFAULT_SETUP,
       knobs: { ...DEFAULT_SETUP.knobs, memory: "summarize" },
@@ -313,14 +359,59 @@ describe("NewGameDialog", () => {
     );
     await settled();
     change("LLM", "langsmith:baseten/zai-org/GLM-5.3");
-    await act(async () => answers[0](null));
+    await act(async () => answers[0]({ kind: "none" }));
     expect(matchup()).toHaveTextContent("Checking whether GLM-5.3 can summarize…");
     await settled();
     await act(async () => answers[1](KNOWN));
     expect(play()).toBeEnabled();
   });
 
-  it("clears nullable knobs, keeps valid values over invalid text, and flags it", async () => {
+  it("keeps summarize and holds Play when the limit check fails, until a retry answers", async () => {
+    const summarizing = {
+      ...DEFAULT_SETUP,
+      knobs: { ...DEFAULT_SETUP.knobs, memory: "summarize" },
+    } as Setup;
+    const { onPlay, modelLimit } = open(
+      summarizing,
+      false,
+      { kind: "ok" },
+      {
+        [DEFAULT_SETUP.llm]: { kind: "failed" },
+      },
+    );
+    await settled();
+    expect(matchup()).toHaveTextContent("Couldn't check whether GLM-5.3 Flash can summarize.");
+    expect(play()).toBeDisabled();
+    advanced();
+    expect(screen.getByLabelText("Memory")).toHaveValue("summarize");
+    expect(screen.getByRole("option", { name: "Summarize" })).toBeEnabled();
+    expect(screen.getByText(/Couldn't reach the server/)).toBeInTheDocument();
+
+    modelLimit.mockImplementation(() => Promise.resolve(KNOWN));
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(matchup()).toHaveTextContent("Checking whether GLM-5.3 Flash can summarize…");
+    await settled();
+    expect(modelLimit).toHaveBeenCalledTimes(2);
+    await clickPlay();
+    expect(onPlay.mock.calls[0][1]).toMatchObject({ memory: "summarize" });
+  });
+
+  it("plays past a failed limit check when summarize isn't asked for", async () => {
+    const { onPlay } = open(
+      DEFAULT_SETUP,
+      false,
+      { kind: "ok" },
+      {
+        [DEFAULT_SETUP.llm]: { kind: "failed" },
+      },
+    );
+    await settled();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    await clickPlay();
+    expect(onPlay.mock.calls[0][1]).toMatchObject({ memory: "none" });
+  });
+
+  it("clears nullable knobs, and holds Play while a number field shows invalid text", async () => {
     const { onPlay } = open({
       ...DEFAULT_SETUP,
       knobs: { ...DEFAULT_SETUP.knobs, top_p: 0.5, tournament_threshold: 0.6 },
@@ -330,13 +421,33 @@ describe("NewGameDialog", () => {
     change("Top-p", "");
     change("Tournament Threshold", "");
     change("Shortlist Size", "0");
+    change("Seed", "1.5");
     expect(screen.getByLabelText("Shortlist Size")).toHaveValue(0);
     expect(screen.getByLabelText("Shortlist Size")).toHaveAttribute("aria-invalid", "true");
+    expect(matchup()).toHaveTextContent("Fix the Advanced settings marked invalid.");
+    expect(play()).toBeDisabled();
+    change("Shortlist Size", "3");
+    expect(play()).toBeDisabled();
+    change("Seed", "2");
     await clickPlay();
     const context = onPlay.mock.calls[0][1];
     expect(context.top_p).toBeNull();
     expect(context.tournament_threshold).toBeNull();
-    expect(context.k).toBe(5);
+    expect(context.k).toBe(3);
+    expect(context.seed).toBe(2);
+  });
+
+  it("drops a hidden field's invalid text: the knob keeps the value it shows again", async () => {
+    const { onPlay } = open();
+    advanced();
+    change("Shortlist Size", "0");
+    expect(play()).toBeDisabled();
+    advanced();
+    expect(play()).toBeEnabled();
+    advanced();
+    expect(screen.getByLabelText("Shortlist Size")).toHaveValue(5);
+    await clickPlay();
+    expect(onPlay.mock.calls[0][1].k).toBe(5);
   });
 });
 

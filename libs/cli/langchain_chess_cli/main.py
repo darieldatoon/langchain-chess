@@ -138,8 +138,6 @@ def play(
     memory: MemoryOption = "none",
 ) -> None:
     """Play a game in the terminal (Textual)."""
-    from langgraph.checkpoint.memory import InMemorySaver
-
     from langchain_chess_cli.tui.app import DRAW_CLAIMS, ChessApp
 
     options = AgentOptions(
@@ -160,8 +158,8 @@ def play(
         memory=memory,
     )
 
-    def factory() -> CompiledStateGraph:
-        return build_agent(options, draw_claims=DRAW_CLAIMS, checkpointer=InMemorySaver())
+    def factory(checkpointer: Checkpointer) -> CompiledStateGraph:
+        return build_agent(options, draw_claims=DRAW_CLAIMS, checkpointer=checkpointer)
 
     ChessApp(factory, options, side=side).run()
 

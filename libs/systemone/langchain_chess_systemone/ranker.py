@@ -247,6 +247,11 @@ def parse_answers(batch: Batch, response: ClassifierResponse) -> Answers:
     return Answers(choices=choices, aux=aux)
 
 
+def _timed(error: RankingFailed, started: float) -> RankingFailed:
+    elapsed_ms = (time.perf_counter() - started) * 1000
+    return RankingFailed(str(error), error.calls, elapsed_ms=elapsed_ms)
+
+
 class GatewayRanker:
     """Ranks moves with a System 1 model. `rank` is sync, `arank` async; both retry transient
     gateway errors with backoff and record one `Call` per request."""
@@ -340,7 +345,8 @@ class GatewayRanker:
     async def _aask(
         self, position: _Position, batch: Batch, calls: list[Call], run_name: str
     ) -> Answers:
-        request = self._request(position, batch)
+        # Describing a crowded position can take most of a second; keep it off the event loop.
+        request = await asyncio.to_thread(self._request, position, batch)
         attempt = 0
         while True:
             at = datetime.now(UTC)
@@ -396,6 +402,21 @@ class GatewayRanker:
         if len(request.options) == 1:
             return self._local(request)
         started = time.perf_counter()
+        try:
+            return self._rank(request, started)
+        except RankingFailed as e:
+            raise _timed(e, started) from e
+
+    async def arank(self, request: RankRequest) -> MoveDistribution:
+        if len(request.options) == 1:
+            return self._local(request)
+        started = time.perf_counter()
+        try:
+            return await self._arank(request, started)
+        except RankingFailed as e:
+            raise _timed(e, started) from e
+
+    def _rank(self, request: RankRequest, started: float) -> MoveDistribution:
         position = _position(request, self.history_plies)
         calls: list[Call] = []
         if len(request.options) <= self.max_options:
@@ -407,10 +428,7 @@ class GatewayRanker:
         )
         return self._distribution(result.final, result.aux, result.tournament, calls, started)
 
-    async def arank(self, request: RankRequest) -> MoveDistribution:
-        if len(request.options) == 1:
-            return self._local(request)
-        started = time.perf_counter()
+    async def _arank(self, request: RankRequest, started: float) -> MoveDistribution:
         position = _position(request, self.history_plies)
         calls: list[Call] = []
         if len(request.options) <= self.max_options:

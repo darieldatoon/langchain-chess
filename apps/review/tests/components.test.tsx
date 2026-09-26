@@ -5,7 +5,7 @@ import { GameList } from "../src/components/GameList";
 import { GameView } from "../src/components/GameView";
 import { GradeCard } from "../src/components/GradeCard";
 import { HostTheme } from "../src/HostTheme";
-import { game, review, values } from "./support/fixtures";
+import { game, graded, review, UNGRADED, values } from "./support/fixtures";
 import { board } from "./support/mocks";
 
 vi.mock("react-chessboard", async () => (await import("./support/mocks")).chessboardMock());
@@ -93,23 +93,29 @@ describe("GameList", () => {
     const onSelect = vi.fn();
     const games = [
       game(),
-      game({ threadId: "t2", review: null, values: values({ moves: ["e2e4"], outcome: null }) }),
+      game({
+        threadId: "t2",
+        grading: UNGRADED,
+        values: values({ moves: ["e2e4"], outcome: null }),
+      }),
       game({
         threadId: "t3",
         values: null,
-        review: review({ accuracy: { white: 88, black: null } }),
+        grading: graded({ accuracy: { white: 88, black: null } }),
       }),
-      game({ threadId: "t4", review: review({ accuracy: { white: null, black: 70 } }) }),
+      game({ threadId: "t4", grading: graded({ accuracy: { white: null, black: 70 } }) }),
+      game({ threadId: "t5", grading: { status: "invalid", problem: "it is not an object" } }),
     ];
     render(<GameList {...base} games={games} selected="t2" onSelect={onSelect} />);
-    expect(screen.getAllByText("1-0")).toHaveLength(2);
+    expect(screen.getAllByText("1-0")).toHaveLength(3);
     expect(screen.getByText("98 / 61")).toBeInTheDocument();
     expect(screen.getByText(/· 1 ply$/)).toBeInTheDocument();
-    expect(screen.getAllByText(/· 7 plies$/)).toHaveLength(2);
+    expect(screen.getAllByText(/· 7 plies$/)).toHaveLength(3);
     expect(screen.getByText("Not graded")).toBeInTheDocument();
     expect(screen.getByText("No record")).toBeInTheDocument();
     expect(screen.getByText("88 / –")).toBeInTheDocument();
     expect(screen.getByText("– / 70")).toBeInTheDocument();
+    expect(screen.getByText("Unreadable review")).toBeInTheDocument();
     const rows = screen.getAllByRole("button");
     expect(rows[1]).toHaveAttribute("aria-current", "true");
     fireEvent.click(rows[2]);
@@ -197,23 +203,31 @@ describe("GameView", () => {
   });
 
   it("shows an ungraded game without engine output", () => {
-    renderView(game({ review: null }));
+    renderView(game({ grading: UNGRADED }));
     expect(screen.getByText("Not graded yet")).toBeInTheDocument();
     expect(screen.queryByLabelText(/^evaluation/)).toBeNull();
     expect(screen.queryByLabelText("engine grade")).toBeNull();
   });
 
+  it("says why a review can't be drawn instead of drawing it", () => {
+    renderView(game({ grading: { status: "invalid", problem: "evaluation 3 is malformed" } }));
+    expect(screen.getByText(/evaluation 3 is malformed/)).toBeInTheDocument();
+    expect(screen.getByText("lcchess grade --thread thread-1 --force")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^evaluation/)).toBeNull();
+    expect(current()).toBe("Qxf7#");
+  });
+
   it("copes with missing plies, turns and moves", () => {
     const root = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 5";
     const bare = game({
-      review: null,
+      grading: UNGRADED,
       values: values({ start_fen: root, moves: ["e7e5"], plies: undefined, turns: undefined }),
     });
     renderView(bare);
     expect(current()).toBe("e7e5");
     expect(screen.getByRole("button", { name: "e7e5" })).toBeInTheDocument();
     const once = game({
-      review: null,
+      grading: UNGRADED,
       values: values({ start_fen: root, moves: undefined, outcome: null }),
     });
     renderView(once);
@@ -223,7 +237,7 @@ describe("GameView", () => {
   it("steps through a game that starts with Black to move", () => {
     const root = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 5";
     const g = game({
-      review: null,
+      grading: UNGRADED,
       values: values({
         start_fen: root,
         moves: ["e7e5", "g1f3"],

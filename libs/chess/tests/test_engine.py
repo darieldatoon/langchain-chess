@@ -47,6 +47,11 @@ def test_scores_are_from_whites_side():
     assert eval_from(chess.engine.PovScore(chess.engine.Mate(-3), chess.BLACK)) == Mate(3, "white")
 
 
+def test_a_mated_side_loses_from_either_perspective():
+    assert eval_from(chess.engine.PovScore(chess.engine.Mate(0), chess.BLACK)) == Mate(0, "white")
+    assert eval_from(chess.engine.PovScore(chess.engine.Mate(0), chess.WHITE)) == Mate(0, "black")
+
+
 def test_an_analysis_needs_a_score():
     with pytest.raises(chess.engine.EngineError, match="no score"):
         analysis_from([{"depth": 1}])
@@ -100,3 +105,28 @@ async def test_an_engine_that_died_is_skipped_on_exit(tmp_path):
         engine = pool._engines[0]
         engine.send_line("quit")
         await engine.returncode
+
+
+async def test_an_unresponsive_engine_is_killed_on_exit(tmp_path):
+    pool = EnginePool(EngineConfig(path=fake_engine(tmp_path, quits=False)), 2, quit_timeout=0.05)
+    async with pool:
+        engines = list(pool._engines)
+    assert all(engine.returncode.done() for engine in engines)
+    assert pool._engines == []
+
+
+async def test_a_cancelled_exit_finishes_cleanup_before_it_propagates(tmp_path):
+    pool = EnginePool(EngineConfig(path=fake_engine(tmp_path, quits=False)), 3, quit_timeout=0.1)
+    await pool.__aenter__()
+    engines = list(pool._engines)
+    exiting = asyncio.create_task(pool.__aexit__(None, None, None))
+    await asyncio.sleep(0)
+    again = asyncio.create_task(pool.__aexit__(None, None, None))
+    exiting.cancel()
+    await asyncio.sleep(0)
+    exiting.cancel()
+    await again
+    assert all(engine.returncode.done() for engine in engines)
+    with pytest.raises(asyncio.CancelledError):
+        await exiting
+    assert pool._engines == []

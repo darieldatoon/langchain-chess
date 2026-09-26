@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vite-plus/test";
-import { apiUrl, configurableOf, DEV_API_URL, sanitizeContext, withKnob } from "../src/settings";
+import {
+  apiUrl,
+  configurableOf,
+  DEV_API_URL,
+  recordedContext,
+  sanitizeContext,
+  withKnob,
+} from "../src/settings";
 import { DEFAULT_CONTEXT } from "@langchain-chess/chess-ui";
 
 describe("sanitizeContext", () => {
@@ -51,6 +58,21 @@ describe("sanitizeContext", () => {
       tournament_threshold: null,
       top_p: null,
     });
+  });
+});
+
+describe("recordedContext", () => {
+  it("takes a whole context, dropping keys it doesn't know", () => {
+    expect(recordedContext({ ...DEFAULT_CONTEXT, newer_knob: 1 })).toEqual(DEFAULT_CONTEXT);
+  });
+
+  it("refuses a context with any knob missing or invalid, rather than fill in a default", () => {
+    const { model: _, ...noModel } = DEFAULT_CONTEXT;
+    expect(recordedContext(noModel)).toBeNull();
+    expect(recordedContext({ ...DEFAULT_CONTEXT, k: 0 })).toBeNull();
+    expect(recordedContext({ ...DEFAULT_CONTEXT, systemone_model: "other" })).toBeNull();
+    expect(recordedContext({})).toBeNull();
+    expect(recordedContext(null)).toBeNull();
   });
 });
 

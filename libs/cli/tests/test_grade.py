@@ -232,12 +232,41 @@ def test_replace_drops_this_graders_feedback_and_writes_the_marker_last():
     entries = [Feedback(run, k, {}) for k in ("cp_loss", "best_move", REVIEW_KEY)]
     LangSmithStore(client, write_concurrency=1).replace([run, RootRun("r0", "p1", T0)], entries)
     ops = [c for c in client.calls if c[0] != "list_feedback"]
-    assert ops[:2] == [("delete", f"r1/cp_loss/{GRADER}"), ("delete", f"r0/{REVIEW_KEY}/{GRADER}")]
+    assert ops[:2] == [("delete", f"r0/{REVIEW_KEY}/{GRADER}"), ("delete", f"r1/cp_loss/{GRADER}")]
     assert ops[2:] == [
         ("create", "r1", "cp_loss", "p1"),
         ("create", "r1", "best_move", "p1"),
         ("create", "r1", REVIEW_KEY, "p1"),
     ]
+
+
+class FlakyClient(FakeClient):
+    """Deletes for real, but fails deleting the feedback keyed `broken`."""
+
+    def __init__(self, broken, feedback):
+        super().__init__(feedback=feedback)
+        self.broken = broken
+
+    def delete_feedback(self, feedback_id):
+        if feedback_id.split("/")[1] == self.broken:
+            msg = "delete failed"
+            raise RuntimeError(msg)
+        super().delete_feedback(feedback_id)
+        self.feedback = [f for f in self.feedback if f.id != feedback_id]
+
+
+@pytest.mark.parametrize(
+    ("broken", "graded", "left"), [(REVIEW_KEY, "f1", 2), ("cp_loss", None, 1)]
+)
+def test_a_failed_delete_never_leaves_a_partial_game_marked_graded(broken, graded, left):
+    run = RootRun("r1", "p1", T0)
+    client = FlakyClient(broken, [fb("cp_loss", "r1"), fb(REVIEW_KEY, "r1")])
+    store = LangSmithStore(client, write_concurrency=1)
+    with pytest.raises(RuntimeError, match="delete failed"):
+        store.replace([run], [Feedback(run, k, {}) for k in ("cp_loss", REVIEW_KEY)])
+    assert store.graded("r1") == graded
+    assert len(client.feedback) == left
+    assert not any(c[0] == "create" for c in client.calls)
 
 
 # batch

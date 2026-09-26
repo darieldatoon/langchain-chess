@@ -1,291 +1,253 @@
 # langchain-chess
 
-Chess agents built on LangChain's `create_agent`. Everything that shapes how a move is chosen
-is middleware: legality checks, forced moves, a System 1 ranker (SemIf or Jev) and memory
-summarization. Everything that talks to the agent is an adapter outside the graph: a UCI
-engine, an Agent Server app with a web UI, and a terminal UI.
+Play chess against LLM agents built on LangChain's `create_agent`, in the browser, the terminal,
+or any chess GUI, then grade every move with Stockfish and replay the game in LangSmith.
 
-The System 1 + System 2 idea is one middleware. A System 1 model ranks the legal moves. If its
-confidence gate clears, it plays the move and the LLM never runs. Otherwise it suggests a
-shortlist, and the LLM may still play any legal move.
+![A game in the web UI: the LLM's move, System 1's top moves and the model's reasoning](docs/images/web-game.png)
 
-| Package | Import | What it is |
+The agent is a **System 1 + System 2** player. A fast move ranker (System 1: SemIf or Jev)
+scores the legal moves. When it is confident it plays straight away and the LLM never runs.
+Otherwise it hands the LLM (System 2) a shortlist, and the LLM thinks the position through.
+Every decision, its cost and its latency are recorded on the game.
+
+## What you can do
+
+| I want to... | Use | Run |
 |---|---|---|
-| `libs/chess` (`langchain-chess`) | `langchain_chess` | `create_chess_agent`, the state, the middleware contract |
-| `libs/systemone` (`langchain-chess-systemone`) | `langchain_chess_systemone` | `SystemOneMiddleware` and the gateway ranker |
-| `libs/cli` (`langchain-chess-cli`) | `langchain_chess_cli` | `lcchess uci`, `lcchess play` and `lcchess grade` |
-| `apps/server` (private) | `langchain_chess_server` | The `chess` graph and the `/ui` app for LangSmith Deployments |
-| `apps/web` | | The React UI served at `/ui` |
-| `apps/review` | | The LangSmith custom app that replays graded games |
-| `packages/chess-ui` | `@langchain-chess/chess-ui` | The board, move list, ply details and state types the web apps share |
+| Play in the browser | [Web UI](apps/web) on a local Agent Server | `mise run dev` |
+| Play in the terminal | [`lcchess play`](libs/cli#play-in-the-terminal) | `mise run dev:tui` |
+| Pit the agent against engines in a chess GUI | [`lcchess uci`](libs/cli#use-it-as-a-uci-engine) | `mise run dev:uci` |
+| See which moves were blunders | [`lcchess grade`](libs/cli#grade-games) + the [review app](apps/review) | `lcchess grade`, `mise run dev:review` |
+| Build my own chess agent | [`langchain-chess`](libs/chess) and [`langchain-chess-systemone`](libs/systemone) | `create_chess_agent(...)` |
 
-## Quickstart
+## How it fits together
+
+```mermaid
+flowchart LR
+  subgraph clients[Clients]
+    web["Web UI<br/>apps/web"]
+    studio[LangSmith Studio]
+    tui["Terminal UI<br/>lcchess play"]
+    uci["UCI engine<br/>lcchess uci"]
+  end
+  server["Agent Server<br/>apps/server: the chess graph"]
+  agent["create_chess_agent<br/>libs/chess"]
+  s1["SystemOneMiddleware<br/>libs/systemone"]
+  gw[("LangSmith LLM Gateway<br/>LLMs, SemIf, Jev")]
+  ls[("LangSmith<br/>traces + feedback")]
+  grade["lcchess grade<br/>+ Stockfish"]
+  review["Review app<br/>apps/review"]
+
+  web -- HTTP --> server
+  studio -- HTTP --> server
+  server --> agent
+  tui --> agent
+  uci --> agent
+  agent --> s1
+  agent -- LLM calls --> gw
+  s1 -- ranking calls --> gw
+  agent -. traces .-> ls
+  grade -- reads games, writes grades --> ls
+  review -- reads --> ls
+```
+
+The web UI and the review app share their board, move list and move details through
+[`packages/chess-ui`](packages/chess-ui).
+
+## Before you start
+
+You need:
+
+- **macOS or Linux** with `git`, `bash` and `curl`.
+- **[mise](https://mise.jdx.dev/getting-started.html), activated in your shell** (`mise activate`,
+  step 2 of its guide). It installs everything else at pinned versions: Node 24, pnpm, uv (which
+  provides Python 3.13), Stockfish, fastchess, lefthook, the `langsmith` CLI and Socket Firewall
+  (`sfw`). Activation puts them on your `PATH` inside the repo; the commands below assume it.
+- **A [LangSmith](https://smith.langchain.com) account** with two API keys (they can be the
+  same key if one workspace does both jobs):
+
+  | Key | Used for | Where it goes |
+  |---|---|---|
+  | Tracing key | Recording and reading runs; reading, creating and deleting feedback (grading) | `LANGSMITH_API_KEY` in `.env` |
+  | Gateway key | Every model call (the LLM and System 1) | `LC_GATEWAY_KEY` in your shell |
+
+  [Create keys](https://docs.langchain.com/langsmith/create-account-api-key) under Settings → API
+  Keys. The gateway key must be [workspace-scoped with the `gateway:invoke` and `workspaces:read`
+  permissions](https://docs.langchain.com/langsmith/llm-gateway-quickstart), in a workspace
+  where an admin has [enabled the LLM Gateway](https://docs.langchain.com/langsmith/llm-gateway-admin-setup).
+  Provider secrets live in the gateway workspace, set by its admin:
+
+  | Model | Needs |
+  |---|---|
+  | GLM-5.3 Flash (the default LLM, `baseten/...`) | A Baseten provider secret |
+  | The other web presets (Baseten, Fireworks, OpenAI, Anthropic models) | That provider's secret |
+  | SemIf (the default System 1) | Nothing: LangChain-hosted |
+  | Jev (`typesafe/jev-latest`) | A TypeSafe provider secret |
+
+## Set up
+
+```sh
+git clone https://github.com/darieldatoon/langchain-chess
+cd langchain-chess
+mise trust && mise install   # the toolchain
+mise run setup               # Python and JS dependencies, git hooks
+cp .env.example .env
+```
+
+Fill in `.env`:
+
+| Variable | Value |
+|---|---|
+| `LANGSMITH_API_KEY` | Your tracing key |
+| `LANGSMITH_WORKSPACE_ID` | The tracing workspace's id ([Settings](https://smith.langchain.com/settings) → General). Without it, the SDK may use another workspace and get 403s. |
+| `LANGSMITH_PROJECT` | Where local games are traced. Default: `langchain-chess-local`. |
+
+Keep `LANGSMITH_TRACING=true` (the template's value): grading and the review app read games from
+their traces.
+
+Then export the gateway key in your shell profile. `.env` expands it from your environment, so
+the key never sits in the repo:
+
+```sh
+export LC_GATEWAY_KEY=lsv2_...
+```
+
+The server refuses to start if `LC_GATEWAY_KEY` is missing. Without it, model calls would
+quietly go to the tracing workspace's gateway instead.
+
+## Play in the browser
+
+```sh
+mise run dev
+```
+
+This starts the Agent Server on `:2024` and the web UI on `:5173`. Once both answer, it prints:
+
+```text
+  ♟  Web UI:  http://localhost:5173/ui/
+     API:     http://127.0.0.1:2024
+     Studio:  https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024
+```
+
+Open the web UI and pick a side and an opponent in the New game dialog. The defaults are SemIf
+for System 1 and GLM-5.3 Flash for the LLM. Click a piece, then its target. When you play Black,
+the agent opens.
+
+![The New game dialog](docs/images/web-new-game.png)
+
+After each reply you can see who chose the move (System 1, the LLM, or a forced move), System 1's
+top moves, the LLM's reasoning, the latency and the cost. The [web UI README](apps/web) covers
+every control.
+
+If `2024` or `5173` is taken, the task stops rather than talk to another project's server. Pick
+other ports:
+
+```sh
+LANGGRAPH_PORT=2034 WEB_PORT=5180 mise run dev
+```
+
+Studio's chat view plays too. Type `go` for the agent to move, or type your move (`e4`, `e2e4`).
+
+## Play in the terminal
+
+```sh
+mise run dev:tui                    # you play White
+mise run dev:tui -- --side black    # options after -- go to `lcchess play`
+```
+
+![The terminal UI](docs/images/tui-game.png)
+
+Type a move (`Nf3` or `g1f3`) and press Enter, or click a piece and then its target. See the
+[CLI README](libs/cli) for the keys, the options, and how to install `lcchess` without cloning.
+
+## Grade and review your games
+
+```sh
+uv run --all-packages --env-file .env lcchess grade --thread <thread-id>   # the id is under Opponent in the web UI
+langsmith auth login --prompt-workspace                                     # once: pick the tracing workspace
+mise run dev:review
+```
+
+`lcchess grade` replays a game from its traces, grades every move with Stockfish, and writes
+the grades back to the traces as LangSmith feedback. The [review app](apps/review) is a
+LangSmith custom app that replays graded games as an analysis board. It runs through the
+`langsmith` CLI's own credentials, not `.env`, hence the login:
+
+![The review app on a System 1 blunder](docs/images/review-blunder.png)
+
+## Build your own agent
 
 ```python
 from langchain.chat_models import init_chat_model
 from langgraph.checkpoint.memory import InMemorySaver
 
 from langchain_chess import create_chess_agent
+from langchain_chess_systemone import SystemOneMiddleware
 
 agent = create_chess_agent(
-    init_chat_model("langsmith:anthropic/claude-opus-5-5", reasoning_effort="low"),
+    init_chat_model("langsmith:baseten/zai-org/GLM-5.3-Flash"),
+    middleware=[SystemOneMiddleware("semif-qwen3.5-4b", threshold=0.9)],
     checkpointer=InMemorySaver(),
 )
 config = {"configurable": {"thread_id": "game-1"}}
 
-agent.invoke({"messages": [{"role": "user", "content": "e4"}]}, config)   # a chat move
-agent.invoke({"position": {"moves": ["e2e4", "c7c5"]}}, config)             # or a position
+agent.invoke({"messages": [{"role": "user", "content": "e4"}]}, config)  # you play 1. e4
 state = agent.get_state(config).values
-state["plies"][-1]   # SAN, source, analysis, model, latency, middleware telemetry
-state["turns"][-1]   # every call on the turn, with tokens and cost
+print(state["plies"][-1]["san"])  # the agent's reply
 ```
 
-One run plays at most one turn and one thread is one game. The agent always moves for the side
-to move. Input is either a chat message (`go` or one move in SAN or UCI) or a `position`
-(`start_fen`, UCI `moves`, optional `restrict`). A position that doesn't extend the thread's
-game is rejected; takebacks and new games use a new thread. A run with no new command retries
-a pending turn (after a provider error) or is a no-op.
+Save it as `play.py` and run it with `uv run --all-packages --env-file .env python play.py`.
+One thread is one game, and one run plays at most one turn. The [core README](libs/chess)
+covers the inputs, the game record and writing your own middleware. The
+[SystemOne README](libs/systemone) covers the gate.
 
-The record lives in `start_fen`, `moves`, `plies`, `turns`, `outcome` and `error`; `messages`
-are the model's working context and may be summarized. Clients should read only those keys:
-the thread-state API also returns private channels.
+## Repository layout
 
-Options worth knowing: `memory` (`none`, or `summarize` at 70% of the model's
-`max_input_tokens`; pass `summarization` for another trigger), `show_legal_moves`,
-`max_retries` (illegal replies before the side to move resigns, default 3), `draw_claims`
-(`auto` ends the game on an actual threefold repetition or the fifty-move rule; `never` leaves
-claimable draws to the caller), `forced_move`, `seed`, `system_prompt`, `context_schema`.
-
-### Cost
-
-No gateway response carries a cost, so every provider response inside a model call is recorded
-and priced locally with [genai-prices](https://github.com/pydantic/genai-prices) (the bundled
-snapshot of the pinned version; it never fetches prices). A move's cost is its turn's total:
-every LLM attempt, every System 1 request (a tournament has several) and any summary call.
-`turn_cost(turn["calls"])` returns `{usd, complete}`, or `None` when nothing was priced. SemIf
-reports no token counts, so its calls are unpriced and a hybrid move's total is marked
-incomplete.
-
-## The middleware contract
-
-Extensions are ordinary `AgentMiddleware` (optionally `ChessMiddleware`, which adds
-`position()`, `propose()`, `narrow()`, `ply_meta()` and `turn_calls()`). Every extension is
-wrapped in a write guard that hands its hooks a detached copy of the state and checks what they
-return:
-
-- `allowed_moves` may only narrow; an empty intersection is a `ChessContractError`.
-- `proposal` must be an allowed move, and only one per turn. A proposer jumps from
-  `before_model` to `end` and must declare `@hook_config(can_jump_to=["end"])`.
-- `candidates` are soft suggestions, set by one middleware per turn.
-- The game record, `messages` and core bookkeeping are core-owned.
-- Your own state keys must be `PrivateStateAttr` (or at least `OmitFromInput`). No tools.
-- `before_model` must be idempotent: a retry re-enters it. Freeze each decision per turn id and
-  replay it as `current allowed ∩ frozen`.
-- Implement sync and async variants of every hook.
-
-## SystemOne
-
-```python
-from langchain_chess_systemone import SystemOneMiddleware
-
-hybrid = create_chess_agent(
-    model,
-    middleware=[SystemOneMiddleware("semif-qwen3.5-4b", gate="margin", threshold=0.9, k=5)],
-)
-system_one_alone = create_chess_agent(
-    None,
-    middleware=[SystemOneMiddleware("semif-qwen3.5-4b", threshold=0.0, has_model=False)],
-)
-```
-
-- The gate signal is the top-1 minus top-2 probability (`margin`) or the Choice `confidence`.
-  SystemOne plays when `threshold < 1` and the signal reaches it. `0` always plays; `1` never
-  does (a pure pruner). Otherwise it suggests the top `k` (or the smallest prefix reaching
-  `top_p`).
-- SemIf takes at most 16 options per Choice and 32 questions per request. More options run a
-  seeded tournament: balanced heats in as few requests as possible, finalists per heat, then a
-  final. Its probabilities are among finalists only, and `tournament_threshold` gates it.
-- A ranking failure (after retries) with a model behind it is recorded as `skipped` and the LLM
-  chooses; without one the run fails and the turn stays pending.
-- Models: `semif-qwen3.5-4b` (the default in the app and CLI; use SemIf for anything
-  user-facing) and `typesafe/jev-latest` (experiments only).
-
-## Adapters
-
-### Web app and Studio
-
-```sh
-mise run dev:web   # langgraph dev on :2024 (Studio) and the web UI on :5173/ui/ (alias: dev)
-LANGGRAPH_PORT=2034 WEB_PORT=5180 mise run dev:web   # when 2024 or 5173 is taken
-```
-
-Once both servers answer, the task prints the web UI, API and Studio URLs below the startup
-logs.
-
-The web UI starts with a New game dialog: pick a side (White, Random or Black), a System 1
-(SemIf by default, Jev, or none) and an LLM (GLM-5.3 Flash by default; the presets are
-inexpensive models only, and anything else is a custom model spec), or none; Advanced holds the
-other `chess` context knobs. Reasoning effort defaults to the model's own, which models without
-reasoning (such as Claude Haiku 4.5) require. Each game keeps the setup it
-started with, one thread per game (the thread id stays in the URL), and shows System 1's
-top moves, the reasoning and the cost per move. The dialog can't be dismissed until a game is
-on the board. After a game, Rematch swaps colours. The gear holds app settings only: the
-LangSmith API key for a deployed server.
-Studio's chat view plays too: type `go` or a move. The task refuses to start if either port is
-taken, rather than letting the UI talk to another project's server.
-
-### UCI engine
-
-```sh
-mise run dev:uci -- --policy systemone   # uv run --all-packages --env-file .env lcchess uci ...
-mise run test:uci   # two SemIf-only games under fastchess
-```
-
-- Options: `Model`, `ReasoningEffort` (`default` sends none), `SystemOneModel`, `Policy`,
-  `Threshold`, `K`, `Memory`, `Seed`. `Ponder` is not advertised.
-- Analysis streams as `info string` lines. LLM moves take seconds, so short time controls mean
-  fallback moves: this turn's System 1 top move when it ranked, else a seeded random legal
-  move. The GUI's next position includes the fallback, and the agent's pending turn is
-  abandoned.
-- Resignation (after four illegal replies), a finished game and a rejected position answer
-  `bestmove 0000` with an `info string` reason. It isn't a standard UCI resignation but a null
-  move: fastchess scores it as an illegal-move loss for the engine that played it (checked with
-  fastchess v1.8.2-alpha), which is the intended forfeit.
-- Draws are left to the GUI (`draw_claims="never"`).
-
-### Terminal UI
-
-```sh
-mise run dev:tui -- --side black   # uv run --all-packages --env-file .env lcchess play ...
-```
-
-Click a piece and then its target, or move the cursor with the arrow keys and press Enter (or
-Space) on the piece and again on the target; the legal targets are marked. Or just type a move
-in SAN or UCI and press Enter. Pieces are drawn larger as the terminal grows (the block-art
-pieces are chess-tui's). `ctrl+s` starts as Black, `ctrl+r` retries a failed move, `ctrl+n`
-starts a new game, `ctrl+f` switches sides. Board colours are `chess-board--*` component
-classes, so CSS can restyle them.
-
-### Grading games
-
-`lcchess grade` replays games from their traces, grades every move with a UCI engine, and
-writes the grades back to the traces as feedback. `mise install` provides Stockfish.
-
-```sh
-uv run --all-packages --env-file .env lcchess grade --thread <thread-id>        # one game
-uv run --all-packages --env-file .env lcchess grade --project langchain-chess-app \
-  --since 2026-09-01 --metadata surface=web --limit 50 --dry-run                # a filtered batch
-```
-
-- Each distinct position is evaluated once across the batch, on `--workers` engines (default:
-  cores / `--engine-threads`). Each game's feedback is written as soon as it is graded.
-- Games already graded with the same engine and settings are skipped; `--force` re-grades.
-  Re-grading replaces this grader's earlier feedback on the game and leaves other feedback alone.
-- Search: `--depth` (default 16), `--nodes` or `--movetime`; `--multipv`, `--hash`,
-  `--engine-threads`, and `--engine` (or `STOCKFISH_PATH`). With one engine thread, `--nodes`
-  gives the same grades on any machine. Each position starts with a cleared hash, so a grade
-  never depends on which positions its engine searched before.
-- Classification, loss and accuracy follow Lichess (`langchain_chess.grading` cites the
-  sources). Each agent turn's root run gets `move_quality` (`best`, `good`, `inaccuracy`,
-  `mistake`, `blunder`), `cp_loss`, `win_pct_loss` and `best_move`. The game's last root run
-  gets `accuracy_white`, `accuracy_black` and `game_review`: every position's eval and every
-  move's grade and engine lines, for the review app. Moves that came in as input (the human's,
-  in the web UI) are graded in `game_review` and the accuracies, but get no per-turn feedback.
-- Every entry's source info records the engine (its UCI `id name`), the settings and their
-  fingerprint.
-- The review app (`apps/review`, a LangSmith custom app) replays graded games as an analysis
-  board: `mise run dev:review` runs it locally. See its README.
-
-### Install the CLI without cloning
-
-The packages aren't on PyPI, so only uv can install it: it resolves the sibling packages from
-the same commit (pip would look for them on PyPI).
-
-```sh
-uvx --env-file /absolute/path/to/.env \
-  --from "git+https://github.com/darieldatoon/langchain-chess#subdirectory=libs/cli" lcchess play
-uv tool install "git+https://github.com/darieldatoon/langchain-chess#subdirectory=libs/cli"
-```
-
-The default model, `langsmith:baseten/zai-org/GLM-5.3-Flash`, goes through the LLM Gateway. To
-use a bare name such as `--model claude-opus-5-5` with your own `ANTHROPIC_API_KEY`, install the
-provider's extra:
-
-```sh
-uv tool install "langchain-chess-cli[anthropic] @ git+https://github.com/darieldatoon/langchain-chess#subdirectory=libs/cli"
-```
-
-## Environment
-
-Traces go to a LangSmith workspace. Models are `init_chat_model` specs: the default
-`langsmith:<provider>/<model>` goes through a LangSmith LLM Gateway (which may be in a different
-org). A bare name or `provider:model` uses that provider's package and key, or the gateway's
-passthrough when `LANGSMITH_GATEWAY=true`. Gateway models get their input limit from
-genai-prices' context windows; `memory="summarize"` needs one, so the web app offers it only for
-models genai-prices knows. System 1 needs `TYPESAFE_API_KEY` and
-`TYPESAFE_BASE_URL`.
-Copy `.env.example` to `.env` and fill it in; `LC_GATEWAY_KEY` in your shell supplies the
-gateway key. Commands that make model calls load it explicitly (`uv run --env-file .env ...`);
-`langgraph dev` reads it through `langgraph.json`. The app refuses to start on a key that is set
-but empty, which is what the template's `${LC_GATEWAY_KEY}` expands to when it is missing.
+| Path | Package | What it is |
+|---|---|---|
+| [`libs/chess`](libs/chess) | `langchain-chess` | `create_chess_agent`, the game state and the middleware contract |
+| [`libs/systemone`](libs/systemone) | `langchain-chess-systemone` | `SystemOneMiddleware`: the System 1 ranker and its gate |
+| [`libs/cli`](libs/cli) | `langchain-chess-cli` | The `lcchess` command: `play`, `uci`, `grade` |
+| [`apps/server`](apps/server) | `langchain-chess-server` (private) | The `chess` graph and the `/ui` routes for the Agent Server |
+| [`apps/web`](apps/web) | | The React UI served at `/ui` |
+| [`apps/review`](apps/review) | | The LangSmith custom app that replays graded games |
+| [`packages/chess-ui`](packages/chess-ui) | `@langchain-chess/chess-ui` | Board, move list and move details shared by the two web apps |
 
 ## Development
 
 ```sh
-mise trust && mise install && mise run setup   # tools, dependencies, git hooks
-mise run check   # ruff, ty, and the web lint and type checks
-mise run test    # pytest and Vitest, both at 100% line and branch coverage
-mise run test:live   # the live tests against the real gateway, a real `langgraph dev` included
-mise run build   # the web UI into apps/server/.../static, served at /ui
+mise run check       # ruff, ty, and the web lint, format and type checks
+mise run test        # pytest and Vitest, both gated at 100% line and branch coverage
+mise run test:live   # against the real gateway, a real `langgraph dev` included (a few cents)
+mise run test:uci    # two SemIf-only games under fastchess
+mise tasks           # every task
 ```
 
-`mise tasks` lists every task: `dev:web` (alias `dev`), `dev:tui`, `dev:uci`, `test`,
-`test:live`, `test:uci`, and the rest. Options after `--` pass through, as in
-`mise run dev:tui -- --side black`.
+- **Dependencies.** Add them through Socket Firewall: `sfw uv add --package <distribution> <dep>`
+  (root dev tools: `sfw uv add --group dev <tool>`), and `sfw pnpm add <pkg>` in the JS package
+  that needs it. JS versions shared by several packages live in the `pnpm-workspace.yaml`
+  catalog. Lint and format config for all JS lives in the root `vite.config.ts` (Vite+).
+- **Hooks.** Pre-commit runs when matching files are staged: ruff on the staged Python files,
+  plus `ty` and the web checks over the whole repo, and a secret scan. Pre-push runs
+  `mise run test`.
+- **CI and deploys.** Pull requests that change more than Markdown run `check` and `test`. A push to `main` that changes the
+  agent (`langchain-chess-app` on LangSmith Deployments, web UI included) or the review app runs
+  them again, then deploys what changed. See [apps/server](apps/server#deploy) and
+  [apps/review](apps/review#publish).
+- **OpenWiki.** [`openwiki/`](openwiki) is a generated wiki of this repo for coding agents.
+  `mise run wiki:update` refreshes stale pages; `mise run wiki:view` browses it.
 
-mise provides every tool (node, pnpm, uv, lefthook, `sfw`, fastchess, Stockfish, the `langsmith`
-CLI); Python comes from uv.
-Add dependencies with `sfw uv add --package <distribution> <dependency>` (root dev tools:
-`sfw uv add --group dev <tool>`) and `sfw pnpm add <pkg>` in the JS package that needs it. The
-JS side is one pnpm workspace managed by Vite+: `vp check` runs at the root (lint and format
-config live only in the root `vite.config.ts`), `vp run -r test` and `vp run -r build` run per
-package, and versions used by more than one package live in the `pnpm-workspace.yaml`
-catalog. `packages/chess-ui` is consumed as TypeScript source, with no build step. Pull requests
-run `mise run check` and `mise run test` (`.github/workflows/ci.yml`). Pushing to `main` runs
-both and then `mise run deploy` (`.github/workflows/deploy.yml`), which deploys `langchain-chess-app`. The pre-push hook runs `mise run test`; the pre-commit hook checks
-only the staged files.
+Design decisions and measurements live in [docs/decisions.md](docs/decisions.md).
 
-`openwiki/` is an [OpenWiki](https://docs.langchain.com/oss/openwiki/overview) of this repo for
-coding agents; `AGENTS.md` and `CLAUDE.md` point to it. `mise run wiki:update` refreshes the
-pages that changed code made stale, and `mise run wiki:view` browses it. Its model calls go
-through the LLM Gateway (`LC_GATEWAY_KEY`), its traces go to `langchain-chess-openwiki`, and it
-reads `langchain-chess-app`'s traces (`openwiki/.langsmith.json`). `openwiki/INSTRUCTIONS.md` is
-its brief and `.openwikiignore` lists what it never reads. The `openwiki-update` workflow runs
-the same update on demand and opens a `docs: update OpenWiki` PR when pages changed.
+## Troubleshooting
 
-The image builds from the uv workspace and its lockfile (`langgraph.json` `source.kind = "uv"`).
-langgraph-cli 0.4.31 copies only the root `pyproject.toml` before `uv export`, so
-`dockerfile_lines` adds each member's `pyproject.toml`; keep that list in step with the
-workspace members. Workspace sources live only in the root `pyproject.toml`: each member is
-installed on its own in the image, and a member-level `workspace = true` source fails there.
-Check a build locally with `uv run --all-packages langgraph build -t langchain-chess:smoke`.
-
-## Decisions and measurements
-
-- **Prompt caching (Anthropic): shipped without.** The gateway's Responses route (which the
-  `langsmith:` provider uses) supports only one request-level breakpoint, and it lands on the
-  per-turn position, so it never hits. Caching would need `ChatAnthropic` on the gateway's
-  native `/anthropic` route plus a breakpoint before the position. Measured prompts are small:
-  about 520 input tokens per move with `memory="none"` (the default), most of it the per-turn
-  position, so the cacheable prefix is under Opus 5's 512-token minimum; about 1,000 (at most
-  1,850) with `full` over 12-ply games. At $5 per million input tokens, caching would save under half a
-  cent a move. Revisit if long `full` or `summarize` games become the norm. OpenAI models cache
-  automatically.
-- **Memory and analysis length.** Three self-play hybrid games per mode (12 plies, low effort,
-  2026-09-25): the LLM's analysis averaged 97 characters with `memory="none"` and 213 with
-  `full`, so seeing earlier bare `MOVE:` turns didn't make it terser. System 1 played no moves in
-  the `full` games of that sample, so the imitation risk from System 1's bare turns is still
-  unmeasured.
+| Symptom | Fix |
+|---|---|
+| `port 2024 is already in use` | Stop the other server, or set `LANGGRAPH_PORT` / `WEB_PORT`. |
+| The server exits: gateway key is empty | Export `LC_GATEWAY_KEY` in the shell that runs `mise`. |
+| 403 on traces or grading | Set `LANGSMITH_WORKSPACE_ID` to the tracing key's workspace. |
+| `Memory: summarize` is disabled in the web UI | That model's input limit is unknown, so summarizing can't be scheduled. |
+| `lcchess grade` can't find the game | Pass the project it was traced to: `--project langchain-chess-local` locally, `langchain-chess-app` for the deployment. |
 
 ## License
 

@@ -36,7 +36,8 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
   const [days, setDays] = useState("7");
   const [since, setSince] = useState(() => sinceFor(now(), "7"));
   const [loaded, setLoaded] = useState<Loaded | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
+  /** The page being extended by a load-more in flight. */
+  const [moreFrom, setMoreFrom] = useState<Loaded | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const key = `${projectId}|${since}`;
@@ -63,23 +64,34 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
     };
   }, [api, projectId, since]);
 
+  // Owned by the query like the first page, so a new query cancels it rather than racing it.
+  useEffect(() => {
+    if (!projectId || !moreFrom) return;
+    let current = true;
+    api.games(projectId, since, moreFrom.cursor).then(
+      (next) => {
+        if (!current) return;
+        setLoaded({ ...moreFrom, games: [...moreFrom.games, ...next.games], cursor: next.cursor });
+        setMoreFrom(null);
+      },
+      (e: unknown) => {
+        if (!current) return;
+        setError(message(e));
+        setMoreFrom(null);
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, [api, projectId, since, moreFrom]);
+
   const choose = (project: string, window: string) => {
     setProjectId(project);
     setDays(window);
     setSince(sinceFor(now(), window));
     setSelected(null);
     setError(null);
-  };
-
-  const more = (project: string, current: Loaded, cursor: string) => {
-    setLoadingMore(true);
-    api
-      .games(project, since, cursor)
-      .then(
-        (next) => setLoaded({ key, games: [...current.games, ...next.games], cursor: next.cursor }),
-        (e: unknown) => setError(message(e)),
-      )
-      .finally(() => setLoadingMore(false));
+    setMoreFrom(null);
   };
 
   const openRun = (project: string, runId: string) => {
@@ -87,10 +99,9 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
   };
 
   const page = loaded?.key === key ? loaded : null;
-  const cursor = page?.cursor;
   const games = page?.games ?? [];
   const game = games.find((g) => g.threadId === selected);
-  const loading = (projectId !== null && !page && !error) || loadingMore;
+  const loading = (projectId !== null && !page && !error) || moreFrom !== null;
 
   return (
     <div className="flex h-screen flex-col gap-space-4 bg-surface-level-1 p-space-4">
@@ -130,7 +141,7 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
           selected={selected}
           loading={loading}
           onSelect={setSelected}
-          onMore={projectId && page && cursor ? () => more(projectId, page, cursor) : null}
+          onMore={page?.cursor ? () => setMoreFrom(page) : null}
         />
         {game?.values && projectId ? (
           <GameView

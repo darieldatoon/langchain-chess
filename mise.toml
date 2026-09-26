@@ -39,20 +39,54 @@ for p in "$port" "$web_port"; do
     exit 1
   fi
 done
-uv run --all-packages langgraph dev --no-browser --port "$port" &
+# Job control puts each job in its own process group, so stopping one reaches every process it
+# spawned (uvicorn's worker, Vite under pnpm) and the terminal's Ctrl-C reaches only this script.
+set -m
+server='' web='' announcer=''
+stop() {
+  for pid in $server $web $announcer; do
+    kill -- "-$pid" 2>/dev/null || true
+  done
+  wait
+}
+trap stop EXIT
+uv run --all-packages langgraph dev --no-browser --port "$port" </dev/null &
 server=$!
+VITE_API_URL="http://localhost:$port" pnpm --dir apps/web exec vp dev --port "$web_port" \
+  --strictPort </dev/null &
+web=$!
 (
-  until curl -sf "http://127.0.0.1:$port/ok" >/dev/null \
-    && curl -sf "http://localhost:$web_port/ui/" >/dev/null; do
+  deadline=$((SECONDS + 120))
+  while ((SECONDS < deadline)); do
+    if curl -sf --max-time 2 "http://127.0.0.1:$port/ok" >/dev/null \
+      && curl -sf --max-time 2 "http://localhost:$web_port/ui/" >/dev/null; then
+      printf '\n  ♟  Web UI:  http://localhost:%s/ui/\n' "$web_port"
+      printf '     API:     http://127.0.0.1:%s\n' "$port"
+      printf '     Studio:  https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:%s\n\n' "$port"
+      exit 0
+    fi
     sleep 0.5
   done
-  printf '\n  ♟  Web UI:  http://localhost:%s/ui/\n' "$web_port"
-  printf '     API:     http://127.0.0.1:%s\n' "$port"
-  printf '     Studio:  https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:%s\n\n' "$port"
+  echo "error: the servers were not up within 2 minutes" >&2
+  exit 1
 ) &
 announcer=$!
-trap 'kill "$announcer" "$server" 2>/dev/null || true' EXIT
-VITE_API_URL="http://localhost:$port" pnpm --dir apps/web exec vp dev --port "$web_port" --strictPort
+# The first server to exit ends the task with its status, as does a readiness timeout; the
+# trap stops the rest. Polled: macOS's bash 3.2 has no `wait -n`.
+watched="$server $web $announcer"
+while :; do
+  sleep 0.5
+  for pid in $watched; do
+    kill -0 "$pid" 2>/dev/null && continue
+    status=0
+    wait "$pid" || status=$?
+    if [[ "$pid" != "$announcer" || "$status" != 0 ]]; then
+      exit "$status"
+    fi
+    watched="$server $web"
+    announcer=
+  done
+done
 '''
 
 [tasks."dev:review"]

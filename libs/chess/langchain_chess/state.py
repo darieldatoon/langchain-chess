@@ -83,7 +83,7 @@ class TurnRecord(TypedDict):
     opened_message_id: str | None
     illegal_attempts: int
     latency_ms: float
-    """Summed model-call time."""
+    """Summed model-call time; extensions' `turn_latency_ms` is added when the turn finalizes."""
 
 
 class Invocation(TypedDict):
@@ -91,6 +91,15 @@ class Invocation(TypedDict):
 
     id: str
     action: Literal["execute", "reject", "noop"]
+    opened_turn: NotRequired[str | None]
+    """The turn this run opened, if any; a retry opens none. Absent on older checkpoints."""
+
+
+class FailedCall(TypedDict):
+    """A model call that failed after some provider calls completed; ChessCore re-raises it."""
+
+    id: str
+    error: str
 
 
 class Proposal(TypedDict):
@@ -158,9 +167,9 @@ class ChessState(AgentState):
     """The middleware that wrote `candidates` this turn; set by the write guard."""
     proposal: NotRequired[Annotated[Proposal | None, PrivateStateAttr]]
     fallback_move: NotRequired[Annotated[str | None, PrivateStateAttr]]
-    attempts: NotRequired[Annotated[int, PrivateStateAttr]]
     consumed_message_ids: NotRequired[Annotated[list[str], PrivateStateAttr]]
     terminal_intent: NotRequired[Annotated[Resignation | None, PrivateStateAttr]]
+    failed_call: NotRequired[Annotated[FailedCall | None, PrivateStateAttr]]
     invocation: NotRequired[Annotated[Invocation, PrivateStateAttr]]
 
 

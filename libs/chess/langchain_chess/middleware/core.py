@@ -21,7 +21,7 @@ from langchain.agents.middleware.types import (
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, RemoveMessage
 from langgraph.types import Command
 
-from langchain_chess.contract import ply_meta_of, turn_calls_of
+from langchain_chess.contract import ply_meta_of, turn_calls_of, turn_latency_of
 from langchain_chess.errors import ChessContractError, ContextBudgetError
 from langchain_chess.parse import EMPTY_REPLY, parse_move, text_of
 from langchain_chess.prompt import Memory, delta_text, feedback_text, model_view, render_position
@@ -42,6 +42,7 @@ from langchain_chess.rules import (
 from langchain_chess.state import (
     Call,
     ChessState,
+    FailedCall,
     Invocation,
     Ply,
     PositionInput,
@@ -66,7 +67,7 @@ _DECISION_RESET: dict[str, Any] = {
     "candidates": None,
     "candidates_by": None,
     "fallback_move": None,
-    "attempts": 0,
+    "failed_call": None,
 }
 
 
@@ -74,8 +75,10 @@ def _new_id() -> str:
     return str(uuid.uuid4())
 
 
-def _invocation(action: Literal["execute", "reject", "noop"]) -> Invocation:
-    return {"id": _new_id(), "action": action}
+def _invocation(
+    action: Literal["execute", "reject", "noop"], opened_turn: str | None = None
+) -> Invocation:
+    return {"id": _new_id(), "action": action, "opened_turn": opened_turn}
 
 
 def looks_like_overflow(error: BaseException) -> bool:
@@ -132,6 +135,9 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         self.show_legal_moves = show_legal_moves
         self.recorder = recorder
         self.extensions = list(extensions)
+        # In memory only: after_model raises the original error in the run that failed. Absent
+        # on a resume, which tries the model call again instead of re-raising forever.
+        self._failures: dict[str, Exception] = {}
 
     # ---- helpers ------------------------------------------------------------------------------
 
@@ -140,6 +146,15 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
 
     def _extension_calls(self, state: Mapping[str, Any]) -> list[Call]:
         return [call for m in self.extensions for call in turn_calls_of(m, state)]
+
+    def _finalized(self, turn: TurnRecord, state: Mapping[str, Any]) -> TurnRecord:
+        """The turn with the extensions' calls and time folded in: once, as it finalizes."""
+        return {
+            **turn,
+            "calls": [*turn["calls"], *self._extension_calls(state)],
+            "latency_ms": turn["latency_ms"]
+            + sum(turn_latency_of(m, state) for m in self.extensions),
+        }
 
     @staticmethod
     def _first_run(state: Mapping[str, Any]) -> dict[str, Any]:
@@ -235,11 +250,7 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
 
         if pending:
             assert turn is not None
-            turns[-1] = {
-                **turn,
-                "status": "abandoned",
-                "calls": [*turn["calls"], *self._extension_calls(state)],
-            }
+            turns[-1] = {**self._finalized(turn, state), "status": "abandoned"}
         opened: TurnRecord = {
             "id": _new_id(),
             "request": request,
@@ -271,7 +282,7 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
                 "outcome": outcome,
                 "messages": new_messages,
                 "allowed_moves": [],
-                "invocation": _invocation("noop"),
+                "invocation": _invocation("noop", opened["id"]),
                 "jump_to": "end",
             }
         restrict = synced.restrict
@@ -279,7 +290,7 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         update |= {
             "turns": [*turns, {**opened, "initial_allowed": allowed}],
             "allowed_moves": allowed,
-            "invocation": _invocation("execute"),
+            "invocation": _invocation("execute", opened["id"]),
         }
         if new_messages:
             update["messages"] = new_messages
@@ -375,6 +386,18 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         )
         return request.override(messages=[*view, HumanMessage(block)])
 
+    @staticmethod
+    def _with_calls(request: ModelRequest, calls: list[Call], started: float) -> list[TurnRecord]:
+        state: Any = request.state
+        turns = list(state["turns"])
+        turn = turns[-1]
+        turns[-1] = {
+            **turn,
+            "calls": [*turn["calls"], *calls],
+            "latency_ms": turn["latency_ms"] + (time.perf_counter() - started) * 1000,
+        }
+        return turns
+
     def _finish(
         self, request: ModelRequest, response: ModelResponse, calls: list[Call], started: float
     ) -> ExtendedModelResponse:
@@ -388,19 +411,24 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
                     response_metadata=message.response_metadata,
                 )
             result.append(message)
-        state: Any = request.state
-        turns = list(state["turns"])
-        turn = turns[-1]
-        turns[-1] = {
-            **turn,
-            "calls": [*turn["calls"], *calls],
-            "latency_ms": turn["latency_ms"] + (time.perf_counter() - started) * 1000,
-        }
         return ExtendedModelResponse(
             model_response=ModelResponse(
                 result=result, structured_response=response.structured_response
             ),
-            command=Command(update={"turns": turns}),
+            command=Command(update={"turns": self._with_calls(request, calls, started)}),
+        )
+
+    def _failed(
+        self, request: ModelRequest, error: Exception, calls: list[Call], started: float
+    ) -> ExtendedModelResponse:
+        """Keeps the calls that completed before `error`; `after_model` then re-raises it."""
+        marker: FailedCall = {"id": _new_id(), "error": f"{type(error).__name__}: {error}"}
+        self._failures[marker["id"]] = error
+        return ExtendedModelResponse(
+            model_response=ModelResponse(result=[]),
+            command=Command(
+                update={"turns": self._with_calls(request, calls, started), "failed_call": marker}
+            ),
         )
 
     def wrap_model_call(
@@ -409,11 +437,16 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         started = time.perf_counter()
         with self.recorder.sink("llm") as calls:
             try:
-                response = handler(self._prepare(request))
-            except Exception as e:
-                if looks_like_overflow(e):
-                    raise ContextBudgetError(str(e)) from e
-                raise
+                try:
+                    response = handler(self._prepare(request))
+                except Exception as e:
+                    if looks_like_overflow(e):
+                        raise ContextBudgetError(str(e)) from e
+                    raise
+            except Exception as error:
+                if not calls:
+                    raise
+                return self._failed(request, error, calls, started)
         return self._finish(request, response, calls, started)
 
     async def awrap_model_call(
@@ -422,11 +455,16 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         started = time.perf_counter()
         with self.recorder.sink("llm") as calls:
             try:
-                response = await handler(self._prepare(request))
-            except Exception as e:
-                if looks_like_overflow(e):
-                    raise ContextBudgetError(str(e)) from e
-                raise
+                try:
+                    response = await handler(self._prepare(request))
+                except Exception as e:
+                    if looks_like_overflow(e):
+                        raise ContextBudgetError(str(e)) from e
+                    raise
+            except Exception as error:
+                if not calls:
+                    raise
+                return self._failed(request, error, calls, started)
         return self._finish(request, response, calls, started)
 
     # ---- after_model: parse, retry, resign ----------------------------------------------------
@@ -440,6 +478,10 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         return self._parse(state)
 
     def _parse(self, state: Mapping[str, Any]) -> dict[str, Any] | None:
+        if (failed := state.get("failed_call")) is not None:
+            if (error := self._failures.pop(failed["id"], None)) is not None:
+                raise error
+            return {"failed_call": None, "jump_to": "model"}
         reply = state["messages"][-1]
         board = self._board(state)
         text = text_of(reply)
@@ -457,13 +499,13 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
             reason = f"`{board.san(move)}` is not an allowed move here"
         turns = list(state["turns"])
         turn = turns[-1]
-        attempts: int = state.get("attempts") or 0
         record: TurnRecord = {
             **turn,
             "rejected_message_ids": [*turn["rejected_message_ids"], str(reply.id)],
             "illegal_attempts": turn["illegal_attempts"] + 1,
         }
-        if attempts < self.max_retries:
+        # Counted on the durable turn record, so a retry after a provider error keeps the budget.
+        if turn["illegal_attempts"] < self.max_retries:
             feedback = HumanMessage(
                 feedback_text(board, allowed, reason or "", empty=text == EMPTY_REPLY),
                 id=_new_id(),
@@ -475,7 +517,6 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
             return {
                 "messages": [feedback],
                 "consumed_message_ids": [*state["consumed_message_ids"], str(feedback.id)],
-                "attempts": attempts + 1,
                 "turns": turns,
                 "jump_to": "model",
             }
@@ -500,10 +541,10 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
             return None
         # Only a pending turn is ever retried or opened as `execute`.
         turns: list[TurnRecord] = list(state["turns"])
-        turn = turns[-1]
-        calls = [*turn["calls"], *self._extension_calls(state)]
+        turn = self._finalized(turns[-1], state)
+        calls = turn["calls"]
         if (intent := state.get("terminal_intent")) is not None:
-            turns[-1] = {**turn, "status": "terminal", "calls": calls}
+            turns[-1] = {**turn, "status": "terminal"}
             return _DECISION_RESET | {
                 "turns": turns,
                 "outcome": intent,
@@ -551,7 +592,7 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
             }
         )
         board.push(move)
-        turns[-1] = {**turn, "status": "committed", "ply": len(plies) - 1, "calls": calls}
+        turns[-1] = {**turn, "status": "committed", "ply": len(plies) - 1}
         update: dict[str, Any] = _DECISION_RESET | {
             "turns": turns,
             "plies": plies,

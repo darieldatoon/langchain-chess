@@ -34,7 +34,10 @@ def api_error(status: int = 422, kind: type[TypeSafeAPIError] = TypeSafeAPIError
 
 
 def distribution(
-    probabilities: Mapping[str, float], confidence: float = 0.5, model: str = "fake"
+    probabilities: Mapping[str, float],
+    confidence: float = 0.5,
+    model: str = "fake",
+    latency_ms: float = 1.0,
 ) -> MoveDistribution:
     """A sorted distribution from `{uci: probability}`, ties in the given order."""
     order = sorted(probabilities, key=lambda u: -probabilities[u])
@@ -42,7 +45,7 @@ def distribution(
         candidates=tuple(Candidate(u, probabilities[u]) for u in order),
         confidence=confidence,
         model=model,
-        latency_ms=1.0,
+        latency_ms=latency_ms,
         calls=(),
     )
 
@@ -73,8 +76,10 @@ class FakeRanker:
         return self.rank(request)
 
 
-def failed(message: str = "ranker down", calls: Sequence[Any] = ()) -> RankingFailed:
-    return RankingFailed(message, calls)
+def failed(
+    message: str = "ranker down", calls: Sequence[Any] = (), elapsed_ms: float = 0.0
+) -> RankingFailed:
+    return RankingFailed(message, calls, elapsed_ms)
 
 
 def choice_answer(probabilities: dict[str, float], confidence: float = 0.5) -> ChoiceAnswer:

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2b0daeb644a8ebd39de6f13f9a93f78c94e83cd6db41d3ba816424a05d09ad83",
+  "pageVersion": "sha256:e4eda1b23afb327e4ec3695c2a4719d11c8f97357ce421d315986e91651cadbf",
   "claims": [
     {
       "id": "claim_64f9d3d12be44aa4b19129d0e5102977",
@@ -34,11 +34,11 @@
     },
     {
       "id": "claim_3c68efa6b53f47f7a97c96b717d69cd9",
-      "statement": "dev:web runs langgraph dev in the background and Vite with --strictPort in the foreground with VITE_API_URL pointing at the langgraph port, prints the UI/API/Studio URLs once /ok and /ui/ respond, and kills the background processes via an EXIT trap.",
+      "statement": "dev:web refuses to start if LANGGRAPH_PORT (default 2024) or WEB_PORT (default 5173) answers on 127.0.0.1 or ::1, then runs langgraph dev and Vite (--strictPort, VITE_API_URL pointing at the langgraph port) both in the background, each in its own process group via set -m, plus an announcer that prints the UI/API/Studio URLs once /ok and /ui/ respond or fails after 2 minutes.",
       "evidence": [
         {
-          "resource": "repo://mise.toml#L42-L56",
-          "version": "repo-lines-v1:sha256:57334a1533e5712824db5881485aeb72eedaa6f86705ce2eb994b837044fe20c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxM2MwOWYzYWExMjczMDhmMGQ1NDM2YzQzYjU4ZjgzN2VkMzJkODkyNmI1ZGYyOTkyYTY1ZmNiZmE2ZTMyZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0NTQyNTBmZWRhMmYwZWE5NTkzMjMyNmVmZmUzMTdjOTQ1N2ZmM2Q4ZTBjMDM0NDdkYzUwYWIzYWNiZjNjMzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZDFkOTI4ZGVkMzRiNDZkZTQ5YTFmNzdmNjVkOWQ1NDlkNWE5YTk3YjQzNGQyOWE2OTMzMmZkMmM2MzRkOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3NTkxNWU1N2E4ZTRlMmZlNjU3Mjc4ZTczN2M4YTc0MGUzMWVkMzFlZDdiZTE3MGY1NDFmMjk2MDZkMzk3ODcifQ"
+          "resource": "repo://mise.toml#L24-L73",
+          "version": "repo-lines-v1:sha256:5d1914b1592bd3da27e9f26fb2d0b339a3aab20491153c17a1dec00c594764ca:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmM2UwYWE4MjQ4NGUwMTYxOTdmZTc3YzBjMWJiYTUwNTI3NThjNWVhYzE2NzY1ZDRlNzNiMWE3NWIyMjVmM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkN2EyMTg2NzA0YWNkYTY4MDliZTYwZmMyZTM4N2M2NjI2ZTk5OTc1NzdkNWZmNmNmODM4MTVmZjUyNTIyNmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkM2QxZDMyNjM3Y2Y3OTU3YjQ1NWJiYTM4NTU4ODRjZDk3YmQxMWQ5ZDNlNjNkMDc0MmIyZWViMWY5MjRlMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4NmIwNTJkMGU2MmNhM2M2ODFiMDcyODljMzk5MTBkZjdhZjdjNjA1MzUxNzIxNTcyY2RjZjI3NDY0YjViYjkifQ"
         }
       ]
     },
@@ -112,11 +112,11 @@
     },
     {
       "id": "claim_198471b30fc64176a293a65d67a7c6d3",
-      "statement": "The lefthook pre-commit hook runs in parallel on staged files (vp check for ts/tsx/css/json, ruff format check and ruff lint on staged Python, ty check) plus a secret-pattern scan of added staged lines; pre-push runs mise run test.",
+      "statement": "The lefthook pre-commit hook runs in parallel, gated by staged file globs (vp check for ts/tsx/css/json, ruff format check and ruff lint on staged Python files, ty check), plus a per-file secret-pattern scan of added staged lines that prints only matching file names; pre-push runs mise run test.",
       "evidence": [
         {
-          "resource": "repo://lefthook.yml#L1-L28",
-          "version": "repo-lines-v1:sha256:ef825d7c242b11435080165c56bff03f8b295184a0d7c110ee57fbb9f5187e37:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkOWFmYWMzNzFmZmM4ZTZkZmQ1ZjA3NmFmNTM4NzZkMmMyN2IyMDc2ODkyZjY5NWNmMDhhMzljMjQ2NDYyNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4YmYyMmQ0Nzc0NGI1MTY2YjMxZGUxZjY1MTI0MjNiMmY0ZjY1N2RlNWQ2ZGI1MDRiOWRjNDJkNDc2ZTM5ODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://lefthook.yml#L1-L37",
+          "version": "repo-lines-v1:sha256:d38c2348d84c0baf61a2feb9df271999d22d5ce1c45a8cb6d9886d061bfdfeac:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkOWFmYWMzNzFmZmM4ZTZkZmQ1ZjA3NmFmNTM4NzZkMmMyN2IyMDc2ODkyZjY5NWNmMDhhMzljMjQ2NDYyNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4YmYyMmQ0Nzc0NGI1MTY2YjMxZGUxZjY1MTI0MjNiMmY0ZjY1N2RlNWQ2ZGI1MDRiOWRjNDJkNDc2ZTM5ODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -125,8 +125,8 @@
       "statement": "Dependencies are added through sfw (sfw uv add --package, sfw uv add --group dev, sfw pnpm add in the consuming JS package).",
       "evidence": [
         {
-          "resource": "repo://README.md#L241-L248",
-          "version": "repo-lines-v1:sha256:8d3ebd32d6bd972fb1fa899b2d03e053e183feb4868aa8c481184d03f4349ceb:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmZmOTRlNzQzY2YxNjgyMmE5M2U5ZjZiYTI5ZWNiZDg2MWI4YTQ1ODcwMjljMDgxOWQ4ZTM3NjdjNjE0MzFiNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODExOTRlOGJkYjE4ZjEwZDQwYmMwNjBhZGQzNjhlOGU5MDViZWE2MzZhODllMTNmZDg4MGY0YWZkZjYwN2QxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWIyNGY5N2NhMTUwZGNlZTJhNTQ5ZTc2OTI4ZTk1NzBmYjU5MTY2ZTZiNzQ1YmM5MDMyOTg1Y2RiYTM5NjcxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDQ1ZWIyMTJhMjA2NjBlZTVhZDA1YzNkYjJlZWZjZmQzMTA0NDMwNjU2Yzc2YzU0OTg2Nzk5Zjk5OWNlNmFkNyJ9"
+          "resource": "repo://README.md#L226-L229",
+          "version": "repo-lines-v1:sha256:baa2e087ff926f91d94573d723295c371c0649aa062fe9e5d27d5f02c389a07f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzgzODUwMzI2MDg0ZDU2NzZkYWI2Y2NjMGQ3NGI3MjYwOGMzMjA5YWVhNzdlOTJjYzhjOTAzOTJiNjk3NDUxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzNlZWNjYmU0Nzc1Yjg0ZDA0NDljN2NmMWNhMDNkNThiOTYyMmE1MzdjZGE5ZmQ0ZDk1ZmM0ODdiM2RlNTM5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGU0NDc3MTEwNjQzNzU5NDYxMjY1NDEyNDc1OWM3MjNkMmQ3ZWVlODFhZjU1NDViZjg1OWE5ZjY5MzM3OWIzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTY2ZTg1M2U4OWNiNGZlMWRiMzE1ZTAwOTYyMzAwZDY0ZTQ1YjQ3ZGNkM2M3ZWQ3YzJjYzZlNjcwN2YzNjg2NyJ9"
         }
       ]
     },
@@ -197,10 +197,30 @@
           "version": "repo-lines-v1:sha256:77fa03fc8321779a0f0f135fe87f917c5d7178c03e420e2b775963ae85006a16:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U0NWZhYjU2MTZkMjNiMzk2NTdmYTIxN2E4OTc0Mjg3NGRhY2NlOTQ1MmNhMzc3Zjk5NDBmNmI3YzIzZjBkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODMwZmYwOGQzMTQ2ZWQ2OTM4NGJlOTFkNGE3OTUyZGUzZWI1N2EyNzlkMTRhM2I4ZmMzYWZmZGRjMTZiMjVkZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNlYWI4ZTczMzgwNWI4NDMyY2Q2YTJjMWUxNGQxZTFkZTdjMmM4NjgwMzFiMDNiNzI5MzYzNmQ4NzdhOWYwYyJ9"
         }
       ]
+    },
+    {
+      "id": "claim_1b1a85de4ead468194d3c830499b01ac",
+      "statement": "dev:web polls its jobs every 0.5s (no wait -n on macOS bash 3.2); the first server to exit, or an announcer failure, ends the task with that exit status, and an EXIT trap kills every remaining process group.",
+      "evidence": [
+        {
+          "resource": "repo://mise.toml#L42-L89",
+          "version": "repo-lines-v1:sha256:01f6555b2c827600b9064dd097f452e2f70035d0480acfa7ede1bc3e4235f787:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlZWRiYmJmMzFhNzdlYjFjNDQ3MzkyNzE3MDMxZGEzYThlYjQwYzIzNDA4ZjlhMmQ3ZjE5YzA1MzIyYzAzYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZDFkOTI4ZGVkMzRiNDZkZTQ5YTFmNzdmNjVkOWQ1NDlkNWE5YTk3YjQzNGQyOWE2OTMzMmZkMmM2MzRkOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwNzU5ZTA0NDA0ZDNhNzkyNTZkM2IyYThmMzZmMDNhYzk4YzlkNjE1NzJlZmNmZjYyZjU0MjViYTY3OGQ1MjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6e7fbbbd878f44aea904f10cc8f9c93b",
+      "statement": "The review app run by dev:review uses the langsmith CLI's own credentials rather than .env, so it needs a one-time langsmith auth login --prompt-workspace.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L163-L175",
+          "version": "repo-lines-v1:sha256:b297bb5d879c66c2424fe6ca70ddbedaafafc04de61457fcf1aefe08f427aceb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMDI3YjU1MjNjNWM0OGY2Yjc3OTE5ZjU4NjQwNjQwYmVhNmUxNGMzNThjOTQ5ZGI4MmMyNjU5MDZmY2IxMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxODcwOTBlZjJmMGI3ZWFmODg2N2Y1M2QzZTY4MDE0NDAzYmI5NWYzMmUxYTNlOWRmNDY3ZjQ2ZjZlY2U0OWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1MDlkNDllMjNmYmM1NTM0MjFjNmE4MTc1ZDgxMjQyYzBkYzZjYzlmMjNiYWJiZWFmNDhhZDgxZjNmNjVlNDMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-26T05:03:34.528Z"
+    "at": "2026-09-26T13:04:36.303Z"
   }
 }

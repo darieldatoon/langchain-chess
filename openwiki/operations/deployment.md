@@ -1,8 +1,11 @@
 ---
 type: operations guide
-title: Deployment, image build and CI
-description: How the langchain-chess Agent Server image is built from the uv workspace (langgraph.json source.kind uv), why dockerfile_lines copies every member pyproject.toml, how the web UI is built into apps/server static, and how ci.yml and deploy.yml gate and deploy the agent and review targets.
+title: Deployment and image build
+description: How CI gates merges, how deploy.yml ships the Agent Server image and deploy-review.yml publishes the review app (tip SHA resolved inside a queued concurrency lock, on.push path filters, superseded check), how langgraph.json builds the image from the uv workspace, and why dockerfile_lines lists every member pyproject.toml while workspace sources live only in the root pyproject.toml.
 tags: [deployment, ci, docker, langgraph, uv-workspace, github-actions]
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T13:04:36.303Z
 sources:
   - id: openwiki-source-715dace563ef484b6e8bd1e2
     resource: repo://.dockerignore
@@ -10,6 +13,8 @@ sources:
     resource: repo://.github/actions/setup/action.yml
   - id: openwiki-source-164e2da859b5277df81c7d94
     resource: repo://.github/workflows/ci.yml
+  - id: openwiki-source-e845435463a5dd656e3a8376
+    resource: repo://.github/workflows/deploy-review.yml
   - id: openwiki-source-6766b7a0c14857435d2077c9
     resource: repo://.github/workflows/deploy.yml
   - id: openwiki-source-ea70eb6c045047448e446296
@@ -22,6 +27,8 @@ sources:
     resource: repo://apps/server/langchain_chess_server/settings.py
   - id: openwiki-source-f5485618fdea35eba238fd7b
     resource: repo://apps/server/pyproject.toml
+  - id: openwiki-source-af9ed044b3462b6126b95a6e
+    resource: repo://apps/server/README.md
   - id: openwiki-source-0c7af728d91c2bdeaf4f3679
     resource: repo://apps/server/tests/test_app.py
   - id: openwiki-source-03f6dd3375679341910a29c1
@@ -32,22 +39,19 @@ sources:
     resource: repo://mise.toml
   - id: openwiki-source-05ccef8d4cf1698187f20464
     resource: repo://pyproject.toml
-  - id: openwiki-source-23775c3de52f3ab95a13cb8b
-    resource: repo://README.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T05:03:34.528Z
+  - id: openwiki-source-5d3885b801ad37ac84a9169b
+    resource: repo://scripts/superseded.sh
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
 ---
 
-# Deployment, image build and CI
+# Deployment and image build
 
-The repository deploys two things:
+The repository deploys two things, and each has its own workflow:
 
-- **agent**: the LangGraph Agent Server image `langchain-chess-app`. It serves the `chess` graph plus the web UI under `/ui`.
-- **review**: the `apps/review` LangSmith custom app.
+- **agent**: the LangGraph Agent Server image `langchain-chess-app`. It serves the `chess` graph plus the web UI under `/ui`. It is deployed by `.github/workflows/deploy.yml`.
+- **review**: the `apps/review` LangSmith custom app. It is published by `.github/workflows/deploy-review.yml`.
 
-Both are deployed from `.github/workflows/deploy.yml` on pushes to `main`, and both deploy only after the same checks that pull requests run (`.github/workflows/ci.yml`). This page covers the image build inputs, the workflows, and how to check a build locally. For the package layout see [package map](/openwiki/architecture/package-map.md). For the server's graph and HTTP app see [Agent Server integration](/openwiki/integrations/agent-server.md). For local dev servers and tasks see [local development](/openwiki/operations/local-development.md).
+Both workflows run on pushes to `main`, and both deploy only after the same checks that pull requests run (`.github/workflows/ci.yml`). This page covers the image build inputs, the workflows, and how to check a build locally. For the package layout see [package map](/openwiki/architecture/package-map.md). For the server's graph and HTTP app see [Agent Server integration](/openwiki/integrations/agent-server.md). For local dev servers and tasks see [local development](/openwiki/operations/local-development.md). For the test and coverage gates CI runs, see [testing conventions](/openwiki/testing/testing-conventions.md).
 
 ## Image build: `langgraph.json`
 
@@ -56,25 +60,25 @@ Both are deployed from `.github/workflows/deploy.yml` on pushes to `main`, and b
 - `python_version: "3.13"`, `image_distro: "wolfi"`.
 - `source: { kind: "uv", root: ".", package: "langchain-chess-server" }`. The image is built from the uv workspace and its `uv.lock`, not from a requirements list. The package installed as the app is the `apps/server` distribution.
 - `graphs.chess` points at `./apps/server/langchain_chess_server/graph.py:make_graph`, and `http.app` points at `./apps/server/langchain_chess_server/app.py:app`. The custom FastAPI app handles the UI routes.
-- `env: ".env"`. The deploy job writes this file (see below).
+- `env: ".env"`. The agent deploy job writes this file (see below).
 
 ### Why `dockerfile_lines` copies every member's `pyproject.toml`
 
-langgraph-cli (pinned in the root dev group as `langgraph-cli[inmem]==0.4.31`) copies only the root `pyproject.toml` into `/tmp/uv_export/project` before it runs `uv export`. The root is a *virtual* workspace with no package of its own. Its `[tool.uv.workspace] members` list is `libs/chess`, `libs/systemone`, `libs/cli` and `apps/server`, so the export cannot resolve the workspace without each member's manifest. `dockerfile_lines` fills the gap with one `ADD <member>/pyproject.toml /tmp/uv_export/project/<member>/pyproject.toml` line per member.
+langgraph-cli (pinned in the root dev group as `langgraph-cli[inmem]==0.4.31`) copies only the root `pyproject.toml` into `/tmp/uv_export/project` before it runs `uv export`. The root is a *virtual* workspace with no package of its own. Its `[tool.uv.workspace] members` list is `libs/chess`, `libs/systemone`, `libs/cli` and `apps/server`, so the export cannot resolve the workspace without each member's manifest. `dockerfile_lines` fills the gap with one `ADD <member>/pyproject.toml /tmp/uv_export/project/<member>/pyproject.toml` line per member. `apps/server/README.md` records this workaround.
 
-**Invariant:** keep `dockerfile_lines` in step with `[tool.uv.workspace] members`. If you add a member without an `ADD` line, the image build breaks. `libs/cli` is a member even though the server does not depend on it, so its manifest is copied too. This is also why the deploy path filter watches `libs/cli/pyproject.toml` (only that file, not the rest of `libs/cli`).
+**Invariant:** keep `dockerfile_lines` in step with `[tool.uv.workspace] members`. If you add a member without an `ADD` line, the image build breaks. `libs/cli` is a member even though the server does not depend on it, so its manifest is copied too. This is also why the agent path filter watches `libs/cli/pyproject.toml` (only that file, not the rest of `libs/cli`).
 
 The members are listed by name rather than with a glob. A glob over `apps/` would pick up `apps/web`, which has no `pyproject.toml`.
 
 ### Why workspace sources live only in the root `pyproject.toml`
 
-The root `[tool.uv.sources]` marks all four distributions (`langchain-chess`, `langchain-chess-systemone`, `langchain-chess-cli`, `langchain-chess-server`) as `{ workspace = true }`. The member manifests declare plain dependencies (for example, `apps/server/pyproject.toml` depends on `langchain-chess` and `langchain-chess-systemone`) and have no `[tool.uv.sources]` of their own. According to the README, each member is installed on its own inside the image, and a member-level `workspace = true` source fails there. Keep new workspace sources in the root file. The same root sources also let `uvx --from git+…#subdirectory=libs/cli` resolve the unpublished sibling packages from the same commit.
+The root `[tool.uv.sources]` marks all four distributions (`langchain-chess`, `langchain-chess-systemone`, `langchain-chess-cli`, `langchain-chess-server`) as `{ workspace = true }`. The member manifests declare plain dependencies (for example, `apps/server/pyproject.toml` depends on `langchain-chess` and `langchain-chess-systemone`) and have no `[tool.uv.sources]` of their own. According to `apps/server/README.md`, each member is installed on its own inside the image, and a member-level `workspace = true` source fails there. Keep new workspace sources in the root file. The same root sources also let `uvx --from git+…#subdirectory=libs/cli` resolve the unpublished sibling packages from the same commit.
 
 ### Build context: `.dockerignore`
 
-The image needs three things: the uv workspace (`libs/`, `apps/server/`, the lockfile) and the built UI under `apps/server/langchain_chess_server/static`. `.dockerignore` excludes everything else:
+The image needs two things: the uv workspace (`libs/`, `apps/server/`, the lockfile) and the built UI under `apps/server/langchain_chess_server/static`. `.dockerignore` excludes everything else:
 
-- `.git/`, virtualenvs, caches and coverage output.
+- `.git/`, virtualenvs, `node_modules`, caches and coverage output.
 - `**/tests/`, `plans/`, `docs/`, `.github/`.
 - The JS sources `apps/web/`, `apps/review/` and `packages/`.
 - Secrets and key material: `.env`, `.env.*` except `.env.example`, `*.pem`, `*.key`, `*.crt`, `credentials.json`.
@@ -97,54 +101,67 @@ run = [
 ]
 ```
 
-`--no-remote` builds the image locally (on the CI runner) from the `.dockerignore`d context and then pushes it to LangSmith Deployments.
+`--no-remote` builds the image locally (on the CI runner, or on your machine, which needs Docker with buildx) from the `.dockerignore`d context and then pushes it to LangSmith Deployments.
+
+## Deploy workflows
+
+`deploy.yml` (agent) and `deploy-review.yml` (review) have the same structure: a trigger with path filters, a workflow-level queued concurrency lock, a `tip` job, a call to `ci.yml`, and a deploy job that checks it has not been superseded.
 
 ```mermaid
 flowchart TD
-  Push["push to main or workflow_dispatch"] --> Changes["changes job: path filter"]
-  Changes -->|"agent or review true"| CI["ci.yml via workflow_call"]
-  CI --> AgentJob["agent job"]
-  CI --> ReviewJob["review job"]
-  AgentJob --> Env["write .env for deployment"]
-  Env --> Build["mise run build: Vite into apps/server static"]
-  Build --> Deploy["langgraph deploy --no-remote"]
-  Deploy --> Image["image langchain-chess-app on LangSmith"]
-  ReviewJob --> AppJson["write .langsmith/app.json from CUSTOM_APP_ID"]
-  AppJson --> Pushapp["langsmith apps push"]
+  Push["push to main touching a filtered path"] --> Lock["concurrency group, queue max"]
+  Dispatch["workflow_dispatch from main"] --> Lock
+  Lock --> Tip["tip job: resolve current main SHA"]
+  Tip --> CI["ci.yml via workflow_call at that SHA"]
+  CI --> Deploy["deploy job: checkout same SHA"]
+  Deploy --> Check["superseded.sh: newer main changed this target?"]
+  Check -->|"yes"| Fail["fail: re-run all jobs"]
+  Check -->|"no"| Ship["agent: write .env, mise run deploy / review: write app.json, langsmith apps push"]
 ```
 
-*Deploy workflow: path filter, shared CI gate, then the per-target deploy jobs.*
+*One deploy workflow run: queued lock, tip SHA, shared CI gate, superseded check, then the target-specific deploy.*
 
-## `deploy.yml`
+### Triggers and path filters
 
-**Triggers.** The workflow runs on `push` to `main`, and on `workflow_dispatch` with a `target` choice of `both`, `agent` or `review` (default `both`). A manual dispatch skips the path filters. Use it to retry a failed deploy that no later push would redo.
+Each workflow runs on `push` to `main` filtered by `on.push.paths`, and on `workflow_dispatch` (no inputs). A manual dispatch ignores the path filters, so it is the way to retry a failed deploy that no later push would redo. Every job is conditioned on `github.ref == 'refs/heads/main'` (via `tip`), so a dispatch from another branch skips.
 
-**`changes` job.** This job decides which targets to deploy:
+- **agent** (`deploy.yml`): `libs/chess/**`, `libs/systemone/**`, `libs/cli/pyproject.toml`, `apps/server/**`, `apps/web/**`, `packages/chess-ui/**`, `uv.lock`, `pyproject.toml`, `.python-version`, `langgraph.json`, `.dockerignore`, plus the shared set below and `.github/workflows/deploy.yml`.
+- **review** (`deploy-review.yml`): `apps/review/**`, `packages/chess-ui/**`, plus the shared set and `.github/workflows/deploy-review.yml`.
+- **shared** (in both): `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `package.json`, `vite.config.ts`, `tsconfig.json`, `mise.toml`, `mise.lock`, `.github/actions/setup/**`, `.github/workflows/ci.yml`, `scripts/superseded.sh`.
 
-- On dispatch, it follows `target`.
-- If `github.event.before` is not a known commit (a new branch or a force push), there is nothing to diff against, so both targets are deployed.
-- Otherwise it runs `git diff --name-only "$BEFORE" "$GITHUB_SHA"` and matches each path:
-  - **agent**: `libs/chess/*`, `libs/systemone/*`, `libs/cli/pyproject.toml`, `apps/server/*`, `apps/web/*`, `uv.lock`, `pyproject.toml`, `.python-version`, `langgraph.json`, `.dockerignore`.
-  - **review**: `apps/review/*`.
-  - **both**: `packages/chess-ui/*`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `package.json`, `vite.config.ts`, `tsconfig.json`, `mise.toml`, `mise.lock`, `.github/actions/setup/*`, `.github/workflows/deploy.yml`.
+A path missing from a filter causes a silent stale deploy. The workflow comments say to over-include rather than under-include when a deployable gains a dependency.
 
-A path missing from the filter causes a silent stale deploy. The workflow comment says to over-include rather than under-include when a deployable gains a dependency.
+### Concurrency queue and the tip SHA
 
-**`ci` job.** When either target is selected, this job calls `./.github/workflows/ci.yml` as a reusable workflow. Merges therefore deploy only behind the same checks that pull requests run. Both deploy jobs `need` it.
+Concurrency is set per workflow, so the whole run, CI included, holds the lock and deploys go out in push order. The groups are `deploy-agent-${{ github.ref }}` and `deploy-review-${{ github.ref }}`, with `queue: max`: a newer arrival waits its turn and never cancels a pending deploy. The group is per ref so that a branch dispatch, which skips anyway, cannot displace a pending `main` run. The workflow comments note that a newer run replacing a pending older one is acceptable only because every run of a workflow deploys the same target. That is why the review app is kept in its own workflow and group rather than sharing the agent's.
 
-**`agent` job** (30 min timeout, concurrency group `deploy-agent`, `cancel-in-progress: false`):
+The first job, `tip`, runs inside the lock and asks the GitHub API for the current `main` commit (`gh api repos/$GITHUB_REPOSITORY/commits/main`). It does not use the pushed `GITHUB_SHA`. It passes that SHA to `ci.yml` as the `ref` input and to the deploy job's checkout. So a retried or long-queued older run still ships `main` as it is now, and what deploys is exactly the commit that passed CI.
 
-1. Runs the setup action.
-2. Writes `.env` with the runtime variables `LANGSMITH_GATEWAY`, `LANGSMITH_GATEWAY_API_KEY`, `TYPESAFE_BASE_URL` and `TYPESAFE_API_KEY`. Both API keys come from the `LC_GATEWAY_KEY` repository secret. `langgraph deploy` re-sends this env file as the revision's secrets on every deploy, so the file must contain the *complete* runtime set. A variable left out could be dropped by a redeploy.
-3. Runs `mise run deploy -- --no-input` with `LANGSMITH_API_KEY` from secrets.
+### CI gate
 
-**`review` job** (15 min timeout, group `deploy-review`) runs only if review changed *and* the repository variable `CUSTOM_APP_ID` is non-empty. It sets up without Python, writes `apps/review/.langsmith/app.json` from `CUSTOM_APP_ID` (the CLI reads the app id only from that file, and it is not committed), and runs `langsmith apps push`.
+The `ci` job calls `./.github/workflows/ci.yml` as a reusable workflow with `ref` set to the tip SHA, and the deploy job `needs` both `tip` and `ci`. Merges therefore deploy only behind the same checks that pull requests run.
 
-Concurrency is set per job, not per workflow. A queued run replaces the pending run in its group, and a later run that skips a job must not replace a pending deploy of that job. Neither group cancels a deploy that is already running.
+### Superseded check
+
+Re-running only the deploy job in the Actions UI reuses the earlier `tip` output and CI result, while `main` may have moved. Before deploying, each deploy job fetches the current `main` and runs `scripts/superseded.sh <workflow file> <tested sha> <main sha>`. The script reads the workflow's `on.push.paths` from **main's** copy of the file (with `yq`), turns each into a `:(glob)` pathspec so `**` and `*` match the way GitHub's filters do, and prints `git diff --name-only` between the two SHAs. Any output means a newer run of that workflow will deploy this target, so the job fails with an error asking you to re-run all jobs. If `main` moved only in unrelated paths, the deploy proceeds with the tested SHA.
+
+### `agent` job (`deploy.yml`)
+
+30-minute timeout. It checks out the tip SHA and runs the setup action. Then it:
+
+1. Writes `.env` with the runtime variables `LANGSMITH_GATEWAY`, `LANGSMITH_GATEWAY_API_KEY`, `TYPESAFE_BASE_URL` and `TYPESAFE_API_KEY`. Both API keys come from the `LC_GATEWAY_KEY` repository secret. `langgraph deploy` re-sends this env file as the revision's secrets on every deploy, so the file must contain the *complete* runtime set. A variable left out could be dropped by a redeploy.
+2. Runs the superseded check against `deploy.yml`.
+3. Runs `mise run deploy -- --no-input` with the `LANGSMITH_API_KEY` repository secret.
+
+At runtime `ServerSettings` (`apps/server/langchain_chess_server/settings.py`) reads the shell, then `.env`, and rejects `LANGSMITH_GATEWAY_API_KEY`, `TYPESAFE_API_KEY` or `TYPESAFE_BASE_URL` when set but blank. `make_graph` constructs it for each run, so an empty secret written into the deployment `.env` makes runs fail loudly instead of falling back silently to another key.
+
+### `review` job (`deploy-review.yml`)
+
+15-minute timeout. The whole workflow is skipped until the repository variable `CUSTOM_APP_ID` is set: `tip` requires both `main` and a non-empty `CUSTOM_APP_ID`. The job sets up without Python (`python: false`) and runs the superseded check against `deploy-review.yml`. Then, in `apps/review`, it writes `.langsmith/app.json` (`app_id` from `CUSTOM_APP_ID`, `name` `langchain-chess-review`) and runs `langsmith apps push` with `LANGSMITH_API_KEY`. The file is written here because the CLI reads the app id only from it, and it is not committed.
 
 ## `ci.yml`
 
-`ci.yml` runs on `pull_request` (except for changes only to `**/*.md`, `plans/**` or `openwiki/**`) and on `workflow_call` from deploy. The concurrency group is `ci-<PR number or run id>` with `cancel-in-progress: true`. A called run gets its own group, so a new merge never cancels the checks of a deploy in progress.
+`ci.yml` runs on `pull_request` (except for changes only to `**/*.md`, `plans/**` or `openwiki/**`) and on `workflow_call` from the deploy workflows. The `workflow_call` input `ref` names the exact commit to check. Both jobs pass it to `actions/checkout`, and an empty value checks the triggering commit. The concurrency group is `ci-<PR number or run id>` with `cancel-in-progress: true`. A called run gets its own group, so a new merge never cancels the checks of a deploy in progress.
 
 - **python** job: setup with `web: false`, then `mise run check:python` (ruff format check, ruff lint, `ty check`) and `mise run test:python` (`pytest -q -n auto` with the 100% coverage gate from the root pytest/coverage config; live tests are deselected by `-m "not live"`).
 - **web** job: setup with `python: false`, then `mise run check:web` (`vp check`), `mise run test:web` (`vp run -r test` with 100% coverage thresholds), and `mise run review:size`. That last task builds `apps/review` and runs `scripts/upload-size.mjs`, because `langsmith apps push` uploads the directory whole with a budget of 5 MiB, 500 files, text only.
@@ -160,15 +177,24 @@ Concurrency is set per job, not per workflow. A queued run replaces the pending 
 
 Package caches (the uv cache and uv-managed Python, keyed on `uv.lock` and `.python-version`; the pnpm store, keyed on `pnpm-lock.yaml`) are saved only on `main`. Other refs only restore, because caches scoped to one PR can't be read by other PRs.
 
+## Secrets and variables
+
+| Name | Kind | Used by |
+|---|---|---|
+| `LANGSMITH_API_KEY` | repository secret | `mise run deploy` (agent) and `langsmith apps push` (review) |
+| `LC_GATEWAY_KEY` | repository secret | written into the agent `.env` as `LANGSMITH_GATEWAY_API_KEY` and `TYPESAFE_API_KEY` |
+| `CUSTOM_APP_ID` | repository variable | review app id; the review workflow skips while it is empty |
+
 ## Local smoke builds and manual deploys
 
 - Build the image locally without deploying: `uv run --all-packages langgraph build -t langchain-chess:smoke`. Run `mise run build` first if you want the UI inside the image. Otherwise `/ui/` returns the "UI not built" 404.
-- Manual deploy from a workstation: `mise run deploy`. It needs `LANGSMITH_API_KEY` in the environment and a complete `.env` with the runtime variables listed above. Prefer `workflow_dispatch` so that CI gates the deploy.
+- Manual deploy from a workstation: `mise run deploy`. It needs Docker with buildx, `LANGSMITH_API_KEY` in the environment, and a complete `.env` with the runtime variables listed above. Prefer `workflow_dispatch` from `main` so that CI gates the deploy.
 - Check the review app's upload budget: `mise run review:size`.
 
 ## Changing things safely
 
-- **Adding a workspace member:** add it to the root `members` and `[tool.uv.sources]`, add an `ADD` line to `dockerfile_lines`, add its `pyproject.toml` to the `agent` filter in `deploy.yml` (every member's manifest is copied into the image, whether or not the server imports it) and its source paths if the server depends on it, and add it to the pytest/ruff/coverage lists in the root `pyproject.toml`.
+- **Adding a workspace member:** add it to the root `members` and `[tool.uv.sources]` (not to the member's own manifest), add an `ADD` line to `dockerfile_lines`, add its `pyproject.toml` to the `on.push.paths` of `deploy.yml` (every member's manifest is copied into the image, whether or not the server imports it) and its source paths if the server depends on it, and add it to the pytest/ruff/coverage lists in the root `pyproject.toml`.
 - **Adding a runtime environment variable:** add it to the `.env` heredoc in the `agent` job. Otherwise the next deploy won't carry it.
-- **New build input for the server or UI:** add its path to the deploy filter.
+- **New build input for the server, UI or review app:** add its path to the matching workflow's `on.push.paths`. `superseded.sh` reads the same list, so it needs no separate change.
+- **Adding another deploy target:** give it its own workflow and concurrency group. Queued-run replacement is safe only when every run of a workflow deploys the same target.
 - **Excluding files from the image:** edit `.dockerignore`. Don't exclude `apps/server/langchain_chess_server/static`.

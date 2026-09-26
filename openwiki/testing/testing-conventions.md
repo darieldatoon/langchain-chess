@@ -6,12 +6,20 @@ tags: [testing, coverage, pytest, vitest, fakes, snapshots, live-tests, uci]
 sources:
   - id: openwiki-source-164e2da859b5277df81c7d94
     resource: repo://.github/workflows/ci.yml
+  - id: openwiki-source-e845435463a5dd656e3a8376
+    resource: repo://.github/workflows/deploy-review.yml
+  - id: openwiki-source-6766b7a0c14857435d2077c9
+    resource: repo://.github/workflows/deploy.yml
+  - id: openwiki-source-07458769070f9e24433ab7fd
+    resource: repo://apps/review/tests/support/fixtures.ts
   - id: openwiki-source-1c7945f632aab9aad6118b88
     resource: repo://apps/review/vite.config.ts
   - id: openwiki-source-399df37e47710a2e15d69670
     resource: repo://apps/server/tests/conftest.py
   - id: openwiki-source-81f430313af7099d0ab0f750
     resource: repo://apps/server/tests/test_live.py
+  - id: openwiki-source-c5be26edbecc900286e62bd7
+    resource: repo://apps/server/tests/test_server.py
   - id: openwiki-source-99de51df25f29bfc72caf823
     resource: repo://apps/web/package.json
   - id: openwiki-source-af065fe99821f520742e70e5
@@ -44,10 +52,12 @@ sources:
     resource: repo://packages/chess-ui/vite.config.ts
   - id: openwiki-source-05ccef8d4cf1698187f20464
     resource: repo://pyproject.toml
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
+  - id: openwiki-source-5e1b077422a94ae165e88e4e
+    resource: repo://vite.config.ts
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-26T05:03:34.528Z
+    at: 2026-09-26T13:04:36.303Z
 ---
 
 # Testing conventions
@@ -84,7 +94,7 @@ flowchart TD
 | `mise run test:live` | `uv run --all-packages --env-file .env pytest -m live --no-cov -q` |
 | `mise run test:uci` | A two-game fastchess match of `lcchess uci` against itself |
 
-The lefthook `pre-push` hook runs `mise run test`. The `pre-commit` hook only runs format, lint, type and secret checks on staged files, so commits stay fast. The CI workflow (`.github/workflows/ci.yml`) runs `check:python` + `test:python` and `check:web` + `test:web` as separate jobs. None of the configured automation (lefthook, `ci.yml`, `mise run test`) runs `test:live` or `test:uci`.
+The lefthook `pre-push` hook runs `mise run test`. The `pre-commit` hook only runs format, lint, type and secret checks on staged files, so commits stay fast. The CI workflow (`.github/workflows/ci.yml`) runs `check:python` + `test:python` and `check:web` + `test:web` as separate jobs, each with a 15-minute timeout. The web job also runs `mise run review:size`, which builds `apps/review` and checks it against the `langsmith apps push` upload budget (5 MiB, 500 files, text only). CI triggers on pull requests (ignoring Markdown, `plans/**` and `openwiki/**` changes) and is also invoked via `workflow_call` from the deploy workflows (`deploy.yml`, `deploy-review.yml`), so a merge deploys behind exactly these checks, run against the given `ref`. See [Deployment](/openwiki/operations/deployment.md). None of the configured automation (lefthook, `ci.yml`, `mise run test`) runs `test:live` or `test:uci`.
 
 ## Python: pytest configuration
 
@@ -146,7 +156,7 @@ See [Web frontends](/openwiki/architecture/web-frontends.md) for the components 
 
 ## JS: Vitest through vp
 
-Each JS package (`apps/web`, `apps/review`, `packages/chess-ui`) has a `vite.config.ts` built with `vite-plus`'s `defineConfig`, and a `test` script `vp test --run --coverage`. The test configurations are nearly identical:
+Each JS package (`apps/web`, `apps/review`, `packages/chess-ui`) has a `vite.config.ts` built with `vite-plus`'s `defineConfig`, and a `test` script `vp test --run --coverage`. The repo-root `vite.config.ts` holds only the `lint` and `fmt` settings, because Vite+ ignores those blocks in nested configs. Test settings therefore live in each package's config. The test configurations are nearly identical:
 
 - `environment: "jsdom"`, `globals: false` (import `vi`/`expect` explicitly, from `vite-plus/test`), and a `./tests/support/setup.ts` setup file.
 - Tests match `tests/**/*.test.{ts,tsx}`. Coverage uses `provider: "v8"` over `src/**/*.{ts,tsx}`, excluding `.d.ts` files.
@@ -164,6 +174,13 @@ Each JS package (`apps/web`, `apps/review`, `packages/chess-ui`) has a `vite.con
 - The full `ChessApp` game screen after the user plays `e4`, with the reply from a `ScriptedModel` whose script is `"…\nMOVE: e5"`.
 
 To accept a deliberate visual change, run `pytest --snapshot-update` serially (not under `-n auto`, as noted above). The module docstring asks you to open the SVGs under `__snapshots__/` and look at them before accepting the update.
+
+## Offline server test
+
+`apps/server/tests/test_server.py` is in the default suite, not `live`. It uses `langgraph_dev` to boot a real server with a generated `.env` that holds fake gateway keys and `LANGSMITH_TRACING=false`. It also strips every `LANGSMITH_`, `LANGCHAIN_`, `TYPESAFE_` and `LC_` variable from the process environment, so there are no System 1 keys and none of the shell's LangSmith settings. No run reaches a model. It checks what the in-process tests can't:
+
+- A run paused before summarization (settings `policy: "llm"`, `memory: "summarize"`, passed either as run config or as assistant context) reads back with the same `next` and `setup`. The graph the server describes has the same nodes as `topology()` of the graph that ran. This matters because the server rebuilds the graph without the run's settings to read a thread and describe the graph.
+- A `hybrid` run without System 1 keys ends in `error` before writing anything, and its thread still reads back as empty state.
 
 ## Live tests (opt-in, cost money)
 
@@ -189,5 +206,8 @@ The live modules that use asyncio (`libs/chess`, `libs/systemone`, `libs/cli`) m
 1. It runs inside the gitignored `.uci-match/` directory, because fastchess writes its `config.json` to the working directory.
 2. It pits two `lcchess uci --policy systemone` engines against each other, with seeds 1 and 2. Each engine gets `st=3` (3 s per move) and `timemargin=2000`. The match is 1 round of 2 games, capped at 60 moves, and writes `games.pgn` and a warn-level `fastchess.log` that includes engine output.
 3. It passes only if both games have a `[Result "1-0"|"0-1"|"1/2-1/2"]` and no `[Termination …]` tag is anything other than `normal` or `adjudication`. That means no forfeits from timeouts, crashes or illegal moves. On success it prints `test:uci: 2 games finished, no forfeits`.
+
+Because it uses the SemIf-only `systemone` policy through `.env`, this test also calls the real gateway. Like the live tests, you run it manually.
+moves. On success it prints `test:uci: 2 games finished, no forfeits`.
 
 Because it uses the SemIf-only `systemone` policy through `.env`, this test also calls the real gateway. Like the live tests, you run it manually.

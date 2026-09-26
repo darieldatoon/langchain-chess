@@ -1,9 +1,12 @@
+import threading
+
 import chess
 import pytest
 from langchain_typesafe import TypeSafeClassifier
 from langchain_typesafe.client import TypeSafeAPITimeoutError, TypeSafeRateLimitError
 
 from langchain_chess_systemone import GatewayRanker, RankingFailed, RankRequest
+from langchain_chess_systemone import ranker as ranker_module
 from langchain_chess_systemone.ranker import backoff_seconds, default_max_options
 from langchain_chess_systemone.testing import FakeTypeSafeClient, api_error, choice_answer
 
@@ -54,6 +57,20 @@ async def test_a_single_ranking(rank):
     assert list(sent["questions"]) == ["move"]
     assert "Only some" not in sent["questions"]["move"].instructions
     assert sent["state"]["side_to_move"] == "white"
+
+
+async def test_arank_describes_moves_off_the_event_loop(monkeypatch):
+    threads: list[int] = []
+    describe = ranker_module.describe_moves
+
+    def recording(*args, **kwargs):
+        threads.append(threading.get_ident())
+        return describe(*args, **kwargs)
+
+    monkeypatch.setattr(ranker_module, "describe_moves", recording)
+    await ranker(FakeTypeSafeClient()).arank(rank_request())
+    assert threads
+    assert threading.get_ident() not in threads
 
 
 async def test_the_request_state_uses_recent_san(rank):
@@ -136,6 +153,7 @@ async def test_other_errors_fail_immediately(rank):
     with pytest.raises(RankingFailed, match="invalid SemIf request") as caught:
         await rank(ranker(client), rank_request())
     assert caught.value.calls == ()
+    assert caught.value.elapsed_ms > 0
     assert len(client.requests) == 1
 
 

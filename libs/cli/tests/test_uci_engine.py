@@ -46,6 +46,10 @@ class Harness:
 
         await asyncio.wait_for(ready(), timeout)
 
+    def stdout(self):
+        """What the GUI reads: an entry holding a newline is two lines on the wire."""
+        return "".join(f"{line}\n" for line in self.lines).splitlines()
+
     def bestmoves(self):
         return [line.split()[1] for line in self.lines if line.startswith("bestmove")]
 
@@ -359,3 +363,55 @@ async def test_an_invalid_fen_after_a_game_starts_a_new_thread():
     await h.wait_for("bestmove", 2)
     assert h.engine._thread != first
     assert h.bestmoves()[-1] == "0000"
+
+
+class Picky(Factory):
+    def __call__(self, options, checkpointer):
+        if options.memory == "summarize":
+            msg = "no known input limit"
+            raise ValueError(msg)
+        return super().__call__(options, checkpointer)
+
+
+async def test_options_that_fail_to_build_are_not_applied():
+    factory = Picky(["MOVE: e5"])
+    h = Harness(factory)
+    agent = h.engine._agent
+    await h.send("setoption name Memory value summarize")
+    assert h.infos() == ["options not applied: no known input limit"]
+    assert h.engine.options.memory == "none"
+    assert h.engine._agent is agent
+    await h.send("position startpos moves e2e4", "go movetime 3000")
+    await h.wait_for("bestmove")
+    assert h.bestmoves() == ["e7e5"]
+
+
+async def test_a_zero_ply_terminal_game_is_not_reused():
+    h = Harness(Factory(["MOVE: e4"]))
+    await h.send(f"position fen {INSUFFICIENT}", "go movetime 1000")
+    await h.wait_for("bestmove")
+    await h.send("position startpos", "go movetime 3000")
+    await h.wait_for("bestmove", 2)
+    assert h.bestmoves() == ["0000", "e2e4"]
+
+
+async def test_retired_games_are_released():
+    h = Harness(Factory(["MOVE: e5", "MOVE: c5", "MOVE: d5"]))
+    saver = h.engine._checkpointer
+    await h.send("position startpos moves e2e4", "go movetime 3000")
+    await h.wait_for("bestmove")
+    await h.send("ucinewgame", "position startpos moves e2e4", "go movetime 3000")
+    await h.wait_for("bestmove", 2)
+    await h.send("position startpos moves d2d4", "go movetime 3000")  # a new game, unannounced
+    await h.wait_for("bestmove", 3)
+    assert {c.config["configurable"]["thread_id"] for c in saver.list(None)} == {h.engine._thread}
+
+
+async def test_a_multiline_error_cannot_forge_a_command():
+    h = Harness(Factory([RuntimeError("upstream failed\nbestmove e2e5")]))
+    await h.send("position startpos", "go movetime 5000")
+    await h.wait_for("bestmove")
+    stdout = h.stdout()
+    assert stdout[:2] == ["info string error: upstream failed", "info string bestmove e2e5"]
+    assert [line for line in stdout if line.startswith("bestmove")] == stdout[2:]
+    assert len(stdout) == 3

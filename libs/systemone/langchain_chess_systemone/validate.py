@@ -38,12 +38,16 @@ def validate_choice(
         msg = "probabilities must be finite and within [0, 1]"
         raise MalformedChoice(msg)
     total = sum(values)
-    if abs(total - 1.0) > _tolerance(values):
+    # The per-option tolerance reaches 1 at 200 options, so it alone would admit an all-zero sum.
+    if total <= 0.0 or abs(total - 1.0) > _tolerance(values):
         msg = f"probabilities sum to {total:.6f}, not 1"
         raise MalformedChoice(msg)
     if not (math.isfinite(confidence) and 0.0 <= confidence <= 1.0):
         msg = f"confidence {confidence} is not within [0, 1]"
         raise MalformedChoice(msg)
+    # Scale down only: scaling a rounded-away shortfall up would inflate the top move and the
+    # margin gate with it (0.85 plus 32 zeros would become 1.0).
+    scale = max(total, 1.0)
     order = sorted(range(len(options)), key=lambda i: (-values[i], i))
-    ranked = tuple(Candidate(uci=options[i], probability=values[i] / total) for i in order)
+    ranked = tuple(Candidate(uci=options[i], probability=values[i] / scale) for i in order)
     return ChoiceResult(ranked=ranked, confidence=confidence)

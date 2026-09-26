@@ -18,13 +18,20 @@ describe("status", () => {
     outcome: null,
     fen: START_FEN,
     moveCount: 0,
-    humanSide: "white" as Side,
+    humanSide: "white" as Side | null,
     pending: false,
   };
 
   it("shows the outcome once there is one", () => {
     const draw = { kind: "draw", reason: "stalemate" } as const;
     expect(statusLine({ ...base, outcome: draw })).toBe("Draw by stalemate. 1/2-1/2");
+    expect(statusLine({ ...base, humanSide: null, outcome: draw })).toBe(
+      "Draw by stalemate. 1/2-1/2",
+    );
+  });
+
+  it("says a game this browser can't play is view only", () => {
+    expect(statusLine({ ...base, humanSide: null })).toBe("View only.");
   });
 
   it("says whose move it is", () => {
@@ -49,14 +56,22 @@ describe("status", () => {
     expect(describeError({ detail: "x" })).toBe('{"detail":"x"}');
   });
 
-  it("recognises only auth failures by status or message", () => {
+  it("recognises only the server refusing the request, by status or the SDK's message", () => {
     const http = (status: number, message: string) =>
       Object.assign(new Error(`HTTP ${status}: ${message}`), { status });
     expect(isAuthError(http(401, "Unauthorized"))).toBe(true);
     expect(isAuthError(Object.assign(new Error("denied"), { status: 403 }))).toBe(true);
-    expect(isAuthError(new Error("Forbidden"))).toBe(true);
-    expect(isAuthError("401 Unauthorised")).toBe(true);
+    expect(isAuthError(new Error("Protocol request failed: 401 Unauthorized — bad key"))).toBe(
+      true,
+    );
+    expect(isAuthError(new Error("Thread state request failed: 403 Forbidden"))).toBe(true);
     expect(isAuthError(http(500, "Internal Server Error"))).toBe(false);
+    // A run that failed on the server's own model credentials is not the browser's key.
+    expect(isAuthError(new Error("AuthenticationError: Error code: 401 - invalid x-api-key"))).toBe(
+      false,
+    );
+    expect(isAuthError(new Error("Forbidden"))).toBe(false);
+    expect(isAuthError("HTTP 401: Unauthorized")).toBe(false);
     expect(isAuthError(new Error("provider 4013 overloaded"))).toBe(false);
     expect(isAuthError(new Error("Failed to fetch"))).toBe(false);
     expect(isAuthError(undefined)).toBe(false);

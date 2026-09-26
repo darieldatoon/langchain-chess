@@ -6,6 +6,8 @@ check. The static directory is the Vite build output, produced in CI right befor
 `/ui/config` still answers.
 """
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
@@ -15,6 +17,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import TypeAdapter
 
+from langchain_chess_server.clients import POOL
 from langchain_chess_server.context import ChessContext
 from langchain_chess_server.graph import model_limit
 
@@ -31,8 +34,23 @@ def ui_config() -> dict[str, Any]:
     }
 
 
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """The Agent Server merges this app's lifespan with its own, so graph clients close too."""
+    try:
+        yield
+    finally:
+        await POOL.aclose()
+
+
 def create_app(static_dir: Path | None = STATIC_DIR) -> FastAPI:
-    app = FastAPI(title="langchain-chess ui", docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(
+        title="langchain-chess ui",
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+        lifespan=lifespan,
+    )
 
     @app.get("/ui/config")
     def config() -> dict[str, Any]:

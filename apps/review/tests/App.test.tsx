@@ -1,9 +1,9 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import type { Api, GamesPage } from "../src/api";
+import { createApi, type Api, type GamesPage } from "../src/api";
 import { App } from "../src/App";
 import { HostTheme } from "../src/HostTheme";
-import { game } from "./support/fixtures";
+import { game, review, reviewFeedback, values } from "./support/fixtures";
 
 vi.mock("react-chessboard", async () => (await import("./support/mocks")).chessboardMock());
 vi.mock("@langchain/macaw-components/LineChart", async () =>
@@ -98,6 +98,76 @@ describe("App", () => {
     fireEvent.change(screen.getByLabelText("Window"), { target: { value: "1" } });
     await act(async () => resolveFirst({ games: [game()], cursor: null }));
     expect(screen.queryByText("1-0")).toBeNull();
+  });
+
+  it("drops a load-more that settles after the project changed", async () => {
+    const pending: {
+      resolve: (page: GamesPage) => void;
+      reject: (e: Error) => void;
+    }[] = [];
+    const api = fakeApi();
+    show(api);
+    const more = () => {
+      api.games.mockImplementationOnce(
+        () => new Promise<GamesPage>((resolve, reject) => pending.push({ resolve, reject })),
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Load more" }));
+    };
+    await screen.findByRole("button", { name: "Load more" });
+    more();
+    fireEvent.change(screen.getByLabelText("Project"), { target: { value: "p-local" } });
+    const loadMore = await screen.findByRole("button", { name: "Load more" });
+    expect(screen.getAllByText(/7 plies/)).toHaveLength(1);
+    await act(async () =>
+      pending[0].resolve({ games: [game({ threadId: "t-old" })], cursor: null }),
+    );
+    expect(screen.getAllByText(/7 plies/)).toHaveLength(1);
+    expect(loadMore).toBeInTheDocument();
+
+    more();
+    fireEvent.change(screen.getByLabelText("Project"), { target: { value: "p-app" } });
+    await screen.findByRole("button", { name: "Load more" });
+    await act(async () => pending[1].reject(new Error("stale failure")));
+    expect(screen.queryByText("stale failure")).toBeNull();
+  });
+
+  it("draws only what LangSmith's answers can back", async () => {
+    const thread = (id: string) => ({
+      thread_id: id,
+      count: 1,
+      min_start_time: "2026-09-25T12:00:00Z",
+      max_start_time: "2026-09-25T12:00:00Z",
+      last_trace_id: `${id}-run`,
+    });
+    const run = (id: string, outputs: unknown) => ({
+      id: `${id}-run`,
+      trace_id: `${id}-run`,
+      start_time: "",
+      metadata: { policy: "llm", model: id },
+      outputs,
+    });
+    const call = vi.fn(async (operation: string) => {
+      if (operation === "GET /api/v1/sessions") return PROJECTS;
+      if (operation === "POST /api/v2/threads/query") {
+        return { items: [thread("not-chess"), thread("huge-multipv")], next_cursor: null };
+      }
+      if (operation === "POST /api/v2/runs/query") {
+        return {
+          items: [
+            run("not-chess", { moves: [{ from: "a", to: "b" }] }),
+            run("huge-multipv", values()),
+          ],
+        };
+      }
+      return [reviewFeedback("huge-multipv-run", review({ settings: { multipv: 4294967296 } }))];
+    });
+    show(createApi(call));
+    fireEvent.click(await screen.findByText("not-chess"));
+    expect(screen.getByText("No game record")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("huge-multipv"));
+    const lines = within(screen.getByLabelText("engine lines"));
+    expect(lines.getByText("Engine lines before the move")).toBeInTheDocument();
+    expect(screen.getByLabelText("engine lines").children).toHaveLength(2);
   });
 
   it("shows request failures", async () => {

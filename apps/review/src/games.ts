@@ -1,6 +1,7 @@
 // Games as the list shows them, built from thread summaries, root runs and reviews. Pure.
 import type { ChessValues, Outcome } from "@langchain-chess/chess-ui";
-import type { GameReview } from "./review";
+import type { Grading } from "./review";
+import { decodeValues } from "./values";
 
 /** An item of `POST /api/v2/threads/query`. */
 export interface ThreadItem {
@@ -17,7 +18,7 @@ export interface RootRun {
   trace_id: string;
   start_time: string;
   metadata: Record<string, unknown> | null;
-  outputs: ChessValues | null;
+  outputs: unknown;
 }
 
 export interface Game {
@@ -28,7 +29,7 @@ export interface Game {
   matchup: string;
   /** Null when the last run carries no game record (it errored, or it isn't a chess run). */
   values: ChessValues | null;
-  review: GameReview | null;
+  grading: Grading;
 }
 
 /** `langsmith:anthropic/claude-opus-5-5` and `anthropic:claude-opus-5-5` read as the model. */
@@ -58,12 +59,25 @@ export function resultText(outcome: Outcome | null | undefined): string {
   return outcome.winner === "white" ? "1-0" : "0-1";
 }
 
+const UNGRADED: Grading = { status: "ungraded" };
+
+/** A review of other moves than the game's would draw the wrong evaluations on the board. */
+function against(values: ChessValues | null, grading: Grading): Grading {
+  const moves = values?.moves;
+  if (grading.status !== "graded" || !moves) return grading;
+  const plies = grading.review.plies;
+  const matches = plies.length === moves.length && plies.every((p, i) => p.uci === moves[i]);
+  return matches
+    ? grading
+    : { status: "invalid", problem: "it grades different moves than the game's" };
+}
+
 export function toGame(
   thread: ThreadItem,
   run: RootRun | undefined,
-  review: GameReview | undefined,
+  grading: Grading = UNGRADED,
 ): Game {
-  const values = run?.outputs && Array.isArray(run.outputs.moves) ? run.outputs : null;
+  const values = decodeValues(run?.outputs);
   return {
     threadId: thread.thread_id,
     lastRunId: thread.last_trace_id,
@@ -71,6 +85,6 @@ export function toGame(
     turns: thread.count,
     matchup: matchup(run?.metadata ?? null),
     values,
-    review: review ?? null,
+    grading: against(values, grading),
   };
 }

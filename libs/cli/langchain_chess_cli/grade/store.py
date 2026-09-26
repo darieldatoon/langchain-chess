@@ -86,15 +86,19 @@ class LangSmithStore:
         The last entry is written only after all the others: it marks the game as graded.
         """
         stale = [
-            fb.id
+            fb
             for fb in self._client.list_feedback(
                 run_ids=[r.id for r in runs], feedback_key=list(KEYS)
             )
             if _ours(fb) is not None
         ]
+        # The game reads as graded while an old marker survives, so markers go first.
+        markers = [f.id for f in stale if f.key == REVIEW_KEY]
+        others = [f.id for f in stale if f.key != REVIEW_KEY]
         *rest, marker = entries
         with ThreadPoolExecutor(self._write_concurrency) as pool:
-            list(pool.map(self._client.delete_feedback, stale))
+            list(pool.map(self._client.delete_feedback, markers))
+            list(pool.map(self._client.delete_feedback, others))
             list(pool.map(self._create, rest))
         self._create(marker)
 

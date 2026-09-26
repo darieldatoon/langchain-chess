@@ -1,8 +1,8 @@
 ---
 type: operations guide
 title: Local development toolchain
-description: How the repo's single mise.toml supplies every tool and task (setup, dev:web with port checks, dev:tui, dev:uci, dev:review, check, test, test:live, build, wiki tasks), how .env is loaded explicitly with --env-file, how Socket Firewall (sfw) wraps dependency installs, what the lefthook git hooks enforce, and how the OpenWiki update workflow runs.
-tags: [mise, toolchain, local-development, lefthook, sfw, environment, openwiki, tasks]
+description: How the repo's single mise.toml supplies every tool and task (setup, dev:web with port checks, dev:tui, dev:uci, dev:review, check, test, test:live, build, wiki tasks), how .env is loaded explicitly with --env-file, how Socket Firewall (sfw) wraps dependency installs, what the lefthook git hooks enforce, common troubleshooting fixes, and how the OpenWiki update workflow runs.
+tags: [mise, toolchain, local-development, lefthook, sfw, environment, openwiki, tasks, troubleshooting]
 sources:
   - id: openwiki-source-5f5b95b3d6a215fa02ceb945
     resource: repo://.env.example
@@ -28,10 +28,10 @@ sources:
     resource: repo://scripts/setup-worktree.sh
   - id: openwiki-source-d40d5b1418858a88965a8a23
     resource: repo://t3.json
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-26T05:03:34.528Z
+    at: 2026-09-26T13:04:36.303Z
 ---
 
 # Local development toolchain
@@ -139,10 +139,23 @@ Shared JS versions live in the `pnpm-workspace.yaml` catalog. The OpenWiki workf
 - **pre-commit** (parallel, staged-file scope so it stays fast):
   - `vp check` when `*.{ts,tsx,css,json}` files are staged.
   - `ruff format --check` and `ruff check` on staged `*.py` files, plus `ty check` whenever Python is staged.
-  - A secrets scan over the added lines of `git diff --cached`, excluding `lefthook.yml` itself. It rejects the commit on patterns that look like Anthropic, OpenAI project, LangSmith, TypeSafe live or GitHub personal tokens. The patterns require a key body, so the regex never matches its own definition.
+  - A secrets scan over the added lines of `git diff --cached`, excluding `lefthook.yml` itself. It rejects the commit on patterns that look like Anthropic, OpenAI project, LangSmith, TypeSafe live or GitHub personal tokens. The patterns require a key body, so the regex never matches its own definition. The scan checks each staged file separately (NUL-separated names, literal pathspecs, so unusual file names still get scanned) and prints only the names of the matching files, never the matched line, so the secret never lands in the log.
+  - `vp check` and `ty check` run over the whole repo. Only the ruff commands take `{staged_files}`; the globs only decide whether each command runs.
 - **pre-push**: `mise run test`, the full Python and web suites with coverage gates.
 
-CI runs the same `mise run check` and `mise run test` on pull requests. See [Deployment](/openwiki/operations/deployment.md) for the workflows.
+CI runs the same `mise run check` and `mise run test` on pull requests. See [Deployment](/openwiki/operations/deployment.md) for the workflows. `mise.toml` is a shared deploy input, so a push to `main` that changes it redeploys both targets. Deploy jobs also use `scripts/superseded.sh` to skip deploying a SHA that a newer `main` has overtaken; see Deployment for details.
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `error: port 2024 is already in use` from `dev:web` | Stop the other server, or pick other ports: `LANGGRAPH_PORT=2034 WEB_PORT=5180 mise run dev`. |
+| `error: the servers were not up within 2 minutes` | One of the servers failed to become ready. Check the `langgraph dev` and Vite output above the error. |
+| The server exits because the gateway key is empty | Export `LC_GATEWAY_KEY` in the shell that runs `mise`. |
+| 403 on traces or grading | Set `LANGSMITH_WORKSPACE_ID` to the tracing key's workspace. |
+| `lcchess grade` can't find the game | Pass the project it was traced to: `--project langchain-chess-local` locally, `langchain-chess-app` for the deployment. |
+| `dev:review` can't reach LangSmith | The review app uses the `langsmith` CLI's own credentials, not `.env`. Run `langsmith auth login --prompt-workspace` once. |
+| Commit rejected with `possible secret in staged changes to:` | Remove the token from the listed files. Keep keys in `.env` or the shell. |
 
 ## OpenWiki tasks and update workflow
 
@@ -167,6 +180,11 @@ The **`openwiki-update`** GitHub workflow is currently `workflow_dispatch` only.
 - Runs one at a time (concurrency group `openwiki-update`, no cancel-in-progress), because every run pushes to the same `openwiki/update` branch.
 - Checks out with `fetch-depth: 0`, because `--update` diffs HEAD against the last documented commit.
 - Runs the shared setup action without Python or web dependencies, installs OpenWiki through `sfw`, then runs `mise run wiki:update` with `LC_GATEWAY_KEY` and `LANGSMITH_API_KEY` from repository secrets. That step is `continue-on-error`.
+- Deletes `openwiki/.run.json`, then uses `peter-evans/create-pull-request` to open or update a `docs: update OpenWiki` PR covering `openwiki`, `AGENTS.md` and `CLAUDE.md`. The PR is created only when files changed.
+- If OpenWiki failed, the PR still holds the pages finished before the failure, and a final step fails the job. Merging such a PR makes those pages the baseline for the next run.
+
+`AGENTS.md` tells coding agents not to hand-edit generated pages. Change the source instead and let the workflow regenerate them.
+s. That step is `continue-on-error`.
 - Deletes `openwiki/.run.json`, then uses `peter-evans/create-pull-request` to open or update a `docs: update OpenWiki` PR covering `openwiki`, `AGENTS.md` and `CLAUDE.md`. The PR is created only when files changed.
 - If OpenWiki failed, the PR still holds the pages finished before the failure, and a final step fails the job. Merging such a PR makes those pages the baseline for the next run.
 

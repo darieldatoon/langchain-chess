@@ -2,9 +2,9 @@ import { describe, expect, it } from "vite-plus/test";
 import { commandKey, createCommandIds } from "../src/commands";
 
 describe("command ids", () => {
-  it("keys by thread, ply, and content", () => {
-    expect(commandKey(null, 0, "go")).toBe("new:0:go");
-    expect(commandKey("t", 2, "e2e4")).toBe("t:2:e2e4");
+  it("keys by ply and content", () => {
+    expect(commandKey(0, "go")).toBe("0:go");
+    expect(commandKey(2, "e2e4")).toBe("2:e2e4");
   });
 
   it("reuses an id for the same key and mints one per new key", () => {

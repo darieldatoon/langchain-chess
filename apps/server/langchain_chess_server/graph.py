@@ -1,9 +1,12 @@
-"""The `chess` graph factory. Construction is cheap and never calls a model."""
+"""The `chess` graph factory. Construction is cheap and never calls a model.
+
+The server calls the factory to run a thread and, without the run's settings, to read or update
+its state and to describe the graph. Every call must build the same nodes, edges and state
+schema, so a setting may switch a node off but never remove it.
+"""
 
 from functools import lru_cache
-from typing import Any
 
-from langchain.chat_models import init_chat_model
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.runnables import RunnableConfig
 from langchain_typesafe import TypeSafeClassifier
@@ -12,33 +15,17 @@ from langgraph.types import Checkpointer
 from langgraph_sdk.runtime import ServerRuntime
 
 from langchain_chess import ChessContractError, create_chess_agent
+from langchain_chess.chat_models import chat_model as base_chat_model
 from langchain_chess.middleware.summarization import input_limit
-from langchain_chess.models import GATEWAY_PREFIX, model_identity
-from langchain_chess.pricing import context_window
+from langchain_chess_server.clients import POOL
 from langchain_chess_server.context import ChessContext, resolve_context
+from langchain_chess_server.game_setup import GameSetupMiddleware
 from langchain_chess_server.settings import ServerSettings
-from langchain_chess_systemone import GatewayRanker, SystemOneMiddleware
-
-MAX_TOKENS = 32000
-"""The output cap covers reasoning too; 8000 ran out mid-game at medium effort."""
+from langchain_chess_systemone import GatewayRanker, NoSystemOne, SystemOneMiddleware
 
 
 def chat_model(context: ChessContext) -> BaseChatModel:
-    model = context.model
-    name = model_identity(model)[1]
-    kwargs: dict[str, Any] = {
-        "max_tokens": MAX_TOKENS,
-        # The trace span's name; through the gateway every vendor would read as `ChatOpenAI`.
-        "name": name,
-    }
-    # Models without reasoning reject the parameter outright, even as a default.
-    if context.reasoning_effort is not None:
-        kwargs["reasoning_effort"] = context.reasoning_effort
-    # The gateway's ChatOpenAI has no profile, and summarize's fractional trigger needs one.
-    # Native providers ship full profiles; never replace them.
-    if model.startswith(GATEWAY_PREFIX) and (window := context_window(model)):
-        kwargs["profile"] = {"max_input_tokens": window - MAX_TOKENS}
-    return init_chat_model(model, **kwargs)
+    return base_chat_model(context.model, context.reasoning_effort)
 
 
 @lru_cache(maxsize=64)
@@ -50,9 +37,15 @@ def model_limit(model: str) -> int | None:
         return None
 
 
-@lru_cache(maxsize=8)
 def _classifier(model: str, api_key: str, base_url: str) -> TypeSafeClassifier:
-    return TypeSafeClassifier(model=model, api_key=api_key, base_url=base_url, timeout=15.0)
+    client, async_client = POOL.get()
+    return TypeSafeClassifier(
+        model=model,
+        api_key=api_key,
+        base_url=base_url,
+        client=client,
+        async_client=async_client,
+    )
 
 
 def systemone(context: ChessContext, settings: ServerSettings) -> SystemOneMiddleware:
@@ -85,7 +78,10 @@ def build_agent(
     checkpointer: Checkpointer | None = None,
 ) -> CompiledStateGraph:
     model = None if context.policy == "systemone" else chat_model(context)
-    middleware = [] if context.policy == "llm" else [systemone(context, settings)]
+    middleware = [
+        NoSystemOne() if context.policy == "llm" else systemone(context, settings),
+        GameSetupMiddleware(context),
+    ]
     memory = "none" if model is None else context.memory
     if model is not None and memory == "summarize" and input_limit(model) is None:
         msg = (
@@ -100,12 +96,30 @@ def build_agent(
         memory=memory,
         draw_claims=context.draw_claims,
         seed=context.seed,
+        fixed_topology=True,
         context_schema=ChessContext,
         checkpointer=checkpointer,
         name="chess",
     )
 
 
+def shape() -> CompiledStateGraph:
+    """The graph with every node switched off: no model, no clients, no credentials."""
+    return create_chess_agent(
+        None,
+        # Its context is never written: this graph never runs.
+        middleware=[NoSystemOne(), GameSetupMiddleware(ChessContext())],
+        fixed_topology=True,
+        context_schema=ChessContext,
+        name="chess",
+    )
+
+
 def make_graph(config: RunnableConfig, runtime: ServerRuntime[ChessContext]) -> CompiledStateGraph:
-    """Assistant settings arrive through `runtime`; dropping it would silently lose them."""
+    """Assistant settings arrive through `runtime`; dropping it would silently lose them.
+
+    Only a run carries them; reads, updates and introspection get the same graph's shape.
+    """
+    if runtime.execution_runtime is None:
+        return shape()
     return build_agent(resolve_context(ChessContext, config, runtime), ServerSettings())

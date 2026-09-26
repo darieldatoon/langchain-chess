@@ -1,0 +1,102 @@
+name: deploy-review
+
+on:
+  push:
+    branches: [main]
+    # A path missing here is a silent stale deploy: when the app gains a dependency, add it.
+    # Over-include rather than under.
+    paths:
+      - apps/review/**
+      - packages/chess-ui/**
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - package.json
+      - vite.config.ts
+      - tsconfig.json
+      - mise.toml
+      - mise.lock
+      - .github/actions/setup/**
+      - .github/workflows/ci.yml
+      - .github/workflows/deploy-review.yml
+      - scripts/superseded.sh
+  # Ignores the path filters: the way to retry a failed deploy that no later push will redo.
+  # Runs only from main; the jobs skip on any other ref.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# The whole run, CI included, holds the lock, so publishes go out in push order. A newer run
+# replaces a pending older one, which is safe only because every run here publishes the app.
+concurrency:
+  # Per ref: a branch dispatch, which skips, must not replace a pending main run.
+  group: deploy-review-${{ github.ref }}
+  # Every run waits its turn: a newer arrival must never cancel a pending deploy.
+  queue: max
+
+jobs:
+  # Inside the lock, so a retried or replaced older run still ships main as it is now. CI and
+  # the deploy both use this SHA, so what deploys is exactly what passed.
+  tip:
+    # Skipped until CUSTOM_APP_ID is set.
+    if: github.ref == 'refs/heads/main' && vars.CUSTOM_APP_ID != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      sha: ${{ steps.main.outputs.sha }}
+    steps:
+      - id: main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          echo "main is at $sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+  ci:
+    needs: tip
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.tip.outputs.sha }}
+
+  # The app id is a repository variable, not committed: the CLI reads it only from
+  # .langsmith/app.json, so it is written here.
+  review:
+    needs: [tip, ci]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ needs.tip.outputs.sha }}
+
+      - uses: ./.github/actions/setup
+        with:
+          python: false
+
+      # Re-running only this job reuses the earlier tip and CI. Main may have moved since; that
+      # is fine unless it changed the review app, whose newer run then deploys instead.
+      - name: Check no newer commit changes the review app
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TESTED: ${{ needs.tip.outputs.sha }}
+        run: |
+          main=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          git -c "http.extraheader=AUTHORIZATION: basic $auth" fetch --quiet --depth 1 origin "$main"
+          changed=$(bash scripts/superseded.sh .github/workflows/deploy-review.yml "$TESTED" "$main")
+          if [[ -n "$changed" ]]; then
+            echo "::error::main moved from $TESTED to $main and changed the review app (${changed//$'\n'/, }); re-run all jobs, not just this one."
+            exit 1
+          fi
+
+      - name: Publish the review app
+        working-directory: apps/review
+        env:
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          CUSTOM_APP_ID: ${{ vars.CUSTOM_APP_ID }}
+        run: |
+          mkdir -p .langsmith
+          printf '{"app_id":"%s","name":"langchain-chess-review"}\n' "$CUSTOM_APP_ID" > .langsmith/app.json
+          langsmith apps push

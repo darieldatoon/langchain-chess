@@ -3,18 +3,21 @@ type: workflow
 title: Grading games and the review app
 description: How `lcchess grade` selects game threads from LangSmith, rebuilds each game from its root runs, evaluates every distinct position once on a pool of UCI engines, grades moves the Lichess way, and writes fingerprinted feedback that the review app replays.
 tags: [grading, lcchess, langsmith, feedback, stockfish, review-app, accuracy]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T04:03:54.007Z
 sources:
   - id: openwiki-source-e38522714f61b06be12390be
     resource: repo://apps/review/src/api.ts
+  - id: openwiki-source-c29d1556d6d26b04617e532d
+    resource: repo://apps/review/src/App.tsx
   - id: openwiki-source-8e17609d88ef23327924a49d
     resource: repo://apps/review/src/components/GameView.tsx
   - id: openwiki-source-ed1fb758d91e09f3b631921d
     resource: repo://apps/review/src/components/GradeCard.tsx
+  - id: openwiki-source-471a9092cd5b3971e06785cb
+    resource: repo://apps/review/src/games.ts
   - id: openwiki-source-4a50211e51ae5b4042cd6e74
     resource: repo://apps/review/src/review.ts
+  - id: openwiki-source-f93334adeeacab16f8dc8d99
+    resource: repo://apps/review/src/values.ts
   - id: openwiki-source-5b6b489082764cbfaca4adbf
     resource: repo://libs/chess/langchain_chess/engine.py
   - id: openwiki-source-347e47f606324c25df1bf7de
@@ -31,7 +34,10 @@ sources:
     resource: repo://libs/cli/langchain_chess_cli/main.py
   - id: openwiki-source-86c764f8d1bcb50d2d33c301
     resource: repo://libs/cli/tests/test_grade.py
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T04:03:54.007Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T13:04:36.303Z
 ---
 
 # Grading games and the review app
@@ -129,7 +135,7 @@ Unless `--force` is set, `LangSmithStore.graded(last_run.id)` looks for `game_re
 
 `grading.engine_fens` collects the unsettled FENs of every remaining game, deduplicated, in first-seen order. The work unit is a position, not a game, so games that share an opening only evaluate it once and one long game cannot hold up the batch. The `Planned` event reports the games, the position count and the pool size. With `--dry-run` the batch stops here and writes nothing, though the probe engine has already been started.
 
-The pool size is `max(1, min(workers, len(fens)))`. `--workers` defaults to `os.cpu_count() // engine_threads`. `EnginePool` starts that many `popen_uci` processes and configures `Threads` and `Hash` on each. If any process fails to start, the ones already running are shut down. `analyse` takes whichever engine is idle from a FIFO queue. Because the batch creates one task per FEN, game by game, positions from earlier games are searched first, so those games finish and are written first.
+The pool size is `max(1, min(workers, len(fens)))`. `--workers` defaults to `os.cpu_count() // engine_threads`. `EnginePool` starts that many `popen_uci` processes and configures `Threads` and `Hash` on each. If any process fails to start, the ones already running are shut down. Shutdown is bounded: each engine gets `quit_timeout` seconds (default 5) to answer `quit`, after which its process is killed. Engine errors and timeouts during shutdown are suppressed, and if the exit is cancelled the pool still waits for the cleanup to finish before re-raising, so no engine process is left orphaned. `analyse` takes whichever engine is idle from a FIFO queue. Because the batch creates one task per FEN, game by game, positions from earlier games are searched first, so those games finish and are written first.
 
 Two details keep grades reproducible:
 
@@ -208,7 +214,7 @@ The grader writes `game_review` on the run with the most plies, but the app look
 
 - **Other engines**: any UCI binary works through `--engine`. The fingerprint includes its `id name`, so switching engines re-grades.
 - **Other stores or pools**: `grade_batch` depends only on the `Store` protocol (`find_threads`, `thread_runs`, `graded`, `replace`) and on a `Pools` factory that yields an `Evaluator` (`grader`, `analyse`). The tests swap in fakes for both.
-- **Changing the review payload**: `records.review` and `apps/review/src/review.ts` must change together. The app rejects any `version` other than 1.
+- **Changing the review payload**: `records.review` and `apps/review/src/review.ts` must change together. The app treats any `version` other than 1, or any field it can't validate, as an unreadable review.
 - **Changing grading math**: grading output does not change the fingerprint; only the engine and settings do. After changing `grading.py`, re-grade with `--force` to refresh existing grades.
 - **Adding feedback keys**: add them to `PLY_KEYS`/`GAME_KEYS` so `replace` also deletes stale copies. Keep `game_review` as the last entry.
 
@@ -224,5 +230,21 @@ The grader writes `game_review` on the run with the most plies, but the app look
 - `libs/chess/tests/test_grading.py`: symmetry and clamping of winning chances, centipawn and mate judgements from the mover's side, move and game accuracy (including one Black move and long games), settled positions, `engine_fens` dedupe, `grade_game`, `first_runs` and `eval_json`.
 - `libs/chess/tests/test_engine.py`: search limit mapping, settings that leave out the path, fingerprint sensitivity, White-side scores, the error when no score comes back, and pool start-up and shutdown with a fake engine.
 - `apps/review/tests/`: logic (`logic.test.ts`), components, `App`, and entry rendering.
+
+See also [runtime behavior](/openwiki/operations/runtime-behavior.md) for how the traced runs that grading reads are produced.
+endering.
+
+See also [runtime behavior](/openwiki/operations/runtime-behavior.md) for how the traced runs that grading reads are produced.
+ where feedback goes (agent turns only, game keys and the marker last)
+  - the exact review payload
+  - store filters and `replace` ordering (only this grader's feedback deleted, marker written last)
+  - batch behaviour: each position evaluated once, pool size clamping, skip unless forced, dry run, a failure that keeps earlier writes
+  - option validation, printer output, and an end-to-end CLI run against a fake engine
+- `libs/chess/tests/test_grading.py`: symmetry and clamping of winning chances, centipawn and mate judgements from the mover's side, move and game accuracy (including one Black move and long games), settled positions, `engine_fens` dedupe, `grade_game`, `first_runs` and `eval_json`.
+- `libs/chess/tests/test_engine.py`: search limit mapping, settings that leave out the path, fingerprint sensitivity, White-side scores, the error when no score comes back, and pool start-up and shutdown with a fake engine.
+- `apps/review/tests/`: logic (`logic.test.ts`), components, `App`, and entry rendering.
+
+See also [runtime behavior](/openwiki/operations/runtime-behavior.md) for how the traced runs that grading reads are produced.
+endering.
 
 See also [runtime behavior](/openwiki/operations/runtime-behavior.md) for how the traced runs that grading reads are produced.

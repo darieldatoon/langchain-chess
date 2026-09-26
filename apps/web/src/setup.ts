@@ -1,9 +1,13 @@
-// The new-game setup: what the human picks in the modal, and the ChessContext it pins to a game.
+// The new-game setup: what the human picks in the modal, and the ChessContext a game plays with.
 // Pure: storage lives in storage.ts.
-import { isRecord, oneOf, sanitizeContext } from "./settings";
+import { isRecord, oneOf, recordedContext, sanitizeContext } from "./settings";
 import {
   DEFAULT_CONTEXT,
+  fenOrStart,
+  opposite,
+  sideToMove,
   type ChessContext,
+  type ChessValues,
   type Memory,
   type Side,
   type SystemOneModel,
@@ -75,8 +79,11 @@ export function modelName(model: string): string {
 /** A playable setup pins a context; an unplayable one says what to fix. */
 export type Matchup = { ok: true; context: ChessContext } | { ok: false; reason: string };
 
-/** Only a model with a known input limit can summarize; the server is asked which ones do. */
-export type Summarize = "checking" | "yes" | "no";
+/**
+ * Only a model with a known input limit can summarize; the server is asked which ones do.
+ * `unknown`: the server couldn't be asked, which says nothing about the model.
+ */
+export type Summarize = "checking" | "yes" | "no" | "unknown";
 
 export function modelOf(setup: Pick<Setup, "llm" | "customModel">): string | null {
   if (setup.llm === "none") return null;
@@ -95,8 +102,13 @@ export function matchupOf(setup: Setup, summarize: Summarize): Matchup {
     return { ok: false, reason: "Pick a System 1, an LLM, or both." };
   }
   if (model === "") return { ok: false, reason: "Enter a model spec for the custom LLM." };
-  if (model !== null && setup.knobs.memory === "summarize" && summarize === "checking") {
-    return { ok: false, reason: `Checking whether ${modelName(model)} can summarize…` };
+  if (model !== null && setup.knobs.memory === "summarize") {
+    if (summarize === "checking") {
+      return { ok: false, reason: `Checking whether ${modelName(model)} can summarize…` };
+    }
+    if (summarize === "unknown") {
+      return { ok: false, reason: `Couldn't check whether ${modelName(model)} can summarize.` };
+    }
   }
   const policy = systemOne === null ? "llm" : model === null ? "systemone" : "hybrid";
   return {
@@ -222,18 +234,29 @@ export function setupFromContext(stored: unknown): Setup {
   };
 }
 
-export const isSide = oneOf("white", "black");
-
-/** A game's pinned side and context; both are adapter state, not graph state. */
+/** A game's human side and the context every run of it sends. */
 export interface GameRecord {
   side: Side;
   context: ChessContext;
 }
 
-export function sanitizeGame(stored: unknown): GameRecord {
-  const record = isRecord(stored) ? stored : {};
-  return {
-    side: isSide(record.side) ? record.side : "white",
-    context: sanitizeContext(record.context),
-  };
+/**
+ * The human plays the external moves. Before the first, the side the opponent didn't open with;
+ * before any move, the side picked, else the side not to move: the opponent's first turn is open.
+ */
+function humanSideOf(values: ChessValues, picked: Side | null): Side {
+  const plies = values.plies ?? [];
+  const external = plies.findLast((p) => p.source === "external");
+  if (external) return external.side;
+  if (plies[0]) return opposite(plies[0].side);
+  return picked ?? opposite(sideToMove(fenOrStart(values.start_fen)));
+}
+
+/**
+ * The game from its thread, falling back to a new game's picks until its first turn records
+ * them. Null for a thread with no readable `setup`: a guessed context would play another game.
+ */
+export function gameOf(values: ChessValues, chosen: GameRecord | null): GameRecord | null {
+  const context = recordedContext(values.setup) ?? chosen?.context;
+  return context ? { side: humanSideOf(values, chosen?.side ?? null), context } : null;
 }

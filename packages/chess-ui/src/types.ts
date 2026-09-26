@@ -1,5 +1,5 @@
 // Mirrors libs/chess/langchain_chess/state.py, libs/systemone/langchain_chess_systemone/types.py,
-// and ChessContext in apps/server/langchain_chess_server/context.py. Keep them in step by hand.
+// and ChessContext and `setup` in apps/server/langchain_chess_server/. Keep them in step by hand.
 
 export type Side = "white" | "black";
 export type PolicyKind = "llm" | "systemone" | "hybrid";
@@ -186,6 +186,8 @@ export interface ChessValues {
   turns?: TurnRecord[];
   outcome?: Outcome | null;
   error?: string | null;
+  /** The server's resolved settings on the game's first turn; absent on older games. */
+  setup?: ChessContext;
 }
 
 export const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

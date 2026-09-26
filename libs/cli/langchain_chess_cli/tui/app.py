@@ -4,20 +4,25 @@ Moves come from the drawn board (mouse, or arrow keys and Enter) or from the not
 which takes SAN or UCI; typing on the board starts a move there.
 
 Start and retry are separate actions, as in the web UI: playing Black opens with `go`; after a
-failed run, retry invokes the same thread with empty input. A new game is a new thread, and a
-generation counter drops late events from the previous one.
+failed run, retry invokes the same thread with empty input. A new game is a new thread; it
+cancels the previous game's run, then deletes that game's checkpoints.
 """
 
+import contextlib
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 import chess
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.state import CompiledStateGraph
+from langgraph.types import Checkpointer
+from rich.text import Text
 from textual.app import App, ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widgets import Footer, Header, Input, Static
+from textual.worker import Worker, WorkerCancelled, WorkerFailed
 
 from langchain_chess.parse import text_of
 from langchain_chess.rules import DrawClaims
@@ -37,6 +42,7 @@ if TYPE_CHECKING:
 type Side = Literal["white", "black"]
 
 DRAW_CLAIMS: DrawClaims = "auto"
+RUN = "agent-run"
 
 
 class ChessApp(App[None]):
@@ -61,17 +67,17 @@ class ChessApp(App[None]):
 
     def __init__(
         self,
-        factory: Callable[[], CompiledStateGraph],
+        factory: Callable[[Checkpointer], CompiledStateGraph],
         options: AgentOptions,
         *,
         side: Side = "white",
     ) -> None:
         super().__init__()
-        self.agent = factory()
+        self.checkpointer = InMemorySaver()
+        self.agent = factory(self.checkpointer)
         self.options = options
         self.side: Side = side
         self.thread = ""
-        self.generation = 0
         self.values: dict[str, Any] = {}
         self.running = False
         self.failed: str | None = None
@@ -83,13 +89,14 @@ class ChessApp(App[None]):
         yield Header()
         with Horizontal(id="main"):
             yield ChessBoard(id="board")
+            # Model output, errors and SAN are shown literally, never parsed as markup.
             with Vertical(id="side"):
-                yield Static(id="status")
-                yield Static(id="details")
-                yield Static(id="moves")
+                yield Static(id="status", markup=False)
+                yield Static(id="details", markup=False)
+                yield Static(id="moves", markup=False)
                 with VerticalScroll(id="analysis-box") as box:
                     box.border_title = "Analysis"
-                    yield Static(id="analysis")
+                    yield Static(id="analysis", markup=False)
         # Typing on the board moves focus here mid-word, so focus must not select the text.
         yield Input(
             placeholder="Type a move (SAN or UCI), or click the board",
@@ -129,11 +136,11 @@ class ChessApp(App[None]):
             last_move=last,
             interactive=self._can_move(),
         )
-        status = status_text(
-            self.values, human=self.human, running=self.running, failed=self.failed
+        status = Text(
+            status_text(self.values, human=self.human, running=self.running, failed=self.failed)
         )
         if error := self.values.get("error"):
-            status += f"\n[red]{error}[/]"
+            status.append(f"\n{error}", style="red")
         self.query_one("#status", Static).update(status)
         self.query_one("#details", Static).update(ply_details(self.values))
         self.query_one("#moves", Static).update(move_list(self.values))
@@ -142,7 +149,9 @@ class ChessApp(App[None]):
     # ---- actions ------------------------------------------------------------------------------
 
     def action_new_game(self) -> None:
-        self.generation += 1
+        runs = self.workers.cancel_group(self, RUN)
+        if self.thread:
+            self.run_worker(self._forget(self.thread, runs))
         self.thread = f"tui-{uuid.uuid4()}"
         self.values, self.running, self.failed, self.analysis = {}, False, None, ""
         self._refresh()
@@ -192,16 +201,14 @@ class ChessApp(App[None]):
     def _submit(self, payload: dict[str, Any]) -> None:
         self.running, self.failed, self.analysis = True, None, ""
         self._refresh()
-        self.run_worker(self._invoke(payload, self.generation, self.thread))
+        self.run_worker(self._invoke(payload, self.thread), group=RUN)
 
-    async def _invoke(self, payload: dict[str, Any], generation: int, thread: str) -> None:
+    async def _invoke(self, payload: dict[str, Any], thread: str) -> None:
         config: RunnableConfig = run_config("tui", thread, self.options, draw_claims=DRAW_CLAIMS)
         try:
             async for mode, chunk in self.agent.astream(
                 payload, config, stream_mode=["messages", "values"]
             ):
-                if generation != self.generation:
-                    return
                 if mode == "values":
                     self.values = dict(cast("dict[str, Any]", chunk))
                 else:
@@ -210,12 +217,17 @@ class ChessApp(App[None]):
                         self.analysis += text_of(message)
                 self._refresh()
         except Exception as e:  # the turn stays pending; retry resumes it
-            if generation == self.generation:
-                self.failed = str(e) or type(e).__name__
-        if generation == self.generation:
-            self.values = dict((await self.agent.aget_state(config)).values)
-            self.running = False
-            self._refresh()
+            self.failed = str(e) or type(e).__name__
+        self.values = dict((await self.agent.aget_state(config)).values)
+        self.running = False
+        self._refresh()
+
+    async def _forget(self, thread: str, runs: Sequence[Worker]) -> None:
+        """Nothing reopens a retired game; drop it once its runs have unwound."""
+        for run in runs:
+            with contextlib.suppress(WorkerCancelled, WorkerFailed):
+                await run.wait()
+        await self.checkpointer.adelete_thread(thread)
 
 
 def _human(content: str) -> dict[str, Any]:

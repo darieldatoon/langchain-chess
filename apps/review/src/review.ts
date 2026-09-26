@@ -1,6 +1,7 @@
 // The `game_review` feedback `lcchess grade` writes (libs/cli/langchain_chess_cli/grade/records.py
 // `review`), and the eval maths the board and graph draw from it. Pure.
 import type { Quality, Side } from "@langchain-chess/chess-ui";
+import { isJson, isNumber, isSide, isStrings } from "./json";
 
 export const REVIEW_KEY = "game_review";
 export const GRADER = "lcchess grade";
@@ -44,21 +45,76 @@ export interface FeedbackItem {
   feedback_source?: { metadata?: Record<string, unknown> | null } | null;
 }
 
-export function parseReview(value: unknown): GameReview | null {
-  if (typeof value !== "object" || value === null) return null;
-  const review = value as Partial<GameReview>;
-  return review.version === 1 && Array.isArray(review.evals) && Array.isArray(review.plies)
-    ? (review as GameReview)
-    : null;
+/** A thread's review as the list and board read it; `invalid` is feedback this app can't draw. */
+export type Grading =
+  | { status: "ungraded" }
+  | { status: "graded"; review: GameReview }
+  | { status: "invalid"; problem: string };
+
+const QUALITIES: readonly unknown[] = ["best", "good", "inaccuracy", "mistake", "blunder"];
+
+function isEval(v: unknown): boolean {
+  if (!isJson(v)) return false;
+  return "cp" in v ? isNumber(v.cp) : Number.isInteger(v.mate) && isSide(v.winner);
+}
+
+function isPlyGrade(v: unknown, ply: number): boolean {
+  return (
+    isJson(v) &&
+    v.ply === ply &&
+    typeof v.run_id === "string" &&
+    isSide(v.side) &&
+    typeof v.uci === "string" &&
+    (v.best_move === null || typeof v.best_move === "string") &&
+    QUALITIES.includes(v.quality) &&
+    [v.cp_loss, v.win_pct_loss, v.accuracy].every(isNumber) &&
+    Array.isArray(v.lines) &&
+    v.lines.every((l) => isJson(l) && isEval(l.eval) && isStrings(l.pv))
+  );
+}
+
+/** The first thing wrong with a review, or null when it is a complete version 1 review. */
+function problemWith(v: unknown): string | null {
+  if (!isJson(v)) return "it is not an object";
+  if (v.version !== 1) {
+    return isNumber(v.version)
+      ? `version ${v.version} is not supported`
+      : "the version is missing or malformed";
+  }
+  if (typeof v.engine !== "string") return "the engine is missing";
+  if (!isJson(v.settings) || !Object.values(v.settings).every(isNumber)) {
+    return "the settings are malformed";
+  }
+  const accuracy = v.accuracy;
+  const sideAccuracy = (a: unknown) => a === null || isNumber(a);
+  if (!isJson(accuracy) || !sideAccuracy(accuracy.white) || !sideAccuracy(accuracy.black)) {
+    return "the accuracy is malformed";
+  }
+  if (!Array.isArray(v.evals)) return "the evaluations are missing";
+  const badEval = v.evals.findIndex((e) => !isEval(e));
+  if (badEval >= 0) return `evaluation ${badEval} is malformed`;
+  if (!Array.isArray(v.plies)) return "the move grades are missing";
+  const badPly = v.plies.findIndex((p, i) => !isPlyGrade(p, i));
+  if (badPly >= 0) return `the grade of ply ${badPly} is malformed`;
+  if (v.evals.length !== v.plies.length + 1) return "there is not one evaluation per position";
+  return null;
+}
+
+export function parseReview(value: unknown): Grading {
+  const problem = problemWith(value);
+  return problem === null
+    ? { status: "graded", review: value as GameReview }
+    : { status: "invalid", problem };
 }
 
 /** This grader's reviews by run; other feedback under the same key is ignored. */
-export function reviewsByRun(items: readonly FeedbackItem[]): Map<string, GameReview> {
-  const reviews = new Map<string, GameReview>();
+export function reviewsByRun(items: readonly FeedbackItem[]): Map<string, Grading> {
+  const reviews = new Map<string, Grading>();
   for (const item of items) {
-    const review = parseReview(item.value);
     const ours = item.feedback_source?.metadata?.grader === GRADER;
-    if (item.key === REVIEW_KEY && ours && review && item.run_id) reviews.set(item.run_id, review);
+    if (item.key === REVIEW_KEY && ours && item.run_id) {
+      reviews.set(item.run_id, parseReview(item.value));
+    }
   }
   return reviews;
 }

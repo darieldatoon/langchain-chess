@@ -961,6 +961,7 @@ version = "0.1.0"
 source = { editable = "apps/server" }
 dependencies = [
     { name = "fastapi" },
+    { name = "httpx2" },
     { name = "langchain-chess" },
     { name = "langchain-chess-systemone" },
     { name = "langchain-openai" },
@@ -970,6 +971,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.141.1" },
+    { name = "httpx2", specifier = ">=2.13.0" },
     { name = "langchain-chess", editable = "libs/chess" },
     { name = "langchain-chess-systemone", editable = "libs/systemone" },
     { name = "langchain-openai", specifier = ">=1.6.2" },

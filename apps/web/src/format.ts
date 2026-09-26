@@ -10,12 +10,14 @@ export interface StatusInput {
   outcome: Outcome | null;
   fen: string;
   moveCount: number;
-  humanSide: Side;
+  /** Null for a game this browser can only show. */
+  humanSide: Side | null;
   pending: boolean;
 }
 
 export function statusLine(game: StatusInput): string {
   if (game.outcome) return outcomeLine(game.outcome);
+  if (game.humanSide === null) return "View only.";
   if (game.humanSide === sideToMove(game.fen)) return "Your move.";
   return game.moveCount === 0 && !game.pending
     ? "Press Start and the opponent opens."
@@ -29,14 +31,19 @@ export function isBusyRejection(error: unknown): boolean {
 }
 
 const AUTH_STATUSES = new Set([401, 403]);
-const AUTH_TEXT = /\b40[13]\b|unauthori[sz]ed|forbidden/i;
+/**
+ * The SDK's own messages for a refused request; its stream requests carry no `status`. Anchored
+ * so a failed run's message (say, a model provider's 401) never reads as the browser's key.
+ */
+const AUTH_REQUEST = /^(?:HTTP|(?:Protocol|Thread state) request failed:) 40[13]\b/;
 
-/** The server refused the request's credentials: the SDK's HTTPError carries `status`. */
+/** The Agent Server refused this browser's credentials, as opposed to a run failing. */
 export function isAuthError(error: unknown): boolean {
-  const text = describeError(error);
-  if (text === null) return false;
+  if (!(error instanceof Error)) return false;
   const status = (error as { status?: unknown }).status;
-  return (typeof status === "number" && AUTH_STATUSES.has(status)) || AUTH_TEXT.test(text);
+  return (
+    (typeof status === "number" && AUTH_STATUSES.has(status)) || AUTH_REQUEST.test(error.message)
+  );
 }
 
 export function describeError(error: unknown): string | null {

@@ -1,4 +1,4 @@
-import { Chess } from "chess.js";
+import { Chess, validateFen } from "chess.js";
 import { START_FEN, type Side } from "./types";
 
 export interface Attempt {
@@ -7,8 +7,23 @@ export interface Attempt {
   fen: string;
 }
 
+export type Promotion = "q" | "r" | "b" | "n";
+export const PROMOTIONS: readonly Promotion[] = ["q", "r", "b", "n"];
+
+/** Whether moving from `from` to `to` is a legal pawn promotion, so it needs a piece chosen. */
+export function isPromotion(fen: string, from: string, to: string): boolean {
+  return new Chess(fen)
+    .moves({ verbose: true })
+    .some((m) => m.from === from && m.to === to && m.promotion !== undefined);
+}
+
 /** Legal-move check for a drag on the client; the graph re-validates server side. */
-export function tryMove(fen: string, from: string, to: string, promotion = "q"): Attempt | null {
+export function tryMove(
+  fen: string,
+  from: string,
+  to: string,
+  promotion: Promotion = "q",
+): Attempt | null {
   const game = new Chess(fen);
   const legal = game.moves({ verbose: true }).find((m) => m.from === from && m.to === to);
   if (!legal) return null;
@@ -31,6 +46,10 @@ export function fullmoveNumber(fen: string): number {
 
 export function isOwnPiece(piece: string, side: Side): boolean {
   return piece.startsWith(side === "white" ? "w" : "b");
+}
+
+export function isFen(fen: string): boolean {
+  return validateFen(fen).ok;
 }
 
 export function fenOrStart(fen: string | undefined): string {
@@ -60,6 +79,25 @@ export function replay(startFen: string, moves: readonly string[]): Replay {
     }
   }
   return { fen: game.fen(), sans };
+}
+
+/** The start and the position after each move, in one pass; from a move chess.js rejects on, as
+ * in `replay`, the position stays put. */
+export function positions(startFen: string, moves: readonly string[]): string[] {
+  const game = new Chess(startFen);
+  const fens = [startFen];
+  let playing = true;
+  for (const uci of moves) {
+    if (playing) {
+      try {
+        play(game, uci);
+      } catch {
+        playing = false;
+      }
+    }
+    fens.push(game.fen());
+  }
+  return fens;
 }
 
 /** SAN for a move at a position, or the UCI itself when it isn't legal there. */

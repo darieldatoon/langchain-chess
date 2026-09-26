@@ -53,15 +53,28 @@ function knob<K extends keyof ChessContext>(stored: Record<string, unknown>, key
   return CONTEXT_CHECKS[key](value) ? value : DEFAULT_CONTEXT[key];
 }
 
+// `full` was removed; the dialog turns `summarize` off for models that can't summarize.
+const migrated = (raw: Record<string, unknown>) =>
+  raw.memory === "full" ? { ...raw, memory: "summarize" } : raw;
+
 /** Keeps only known knobs with valid values, so obsolete or corrupt storage can't reach a run. */
 export function sanitizeContext(stored: unknown): ChessContext {
-  const raw = isRecord(stored) ? stored : {};
-  // `full` was removed; the dialog turns `summarize` off for models that can't summarize.
-  const record = raw.memory === "full" ? { ...raw, memory: "summarize" } : raw;
+  const record = migrated(isRecord(stored) ? stored : {});
   return CONTEXT_KEYS.reduce<ChessContext>(
     (context, key) => ({ ...context, [key]: knob(record, key) }),
     DEFAULT_CONTEXT,
   );
+}
+
+/**
+ * A context exactly as a game recorded it, else null: a knob filled in from the defaults would
+ * play a different game. Every recorded setup holds every key.
+ */
+export function recordedContext(stored: unknown): ChessContext | null {
+  if (!isRecord(stored)) return null;
+  return CONTEXT_KEYS.every((key) => CONTEXT_CHECKS[key](stored[key]))
+    ? sanitizeContext(stored)
+    : null;
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {

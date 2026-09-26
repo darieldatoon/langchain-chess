@@ -8,7 +8,7 @@ from langchain_core.messages import BaseMessage
 EMPTY_REPLY = "[no text in reply]"
 """Stored in place of an empty reply: Anthropic rejects a replayed assistant turn with no text."""
 
-_MOVE_LINE = re.compile(r"MOVE:\s*\**\s*([^\s*`]+)", re.IGNORECASE)
+_MOVE_MARKER = re.compile(r"MOVE:", re.IGNORECASE)
 _MOVE_TOKEN = re.compile(
     r"\b(O-O(?:-O)?|[KQRBN]?[a-h]?[1-8]?x?[a-h][1-8](?:=?[QRBN])?|[a-h][1-8][a-h][1-8][qrbn]?)[+#]?\b"
 )
@@ -36,20 +36,26 @@ def _normalise(token: str) -> str:
 def parse_move(board: chess.Board, reply: str) -> tuple[chess.Move | None, str | None]:
     """The legal move named in the reply, or the reason none was found.
 
-    The last `MOVE:` line wins; without one, the last move-like token. SAN first, then UCI.
+    The last `MOVE:` marker wins, read to the end of its line; without one, the last move-like
+    token. SAN first, then UCI.
     """
-    marked = _MOVE_LINE.findall(reply)
-    tokens = [_normalise(m) for m in reversed(marked)] or [
-        _normalise(m) for m in reversed(_MOVE_TOKEN.findall(reply))
-    ]
-    if not tokens:
+    if markers := list(_MOVE_MARKER.finditer(reply)):
+        # Only the final marker's contents, to the end of its line: an empty or unreadable one
+        # is rejected, not skipped in favour of an earlier marker.
+        line = reply[markers[-1].end() :].partition("\n")[0]
+        words = line.replace("*", " ").replace("`", " ").split()
+        if not words:
+            return None, "the last `MOVE:` line names no move; end with `MOVE: <move>`"
+        token = _normalise(words[0])
+    elif found := _MOVE_TOKEN.findall(reply):
+        token = _normalise(found[-1])
+    else:
         return None, "no move found; end your reply with a line `MOVE: <move>`"
-    for token in tokens:
-        for parse in (board.parse_san, board.parse_uci):
-            try:
-                move = parse(token)
-            except ValueError:
-                continue
-            if move in board.legal_moves:
-                return move, None
-    return None, f"`{tokens[0]}` is not a legal move in this position"
+    for parse in (board.parse_san, board.parse_uci):
+        try:
+            move = parse(token)
+        except ValueError:
+            continue
+        if move in board.legal_moves:
+            return move, None
+    return None, f"`{token}` is not a legal move in this position"

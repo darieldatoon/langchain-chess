@@ -1,6 +1,9 @@
-/** Identifies a command: the same content at the same position in the same thread. */
-export function commandKey(threadId: string | null, ply: number, content: string): string {
-  return `${threadId ?? "new"}:${ply}:${content}`;
+/**
+ * Identifies a command within one game: the same content at the same position. Do not key by
+ * thread id: a new game's first command is sent before the server assigns one.
+ */
+export function commandKey(ply: number, content: string): string {
+  return `${ply}:${content}`;
 }
 
 /**

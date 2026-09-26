@@ -22,7 +22,7 @@ import {
   usePlyKeys,
 } from "@langchain-chess/chess-ui";
 import { checkApiKey, type KeyCheck } from "./auth";
-import { fetchModelLimit } from "./modelLimit";
+import { fetchModelLimit, type ModelLimit } from "./modelLimit";
 import { AppSettingsDialog } from "./components/AppSettingsDialog";
 import { NewGameDialog } from "./components/NewGameDialog";
 import { ResultCard } from "./components/ResultCard";
@@ -31,8 +31,8 @@ import { describeError, isAuthError, isBusyRejection, statusLine } from "./forma
 import { apiUrl } from "./settings";
 import { changedKnobs, opponentLabel, resolveSide, type GameRecord, type Setup } from "./setup";
 import {
+  browserStorage,
   loadAppSettings,
-  loadGame,
   loadSetup,
   saveAppSettings,
   saveSetup,
@@ -40,12 +40,14 @@ import {
 } from "./storage";
 import { threadFromUrl, useGame, writeThreadToUrl } from "./useGame";
 
-/** One game on screen: its pinned side and context. */
-interface Seat extends GameRecord {
+/** One game on screen. */
+interface Seat {
   /** Changes on every new game, remounting the table so useStream starts a fresh thread. */
   number: number;
   /** A fresh game where the opponent opens: the table sends `go` once, on mount. */
   autoStart: boolean;
+  /** A new game's side and context, until its first turn records them; null from a link. */
+  chosen: GameRecord | null;
 }
 
 /** Settings opened from New game go back to it; `draft` holds the picks not yet played. */
@@ -57,7 +59,11 @@ type Overlay =
 const NEW_GAME: Overlay = { kind: "new-game", draft: null };
 
 function nextSeat(previous: Seat | null, side: Side, context: ChessContext): Seat {
-  return { number: (previous?.number ?? 0) + 1, side, context, autoStart: side === "black" };
+  return {
+    number: (previous?.number ?? 0) + 1,
+    chosen: { side, context },
+    autoStart: side === "black",
+  };
 }
 
 interface Props {
@@ -66,7 +72,7 @@ interface Props {
   /** Asks the server about a key before a game starts; injectable so tests need no server. */
   checkKey?: (apiKey: string) => Promise<KeyCheck>;
   /** Asks the server for a model's input limit; injectable so tests need no server. */
-  modelLimit?: (apiKey: string, model: string) => Promise<number | null>;
+  modelLimit?: (apiKey: string, model: string) => Promise<ModelLimit>;
 }
 
 const serverCheck = (apiKey: string) => checkApiKey(apiUrl(), apiKey);
@@ -81,9 +87,13 @@ export default function App({
   const [setup, setSetup] = useState<Setup>(() => loadSetup());
   const [seat, setSeat] = useState<Seat | null>(() => {
     const threadId = threadFromUrl();
-    return threadId ? { number: 0, autoStart: false, ...loadGame(threadId) } : null;
+    return threadId ? { number: 0, autoStart: false, chosen: null } : null;
   });
   const [overlay, setOverlay] = useState<Overlay>(() => (seat ? null : NEW_GAME));
+  const [unsaved, setUnsaved] = useState(() => browserStorage() === null);
+  const noteSaved = useCallback((saved: boolean) => {
+    if (!saved) setUnsaved(true);
+  }, []);
 
   // With no game on screen the New game dialog is the page: it can't be closed, and the header's
   // Settings is out of reach behind it, so a null `back` always means the game on screen.
@@ -103,33 +113,37 @@ export default function App({
     [modelLimit, app.apiKey],
   );
 
-  // Also persists a key migrated from the old settings on first load.
-  useEffect(() => saveAppSettings(app), [app]);
-
   const onSaveApp = useCallback(
     (next: AppSettings) => {
+      noteSaved(saveAppSettings(next));
       setApp(next);
       closeSettings();
     },
-    [closeSettings],
+    [closeSettings, noteSaved],
   );
 
   const play = useCallback(
     (next: Setup, context: ChessContext) => {
-      saveSetup(next);
+      noteSaved(saveSetup(next));
       setSetup(next);
       writeThreadToUrl(null);
       const side = resolveSide(next.side, random);
       setSeat((s) => nextSeat(s, side, context));
       setOverlay(null);
     },
-    [random],
+    [random, noteSaved],
   );
 
-  const rematch = useCallback((from: Seat) => {
+  const rematch = useCallback((from: GameRecord) => {
     writeThreadToUrl(null);
     setSeat((s) => nextSeat(s, opposite(from.side), from.context));
   }, []);
+
+  // The same thread, on a fresh stream: the URL still names it.
+  const reload = useCallback(
+    (from: Seat) => setSeat({ ...from, number: from.number + 1, autoStart: false }),
+    [],
+  );
 
   return (
     <div className="min-h-screen bg-surface-level-1 text-primary">
@@ -157,12 +171,19 @@ export default function App({
           </div>
         </header>
 
+        {unsaved && (
+          <Banner intent="warning" title="This browser isn't saving">
+            Its storage is blocked or full, so your key and last setup won't be remembered here.
+          </Banner>
+        )}
+
         {seat ? (
           <Table
             key={seat.number}
             apiKey={app.apiKey}
             seat={seat}
             onRematch={rematch}
+            onReload={reload}
             onNewGame={openNewGame}
             onOpenSettings={openSettings}
           />
@@ -214,28 +235,35 @@ function EmptyTable() {
 interface TableProps {
   apiKey: string;
   seat: Seat;
-  onRematch: (from: Seat) => void;
+  onRematch: (from: GameRecord) => void;
+  onReload: (from: Seat) => void;
   onNewGame: () => void;
   onOpenSettings: () => void;
 }
 
-function Table({ apiKey, seat, onRematch, onNewGame, onOpenSettings }: TableProps) {
-  const game = useGame(apiKey, seat.context, seat.side);
+function Table({ apiKey, seat, onRematch, onReload, onNewGame, onOpenSettings }: TableProps) {
+  const game = useGame(apiKey, seat.chosen);
+  const { record } = game;
+  // A stand-in for a thread with no record: its board stays locked.
+  const humanSide = record?.side ?? "white";
   const [dismissed, setDismissed] = useState<string | null>(null);
   // Run failures arrive on the stream; this holds a submit that failed before it got there.
   const [submitError, setSubmitError] = useState<unknown>(null);
   const autoStarted = useRef(false);
 
   const over = game.outcome !== null;
-  const opponentToMove = sideToMove(game.fen) !== game.humanSide;
-  const idle = !game.isLoading && game.pendingMove === null;
+  const opponentToMove = sideToMove(game.fen) !== humanSide;
+  const playable = record !== null && game.restore === "ready";
+  const idle = playable && !game.isLoading && game.pendingMove === null;
   // A pending turn means a run failed mid-turn: only an empty submit resumes it.
   const canRetry = !over && idle && game.pendingTurn;
   const canGo = !over && idle && !game.pendingTurn && opponentToMove;
   // Null follows the game; a number is an earlier position the player stepped back to. A move
   // arriving meanwhile leaves them there: Last (or End) comes back.
   const [viewed, setViewed] = useState<number | null>(null);
-  const [orientation, setOrientation] = useState<Side>(game.humanSide);
+  // Follows the side, which a game opened from its link only knows once its thread loads.
+  const [flipped, setFlipped] = useState(false);
+  const orientation = flipped ? opposite(humanSide) : humanSide;
   const last = game.moves.length;
   const live = viewed === null || viewed >= last;
   const index = live ? last : viewed;
@@ -253,7 +281,7 @@ function Table({ apiKey, seat, onRematch, onNewGame, onOpenSettings }: TableProp
   const notice = game.error && game.error !== dismissed ? game.error : null;
   const failure = submitError ?? game.streamError;
   const failureText = describeError(failure);
-  const changed = changedKnobs(seat.context);
+  const changed = record ? changedKnobs(record.context) : [];
 
   // Every new command re-arms the notice, so a repeated rejection shows again.
   const issue = (run: () => Promise<void>) => {
@@ -274,6 +302,30 @@ function Table({ apiKey, seat, onRematch, onNewGame, onOpenSettings }: TableProp
 
   return (
     <>
+      {game.restore === "failed" && (
+        <Banner
+          intent="error"
+          title="Couldn't load this game"
+          action={
+            <Button variant="plain" size="sm" color="primary" onClick={() => onReload(seat)}>
+              Reload
+            </Button>
+          }
+        >
+          The board stays locked until the game loads.
+        </Banner>
+      )}
+      {game.restore === "missing" && (
+        <Banner intent="warning" title="This game isn't on the server">
+          The server has no thread by this id, so there is nothing to continue. Start a new game.
+        </Banner>
+      )}
+      {record === null && game.restore === "ready" && (
+        <Banner intent="info" title="View only">
+          This game's thread doesn't say which opponent it was set up with (older games don't), so
+          it can only be shown. Start a new game to play.
+        </Banner>
+      )}
       {isAuthError(failure) && (
         <Banner
           intent="warning"
@@ -292,24 +344,24 @@ function Table({ apiKey, seat, onRematch, onNewGame, onOpenSettings }: TableProp
           <Board
             fen={boardFen}
             orientation={orientation}
-            humanSide={game.humanSide}
+            humanSide={humanSide}
             lastMove={lastMove}
             locked={
-              !live || game.isLoading || over || game.pendingTurn || game.pendingMove !== null
+              !playable ||
+              !live ||
+              game.isLoading ||
+              over ||
+              game.pendingTurn ||
+              game.pendingMove !== null
             }
             onMove={(uci, fen) => issue(() => game.play(uci, fen))}
           />
-          <BoardControls
-            index={index}
-            last={last}
-            onGo={go}
-            onFlip={() => setOrientation((o) => opposite(o))}
-          />
-          {game.outcome ? (
+          <BoardControls index={index} last={last} onGo={go} onFlip={() => setFlipped((f) => !f)} />
+          {game.outcome && record ? (
             <ResultCard
               outcome={game.outcome}
-              humanSide={game.humanSide}
-              onRematch={() => onRematch(seat)}
+              humanSide={record.side}
+              onRematch={() => onRematch(record)}
               onNewGame={onNewGame}
             />
           ) : (
@@ -322,7 +374,7 @@ function Table({ apiKey, seat, onRematch, onNewGame, onOpenSettings }: TableProp
                     outcome: game.outcome,
                     fen: game.fen,
                     moveCount: game.moves.length,
-                    humanSide: game.humanSide,
+                    humanSide: record?.side ?? null,
                     pending: game.pendingTurn,
                   })}
                 </Text>
@@ -374,7 +426,7 @@ function Table({ apiKey, seat, onRematch, onNewGame, onOpenSettings }: TableProp
               Opponent
             </Text>
             <Text variant="sm" weight="medium">
-              {opponentLabel(seat.context)}
+              {record ? opponentLabel(record.context) : "Unknown"}
             </Text>
             {changed.length > 0 && (
               <Text variant="xs" color="tertiary" className="font-mono">
