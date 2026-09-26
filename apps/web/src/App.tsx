@@ -18,6 +18,7 @@ import {
   sideToMove,
   START_FEN,
   type ChessContext,
+  type PlyView,
   type Side,
   usePlyKeys,
 } from "@langchain-chess/chess-ui";
@@ -33,8 +34,10 @@ import { changedKnobs, opponentLabel, resolveSide, type GameRecord, type Setup }
 import {
   browserStorage,
   loadAppSettings,
+  loadPlyView,
   loadSetup,
   saveAppSettings,
+  savePlyView,
   saveSetup,
   type AppSettings,
 } from "./storage";
@@ -85,6 +88,7 @@ export default function App({
 }: Props) {
   const [app, setApp] = useState<AppSettings>(() => loadAppSettings());
   const [setup, setSetup] = useState<Setup>(() => loadSetup());
+  const [view, setView] = useState<PlyView>(() => loadPlyView());
   const [seat, setSeat] = useState<Seat | null>(() => {
     const threadId = threadFromUrl();
     return threadId ? { number: 0, autoStart: false, chosen: null } : null;
@@ -120,6 +124,14 @@ export default function App({
       closeSettings();
     },
     [closeSettings, noteSaved],
+  );
+
+  const onViewChange = useCallback(
+    (next: PlyView) => {
+      noteSaved(savePlyView(next));
+      setView(next);
+    },
+    [noteSaved],
   );
 
   const play = useCallback(
@@ -173,7 +185,8 @@ export default function App({
 
         {unsaved && (
           <Banner intent="warning" title="This browser isn't saving">
-            Its storage is blocked or full, so your key and last setup won't be remembered here.
+            Its storage is blocked or full, so your key, last setup and view won't be remembered
+            here.
           </Banner>
         )}
 
@@ -186,9 +199,11 @@ export default function App({
             onReload={reload}
             onNewGame={openNewGame}
             onOpenSettings={openSettings}
+            view={view}
+            onViewChange={onViewChange}
           />
         ) : (
-          <EmptyTable />
+          <EmptyTable view={view} onViewChange={onViewChange} />
         )}
       </div>
 
@@ -215,7 +230,7 @@ export default function App({
 }
 
 /** The board before the first game, behind the New game dialog. */
-function EmptyTable() {
+function EmptyTable({ view, onViewChange }: ViewProps) {
   return (
     <main className="grid items-start gap-space-5 lg:grid-cols-[minmax(320px,640px)_minmax(280px,1fr)]">
       <Card intent="neutral" className="flex flex-col gap-space-3">
@@ -225,14 +240,19 @@ function EmptyTable() {
         </Text>
       </Card>
       <aside className="flex flex-col gap-space-4">
-        <PlyDetails reply={null} />
+        <PlyDetails reply={{ status: "none" }} view={view} onViewChange={onViewChange} />
         <MoveList entries={[]} startFen={START_FEN} />
       </aside>
     </main>
   );
 }
 
-interface TableProps {
+interface ViewProps {
+  view: PlyView;
+  onViewChange: (view: PlyView) => void;
+}
+
+interface TableProps extends ViewProps {
   apiKey: string;
   seat: Seat;
   onRematch: (from: GameRecord) => void;
@@ -241,7 +261,16 @@ interface TableProps {
   onOpenSettings: () => void;
 }
 
-function Table({ apiKey, seat, onRematch, onReload, onNewGame, onOpenSettings }: TableProps) {
+function Table({
+  apiKey,
+  seat,
+  onRematch,
+  onReload,
+  onNewGame,
+  onOpenSettings,
+  view,
+  onViewChange,
+}: TableProps) {
   const game = useGame(apiKey, seat.chosen);
   const { record } = game;
   // A stand-in for a thread with no record: its board stays locked.
@@ -414,7 +443,7 @@ function Table({ apiKey, seat, onRematch, onReload, onNewGame, onOpenSettings }:
           )}
         </Card>
         <aside className="flex flex-col gap-space-4">
-          <PlyDetails reply={game.lastReply} live={game.liveAnalysis} />
+          <PlyDetails reply={game.reply} view={view} onViewChange={onViewChange} />
           <MoveList
             entries={game.entries}
             startFen={game.startFen}

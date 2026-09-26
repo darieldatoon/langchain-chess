@@ -4,7 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import App from "../src/App";
 import { checkApiKey, type KeyCheck } from "../src/auth";
 import { DEFAULT_SETUP } from "../src/setup";
-import { APP_KEY, loadSetup, saveAppSettings, saveSetup } from "../src/storage";
+import {
+  APP_KEY,
+  loadSetup,
+  saveAppSettings,
+  savePlyView,
+  saveSetup,
+  VIEW_KEY,
+} from "../src/storage";
 import { fake, lastOptions, optionsLog, resetFake } from "./support/fakeStream";
 import { AFTER_E4, E4_E5, ply, turn } from "@langchain-chess/chess-ui/testing";
 import { WEB_TRACE } from "../src/useGame";
@@ -728,7 +735,7 @@ describe("the game screen", () => {
     expect(submitted()).toEqual(["go"]);
   });
 
-  it("streams the live analysis while the opponent thinks", async () => {
+  it("streams the live analysis into the reply card while the opponent thinks", async () => {
     resetFake({}, [
       new HumanMessage({ id: "msg-1", content: "e2e4" }),
       new AIMessage({ id: "a1", content: [{ type: "text", text: "**e5** mirrors the centre." }] }),
@@ -737,12 +744,52 @@ describe("the game screen", () => {
     fake.isLoading = true;
     render(<App />);
     expect(screen.getByText("Opponent is thinking")).toBeInTheDocument();
+    const card = screen.getByLabelText("last reply");
+    expect(card).toHaveAttribute("aria-busy", "true");
     // Plain text until the lazy Markdown renderer has loaded.
-    expect(screen.getByLabelText("thinking")).toHaveTextContent("**e5** mirrors the centre.");
+    expect(card).toHaveTextContent("**e5** mirrors the centre.");
     expect(await screen.findByText("e5", { selector: "strong" })).toBeInTheDocument();
-    expect(screen.getByLabelText("thinking")).toHaveTextContent("e5 mirrors the centre.");
-    expect(screen.queryByLabelText("last reply")).not.toBeInTheDocument();
+    expect(card).toHaveTextContent("e5 mirrors the centre.");
+    expect(within(card).getByText("Latency")).toBeInTheDocument();
     expect(board()).toHaveAttribute("data-draggable", "false");
+  });
+
+  it("shows the thinking card before the first token, in place of the previous reply", () => {
+    resetFake({}, [new HumanMessage({ id: "msg-3", content: "g1f3" })]);
+    onThread("abc", E4_E5);
+    fake.isLoading = true;
+    render(<App />);
+    expect(screen.getByLabelText("last reply")).toHaveAttribute("aria-busy", "true");
+    expect(screen.queryByText("System 1 played")).not.toBeInTheDocument();
+  });
+
+  it("keeps the reasoning hidden while it streams when the player hid it", () => {
+    savePlyView({ reasoning: false, topMoves: true });
+    resetFake({}, [
+      new HumanMessage({ id: "msg-1", content: "e2e4" }),
+      new AIMessage({ id: "a1", content: "Weighing e5." }),
+    ]);
+    onThread("abc", { moves: ["e2e4"], plies: [ply()], turns: [turn({ status: "pending" })] });
+    fake.isLoading = true;
+    render(<App />);
+    expect(screen.queryByText("Weighing e5.")).not.toBeInTheDocument();
+    expect(button("Show reasoning").querySelector(".animate-spin")).not.toBeNull();
+  });
+
+  it("remembers the reply card's toggles across reloads", async () => {
+    onThread("abc", E4_E5);
+    const first = render(<App />);
+    await click("Hide top moves");
+    await click("Hide reasoning");
+    expect(JSON.parse(window.localStorage.getItem(VIEW_KEY)!)).toEqual({
+      reasoning: false,
+      topMoves: false,
+    });
+    first.unmount();
+    render(<App />);
+    expect(button("Show top moves")).toBeInTheDocument();
+    expect(button("Show reasoning")).toBeInTheDocument();
+    expect(screen.queryByLabelText("system 1 moves")).not.toBeInTheDocument();
   });
 
   it("shows the rejection reason as a dismissible notice that re-arms on the next command", async () => {
@@ -797,7 +844,7 @@ describe("the game screen", () => {
     expect(board()).toHaveAttribute("data-position", START_FEN);
     expect(board()).toHaveAttribute("data-orientation", "black");
     expect(screen.queryByText("Opponent is thinking")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("thinking")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("last reply")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("result")).not.toBeInTheDocument();
     expect(screen.getByText("No moves yet.")).toBeInTheDocument();
     expect(button("Start")).toBeInTheDocument();

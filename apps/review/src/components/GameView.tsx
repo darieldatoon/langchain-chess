@@ -18,6 +18,7 @@ import {
   turnOf,
   type ChessValues,
   type MoveEntry,
+  type PlyView,
   type Side,
   usePlyKeys,
 } from "@langchain-chess/chess-ui";
@@ -31,12 +32,14 @@ import { GradeCard } from "./GradeCard";
 interface Props {
   game: Game;
   values: ChessValues;
+  view: PlyView;
+  onViewChange: (view: PlyView) => void;
   onOpenRun: (runId: string) => void;
 }
 
 const NO_MOVES: string[] = [];
 
-export function GameView({ game, values, onOpenRun }: Props) {
+export function GameView({ game, values, view, onViewChange, onOpenRun }: Props) {
   const startFen = fenOrStart(values.start_fen);
   const moves = values.moves ?? NO_MOVES;
   const plies = values.plies ?? [];
@@ -167,7 +170,12 @@ export function GameView({ game, values, onOpenRun }: Props) {
         {ply && (
           <PlyDetails
             title="Who Played It"
-            reply={{ ply, turn: turnOf(ply, values.turns ?? []), fenBefore: fens[index - 1] }}
+            reply={{
+              status: "played",
+              reply: { ply, turn: turnOf(ply, values.turns ?? []), fenBefore: fens[index - 1] },
+            }}
+            view={view}
+            onViewChange={onViewChange}
           />
         )}
       </aside>

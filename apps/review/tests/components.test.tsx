@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { DEFAULT_PLY_VIEW } from "@langchain-chess/chess-ui";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { EvalBar } from "../src/components/EvalBar";
 import { GameList } from "../src/components/GameList";
@@ -16,7 +17,13 @@ vi.mock("@langchain/macaw-components/LineChart", async () =>
 const renderView = (g = game(), onOpenRun = vi.fn()) =>
   render(
     <HostTheme mode="light">
-      <GameView game={g} values={g.values!} onOpenRun={onOpenRun} />
+      <GameView
+        game={g}
+        values={g.values!}
+        view={DEFAULT_PLY_VIEW}
+        onViewChange={() => {}}
+        onOpenRun={onOpenRun}
+      />
     </HostTheme>,
   );
 const key = (k: string) => fireEvent.keyDown(window, { key: k });

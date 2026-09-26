@@ -1,12 +1,13 @@
 import { Badge } from "@langchain/macaw-components/Badge";
 import { Button } from "@langchain/macaw-components/Button";
 import { Card } from "@langchain/macaw-components/Card";
+import { Spinner, SpinnerIcon } from "@langchain/macaw-components/Spinner";
 import { Text } from "@langchain/macaw-components/Text";
 import { Tooltip } from "@langchain/macaw-components/Tooltip";
-import { useState } from "react";
+import type { ReactNode } from "react";
 import { costText, seconds, sourceClass, sourceLabel, type SourceClass } from "../format";
 import { systemOneMeta, turnCost } from "../selectors";
-import type { RankedMove, Reply, SystemOneMeta } from "../types";
+import type { PlyView, RankedMove, Reply, ReplyState } from "../types";
 import { Analysis } from "./Analysis";
 import { MoveBar } from "./MoveBar";
 
@@ -20,27 +21,18 @@ const BADGE_COLORS: Record<SourceClass, "primary" | "special" | "secondary" | "w
   };
 
 interface Props {
-  reply: Reply | null;
-  /** The opponent's reasoning as it streams, while it thinks; it replaces the last reply. */
-  live?: string | null;
+  reply: ReplyState;
+  view: PlyView;
+  onViewChange: (view: PlyView) => void;
   title?: string;
 }
 
-export function PlyDetails({ reply, live = null, title = "Last Reply" }: Props) {
-  const [showReasoning, setShowReasoning] = useState(true);
-  if (live !== null) {
-    return (
-      <Card intent="neutral" className="flex flex-col gap-space-3" aria-label="thinking">
-        <Text variant="h4" as="h2" color="secondary">
-          Reasoning
-        </Text>
-        <div className="markdown max-h-80 overflow-auto rounded-md bg-surface-level-3 p-space-3">
-          <Analysis text={live} />
-        </div>
-      </Card>
-    );
-  }
-  if (!reply) {
+/**
+ * Every section and fact row renders in every state, so the card keeps its shape between moves;
+ * do not make one conditional on the ply.
+ */
+export function PlyDetails({ reply, view, onViewChange, title = "Last Reply" }: Props) {
+  if (reply.status === "none") {
     return (
       <Card intent="neutral" className="flex flex-col gap-space-3">
         <Text variant="h4" as="h2" color="secondary">
@@ -52,77 +44,140 @@ export function PlyDetails({ reply, live = null, title = "Last Reply" }: Props) 
       </Card>
     );
   }
-  const { ply, turn, fenBefore } = reply;
-  const cost = costText(turn ? turnCost(turn.calls) : null);
-  const reasoning = turn?.calls.reduce((sum, c) => sum + c.reasoning_tokens, 0) ?? 0;
-  const illegal = turn?.illegal_attempts ?? 0;
-  const s1 = systemOneMeta(ply);
-  const source = sourceClass(ply.source);
+  const played = reply.status === "played" ? reply.reply : null;
+  const thinking = played === null;
 
   return (
-    <Card intent="neutral" className="flex flex-col gap-space-3" aria-label="last reply">
+    <Card
+      intent="neutral"
+      className="flex flex-col gap-space-3"
+      aria-label="last reply"
+      aria-busy={thinking}
+    >
       <Text variant="h4" as="h2" color="secondary">
         {title}
       </Text>
-      <div className="flex items-center gap-space-2">
-        <Badge color={BADGE_COLORS[source]} size="sm">
-          {sourceLabel(ply.source)}
-        </Badge>
-        <Text variant="md" weight="semibold" as="span" className="font-mono">
-          {ply.san}
-        </Text>
+      <div className="flex min-h-6 items-center gap-space-2">
+        {played ? (
+          <>
+            <Badge color={BADGE_COLORS[sourceClass(played.ply.source)]} size="sm">
+              {sourceLabel(played.ply.source)}
+            </Badge>
+            <Text variant="md" weight="semibold" as="span" className="font-mono">
+              {played.ply.san}
+            </Text>
+          </>
+        ) : (
+          <Loading />
+        )}
       </div>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-space-4 gap-y-space-1">
-        <Fact label="Model" value={ply.model ?? "—"} />
-        <Fact label="Latency" value={seconds(ply.latency_ms)} />
-        <Fact
-          label="Cost"
-          value={
-            cost.incomplete ? (
-              <Tooltip title="Incomplete estimate: some calls were unpriced or approximated">
-                <span aria-label={`${cost.text} (incomplete estimate)`}>{cost.text}</span>
-              </Tooltip>
-            ) : (
-              cost.text
-            )
-          }
-        />
-        {reasoning > 0 && <Fact label="Reasoning Tokens" value={String(reasoning)} />}
-        {illegal > 0 && <Fact label="Illegal Attempts" value={String(illegal)} />}
-      </dl>
-      {s1 && <SystemOne meta={s1} playedUci={ply.uci} fenBefore={fenBefore} />}
-      {ply.analysis && (
-        <div className="flex flex-col gap-space-2">
-          <Button
-            variant="plain"
-            color="secondary"
-            size="sm"
-            className="self-start"
-            onClick={() => setShowReasoning((s) => !s)}
-          >
-            {showReasoning ? "Hide reasoning" : "Show reasoning"}
-          </Button>
-          {showReasoning && (
-            <div className="markdown max-h-80 overflow-auto rounded-md bg-surface-level-3 p-space-3">
-              <Analysis text={ply.analysis} />
-            </div>
-          )}
+      <Facts reply={played} />
+      <Section
+        label="top moves"
+        open={view.topMoves}
+        loading={thinking}
+        onToggle={() => onViewChange({ ...view, topMoves: !view.topMoves })}
+      >
+        {/* Room for the caption and five moves, k's default, so a spinner holds the height. */}
+        <div className="min-h-[9rem]">{played ? <TopMoves reply={played} /> : <Loading />}</div>
+      </Section>
+      <Section
+        label="reasoning"
+        open={view.reasoning}
+        loading={thinking}
+        onToggle={() => onViewChange({ ...view, reasoning: !view.reasoning })}
+      >
+        <div className="markdown h-80 overflow-auto rounded-md bg-surface-level-3 p-space-3">
+          <Reasoning
+            text={reply.status === "played" ? reply.reply.ply.analysis : reply.reasoning}
+            thinking={thinking}
+          />
         </div>
-      )}
+      </Section>
     </Card>
   );
 }
 
-function SystemOne({
-  meta,
-  playedUci,
-  fenBefore,
+function Reasoning({ text, thinking }: { text: string | null; thinking: boolean }) {
+  if (text) return <Analysis text={text} />;
+  if (thinking) return <Loading />;
+  return (
+    <Text variant="sm" color="tertiary">
+      No reasoning for this move.
+    </Text>
+  );
+}
+
+/** A Show/Hide toggle over its body; hidden, the toggle spins while the body is loading. */
+function Section({
+  label,
+  open,
+  loading,
+  onToggle,
+  children,
 }: {
-  meta: SystemOneMeta;
-  playedUci: string;
-  fenBefore: string;
+  label: string;
+  open: boolean;
+  loading: boolean;
+  onToggle: () => void;
+  children: ReactNode;
 }) {
-  if (meta.status === "skipped") {
+  return (
+    <div className="flex flex-col gap-space-2">
+      <Button
+        variant="plain"
+        color="secondary"
+        size="sm"
+        className="self-start"
+        aria-expanded={open}
+        rightDecorator={loading && !open ? SpinnerIcon : undefined}
+        onClick={onToggle}
+      >
+        {open ? `Hide ${label}` : `Show ${label}`}
+      </Button>
+      {open && children}
+    </div>
+  );
+}
+
+/** The fact rows, each a spinner until the move lands. */
+function Facts({ reply }: { reply: Reply | null }) {
+  const turn = reply?.turn ?? null;
+  const cost = costText(turn ? turnCost(turn.calls) : null);
+  const value = (fact: (reply: Reply) => ReactNode) => (reply ? fact(reply) : <Loading />);
+  return (
+    <dl className="grid grid-cols-[auto_1fr] gap-x-space-4 gap-y-space-1">
+      <Fact label="Model" value={value(({ ply }) => ply.model ?? "—")} />
+      <Fact label="Latency" value={value(({ ply }) => seconds(ply.latency_ms))} />
+      <Fact
+        label="Cost"
+        value={value(() =>
+          cost.incomplete ? (
+            <Tooltip title="Incomplete estimate: some calls were unpriced or approximated">
+              <span aria-label={`${cost.text} (incomplete estimate)`}>{cost.text}</span>
+            </Tooltip>
+          ) : (
+            cost.text
+          ),
+        )}
+      />
+      <Fact
+        label="Reasoning Tokens"
+        value={value(() =>
+          turn ? String(turn.calls.reduce((sum, c) => sum + c.reasoning_tokens, 0)) : "—",
+        )}
+      />
+      <Fact
+        label="Illegal Attempts"
+        value={value(() => (turn ? String(turn.illegal_attempts) : "—"))}
+      />
+    </dl>
+  );
+}
+
+function TopMoves({ reply: { ply, fenBefore } }: { reply: Reply }) {
+  const meta = systemOneMeta(ply);
+  if (meta?.status === "skipped") {
     return (
       <Text variant="sm" color="error">
         System 1 skipped: {meta.error ?? "no reason given"}
@@ -130,21 +185,27 @@ function SystemOne({
     );
   }
   // Older games recorded only the shortlist handed to the LLM.
-  const top = meta.top ?? meta.shortlist;
-  const played = meta.played_move_result?.at(-1);
+  const top = meta ? (meta.top ?? meta.shortlist) : [];
+  if (top.length === 0) {
+    return (
+      <Text variant="sm" color="tertiary">
+        No System 1 moves.
+      </Text>
+    );
+  }
+  const played = meta?.played_move_result?.at(-1);
   // The move played stays visible even outside the top moves, unless it never reached the final.
   const extra: RankedMove | null =
-    !top.some((m) => m.uci === playedUci) && played && played.heat === null && !played.bye
-      ? { uci: playedUci, probability: played.probability }
+    !top.some((m) => m.uci === ply.uci) && played && played.heat === null && !played.bye
+      ? { uci: ply.uci, probability: played.probability }
       : null;
-  if (top.length === 0) return null;
   return (
     <div className="flex flex-col gap-space-2" aria-label="system 1 moves">
       <Text variant="xs" color="tertiary">
         System 1&apos;s top moves
       </Text>
       {top.map((move) => (
-        <MoveBar key={move.uci} move={move} played={move.uci === playedUci} fen={fenBefore} />
+        <MoveBar key={move.uci} move={move} played={move.uci === ply.uci} fen={fenBefore} />
       ))}
       {extra && (
         <>
@@ -158,7 +219,19 @@ function SystemOne({
   );
 }
 
-function Fact({ label, value }: { label: string; value: React.ReactNode }) {
+function Loading() {
+  return (
+    <span
+      role="img"
+      aria-label="loading"
+      className="inline-flex h-[1lh] items-center align-top text-tertiary"
+    >
+      <Spinner size="xs" />
+    </span>
+  );
+}
+
+function Fact({ label, value }: { label: string; value: ReactNode }) {
   return (
     <>
       <Text variant="sm" color="secondary" as="span">

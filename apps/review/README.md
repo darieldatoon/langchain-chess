@@ -62,7 +62,8 @@ Custom apps depend on your LangSmith plan: Plus gets one per org.
 - **Sandbox.** The build is one CommonJS file, `dist/bundle.js`, exporting
   `render(data, root, metadata)`. It can reach only the LangSmith API, through
   `window.langsmith.call`, and navigates with `window.langsmith.openUrl`. The theme follows
-  `metadata.mode`. There is no localStorage.
+  `metadata.mode`. There is no localStorage, so the reply card's Show/Hide toggles last only the
+  session: they carry from game to game, but not across a reload.
 - **Data.** Each page of games is one threads query, then one call each for the threads' last
   root runs and the grader's `game_review` feedback. `game_review` carries every eval and grade
   and the run that played each move, so replaying a game reads nothing more.

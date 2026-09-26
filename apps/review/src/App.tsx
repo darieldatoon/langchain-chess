@@ -2,6 +2,7 @@ import { Banner } from "@langchain/macaw-components/Banner";
 import { EmptyState } from "@langchain/macaw-components/EmptyState";
 import { Select } from "@langchain/macaw-components/Select";
 import { Text } from "@langchain/macaw-components/Text";
+import { DEFAULT_PLY_VIEW, type PlyView } from "@langchain-chess/chess-ui";
 import { useEffect, useState } from "react";
 import { defaultProject, type Api, type GamesPage, type Project } from "./api";
 import { GameList } from "./components/GameList";
@@ -40,6 +41,8 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
   const [moreFrom, setMoreFrom] = useState<Loaded | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The sandbox has no localStorage and LangSmith no preferences API: this lasts the session.
+  const [view, setView] = useState<PlyView>(DEFAULT_PLY_VIEW);
   const key = `${projectId}|${since}`;
 
   useEffect(() => {
@@ -148,6 +151,8 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
             key={game.threadId}
             game={game}
             values={game.values}
+            view={view}
+            onViewChange={setView}
             onOpenRun={(runId) => openRun(projectId, runId)}
           />
         ) : (

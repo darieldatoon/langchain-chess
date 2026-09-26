@@ -23,7 +23,9 @@ That starts `langgraph dev` on `:2024` and this app on `:5173`, then prints the 
    spec, or none). Advanced holds the rest: threshold, shortlist size, memory, reasoning effort.
 2. **Move.** Click a piece, then its target, or drag it. When you play Black, the agent opens.
 3. **Read the reply.** Last reply shows who chose the move (System 1, the LLM, or a forced move),
-   the model, latency and cost, System 1's top moves, and the LLM's reasoning.
+   the model, latency and cost, System 1's top moves, and the LLM's reasoning. While the
+   opponent thinks, the same card shows spinners and streams the reasoning in. Show/Hide hides
+   the top moves or the reasoning, and stays as you left it.
 4. **After the game**, Rematch swaps colours and keeps the opponent. New game starts over.
 
 ![The New game dialog](../../docs/images/web-new-game.png)
@@ -90,8 +92,9 @@ sequenceDiagram
   models set is `hybrid`, one alone is `systemone` or `llm`). A new game sends it until its
   first turn records it as `setup`. The human's side isn't stored: the external plies are
   theirs, and before the first one they play the side the agent didn't open with.
-- **localStorage** holds only the last setup (`langchain-chess:setup`) and the API key
-  (`langchain-chess:app`). Nothing per game.
+- **localStorage** holds only the last setup (`langchain-chess:setup`), the API key
+  (`langchain-chess:app`), and which reply sections are open (`langchain-chess:view`). Nothing
+  per game.
 - **Styling** follows the Macaw design system: semantic Tailwind classes from its preset
   (`bg-surface-level-2`, `text-secondary`), Macaw components for controls, and no raw colours.
   The chessboard reads the same tokens as CSS variables. To find components:
