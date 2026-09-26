@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <!-- Dev only (`vp dev`, then /ui/render-preview.html): not a build input, so never deployed. -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Renderer preview</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 16px;
+      }
+      #frames {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: 16px;
+      }
+      figure {
+        margin: 0;
+      }
+      figcaption {
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+      iframe {
+        width: 100%;
+        height: 600px;
+        border: 1px solid #8884;
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="frames"></div>
+    <script type="module" src="/preview/render-preview.ts"></script>
+  </body>
+</html>

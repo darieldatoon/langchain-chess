@@ -64,6 +64,26 @@ mise run eval:positions:build -- --version v2 --month 2018-06   # --help for eve
 It stops if the pinned month leaves a bucket short, after reading up to `--max-months` months.
 Labels are cached as they finish, so an interrupted build resumes.
 
+## See outputs as a board
+
+LangSmith shows an experiment's outputs as JSON. The web UI's deployment also serves a
+[custom output renderer](https://docs.langchain.com/langsmith/custom-output-rendering) that draws
+them on a board: Stockfish's best move and top 3 as arrows with every move's eval, and System 1's
+picks as arrows with probability bars, confidence, margin and its tournament. It shows in
+experiment runs, the compare view and annotation queues, not the dataset's Examples tab.
+
+Point the dataset at your own deployment's copy. Its URL is the deployment's API URL (LangSmith
+→ Deployments → your deployment) plus `/ui/render.html`:
+
+```sh
+mise run eval:positions:upload -- --renderer-url https://<your deployment>/ui/render.html
+```
+
+`upload` merges the setting into the dataset's metadata (`iframe_config`) and rejects anything
+but an absolute `https://` URL, which is all LangSmith will embed. There is no default: without
+the flag, `upload` leaves the setting as it is. Turn it off in LangSmith (⋮ → Custom Output
+Rendering). To work on the renderer locally, see [apps/web](../apps/web/README.md#the-langsmith-renderer).
+
 ## What an experiment measures
 
 The target calls `GatewayRanker(model, style=..., max_options=...).arank(...)` on the example,

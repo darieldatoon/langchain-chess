@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Protocol
+from urllib.parse import urlsplit
 
 from langchain_chess_evals.positions.examples import Row
 from langchain_chess_evals.positions.schema import INPUTS_SCHEMA, OUTPUTS_SCHEMA
@@ -111,6 +112,16 @@ class UploadError(RuntimeError):
     """Shown to the user without a traceback."""
 
 
+def iframe_config(renderer_url: str) -> dict[str, Any]:
+    """LangSmith's custom output rendering setting, kept in the dataset's metadata."""
+    # LangSmith draws nothing for any other URL; see its IFrameTraceRenderingConfigSchema.
+    parts = urlsplit(renderer_url)
+    if parts.scheme != "https" or not parts.netloc:
+        msg = f"the renderer URL must be an absolute https:// URL, not {renderer_url!r}"
+        raise UploadError(msg)
+    return {"enabled": True, "url": renderer_url}
+
+
 @dataclass(frozen=True, slots=True)
 class Uploaded:
     dataset_id: str
@@ -125,9 +136,14 @@ def upload(
     *,
     dataset: str,
     tag: str,
+    renderer_url: str | None = None,
     report: Callable[[str], None] = lambda _: None,
 ) -> Uploaded:
-    about = {"description": description(manifest), "metadata": {"manifest": dict(manifest)}}
+    """`renderer_url` sets the dataset's custom output renderer; None leaves it as it is."""
+    settings: dict[str, Any] = {"manifest": dict(manifest)}
+    if renderer_url is not None:
+        settings["iframe_config"] = iframe_config(renderer_url)
+    about = {"description": description(manifest), "metadata": settings}
     if client.has_dataset(dataset_name=dataset):
         info = client.read_dataset(dataset_name=dataset)
         if (info.inputs_schema, info.outputs_schema) != (INPUTS_SCHEMA, OUTPUTS_SCHEMA):
@@ -139,7 +155,7 @@ def upload(
             )
             raise UploadError(msg)
         # Merge, never replace: the metadata also holds UI settings such as `iframe_config`.
-        about["metadata"] = {**(info.metadata or {}), "manifest": dict(manifest)}
+        about["metadata"] = {**(info.metadata or {}), **settings}
     else:
         report(f"creating dataset {dataset}")
         info = client.create_dataset(
@@ -160,4 +176,6 @@ def upload(
     latest = next(iter(client.list_dataset_versions(dataset_id=info.id, limit=1)))
     client.update_dataset_tag(dataset_id=info.id, as_of=latest.as_of, tag=tag)
     report(f"tagged {dataset} as {tag}")
+    if renderer_url is not None:
+        report(f"outputs render with {renderer_url}")
     return Uploaded(str(info.id), tag, sync)

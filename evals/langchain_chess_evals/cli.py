@@ -98,13 +98,32 @@ def build_command(
         raise typer.Exit(1) from e
 
 
+RendererUrl = Annotated[
+    str | None,
+    typer.Option(
+        help="Your deployment's https://<host>/ui/render.html: draws experiment outputs as a "
+        "board in LangSmith. Omitted leaves the dataset's setting as it is."
+    ),
+]
+
+
 @positions.command("upload")
-def upload_command(version: Version = "v1", dataset: str = DATASET) -> None:
+def upload_command(
+    version: Version = "v1", dataset: str = DATASET, renderer_url: RendererUrl = None
+) -> None:
     """Create or update the LangSmith dataset from the committed JSONL, tagged with its version."""
     rows = read_rows(POSITIONS_DIR / f"{version}.jsonl")
     manifest = json.loads((POSITIONS_DIR / f"{version}.manifest.json").read_text())
     try:
-        done = upload(rows, manifest, langsmith_client(), dataset=dataset, tag=version, report=say)
+        done = upload(
+            rows,
+            manifest,
+            langsmith_client(),
+            dataset=dataset,
+            tag=version,
+            renderer_url=renderer_url,
+            report=say,
+        )
     except UploadError as e:
         say(f"error: {e}")
         raise typer.Exit(1) from e

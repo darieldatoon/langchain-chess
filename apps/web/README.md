@@ -42,6 +42,21 @@ A deployed Agent Server needs a LangSmith API key. When the server answers 401 o
 asks for one (the gear, Settings). It stays in this browser's localStorage and is sent as
 `X-Api-Key`. The local `langgraph dev` needs none: the server's own `.env` holds the model keys.
 
+## The LangSmith renderer
+
+`render.html`, served at `/ui/render.html`, is the positions dataset's custom output renderer in
+LangSmith (see [evals](../../evals/README.md#see-outputs-as-a-board)). LangSmith embeds it in an
+iframe and posts each run's outputs or reference outputs, with the example's inputs, as
+`{type: "output" | "reference", data, metadata: {inputs}}`. The page fetches nothing and accepts
+messages only from the window that embeds it: self-hosted LangSmith can live on any origin.
+`src/render/messages.ts` reads the messages; the views reuse the board from
+[`packages/chess-ui`](../../packages/chess-ui).
+
+LangSmith embeds only `https` pages, so it can't reach `vp dev`. Instead, with `vp dev` running,
+open <http://localhost:5173/ui/render-preview.html>: it embeds the renderer four times and posts
+real messages from `preview/samples.ts`, as LangSmith would. It is not a build input, so it never
+deploys.
+
 ## Develop
 
 ```sh

@@ -1,15 +1,14 @@
 import { Badge } from "@langchain/macaw-components/Badge";
 import { Button } from "@langchain/macaw-components/Button";
 import { Card } from "@langchain/macaw-components/Card";
-import { ProgressBar } from "@langchain/macaw-components/ProgressBar";
 import { Text } from "@langchain/macaw-components/Text";
 import { Tooltip } from "@langchain/macaw-components/Tooltip";
 import { useState } from "react";
-import { sanAt } from "../chess";
-import { costText, percent, seconds, sourceClass, sourceLabel, type SourceClass } from "../format";
+import { costText, seconds, sourceClass, sourceLabel, type SourceClass } from "../format";
 import { systemOneMeta, turnCost } from "../selectors";
 import type { RankedMove, Reply, SystemOneMeta } from "../types";
 import { Analysis } from "./Analysis";
+import { MoveBar } from "./MoveBar";
 
 const BADGE_COLORS: Record<SourceClass, "primary" | "special" | "secondary" | "warning" | "plain"> =
   {
@@ -155,26 +154,6 @@ function SystemOne({
           <MoveBar move={extra} played fen={fenBefore} />
         </>
       )}
-    </div>
-  );
-}
-
-function MoveBar({ move, played, fen }: { move: RankedMove; played: boolean; fen: string }) {
-  const san = sanAt(fen, move.uci);
-  return (
-    <div className="grid grid-cols-[6ch_1fr_5ch] items-center gap-space-2">
-      <Text variant="sm" as="span" weight={played ? "semibold" : undefined} className="font-mono">
-        {san}
-      </Text>
-      <ProgressBar
-        value={Math.round(move.probability * 100)}
-        size="sm"
-        color={played ? "success" : "brand"}
-        aria-label={`${san} ${played ? "(played) " : ""}probability`}
-      />
-      <Text variant="sm" color="tertiary" as="span" className="text-right font-mono">
-        {percent(move.probability)}
-      </Text>
     </div>
   );
 }

@@ -11,6 +11,7 @@ from langchain_chess_evals.positions.upload import (
     Stored,
     UploadError,
     description,
+    iframe_config,
     plan_sync,
     read_rows,
     stored,
@@ -117,3 +118,51 @@ def test_upload_keeps_other_dataset_metadata():
     client.metadata[done.dataset_id] = {"manifest": {"old": True}, "iframe_config": iframe}
     upload([row(1)], MANIFEST, client, dataset="d", tag="v1")
     assert client.metadata[done.dataset_id] == {"manifest": MANIFEST, "iframe_config": iframe}
+
+
+RENDERER = "https://chess.example.com/ui/render.html"
+
+
+def test_iframe_config_takes_only_an_absolute_https_url():
+    assert iframe_config(RENDERER) == {"enabled": True, "url": RENDERER}
+    for url in ("http://chess.example.com/ui/render.html", "https:///ui/render.html", "/ui/"):
+        with pytest.raises(UploadError, match="absolute https:// URL"):
+            iframe_config(url)
+
+
+def test_a_renderer_url_is_set_on_a_new_dataset():
+    client = FakeDatasetClient()
+    notes: list[str] = []
+    done = upload(
+        [row(1)],
+        MANIFEST,
+        client,
+        dataset="d",
+        tag="v1",
+        renderer_url=RENDERER,
+        report=notes.append,
+    )
+    expected = {"manifest": MANIFEST, "iframe_config": {"enabled": True, "url": RENDERER}}
+    assert client.metadata[done.dataset_id] == expected
+    assert notes[-1] == f"outputs render with {RENDERER}"
+
+
+def test_a_renderer_url_replaces_only_the_rendering_setting():
+    client = FakeDatasetClient()
+    done = upload([row(1)], MANIFEST, client, dataset="d", tag="v1")
+    old = {"enabled": False, "url": "https://old.example.com/render.html"}
+    client.metadata[done.dataset_id] = {"manifest": {}, "iframe_config": old, "owner": "me"}
+    upload([row(1)], MANIFEST, client, dataset="d", tag="v1", renderer_url=RENDERER)
+    assert client.metadata[done.dataset_id] == {
+        "manifest": MANIFEST,
+        "iframe_config": {"enabled": True, "url": RENDERER},
+        "owner": "me",
+    }
+
+
+def test_a_bad_renderer_url_is_refused_before_langsmith_is_called():
+    client = FakeDatasetClient(datasets={"d": "id-1"})
+    client.has_dataset = None  # type: ignore[method-assign]  # a call would raise
+    with pytest.raises(UploadError, match="absolute https:// URL"):
+        upload([row(1)], MANIFEST, client, dataset="d", tag="v1", renderer_url="http://x/r.html")
+    assert client.calls == []
