@@ -496,6 +496,42 @@ describe("the game screen", () => {
     expect(screen.queryByRole("tab")).not.toBeInTheDocument();
   });
 
+  it("steps back through the game, locked, and returns to play", async () => {
+    const START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    const LIVE = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2";
+    onThread("abc");
+    resetFake(E4_E5);
+    render(<App />);
+    expect(board()).toHaveAttribute("data-draggable", "true");
+    expect(button("Next move")).toBeDisabled();
+
+    await click("e4");
+    expect(board()).toHaveAttribute("data-position", AFTER_E4);
+    // Looking back never plays from there.
+    expect(board()).toHaveAttribute("data-draggable", "false");
+    await click("First move");
+    expect(board()).toHaveAttribute("data-position", START);
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    expect(board()).toHaveAttribute("data-position", AFTER_E4);
+    fireEvent.keyDown(window, { key: "End" });
+    expect(board()).toHaveAttribute("data-position", LIVE);
+    expect(board()).toHaveAttribute("data-draggable", "true");
+    await click("Previous move");
+    await click("Last move");
+    expect(board()).toHaveAttribute("data-position", LIVE);
+  });
+
+  it("flips the board without changing sides", async () => {
+    onThread("abc");
+    resetFake(E4_E5);
+    render(<App />);
+    await click("Flip board");
+    expect(board()).toHaveAttribute("data-orientation", "black");
+    expect(board()).toHaveAttribute("data-draggable", "true");
+    await click("Flip board");
+    expect(board()).toHaveAttribute("data-orientation", "white");
+  });
+
   it("reuses a command id for a resent move", async () => {
     onThread("abc");
     render(<App />);

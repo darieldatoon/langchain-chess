@@ -54,7 +54,7 @@ describe("App", () => {
     expect(api.games).toHaveBeenCalledWith("p-app", "2026-09-18T12:00:00.000Z");
     expect(screen.getByText("Pick a game")).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole("button", { name: /1-0/ })[0]);
-    expect(screen.getByRole("heading", { name: "4. Qxf7#" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Qxf7#" })).toHaveAttribute("aria-current", "step");
     fireEvent.click(screen.getByRole("button", { name: /Open trace/ }));
     await waitFor(() => expect(openUrl).toHaveBeenCalledWith("https://smith/trace"));
     expect(runUrl).toHaveBeenCalledWith("p-app", "run-3");
