@@ -14,7 +14,7 @@ from langchain_chess.position import ascii_board, movetext, san_list
 from langchain_chess.rules import legal_ucis, side
 from langchain_chess.state import TurnRecord
 
-type Memory = Literal["none", "full", "summarize"]
+type Memory = Literal["none", "summarize"]
 
 SYSTEM_PROMPT = (
     "You are a strong chess player. You will be shown a game in progress and asked for your "

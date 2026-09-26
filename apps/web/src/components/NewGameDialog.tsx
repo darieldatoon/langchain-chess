@@ -16,10 +16,12 @@ import { withKnob } from "../settings";
 import {
   matchupLine,
   matchupOf,
+  modelOf,
   sectionsOf,
   type LlmChoice,
   type Setup,
   type SideChoice,
+  type Summarize,
   type SystemOneChoice,
 } from "../setup";
 import type { ChessContext } from "@langchain-chess/chess-ui";
@@ -36,7 +38,12 @@ interface Props {
   onOpenSettings: (draft: Setup) => void;
   /** Runs on Play; the game starts only once the server accepts the key. */
   checkKey: () => Promise<KeyCheck>;
+  /** The model's input limit, or null: `summarize` is offered only when it is known. */
+  modelLimit: (model: string) => Promise<number | null>;
 }
+
+/** Waits out typing in the custom model field before asking the server. */
+export const LIMIT_DELAY_MS = 300;
 
 const SIDES: { value: SideChoice; label: string; icon: React.ReactNode }[] = [
   { value: "white", label: "White", icon: <CrownIcon aria-hidden size={24} weight="regular" /> },
@@ -70,6 +77,7 @@ export function NewGameDialog({
   onClose,
   onOpenSettings,
   checkKey,
+  modelLimit,
 }: Props) {
   const [setup, setSetup] = useState(initial);
   const [advanced, setAdvanced] = useState(false);
@@ -81,8 +89,26 @@ export function NewGameDialog({
       setSetup((s) => withKnob(s, key, value));
   const setKnob: SetKnob = (key, value) =>
     setSetup((s) => ({ ...s, knobs: withKnob(s.knobs, key, value) }));
-  const matchup = matchupOf(setup);
+  const model = modelOf(setup);
+  const [limit, setLimit] = useState<{ model: string; tokens: number | null } | null>(null);
+  const summarize: Summarize =
+    limit?.model !== model ? "checking" : limit.tokens === null ? "no" : "yes";
+  const matchup = matchupOf(setup, summarize);
   const mounted = useRef(true);
+
+  useEffect(() => {
+    if (!model) return;
+    let current = true;
+    const timer = setTimeout(() => {
+      void modelLimit(model).then((tokens) => {
+        if (current) setLimit({ model, tokens });
+      });
+    }, LIMIT_DELAY_MS);
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
+  }, [model, modelLimit]);
 
   useEffect(() => {
     mounted.current = true;
@@ -204,6 +230,7 @@ export function NewGameDialog({
                 <AdvancedSettings
                   knobs={setup.knobs}
                   sections={sectionsOf(setup)}
+                  summarize={summarize}
                   onKnob={setKnob}
                 />
               </div>

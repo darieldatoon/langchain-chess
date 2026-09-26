@@ -22,6 +22,7 @@ import {
   usePlyKeys,
 } from "@langchain-chess/chess-ui";
 import { checkApiKey, type KeyCheck } from "./auth";
+import { fetchModelLimit } from "./modelLimit";
 import { AppSettingsDialog } from "./components/AppSettingsDialog";
 import { NewGameDialog } from "./components/NewGameDialog";
 import { ResultCard } from "./components/ResultCard";
@@ -64,11 +65,18 @@ interface Props {
   random?: () => number;
   /** Asks the server about a key before a game starts; injectable so tests need no server. */
   checkKey?: (apiKey: string) => Promise<KeyCheck>;
+  /** Asks the server for a model's input limit; injectable so tests need no server. */
+  modelLimit?: (apiKey: string, model: string) => Promise<number | null>;
 }
 
 const serverCheck = (apiKey: string) => checkApiKey(apiUrl(), apiKey);
+const serverLimit = (apiKey: string, model: string) => fetchModelLimit(apiUrl(), apiKey, model);
 
-export default function App({ random = Math.random, checkKey = serverCheck }: Props) {
+export default function App({
+  random = Math.random,
+  checkKey = serverCheck,
+  modelLimit = serverLimit,
+}: Props) {
   const [app, setApp] = useState<AppSettings>(() => loadAppSettings());
   const [setup, setSetup] = useState<Setup>(() => loadSetup());
   const [seat, setSeat] = useState<Seat | null>(() => {
@@ -87,6 +95,12 @@ export default function App({ random = Math.random, checkKey = serverCheck }: Pr
   const openSettingsFromNewGame = useCallback(
     (draft: Setup) => setOverlay({ kind: "settings", back: { kind: "new-game", draft } }),
     [],
+  );
+
+  // Stable per key: the dialog asks again whenever this changes.
+  const limitFor = useCallback(
+    (model: string) => modelLimit(app.apiKey, model),
+    [modelLimit, app.apiKey],
   );
 
   // Also persists a key migrated from the old settings on first load.
@@ -166,6 +180,7 @@ export default function App({ random = Math.random, checkKey = serverCheck }: Pr
         onClose={closeNewGame}
         onOpenSettings={openSettingsFromNewGame}
         checkKey={() => checkKey(app.apiKey)}
+        modelLimit={limitFor}
       />
       <AppSettingsDialog
         key={overlay?.kind === "settings" ? "settings-open" : "settings-closed"}

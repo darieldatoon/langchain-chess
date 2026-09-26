@@ -4,6 +4,7 @@ import { isRecord, oneOf, sanitizeContext } from "./settings";
 import {
   DEFAULT_CONTEXT,
   type ChessContext,
+  type Memory,
   type Side,
   type SystemOneModel,
 } from "@langchain-chess/chess-ui";
@@ -67,23 +68,35 @@ export function modelName(model: string): string {
 /** A playable setup pins a context; an unplayable one says what to fix. */
 export type Matchup = { ok: true; context: ChessContext } | { ok: false; reason: string };
 
-function modelOf(setup: Setup): string | null {
+/** Only a model with a known input limit can summarize; the server is asked which ones do. */
+export type Summarize = "checking" | "yes" | "no";
+
+export function modelOf(setup: Pick<Setup, "llm" | "customModel">): string | null {
   if (setup.llm === "none") return null;
   return setup.llm === "custom" ? setup.customModel.trim() : setup.llm;
 }
 
-export function matchupOf(setup: Setup): Matchup {
+/** The memory a game gets: `summarize` falls back to `none` for a model that can't summarize. */
+export function memoryOf(knobs: Pick<Knobs, "memory">, summarize: Summarize): Memory {
+  return summarize === "no" ? "none" : knobs.memory;
+}
+
+export function matchupOf(setup: Setup, summarize: Summarize): Matchup {
   const model = modelOf(setup);
   const systemOne = setup.systemOne === "none" ? null : setup.systemOne;
   if (model === null && systemOne === null) {
     return { ok: false, reason: "Pick a System 1, an LLM, or both." };
   }
   if (model === "") return { ok: false, reason: "Enter a model spec for the custom LLM." };
+  if (model !== null && setup.knobs.memory === "summarize" && summarize === "checking") {
+    return { ok: false, reason: `Checking whether ${modelName(model)} can summarize…` };
+  }
   const policy = systemOne === null ? "llm" : model === null ? "systemone" : "hybrid";
   return {
     ok: true,
     context: {
       ...setup.knobs,
+      memory: memoryOf(setup.knobs, summarize),
       policy,
       // The server ignores the model a policy doesn't use, but the field is required.
       model: model ?? DEFAULT_CONTEXT.model,
@@ -142,7 +155,7 @@ function sectionsOfPolicy(policy: ChessContext["policy"]): Sections {
 }
 
 const KNOB_SECTIONS: Record<keyof Sections | "rules", readonly (keyof Knobs)[]> = {
-  llm: ["show_legal_moves", "memory", "summary_trigger_tokens"],
+  llm: ["show_legal_moves", "memory"],
   systemOne: ["style", "with_eval", "with_nouls"],
   gate: ["gate", "threshold", "tournament_threshold", "k", "top_p"],
   rules: ["draw_claims", "seed"],

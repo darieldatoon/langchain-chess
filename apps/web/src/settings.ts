@@ -32,7 +32,7 @@ export const CONTEXT_CHECKS: { [K in keyof ChessContext]: Check<ChessContext[K]>
   model: isName,
   reasoning_effort: oneOf("low", "medium", "high"),
   show_legal_moves: isBool,
-  memory: oneOf("none", "full", "summarize"),
+  memory: oneOf("none", "summarize"),
   systemone_model: oneOf("semif-qwen3.5-4b", "typesafe/jev-latest"),
   style: oneOf("rich", "terse"),
   with_eval: isBool,
@@ -44,7 +44,6 @@ export const CONTEXT_CHECKS: { [K in keyof ChessContext]: Check<ChessContext[K]>
   top_p: orNull(inRange(0, 1, { minExclusive: true })),
   draw_claims: oneOf("auto", "never"),
   seed: inRange(Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, { integer: true }),
-  summary_trigger_tokens: orNull(inRange(1, Number.MAX_SAFE_INTEGER, { integer: true })),
 };
 
 const CONTEXT_KEYS = Object.keys(DEFAULT_CONTEXT) as (keyof ChessContext)[];
@@ -56,7 +55,9 @@ function knob<K extends keyof ChessContext>(stored: Record<string, unknown>, key
 
 /** Keeps only known knobs with valid values, so obsolete or corrupt storage can't reach a run. */
 export function sanitizeContext(stored: unknown): ChessContext {
-  const record = isRecord(stored) ? stored : {};
+  const raw = isRecord(stored) ? stored : {};
+  // `full` was removed; the dialog turns `summarize` off for models that can't summarize.
+  const record = raw.memory === "full" ? { ...raw, memory: "summarize" } : raw;
   return CONTEXT_KEYS.reduce<ChessContext>(
     (context, key) => ({ ...context, [key]: knob(record, key) }),
     DEFAULT_CONTEXT,

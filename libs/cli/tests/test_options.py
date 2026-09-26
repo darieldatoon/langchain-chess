@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 from langgraph.checkpoint.memory import InMemorySaver
 
 from langchain_chess.testing import ScriptedModel
@@ -27,9 +29,10 @@ def test_the_cli_chat_model_uses_the_environment(monkeypatch):
     model = default_model(AgentOptions(reasoning_effort="low"))
     assert model.model_name == "anthropic/claude-opus-5-5"
     assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
-    assert model.profile == {"max_input_tokens": 1_000_000}
+    assert model.profile == {"max_input_tokens": 1_000_000 - 32000}
     assert model.get_name() == "claude-opus-5-5"
-    assert chat_model("langsmith:openai/gpt-5.6-sol", "low").profile is None
+    gpt = chat_model("langsmith:openai/gpt-5.6-sol", "low")
+    assert gpt.profile == {"max_input_tokens": 1_050_000 - 32000}
     bare = chat_model("gpt-5.6-sol", "low")
     assert bare.openai_api_base == "https://gateway.smith.langchain.com/openai/v1"
     assert bare.get_name() == "gpt-5.6-sol"
@@ -45,14 +48,16 @@ def test_summarize_through_the_cli_model_factory(monkeypatch):
     saver = InMemorySaver()
     agent = build_agent(AgentOptions(memory="summarize"), draw_claims="auto", checkpointer=saver)
     assert "SummarizationMiddleware.before_model" in nodes(agent)
-    profileless = AgentOptions(memory="summarize", model="langsmith:openai/gpt-5.6-sol")
-    with pytest.raises(ChessContractError, match="summary_trigger_tokens"):
-        build_agent(profileless, draw_claims="auto", checkpointer=saver)
-    trigger = AgentOptions(
-        memory="summarize", model="langsmith:openai/gpt-5.6-sol", summary_trigger_tokens=9000
+    unknown = AgentOptions(
+        memory="summarize", model="langsmith:fireworks/accounts/fireworks/models/nope"
     )
-    agent = build_agent(trigger, draw_claims="auto", checkpointer=saver)
-    assert "SummarizationMiddleware.before_model" in nodes(agent)
+    message = "fireworks/models/nope has no known input limit, so it can't use memory summarize"
+    with pytest.raises(ChessContractError, match=message):
+        build_agent(unknown, draw_claims="auto", checkpointer=saver)
+    assert (
+        build_agent(replace(unknown, memory="none"), draw_claims="auto", checkpointer=saver)
+        is not None
+    )
     alone = AgentOptions(policy="systemone", memory="summarize")
     agent = build_agent(alone, draw_claims="auto", checkpointer=saver)
     assert "SummarizationMiddleware.before_model" not in nodes(agent)

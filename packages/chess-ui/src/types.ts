@@ -4,7 +4,7 @@
 export type Side = "white" | "black";
 export type PolicyKind = "llm" | "systemone" | "hybrid";
 export type ReasoningEffort = "low" | "medium" | "high";
-export type Memory = "none" | "full" | "summarize";
+export type Memory = "none" | "summarize";
 export type GateSignal = "margin" | "confidence";
 export type DescriptionStyle = "rich" | "terse";
 export type DrawClaims = "auto" | "never";
@@ -27,7 +27,6 @@ export interface ChessContext {
   top_p: number | null;
   draw_claims: DrawClaims;
   seed: number;
-  summary_trigger_tokens: number | null;
 }
 
 export const DEFAULT_CONTEXT: ChessContext = {
@@ -47,7 +46,6 @@ export const DEFAULT_CONTEXT: ChessContext = {
   top_p: null,
   draw_claims: "auto",
   seed: 0,
-  summary_trigger_tokens: null,
 };
 
 export type DrawReason =

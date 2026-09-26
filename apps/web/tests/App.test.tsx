@@ -62,6 +62,7 @@ vi.mock("../src/auth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../src/auth")>()),
   checkApiKey: vi.fn(() => Promise.resolve(keyCheck.result)),
 }));
+vi.mock("../src/modelLimit", () => ({ fetchModelLimit: vi.fn(() => Promise.resolve(968000)) }));
 vi.mock("@langchain/react", async () => (await import("./support/fakeStream")).useStreamMock());
 vi.mock("@langchain/macaw-components/Select", async () =>
   (await import("./support/macawShims")).selectShim(),

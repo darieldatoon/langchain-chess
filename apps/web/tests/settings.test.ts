@@ -3,6 +3,11 @@ import { apiUrl, configurableOf, DEV_API_URL, sanitizeContext, withKnob } from "
 import { DEFAULT_CONTEXT } from "@langchain-chess/chess-ui";
 
 describe("sanitizeContext", () => {
+  it("reads the removed full memory as summarize and drops the removed trigger", () => {
+    const stored = { ...DEFAULT_CONTEXT, memory: "full", summary_trigger_tokens: 50000 };
+    expect(sanitizeContext(stored)).toEqual({ ...DEFAULT_CONTEXT, memory: "summarize" });
+  });
+
   it("validates every knob's type and range", () => {
     const bad = {
       policy: "random",
@@ -21,7 +26,6 @@ describe("sanitizeContext", () => {
       top_p: 0,
       draw_claims: "always",
       seed: 1.5,
-      summary_trigger_tokens: 0,
     };
     expect(sanitizeContext(bad)).toEqual(DEFAULT_CONTEXT);
     expect(sanitizeContext({ k: 256, threshold: Number.NaN, top_p: 1.2 })).toEqual(DEFAULT_CONTEXT);
@@ -39,7 +43,7 @@ describe("sanitizeContext", () => {
       top_p: 1,
       draw_claims: "never",
       seed: -3,
-      summary_trigger_tokens: 50000,
+      memory: "summarize",
     };
     expect(sanitizeContext(good)).toEqual(good);
     expect(sanitizeContext({ ...good, tournament_threshold: null, top_p: null })).toEqual({

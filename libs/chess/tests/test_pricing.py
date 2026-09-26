@@ -2,7 +2,14 @@ from datetime import UTC, datetime
 
 import pytest
 
-from langchain_chess.pricing import PRICED_WITH, make_call, price, tokens_from_usage, turn_cost
+from langchain_chess.pricing import (
+    PRICED_WITH,
+    context_window,
+    make_call,
+    price,
+    tokens_from_usage,
+    turn_cost,
+)
 from langchain_chess.testing import usage
 
 AT = datetime(2026, 9, 25, tzinfo=UTC)
@@ -54,6 +61,21 @@ def test_jev_is_priced_under_typesafe_and_semif_is_not():
     assert jev["cost_usd"] == pytest.approx(0.000042)
     semif = make_call("systemone", "semif-qwen3.5-4b", tokens, AT, provider="typesafe")
     assert semif["cost_usd"] is None
+
+
+@pytest.mark.parametrize(
+    ("model", "window"),
+    [
+        ("langsmith:anthropic/claude-opus-5-5", 1_000_000),
+        ("langsmith:openai/gpt-5.6-sol", 1_050_000),
+        ("langsmith:fireworks/accounts/fireworks/models/kimi-k3", 1_040_000),
+        ("langsmith:baseten/zai-org/GLM-5.3", 1_048_000),
+        ("langsmith:fireworks/accounts/fireworks/models/nonexistent", None),
+        ("unknown-model", None),
+    ],
+)
+def test_context_windows_come_from_the_price_snapshot(model, window):
+    assert context_window(model) == window
 
 
 def test_unknown_model_and_service_tier_keys():

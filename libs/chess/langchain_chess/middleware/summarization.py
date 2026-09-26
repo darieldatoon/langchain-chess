@@ -30,6 +30,11 @@ DEFAULT_TRIGGER = ("fraction", 0.7)
 DEFAULT_KEEP = ("messages", 20)
 
 
+def input_limit(model: BaseChatModel) -> int | None:
+    """The limit `DEFAULT_TRIGGER` is a fraction of; None when the model's profile lacks it."""
+    return (model.profile or {}).get("max_input_tokens")
+
+
 class ChessSummarization(SummarizationMiddleware):
     state_schema = ChessState
 
@@ -59,8 +64,8 @@ class ChessSummarization(SummarizationMiddleware):
         except ValueError as e:
             msg = (
                 "memory='summarize' needs the model's input limit for a fractional trigger: "
-                "give the model a profile (profile={'max_input_tokens': ...}) or pass an "
-                "absolute trigger such as summary_trigger_tokens"
+                "give the model a profile (profile={'max_input_tokens': ...}), pass "
+                "`summarization` with an absolute trigger, or use memory='none'"
             )
             raise ChessContractError(msg) from e
         self.recorder = recorder

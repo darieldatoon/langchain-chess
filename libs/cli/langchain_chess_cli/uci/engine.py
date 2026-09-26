@@ -113,8 +113,8 @@ def uci_options(defaults: AgentOptions) -> dict[str, Option]:
         Option("k", f"option name K type spin default {d.k} min 1 max 255", _spin(1, 255)),
         Option(
             "memory",
-            f"option name Memory type combo default {d.memory} var none var full var summarize",
-            _choice("none", "full", "summarize"),
+            f"option name Memory type combo default {d.memory} var none var summarize",
+            _choice("none", "summarize"),
         ),
         Option(
             "seed",

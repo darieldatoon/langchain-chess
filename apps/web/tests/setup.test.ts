@@ -19,7 +19,7 @@ import { DEFAULT_CONTEXT, type ChessContext } from "@langchain-chess/chess-ui";
 const setup = (overrides: Partial<Setup> = {}): Setup => ({ ...DEFAULT_SETUP, ...overrides });
 
 function contextOf(s: Setup): ChessContext {
-  const matchup = matchupOf(s);
+  const matchup = matchupOf(s, "yes");
   if (!matchup.ok) throw new Error(matchup.reason);
   return matchup.context;
 }
@@ -45,14 +45,27 @@ describe("matchupOf", () => {
   });
 
   it("refuses both None and an empty custom model", () => {
-    expect(matchupOf(setup({ systemOne: "none", llm: "none" }))).toEqual({
+    expect(matchupOf(setup({ systemOne: "none", llm: "none" }), "yes")).toEqual({
       ok: false,
       reason: "Pick a System 1, an LLM, or both.",
     });
-    expect(matchupOf(setup({ llm: "custom", customModel: "  " }))).toEqual({
+    expect(matchupOf(setup({ llm: "custom", customModel: "  " }), "yes")).toEqual({
       ok: false,
       reason: "Enter a model spec for the custom LLM.",
     });
+  });
+
+  it("summarizes only with a model that can, and waits for the answer", () => {
+    const summarizing = setup({ knobs: { ...DEFAULT_SETUP.knobs, memory: "summarize" } });
+    expect(matchupOf(summarizing, "yes")).toMatchObject({ context: { memory: "summarize" } });
+    expect(matchupOf(summarizing, "no")).toMatchObject({ context: { memory: "none" } });
+    expect(matchupOf(summarizing, "checking")).toEqual({
+      ok: false,
+      reason: "Checking whether Claude Opus 5.5 can summarize…",
+    });
+    expect(matchupOf(setup(), "checking")).toMatchObject({ ok: true });
+    const alone = { ...summarizing, llm: "none" as const };
+    expect(matchupOf(alone, "checking")).toMatchObject({ ok: true });
   });
 
   it("sends a custom model trimmed, and carries the knobs", () => {

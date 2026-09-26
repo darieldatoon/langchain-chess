@@ -6,7 +6,7 @@ import { Text } from "@langchain/macaw-components/Text";
 import { useState } from "react";
 import { parseKnob, parseNullableKnob, sliderValue } from "../format";
 import { CONTEXT_CHECKS } from "../settings";
-import type { Knobs, Sections } from "../setup";
+import { memoryOf, type Knobs, type Sections, type Summarize } from "../setup";
 import type {
   DescriptionStyle,
   DrawClaims,
@@ -20,6 +20,7 @@ export type SetKnob = <K extends keyof Knobs>(key: K, value: Knobs[K] | undefine
 interface Props {
   knobs: Knobs;
   sections: Sections;
+  summarize: Summarize;
   onKnob: SetKnob;
 }
 
@@ -28,13 +29,13 @@ const EFFORTS: SelectOption<ReasoningEffort>[] = [
   { value: "medium", label: "Medium" },
   { value: "high", label: "High" },
 ];
-const MEMORIES: SelectOption<Memory>[] = [
+const memories = (summarize: Summarize): SelectOption<Memory>[] => [
   { value: "none", label: "None", description: "Each turn sees only the current position" },
-  { value: "full", label: "Full", description: "The whole game's conversation, every turn" },
   {
     value: "summarize",
     label: "Summarize",
-    description: "The conversation, summarized as it grows",
+    description: "The conversation, summarized at 70% of the model's input limit",
+    disabled: summarize === "no",
   },
 ];
 const DRAW_CLAIMS: SelectOption<DrawClaims>[] = [
@@ -51,13 +52,13 @@ const GATES: SelectOption<GateSignal>[] = [
 ];
 
 /** The knobs behind the pickers; only the sections the chosen opponent uses are shown. */
-export function AdvancedSettings({ knobs, sections, onKnob: set }: Props) {
+export function AdvancedSettings({ knobs, sections, summarize, onKnob: set }: Props) {
   const number = (key: "k" | "seed") => ({
     value: knobs[key],
     isValid: (v: string) => parseKnob(v, CONTEXT_CHECKS[key]) !== undefined,
     onChange: (v: string) => set(key, parseKnob(v, CONTEXT_CHECKS[key])),
   });
-  const nullable = (key: "tournament_threshold" | "top_p" | "summary_trigger_tokens") => ({
+  const nullable = (key: "tournament_threshold" | "top_p") => ({
     value: knobs[key],
     isValid: (v: string) => parseNullableKnob(v, CONTEXT_CHECKS[key]) !== undefined,
     onChange: (v: string) => set(key, parseNullableKnob(v, CONTEXT_CHECKS[key])),
@@ -82,26 +83,24 @@ export function AdvancedSettings({ knobs, sections, onKnob: set }: Props) {
             checked={knobs.show_legal_moves}
             onChange={(v) => set("show_legal_moves", v)}
           />
-          <Field id="memory" label="Memory" hint="What the model sees of earlier turns.">
+          <Field
+            id="memory"
+            label="Memory"
+            hint={
+              summarize === "no"
+                ? "This model has no known input limit, so it can't summarize."
+                : "What the model sees of earlier turns."
+            }
+          >
             <Select
               aria-label="Memory"
               size="md"
-              value={knobs.memory}
-              options={MEMORIES}
+              value={memoryOf(knobs, summarize)}
+              options={memories(summarize)}
               hideSearch
               onChange={(v) => set("memory", v)}
             />
           </Field>
-          {knobs.memory === "summarize" && (
-            <NumberField
-              id="summary-trigger"
-              label="Summary Trigger Tokens"
-              {...nullable("summary_trigger_tokens")}
-              placeholder="From the model profile"
-              hintText="Empty uses the model's profile."
-              min={1}
-            />
-          )}
         </Section>
       )}
 

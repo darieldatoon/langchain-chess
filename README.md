@@ -50,7 +50,8 @@ The record lives in `start_fen`, `moves`, `plies`, `turns`, `outcome` and `error
 are the model's working context and may be summarized. Clients should read only those keys:
 the thread-state API also returns private channels.
 
-Options worth knowing: `memory` (`none`, `full`, `summarize`), `show_legal_moves`,
+Options worth knowing: `memory` (`none`, or `summarize` at 70% of the model's
+`max_input_tokens`; pass `summarization` for another trigger), `show_legal_moves`,
 `max_retries` (illegal replies before the side to move resigns, default 3), `draw_claims`
 (`auto` ends the game on an actual threefold repetition or the fifty-move rule; `never` leaves
 claimable draws to the caller), `forced_move`, `seed`, `system_prompt`, `context_schema`.
@@ -217,7 +218,9 @@ uv tool install "langchain-chess-cli[anthropic] @ git+https://github.com/darield
 Traces go to a LangSmith workspace. Models are `init_chat_model` specs: the default
 `langsmith:<provider>/<model>` goes through a LangSmith LLM Gateway (which may be in a different
 org). A bare name or `provider:model` uses that provider's package and key, or the gateway's
-passthrough when `LANGSMITH_GATEWAY=true`. System 1 needs `TYPESAFE_API_KEY` and
+passthrough when `LANGSMITH_GATEWAY=true`. Gateway models get their input limit from
+genai-prices' context windows; `memory="summarize"` needs one, so the web app offers it only for
+models genai-prices knows. System 1 needs `TYPESAFE_API_KEY` and
 `TYPESAFE_BASE_URL`.
 Copy `.env.example` to `.env` and fill it in; `LC_GATEWAY_KEY` in your shell supplies the
 gateway key. Commands that make model calls load it explicitly (`uv run --env-file .env ...`);

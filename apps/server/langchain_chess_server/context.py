@@ -13,7 +13,7 @@ from pydantic import Field, TypeAdapter
 
 type Policy = Literal["llm", "systemone", "hybrid"]
 type ReasoningEffort = Literal["low", "medium", "high"]
-type Memory = Literal["none", "full", "summarize"]
+type Memory = Literal["none", "summarize"]
 
 
 def _knob(description: str, *nodes: str) -> Any:
@@ -50,8 +50,9 @@ class ChessContext:
     memory: Annotated[
         Memory,
         _knob(
-            "What the model sees of earlier turns: none, the full conversation, or a running "
-            "summary. Ignored for `systemone`.",
+            "What the model sees of earlier turns: none, or the conversation summarized at 70% "
+            "of the model's input limit. `summarize` needs a model with a known input limit. "
+            "Ignored for `systemone`.",
             "model",
         ),
     ] = "none"
@@ -104,10 +105,6 @@ class ChessContext:
         _knob("End the game on a threefold repetition or the fifty-move rule.", "model"),
     ] = "auto"
     seed: Annotated[int, _knob("Seeds System 1's tournament shuffle.", _SYSTEMONE)] = 0
-    summary_trigger_tokens: Annotated[
-        int | None,
-        _knob("Summarize at this many tokens, for models without a profile.", "model"),
-    ] = None
 
 
 def _context_values(runtime: Any) -> dict[str, Any]:
