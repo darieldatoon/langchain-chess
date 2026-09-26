@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4ce09d0a90b81e4d370172ac39b7171d6d9899ac7a7620113a35bd8fad3e47c8",
+  "pageVersion": "sha256:5d750e8884ece68bb15bf04357a84de194a98925be2277ea26ea286ae8a16f52",
   "claims": [
     {
       "id": "claim_da924ca86b624259b9fe4f9d0bcf3c46",
@@ -18,25 +18,33 @@
     },
     {
       "id": "claim_83f35e061b544a33a139604b187b6cd2",
-      "statement": "The server and CLI build chat models with init_chat_model using max_tokens=32000 (the cap covers reasoning), the configured reasoning_effort, a name equal to the model part for trace spans, and a PROFILES max_input_tokens profile only for langsmith: specs because the gateway's ChatOpenAI has no profile.",
+      "statement": "The server and CLI build chat models with init_chat_model using max_tokens=32000 (the cap covers reasoning), a name equal to the model_identity model part for trace spans, reasoning_effort only when it is not None (models without reasoning reject the parameter), and, only for langsmith: specs whose context window genai-prices knows, a profile with max_input_tokens equal to that window minus MAX_TOKENS because the gateway's ChatOpenAI has no profile; native providers' profiles are never replaced.",
       "evidence": [
         {
-          "resource": "repo://apps/server/langchain_chess_server/graph.py#L22-L44",
-          "version": "repo-lines-v1:sha256:3c9766daae276e2ca7ef59a69a6cd9ea5d5e026343d2bd450de4a9ef7ca39ffa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5N2YxZTM5YzUzYmE3NTBmNWQ0NDFkMzM2MTYxYTM0NDA4OTNmMmVkMjA2ZDUyMzE4MjA4NjkxYThhMjliOTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzZGIyMTNkMzlhODhjZGFkZGM1MDNlMzQ5YmM2NGEzMzVlMGIxMmM1NTg3ZWM2YmI2MDg3MGM4M2E2NjAyMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmNzI5ZjhkOTFmYjVjMjZkNGJmNjNlZDljNTk2ZDgzNjAzNTI4MTIyMzE5ZGM2MmNhZWRhYmFhMWFjMTVkOGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhOTM2NmViNmU2OTkzMGVhODcxMTgwNzgxOWMxZmIxNDdkYjE0MTk4Mzk3YjI3MTFlZTE0MGQ3ZWI0MTU4YjIifQ"
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L22-L41",
+          "version": "repo-lines-v1:sha256:55de16e11557ab4cc444be4eb15482c86e2c5f0f4e6d329ac8112e5d1fef13df:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5N2YxZTM5YzUzYmE3NTBmNWQ0NDFkMzM2MTYxYTM0NDA4OTNmMmVkMjA2ZDUyMzE4MjA4NjkxYThhMjliOTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzZGIyMTNkMzlhODhjZGFkZGM1MDNlMzQ5YmM2NGEzMzVlMGIxMmM1NTg3ZWM2YmI2MDg3MGM4M2E2NjAyMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmNzI5ZjhkOTFmYjVjMjZkNGJmNjNlZDljNTk2ZDgzNjAzNTI4MTIyMzE5ZGM2MmNhZWRhYmFhMWFjMTVkOGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxMDU2ZGZhMGY5YmY4MDMzNTA2NWQ5MGFjOWIzYzU2ZDc0ODBhNjQ4YTAwZDdjMDQ1ZWNhOGYxNWY4MzBhMDIifQ"
         },
         {
-          "resource": "repo://libs/cli/langchain_chess_cli/models.py#L14-L35",
-          "version": "repo-lines-v1:sha256:1ac3b405cd7ab5a76db9530af0aecaf7b8421d1c013528589aa393e4b827542d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5N2YxZTM5YzUzYmE3NTBmNWQ0NDFkMzM2MTYxYTM0NDA4OTNmMmVkMjA2ZDUyMzE4MjA4NjkxYThhMjliOTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzZGIyMTNkMzlhODhjZGFkZGM1MDNlMzQ5YmM2NGEzMzVlMGIxMmM1NTg3ZWM2YmI2MDg3MGM4M2E2NjAyMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5MjkwYmIxZTQ3ZjgyYWU0YTIwYjYzZGVhNGFkZTNiOWY0OTFmYTJkYmJlN2I0ZWYwNmM1NWIwYzM5ODhlNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://apps/server/tests/test_graph.py#L43-L62",
+          "version": "repo-lines-v1:sha256:c11d808dd904d9b9f529b2c3e9a72aecc316760c4031fd33b4b3c01ec6ae2b71:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjMWQxNmY2YmJjNTdhZjg3MzE3OGI4NWIxNmNmNDkxN2MzNjM4MWMwYjYyNjhmOTEwNjY1ZDg2NzE5NmIyMDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4ODZhNDRhNWIzZmU1OGRlYTg0NjE3NTdkNTcxZDcyMjcwNmUzNTU1YTQ1YzdkYmZjNjIzMDhmMGQzNWVmOGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0ZDFhMTFhYmE2NDQwMjA3N2FjOWRhYjRlZjZkNTcxNzFkMzdhOWI5MjEzZDlmZTRmMjFlYzdmOWVjZmY3NjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5NjBhMjMzYWQ2YjdmOTk0MDVhYTA3NjE2MDAzM2I2MTI0MmM5OWE2ZDEwZWM1Y2RmODg0OWI1ZTdjZGQ2MjYifQ"
+        },
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/models.py#L15-L33",
+          "version": "repo-lines-v1:sha256:d231c96b8c0d90abc225377a9514810c00bf26c316d24b6cf88007b1213dbcab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5N2YxZTM5YzUzYmE3NTBmNWQ0NDFkMzM2MTYxYTM0NDA4OTNmMmVkMjA2ZDUyMzE4MjA4NjkxYThhMjliOTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzZGIyMTNkMzlhODhjZGFkZGM1MDNlMzQ5YmM2NGEzMzVlMGIxMmM1NTg3ZWM2YmI2MDg3MGM4M2E2NjAyMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhYzkyZjc1YjMyZjFmZWU5MmU0NGE5NWQyZmNhZTM5OWJmZmJkYzI5NzM3ODFhY2QyNzM4YmQ4NTUyMDM1YTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
       "id": "claim_9d27848ae5aa4ab59a68f3f07a482739",
-      "statement": "The server's default model is langsmith:anthropic/claude-opus-5-5 and the default System 1 model is semif-qwen3.5-4b, with typesafe/jev-latest as the alternative.",
+      "statement": "The server's default model is langsmith:baseten/zai-org/GLM-5.3-Flash with reasoning_effort defaulting to None, and the CLI's AgentOptions mirror these defaults; the default System 1 model is semif-qwen3.5-4b, with typesafe/jev-latest as the alternative.",
       "evidence": [
         {
-          "resource": "repo://apps/server/langchain_chess_server/context.py#L38-L61",
-          "version": "repo-lines-v1:sha256:7cf97635f8d9f12568a0d8674a278b0331f8a9699dcb838f8cfa5a9fef0a53e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzYjQyYmQ2YzBmYmVmYzUwNzA4MGEyYjA5OGUxM2MyYTUwOTUyMTRiZmFjNWFkZjdiOGJmZGUxNjMyOWQwYzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzNjkwY2UxYWVlZjgyMjAwMDk1YTQ0ZDA4MjI0MzA5ZTJjMGZkYWVhOGY4OWYyNzZiMzRjOGU0NTZkOTQwNDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwNmIzYzMwNWY0ZDAxMzI2MDRjNzI0MzZmYmEyYmI1NjIxNDlmMDc1MTRjNmFlOGIyMGQ1OTY4YWRiMGFmM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4NDA2NDhlMjA1OTlhYjEwZjNlMGI1NmNjZmE2ZTA2NTYxOGExNzIwZmZhYjZkMjI1ZDMxODdmYjJjYTliMzcifQ"
+          "resource": "repo://apps/server/langchain_chess_server/context.py#L38-L67",
+          "version": "repo-lines-v1:sha256:75a8ff7f2f6020939c40499f1ef25ac099ddafe1d1461be92962a97040279a03:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzYjQyYmQ2YzBmYmVmYzUwNzA4MGEyYjA5OGUxM2MyYTUwOTUyMTRiZmFjNWFkZjdiOGJmZGUxNjMyOWQwYzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzNjkwY2UxYWVlZjgyMjAwMDk1YTQ0ZDA4MjI0MzA5ZTJjMGZkYWVhOGY4OWYyNzZiMzRjOGU0NTZkOTQwNDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwNmIzYzMwNWY0ZDAxMzI2MDRjNzI0MzZmYmEyYmI1NjIxNDlmMDc1MTRjNmFlOGIyMGQ1OTY4YWRiMGFmM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4NDA2NDhlMjA1OTlhYjEwZjNlMGI1NmNjZmE2ZTA2NTYxOGExNzIwZmZhYjZkMjI1ZDMxODdmYjJjYTliMzcifQ"
+        },
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/options.py#L24-L33",
+          "version": "repo-lines-v1:sha256:121afde33a2b2afb69ed093749e47eb5146865ceb72331200252eff843b63ad6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlM2ZiMWU1OGZiYzkwNDc5NGQ1MDczMTRmYTkxYzlmMmYxOThjODhkM2ZmMzk1ZTAwODI4OTAxYzM3ZGM5MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NTY0ZmM5ODVjZTU0ZjViMDdmM2Q0NjhmYzhmMWEyMTY4YzI4Njg5YjY0YTdiMzk3NmMzNTYwNTVlMmYwZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkMTA0NmRiZDM2YTUxOTBiZWUyZjI5Nzg1MTI2ZmI0OTE2ZmFhNjVhYWYwNmFhYWU0NzgwZmZmNWE0ODQ3MmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg2MTc0Njc0MzhjYWM2MmM3NjMxY2I5N2U1YTZhYWQ5MTllMzZiZGJkYWRlOTJiMGJlYTRmMTI3MDlhN2NmNDkifQ"
         }
       ]
     },
@@ -130,11 +138,15 @@
     },
     {
       "id": "claim_8fcf3cf89b7c43d9a61fa73780a412ee",
-      "statement": "Costs are computed locally from usage_metadata with genai-prices' bundled snapshot (pinned 0.1.9) because no gateway route returns a cost; update_prices is never called and each priced Call records the genai-prices version in priced_with.",
+      "statement": "Costs are computed locally from usage_metadata with genai-prices' bundled snapshot (pinned 0.1.9) because no gateway route returns a cost; update_prices is never called, each priced Call records PRICED_WITH ('genai-prices <version>') in priced_with, and unpriced calls have priced_with None.",
       "evidence": [
         {
           "resource": "repo://libs/chess/langchain_chess/pricing.py#L1-L19",
-          "version": "repo-lines-v1:sha256:209b0161bee740b034ef0b0d576e42544ba3d4865693ada848eb15152bc430e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkOTc1Y2UzZDMyZTFjYWM5MDA4Y2RkNDNiMGNhNzZjZDY4OThhOTMzZGEyOTI5ZTBhMTg2ODljMGIzNDJjOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2NjA0MDljYzA4YzM1YmUwZGU2NWRjODMyZDY0OTIwNGI4N2Q2N2JlYmRiMjFlMDQyMzE2OGRkZmFhNjI0MWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiNGZmODE1ZjIxOWI2Yzg3MzYwNGU5YzhiZmI3ZGRiM2NmZDRiYWQxZDk4ZGFiMzg1OGVlZDJhNjFlYjkzOTEifQ"
+          "version": "repo-lines-v1:sha256:b01548c32aa50828273384fafdc0f383ad201d90197e27a8f80aa34c10cb96cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxZGJhYjkxMDZlOWE5ZGYzZDVmNWJhMmEwODhmZWYxYmJjMjVjNDQyZTNlZWFkNWM2MzgwYmExYjcyZjE1NGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2NjA0MDljYzA4YzM1YmUwZGU2NWRjODMyZDY0OTIwNGI4N2Q2N2JlYmRiMjFlMDQyMzE2OGRkZmFhNjI0MWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiNGZmODE1ZjIxOWI2Yzg3MzYwNGU5YzhiZmI3ZGRiM2NmZDRiYWQxZDk4ZGFiMzg1OGVlZDJhNjFlYjkzOTEifQ"
+        },
+        {
+          "resource": "repo://libs/chess/langchain_chess/pricing.py#L110-L129",
+          "version": "repo-lines-v1:sha256:2388229f134dd0ca40152e3f72cad8bac320e854e281768eb50c0b3cf43a87e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0MGI0OWJkZmM1MjQ0MDQ4NDI1OWQ2ODY2Njg1YjkxOTJkMmMyN2M2NTY3ZGQ4NDMzZTEyZmVlOGIyNmU3MTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczM2U4NDg3Yzg1ZGZkY2Y5ZmE3YjkzYzc0NmM5NDYyNWFlNDdlMTIwYzc5N2U3OTFlNzM3ZjllZDdmZmM3M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4ZTMxZWY1OTUxOGQ1NzIyOWY5MDMwN2FmZDQxMTMzNGY4NWIyYjkzNThjOTczNGZlZWU5MTQ0ZTMwZWEwOTcifQ"
         },
         {
           "resource": "repo://libs/chess/pyproject.toml#L11-L11",
@@ -144,15 +156,19 @@
     },
     {
       "id": "claim_db3db3b29bf34d98968dee62d952d985",
-      "statement": "tokens_from_usage treats missing usage as unknown (None, not zero), sums Anthropic ephemeral 5m/1h keys into cache_write with a 1h subset or else counts cache_creation as 5-minute writes, and marks tokens approximated when non-zero unmapped input or output detail keys (e.g. priority_cache_read) appear.",
+      "statement": "tokens_from_usage treats missing or empty usage as unknown (None, not zero), sums Anthropic ephemeral 5m/1h keys into cache_write with a 1h subset or else counts cache_creation as 5-minute writes, and marks tokens approximated when non-zero unmapped input detail keys (e.g. priority_cache_read) or output detail keys other than reasoning appear.",
       "evidence": [
         {
           "resource": "repo://libs/chess/langchain_chess/pricing.py#L21-L80",
           "version": "repo-lines-v1:sha256:0f7ecded05a585331be90be1a1e627f782a90c3c549c9062ee0b2c9551f7b231:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3NThjOGFmNzI0NjJlMmZiMTZlZGM3ZWQzMzU1ZWRhNTI0MjgyNDU4MTE4NmIzMDgxNDczYmY1MmZlYTUzNDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4OWFlZTNkNTIxYTg1NGFiZjFhMGFmN2EyYWE4ZDk2MjYwMTY4ODJmY2U2NTMzNzU1NGViMTZiMjQ1YmYzMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkNzMwNmI4MDVlZDEzNTc2MGUyYmJlODQ2YjliYjMyM2Q0ZmY1NDQwMmNhMGE0ZTZiMzU3MDZiMTM3ZTc3ODcifQ"
         },
         {
-          "resource": "repo://libs/chess/tests/test_pricing.py#L11-L70",
-          "version": "repo-lines-v1:sha256:5d0411b46261d8e8338dcd3e2c61fcf29f74a2b02ee365e16f5a91c86ff1ef51:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZGRlMzBmMTJlMTM0MjQ2OTVlZDE2NDE4OTZmOTAxZWVlMjcwODg2NWQ4NTdmNTc3NDk2MzJkNzM3ZDdjYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5MzZhMDAxZWFmMzMwOGVhOGNmMGUwMTg5OTE1OTc3MzNiOGQxOWE0ZGVhMTVjNzU5MTZhNzcwZTE3ZTE5ZTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlZWQwMjA2MDZlZjgyNWZlNjlkNzE4ZWZhOGE2ZjZmYWU2YjkzZWMxZDlhNTAzYWFhY2E0MzViNjdiN2VkYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjZmY1YjRmYTNkN2E2MTQ1N2JjYjg1MzAwMjJiZTM5Yjk4MzA2N2I2ZGNjNDRiYzQwM2Q4YTQwOGIzMmI4MjgifQ"
+          "resource": "repo://libs/chess/tests/test_pricing.py#L18-L54",
+          "version": "repo-lines-v1:sha256:93dde2bd33e2f949bf9325764ed745ef628c01a74c2711430a2aa41c6bf03677:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZGRlMzBmMTJlMTM0MjQ2OTVlZDE2NDE4OTZmOTAxZWVlMjcwODg2NWQ4NTdmNTc3NDk2MzJkNzM3ZDdjYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4M2FhZmEyNWI0ZWExYTE0MWRlODFlZDM4NDJlY2ZlZDRkNDdmOWIwNGQ5OTVmMjkzYzc0ZjE2ODJiMTI1ODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlZWQwMjA2MDZlZjgyNWZlNjlkNzE4ZWZhOGE2ZjZmYWU2YjkzZWMxZDlhNTAzYWFhY2E0MzViNjdiN2VkYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkMzhmOTI2NDcxZmMzNWY2YjZlNzI2NWU0MzViZDJhMWVhZDNhMDM0Nzc3M2QyZmJkOWEwMzVlNTkwZDQ3NTkifQ"
+        },
+        {
+          "resource": "repo://libs/chess/tests/test_pricing.py#L81-L92",
+          "version": "repo-lines-v1:sha256:8ca676712699236d1e4c40e22254f0a4bc014cd5c99b02e94a654fc92c25cf10:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4MGMwZTE4Njc1MjA1YjRlMTljYWJkNjY0MGIzMGI0MWQ1ZTRhMDY3ODIyYzA1Y2JmM2ZiZTM0ODg0OWM5OTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5MzZhMDAxZWFmMzMwOGVhOGNmMGUwMTg5OTE1OTc3MzNiOGQxOWE0ZGVhMTVjNzU5MTZhNzcwZTE3ZTE5ZTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhNzgyOGMwYjBmZDgxNjNhMTYxNDRjYzdmNDhhZDcyMGJlNDY1YWJmMWMwMGZjYTJlZjQxYjNjZDJjODU3M2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjZmY1YjRmYTNkN2E2MTQ1N2JjYjg1MzAwMjJiZTM5Yjk4MzA2N2I2ZGNjNDRiYzQwM2Q4YTQwOGIzMmI4MjgifQ"
         }
       ]
     },
@@ -161,12 +177,16 @@
       "statement": "price returns (None, False) for unreported usage or a model genai-prices doesn't know (LookupError), otherwise the USD total with complete equal to not approximated; SemIf is unpriced while typesafe:jev-latest is priced.",
       "evidence": [
         {
-          "resource": "repo://libs/chess/langchain_chess/pricing.py#L83-L120",
-          "version": "repo-lines-v1:sha256:1c2c1f19837ab60eecb42000ac9097c9be9ad4904ca92da824525e5b81b99f12:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiYmViODlkNjI2OTQyYTk4MWZkMmQ1MjhlMjRlOWU1ZjVkYWIyNDZjZGM4ZmNhODg3YTM4MTRjM2E2YmE0NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4ZTMxZWY1OTUxOGQ1NzIyOWY5MDMwN2FmZDQxMTMzNGY4NWIyYjkzNThjOTczNGZlZWU5MTQ0ZTMwZWEwOTcifQ"
+          "resource": "repo://libs/chess/langchain_chess/pricing.py#L83-L98",
+          "version": "repo-lines-v1:sha256:3aec85c9a3e98fa6023ffb2706cb403a0929039a1f4733de3bbc65d938337933:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiYmViODlkNjI2OTQyYTk4MWZkMmQ1MjhlMjRlOWU1ZjVkYWIyNDZjZGM4ZmNhODg3YTM4MTRjM2E2YmE0NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhZWI3MGNkYjNkNGY1NzI2ZDU2ZTgwZWE1YTY3NWFlNDdiMTBmZTk4NTYzZGFjYTE2ZDZiZDI0ODA2ZGQ3NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzNjM0ODNlMjdjY2YwMWZkMjY1Yjg4MTdkYWQ0MjdkOTgyMjg2OWZmODY4MWM4MTg2ZGNiN2FiZjNiNjEwMjkifQ"
         },
         {
-          "resource": "repo://libs/chess/tests/test_pricing.py#L50-L67",
-          "version": "repo-lines-v1:sha256:aec74f8ef60415597c6b7af71fe1efd057aacbc32427a22194d6711f5159bb5f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNmFmNjQ5YzM4NmIzZTNkOWJkYTlmNGNmMDc2Yjg1YWNkNjJlYzcxODExYTU1MDIyNjEyMTcyYjU4NzI3MmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2OWViNzcxZGZiY2VhYzcxYjNlNzE0YWFhMTUyMTc2NzlkODNkMmMxN2RjOWM1NjEyZGMxYWMxZDY5ODUwMjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0ZDlmZWU2ZThjM2FlMWYyNmI4ZGFlMTZjYjYxMGY0N2QyMmU3ZWQxODJlMmViZDc1OTAzMzU2ZWY4MGM2ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljMjViMTJkNTMxYWVkZDQ5OTNmMGM5OWVkMjliM2M5NjBlOTFkYTA0NWE5NmYxNWNmNWQzNTA4NGQ2NDAyODUifQ"
+          "resource": "repo://libs/chess/tests/test_pricing.py#L57-L63",
+          "version": "repo-lines-v1:sha256:96bcf6bd196e968a24e674c0ddf083347bb31433d2b3732c5a3732c2375b088b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWQ2YWY2NDljMzg2YjNlM2Q5YmRhOWY0Y2YwNzZiODVhY2Q2MmVjNzE4MTFhNTUwMjI2MTIxNzJiNTg3MjcyZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjI2ODQzOTllYTg5MGQ4YTdlNTI4ZTI3OWU4OTQ4ZDRhZWEyMWJlYzBiYTU5M2QzOWM1YzYzYWE5MDc1NzQ1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTRkOWZlZTZlOGMzYWUxZjI2YjhkYWUxNmNiNjEwZjQ3ZDIyZTdlZDE4MmUyZWJkNzU5MDMzNTZlZjgwYzZkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTY4MGIwZjI5MjhhYzBkYmYzZGQ0YTMxZDVjMTZlOTE5OGEyOWE2MDg2ZDM5Y2ZiNTdjMjBmNjBiZTMzYTY1ZCJ9"
+        },
+        {
+          "resource": "repo://libs/chess/tests/test_pricing.py#L81-L89",
+          "version": "repo-lines-v1:sha256:bb4df16cdd421bb583d9894b1b337a7de2bacc9f419f9ca88d87f4ef343d90ca:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzgwYzBlMTg2NzUyMDViNGUxOWNhYmQ2NjQwYjMwYjQxZDVlNGEwNjc4MjJjMDVjYmYzZmJlMzQ4ODQ5Yzk5MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY5ZWI3NzFkZmJjZWFjNzFiM2U3MTRhYWExNTIxNzY3OWQ4M2QyYzE3ZGM5YzU2MTJkYzFhYzFkNjk4NTAyNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWE3ODI4YzBiMGZkODE2M2ExNjE0NGNjN2Y0OGFkNzIwYmU0NjVhYmYxYzAwZmNhMmVmNDFiM2NkMmM4NTczYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWMyNWIxMmQ1MzFhZWRkNDk5M2YwYzk5ZWQyOWIzYzk2MGU5MWRhMDQ1YTk2ZjE1Y2Y1ZDM1MDg0ZDY0MDI4NSJ9"
         }
       ]
     },
@@ -175,11 +195,11 @@
       "statement": "turn_cost sums priced calls of a turn, returns None when no call is priced, and marks the total complete only if every call has a cost and cost_complete is true; the TUI shows an em dash for None and prefixes incomplete totals with ≥.",
       "evidence": [
         {
-          "resource": "repo://libs/chess/langchain_chess/pricing.py#L123-L129",
+          "resource": "repo://libs/chess/langchain_chess/pricing.py#L132-L138",
           "version": "repo-lines-v1:sha256:6c63a373bd6cd011c44c2018f76800fe951fa171191715ffcae6c2283627c6ec:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWEzN2RjMWZiNTNkZGU0NWFmNDFlM2VjZjczODY0ODM5ZTdjMjhlZjdmY2Y4ZTFjMzFiYmQ3MzMxNDdlYzdkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDQ2MWRhOTdmYWYyYWVkMDE5MGNlOGI3MDdhNjU3M2VlNmU3ODZlMDUzOWQyZGJkZDk5ZWQ2MDQ2YzYxMWMzNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGNjNGE3ZDFjYzc5NmFiYTNlNDY3MjMzMjdmNTE3ZTlmODExOTgyZDI1MGYwNzAyOTg2ZTRiNTc2NGFkOTU4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://libs/chess/tests/test_pricing.py#L77-L82",
+          "resource": "repo://libs/chess/tests/test_pricing.py#L99-L104",
           "version": "repo-lines-v1:sha256:0cdc0ba13814d9a4128108b0ad43800e4de82e0f8e75d5081bba20ec430d76c4:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTQ4YjkyNTIyNzA2OTIzNjZkODlhMzJmMWM0MTAxZWU3ZTE5ODEzMTU3MjQwZDIwOTMyNWJhZTAyN2NmMWNjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQ4M2NjZjQ5YjE4ZGVkMjE3NzFjMjViOTkwMzI3MDNjZTBhNTJiMTlkNjUwMmFiYzlmMzFhZjhkNGNjNTZjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTU2NWQyYzRjNjZhNmM0OGI0NmYzOTkwMzE0ZGY0YzkyOTZjZWI1OGI3YWFiMjIzOGY1YWQyNzNhYjU3ODk3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
@@ -187,10 +207,60 @@
           "version": "repo-lines-v1:sha256:46408e0466c4a4f823aef02ba9982ff939e82d379f177d7d02aa255b0db1d7ce:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzhmZDcyNDY2MmI3YmY5Njc3YjcyNDlkOTYwYzE5ZGRhNTMxNzc1N2I1ZDlmMDY4YWI1YmZhMzI3MTVkYzUyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM3N2VhMTA1NjcwYmI4MDM5ZGY4NDA1YjY4MTcwZGFmYzgxYTYyZTYxNTU4ZWNlMDJhY2M2MDBkM2NjYWIzMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjU4MjJiNzRmNTJkOTExZGU0MGMwNzE3ZjU4YTIzMzgzNDVmNjVhYThlMWU4NzQ4ZTgzMjY4NDRlMTIzNTczMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTZhYmY0NTE2YzY1YjhjODlhNTFjMTMwMDg2YTk3ODg0MzdlOTYzZDE2NjA4MGNhYWFkMTE4MmY4NWFiNjcxYSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_e3e0c55074324e588cd3997868fe7a2b",
+      "statement": "context_window resolves a spec via model_identity and returns the model's combined input+output context window from the same pinned genai-prices snapshot used for pricing, or None when the model is unknown.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/pricing.py#L101-L107",
+          "version": "repo-lines-v1:sha256:d9dcc416d77a0a94f412e6e8a0df3e0a6e93ac6d401ed30446b1758a261f51d7:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWIyZWYzNTZkZjA2NjBlZjMzYTNkMWEwNGI4ZmU5MWNkYmE1NTBkODlhNmJlODEwZjRjMzUwMTU2OTY2OTFjNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWU3Yzk1N2JjYjQ0ZmI2NzNjOThiMDA1MGE3NWQzODA4MmRiODFkOTE4ZGUzMTNhM2YwN2MxMjM1MzA2ZDdlYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDkwMTAwMTQyMmU4YmY2NzllOTExNzc5MThkNTNjYTExNzM4NTdmNTg0MjIzY2UyMzNjNWY5OTNhMmU5NDYwZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDU1MDdlOGY4Mjk2NDhmMzZmY2Q2ZjYxMzI3MDdmM2IwMjgxOTc5MWEwNGQyYmM0ZTRlNDNiNWJlZWU2OTNlZSJ9"
+        },
+        {
+          "resource": "repo://libs/chess/tests/test_pricing.py#L66-L78",
+          "version": "repo-lines-v1:sha256:d5cb6cea376963f7f2ac7f16ed1fb4879a54f48d2b5d8befa9d326d1fe7b4746:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmMzQ1ODNhNTk4NzY3YmY1NmFlZmViNjVlMjAzM2ExNjUxY2M0YzhkN2U2ZjBhZjNlNWNmZDMyOTNmOTMzYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1YWIwYWFlZjJmMGMyM2YyODVmYTRjM2UyYTJjNzQxYWY5ZGQ2ODc2MmMwZjljNWRjZDMxYmExYmMxMjFjNjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4OTI3YzE1OGY0ZmQyM2UyMDkxZDc5N2ZhMDYyODkwYzEwMTNkNWU0ZmU2YzI5YzQyYmEzYzZjMjI3ZDkyYTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxNjY4ZWUxZTEwZmU1NGNkMWUxODU3ZjY1NjRjMmZlMmFjZmNmOTdmNDM2NWY5N2QwM2JmZDBkNzdlN2EzYzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d4b27e2df6a4e6b81b8011d7b272b55",
+      "statement": "The server's build_agent raises ChessContractError when memory='summarize' is requested for a chat model whose profile lacks max_input_tokens (input_limit is None); the systemone policy builds no chat model and forces memory 'none'.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L81-L95",
+          "version": "repo-lines-v1:sha256:bc6e7ba904cdf7be930c5fbb96aefe54b7b1120ccbdb410e199dd625911890e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3YTY3M2I5NGYzZDBiYzRiZTcwMGRjOTVjZDQ4OGM5NDcyMjVhMDY1MGYzNWFlZDU3MWUzZDM2NDQzN2EwNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2NmM3MDg4MTQ5YWYwMzY3ZDkxYjc5MjEyOGU0ZjBlMDFiY2Y4NTVkZmI3YzljYjBjNzFlZGExYzdjNTBiNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyZjc0ZTE1MDBhOGZkY2NjNDVhM2VmZjE2ODJjMmJkODZiOTU0NjU4OTI3ZjJjYzk0YjhjOGZmODY2N2E2NzcifQ"
+        },
+        {
+          "resource": "repo://apps/server/tests/test_graph.py#L113-L119",
+          "version": "repo-lines-v1:sha256:6d6c0a3f3a319b384597149db1b533d3e6357576be65db9fb28d063cd1393fa0:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjYwMjNiNjNiNTIyZTYxMjI2ZDcwMTM3ZTBlYWIwODJjMzE1ZGU0MzMzNzAyYmJhNWM4NTNkNzliNTc5M2Y3YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzZmYTAyMjkxODc5Y2MzZGI1YmQyZWQ5NGJlZWM0YjFjNTU5MDFiYzk4NDgyM2I1MjcyY2JiZmRiMmQ5NWEwNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmE1NDE3MTczODZlZGRjMzBlZDFkNmIzMzI5MzQyYmNkYmNmZWU1ZGE1ZGY1ZjZkMzJlNzRjYzcxMDllZGYyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzdmOWZkMDI2YzRmNjhiNGMxYmFkN2Y5NzI1OTVlMzlkNzVlYzQzZTk3MWU5ODk4MWUzZGNiZGI5MGIxZTYxMyJ9"
+        },
+        {
+          "resource": "repo://libs/chess/langchain_chess/middleware/summarization.py#L33-L35",
+          "version": "repo-lines-v1:sha256:1c1a85b5246c8e016cd4baceb8a897fe1c6cf269f9c99c0ace3ddd69719cb821:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODEyZGE3OTkyM2IzZjIzMDZkOWZhYTI2NTU3NzE5YzA0ZjU1N2Y0YTgyN2M0NDZkMDcwZDg1ZDRlZWFhMDY0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJkOWE5MzE2MWRhMTZhZDU4ZmE2YTIxMzA1MWU2ZGUyM2UwZjQyN2JmN2VhMzI3NTYxNjEzMDI0MjI0ZGUxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmY0NGYxNTE5ODQ5ZmVlZjU2ZWZmN2EyZjZkY2ZhNDg3NmQyYjE5YzAxZTBjY2E3MjhiMDVmNjljYTY4OTdkMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWFkMGFlMTVjNjc1MWFkMzkzMTdjOTY4MWE1MjBkNTgxM2QxNmNmNWNiOTE0NGY5YzU3YjFmMTAxMDA5YzIxOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1349fc3586464f0a80103c62da8d5aa7",
+      "statement": "model_limit (lru_cached) builds the chat model for a spec and returns its input_limit, or None when the model can't be built (ValueError/ImportError); the /ui/model-limit route exposes it so the web UI only offers summarize for models with a known input limit.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/app.py#L41-L44",
+          "version": "repo-lines-v1:sha256:1173d0785f0632bcd2461d4f1e17c03c4031aeb5ede6f1551394e69378dfc4ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTA0OTFkN2Y5OTY1OTY3NGVmMGRhNjkyZmFkY2Y5YjRjMmUyZWMyYmZkM2FlODg5M2ZhOTRhMWNkOThhOGNiYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdkOGY2M2Y2MWEzOGUyOWFjZTEzNDI3ODkyM2Q3ZmMwZWNhMDlkMWQ2OGUyZmJlNGYxZTg5NDE1ZWUyMWM4OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTVjNmIxOWNlNzM4YzgwY2E1ZGU3YmZkMjhjOTM4YjA1OTI3NDdiYjBmOGEzZDg2NDZmNDY2M2MwZTgwYjk3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjliYzk0YTkyNDZlZThmMGNjOWVmMDg5NDFlNDhmYTg5ZTFlZjFlNmYwYmRkYmQ4MzM2ZWRmNGRhMmY1YTdhMyJ9"
+        },
+        {
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L44-L50",
+          "version": "repo-lines-v1:sha256:f2a3c2a306c92a1aedbdd3962d755554d0c1e78a0b275425ee6c72e7eacc9a05:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODE2ZGMxOGRmZTIwNjRhMWVkZTk1MDE0YjNmZGIzOWUyZWU4OGE2NDUwYTA4OTVhYjYwNmNlOWRkODQ1YTA1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWU3Yzk1N2JjYjQ0ZmI2NzNjOThiMDA1MGE3NWQzODA4MmRiODFkOTE4ZGUzMTNhM2YwN2MxMjM1MzA2ZDdlYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjBmNjA4ZjQ1NTcxOGZkMGVkZDM2ZWRhMjYwNGE0ZjllOGJjNzE1MzNlZjU0OTA0YTFmMjFiMDg1MjhiMTBjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmE5MzY2ZWI2ZTY5OTMwZWE4NzExODA3ODE5YzFmYjE0N2RiMTQxOTgzOTdiMjcxMWVlMTQwZDdlYjQxNThiMiJ9"
+        },
+        {
+          "resource": "repo://apps/server/tests/test_graph.py#L127-L132",
+          "version": "repo-lines-v1:sha256:e5746f349da4b27bdc28827292bb54fcce1645dd4a38d3b3218c57b8508f67e8:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzBhOTQxZTc3MmM4MmVmMTc2YmM1OWUwMWQ3NmI1ZGRkN2E2MTE2ZmEwN2M2Mjg1Y2JhZjcxMjU3NzIyMWFlNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDIxNDY5ZDA5Y2Q1YmZiYjUxMWZjMTUxYTIwOThhOTdhNzhlMjk5NWRhMDkwMzE4Mjc0MGVlN2UwOWVmYTdjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmIzNzA0ZWFlMGQ0ZDhjMjU0NDQyMjAxZTdhNGYyZjA3NTZmYmIxNWNjODgzODczNjQwYjI0ZTZhMDUxOTI2NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-26T04:03:54.007Z"
+    "at": "2026-09-26T05:03:34.528Z"
   }
 }

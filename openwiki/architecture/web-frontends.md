@@ -3,9 +3,6 @@ type: architecture overview
 title: "Web frontends: apps/web, apps/review and packages/chess-ui"
 description: How the React play UI (apps/web) drives the chess graph through useStream with one thread per game, how the LangSmith review app (apps/review) reads threads and game_review feedback, and how both share packages/chess-ui as TypeScript source inside a Vite+ pnpm workspace.
 tags: [frontend, react, web-ui, review-app, chess-ui, vite-plus, useStream]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T04:03:54.007Z
 sources:
   - id: openwiki-source-e38522714f61b06be12390be
     resource: repo://apps/review/src/api.ts
@@ -31,12 +28,16 @@ sources:
     resource: repo://apps/web/src/auth.ts
   - id: openwiki-source-6c16a0bf13a1dee1d6a311ca
     resource: repo://apps/web/src/commands.ts
+  - id: openwiki-source-69320542b148a0b7ce9830b7
+    resource: repo://apps/web/src/components/AdvancedSettings.tsx
   - id: openwiki-source-122f779bf6eb18ae91667e7f
     resource: repo://apps/web/src/components/NewGameDialog.tsx
   - id: openwiki-source-63a59ecdfb2c0567127b7b6f
     resource: repo://apps/web/src/format.ts
   - id: openwiki-source-f78d0b7d64a02f657382652c
     resource: repo://apps/web/src/index.css
+  - id: openwiki-source-434b43fa9c75a1218beca2f5
+    resource: repo://apps/web/src/modelLimit.ts
   - id: openwiki-source-3cb426dd15d324cb1ef8679d
     resource: repo://apps/web/src/settings.ts
   - id: openwiki-source-be4a82601d4a0ee9e1634703
@@ -63,10 +64,13 @@ sources:
     resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-5e1b077422a94ae165e88e4e
     resource: repo://vite.config.ts
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T04:03:54.007Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T05:03:34.528Z
 ---
 
-# Web frontends: apps/web, apps/review and packages/chess-ui
+# Web Frontends
 
 The JavaScript side of the repository has three packages in one pnpm workspace. `apps/web` is the play UI. `apps/review` is a LangSmith custom app for looking at graded games. `packages/chess-ui` holds the board, move list, types and selectors that both apps use (`pnpm-workspace.yaml`). None of them import Python. The web app reaches the agent over the Agent Server HTTP API. The review app only talks to the LangSmith API. For the server side of that boundary, see [Agent Server integration](/openwiki/integrations/agent-server.md). For the thread values the UIs read, see [State record](/openwiki/concepts/state-record.md).
 
@@ -266,4 +270,8 @@ How reviews are produced is covered in [Grading and review](/openwiki/workflows/
 - **Tooling.** Every package uses Vite+ (`vp`): `vp dev`, `vp build`, `vp test --run --coverage`. At the root, `vp check`, `vp run -r test` and `vp run -r build` run across the workspace (`package.json`). The review app's `dev` script is `langsmith apps dev`.
 - **One version per shared dependency.** `pnpm-workspace.yaml` pins shared dependencies in a `catalog`, including `vite` aliased to `@voidzero-dev/vite-plus-core`. Every package refers to them as `catalog:`, so the apps and chess-ui can't drift. An override forces every `vite@*` to the catalog version.
 - **Lint and format.** These are configured only in the root `vite.config.ts`, because Vite+ ignores `lint`/`fmt` blocks in nested configs. Oxlint runs with the react, typescript and oxc plugins, type-aware with type checking. Rules include `react/rules-of-hooks` and `vite-plus/prefer-vite-plus-imports`, which is why tests import `vi` from `vite-plus/test`. Formatting skips `apps/server`, `libs`, and `openwiki/**`.
+- **Tests.** Each app runs jsdom Vitest over `tests/**/*.test.{ts,tsx}` with a **100% coverage threshold** on lines, functions, branches and statements. The review app writes coverage outside its own directory, because `langsmith apps push` uploads the directory without reading `.gitignore`. The web tests replace `useStream` with a shared fake (`apps/web/tests/support/fakeStream.ts`) that records every option set and supports per-thread overrides, so tests can hold two games apart. `App` takes injectable `random`, `checkKey` and `modelLimit`, so tests are deterministic and need no server. Focused suites include `useGame.test.tsx`, `commands.test.ts`, `storage.test.ts`, `setup.test.ts` and `auth.test.ts`. The review app has `logic.test.ts`, `App.test.tsx` and `entry.test.tsx`. See [Testing conventions](/openwiki/testing/testing-conventions.md).
+est.ts`, `App.test.tsx` and `entry.test.tsx`. See [Testing conventions](/openwiki/testing/testing-conventions.md).
++ ignores `lint`/`fmt` blocks in nested configs. Oxlint runs with the react, typescript and oxc plugins, type-aware with type checking. Rules include `react/rules-of-hooks` and `vite-plus/prefer-vite-plus-imports`, which is why tests import `vi` from `vite-plus/test`. Formatting skips `apps/server`, `libs`, and `openwiki/**`.
 - **Tests.** Each app runs jsdom Vitest over `tests/**/*.test.{ts,tsx}` with a **100% coverage threshold** on lines, functions, branches and statements. The review app writes coverage outside its own directory, because `langsmith apps push` uploads the directory without reading `.gitignore`. The web tests replace `useStream` with a shared fake (`apps/web/tests/support/fakeStream.ts`) that records every option set and supports per-thread overrides, so tests can hold two games apart. `App` takes injectable `random` and `checkKey`, so tests are deterministic and need no server. Focused suites include `useGame.test.tsx`, `commands.test.ts`, `storage.test.ts`, `setup.test.ts` and `auth.test.ts`. The review app has `logic.test.ts`, `App.test.tsx` and `entry.test.tsx`. See [Testing conventions](/openwiki/testing/testing-conventions.md).
+conventions](/openwiki/testing/testing-conventions.md).

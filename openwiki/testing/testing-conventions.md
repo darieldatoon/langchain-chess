@@ -3,9 +3,6 @@ type: testing guide
 title: Testing conventions
 description: How the repo tests both halves. Python (pytest with xdist and importlib mode) and JS (Vitest through vp) both have to reach 100% line and branch coverage. Tests use shared fakes rather than mocks. The TUI has Textual snapshot tests. Live tests are opt-in, cost money and run against the real LLM Gateway and a real langgraph dev. A fastchess UCI smoke match covers the engine protocol.
 tags: [testing, coverage, pytest, vitest, fakes, snapshots, live-tests, uci]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T04:03:54.007Z
 sources:
   - id: openwiki-source-164e2da859b5277df81c7d94
     resource: repo://.github/workflows/ci.yml
@@ -47,7 +44,10 @@ sources:
     resource: repo://packages/chess-ui/vite.config.ts
   - id: openwiki-source-05ccef8d4cf1698187f20464
     resource: repo://pyproject.toml
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T04:03:54.007Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T05:03:34.528Z
 ---
 
 # Testing conventions
@@ -175,10 +175,10 @@ Each package has a `test_live.py`:
 - **`libs/systemone`**: a real `GatewayRanker("semif-qwen3.5-4b")` tournament over more than 16 legal moves, among other checks.
 - **`libs/cli`**: a short TUI game against the hybrid policy through `ChessApp.run_test()`.
 - **`apps/server`**: a module-scoped fixture starts a real `langgraph dev`. It rewrites the repo's `langgraph.json` with absolute paths into a temp directory, so the server's `.langgraph_api/` state never mixes into a developer's own dev server. It picks a free port, runs with `--no-reload`, and polls `/ok` for up to 90 s, failing with the server log if the server exits or never comes up. On teardown it terminates the server and kills it after 15 s. The tests check:
-  - The `/ui` app is mounted (`/ui/config`).
-  - A chat game over the SDK works. The test also checks that resending the same message id is a no-op and that an illegal move gets an error.
-  - An assistant's `context` reaches the graph factory through `runtime`.
-  - The call recorder survives the server copying the graph and prices LLM calls.
+  - The `/ui` app is mounted: `/ui/config` reports the `chess` graph and a default `policy` of `hybrid`.
+  - A chat game over the SDK works under `policy: "systemone"`: System 1 (`semif-qwen3.5-4b`) makes the reply and the turn records only `systemone` calls. The test also checks that resending the same message id is a no-op and that an illegal move gets an error.
+  - An assistant's `context` reaches the graph factory through `runtime`. The run passes no config, so only the assistant context (`policy: "systemone"`) can make System 1 play alone.
+  - The call recorder survives the server copying the graph and prices LLM calls. The run sets `threshold: 1.0` so System 1 always hands its shortlist to the LLM, then asserts the last `llm` call reports the server's default model and a positive `cost_usd`.
 
 The live modules that use asyncio (`libs/chess`, `libs/systemone`, `libs/cli`) mark `pytest.mark.asyncio(loop_scope="session")` because langchain-openai caches its async client across tests.
 

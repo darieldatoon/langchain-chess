@@ -3,9 +3,6 @@ type: operations guide
 title: Local development toolchain
 description: How the repo's single mise.toml supplies every tool and task (setup, dev:web with port checks, dev:tui, dev:uci, dev:review, check, test, test:live, build, wiki tasks), how .env is loaded explicitly with --env-file, how Socket Firewall (sfw) wraps dependency installs, what the lefthook git hooks enforce, and how the OpenWiki update workflow runs.
 tags: [mise, toolchain, local-development, lefthook, sfw, environment, openwiki, tasks]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T04:03:54.007Z
 sources:
   - id: openwiki-source-5f5b95b3d6a215fa02ceb945
     resource: repo://.env.example
@@ -31,7 +28,10 @@ sources:
     resource: repo://scripts/setup-worktree.sh
   - id: openwiki-source-d40d5b1418858a88965a8a23
     resource: repo://t3.json
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T04:03:54.007Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T05:03:34.528Z
 ---
 
 # Local development toolchain
@@ -148,7 +148,7 @@ CI runs the same `mise run check` and `mise run test` on pull requests. See [Dep
 
 The `openwiki` npm package is pinned **per task** (`tools = { "npm:openwiki" = "0.6.0" }`), not in `[tools]`. Every CI job runs `mise install`, which skips task tools, so only the wiki tasks install it. If you bump the version, update the three task pins and the version in `.github/workflows/openwiki-update.yml` together.
 
-- `wiki:init` regenerates `openwiki/` from scratch, except `INSTRUCTIONS.md`.
+- `wiki:init` regenerates `openwiki/` from scratch, except `INSTRUCTIONS.md`. `--init` also drops the committed LangSmith connector config, so the task then runs `git checkout -- openwiki/.langsmith.json` to restore it.
 - `wiki:update` refreshes only the pages that code changes made stale. It does nothing when nothing changed.
 - `wiki:view` runs `openwiki visualize` to browse the wiki locally.
 

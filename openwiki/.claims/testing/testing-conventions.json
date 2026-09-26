@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f8f37c358f2be64e09dcdb7c9bf13aa5df4ac9e7f2ed2dfc68c2b4515a829aee",
+  "pageVersion": "sha256:fcd293696fec2efd7cdf7b3ae1e4d54b515fe107f8ec0edd6c3c340e0c818eeb",
   "claims": [
     {
       "id": "claim_3f5f773704a149dbbd89165ee1bc2078",
@@ -190,11 +190,11 @@
     },
     {
       "id": "claim_8c6fbb9e81454a7bb6d6ba0367ac6bd8",
-      "statement": "The server live test starts a real `langgraph dev` on a free port from a temp directory with an absolute-path copy of langgraph.json, polls /ok for up to 90 s, and checks the /ui mount, a chat game, assistant context reaching the factory via runtime, and priced LLM calls.",
+      "statement": "The server live test starts a real `langgraph dev` (--no-reload) on a free port from a temp directory with an absolute-path copy of langgraph.json, polls /ok for up to 90 s (failing with the server log), and checks the /ui mount via /ui/config, a System 1 chat game with idempotent resend and illegal-move error, assistant context reaching the factory via runtime with no run config, and priced LLM calls with threshold 1.0.",
       "evidence": [
         {
           "resource": "repo://apps/server/tests/test_live.py#L1-L152",
-          "version": "repo-lines-v1:sha256:35b35714aa3ca0bbfe7c4dd73b0b3f3a2b7b8c48760a5c933057d7ecfcad9ec9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5MDVkMjgwOWQ4ZDQ4ZDUxNTAyOTIwNzBiZTFhY2I3YzRjZTFjZGJmNDFmM2FlYTY4ZjIzYmQxOWI3MmM3ZWZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhM2FjNGQ5Y2E0ZDMxZDE5MzhjMjc0ZjA0ZDlkNDY1YTcxNjQ3NzlmYjAyMzAzZDE4YjZkYjMxYzFlNmMyZDI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "version": "repo-lines-v1:sha256:d4d4eb556e4036e39483908caf0baffc96e4af212309e11122a8e652336c0dbc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5MDVkMjgwOWQ4ZDQ4ZDUxNTAyOTIwNzBiZTFhY2I3YzRjZTFjZGJmNDFmM2FlYTY4ZjIzYmQxOWI3MmM3ZWZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhM2FjNGQ5Y2E0ZDMxZDE5MzhjMjc0ZjA0ZDlkNDY1YTcxNjQ3NzlmYjAyMzAzZDE4YjZkYjMxYzFlNmMyZDI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -211,6 +211,6 @@
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-26T04:03:54.007Z"
+    "at": "2026-09-26T05:03:34.528Z"
   }
 }

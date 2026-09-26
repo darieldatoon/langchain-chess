@@ -1,11 +1,11 @@
 ---
 type: architecture overview
-title: Package map and dependency direction
+title: Package Map and Dependency Direction
 description: The Python (uv) and JavaScript (pnpm) packages in langchain-chess, which way dependencies are allowed to point (systemone -> chess, cli and server -> both, web/review -> chess-ui), and a guide to which layer a new feature belongs in.
 tags: [architecture, packages, dependencies, monorepo, uv, pnpm, layering]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-26T04:03:54.007Z
+    at: 2026-09-26T05:03:34.528Z
 sources:
   - id: openwiki-source-c2ad925c3422b92574d65d56
     resource: repo://apps/review/package.json
@@ -15,6 +15,8 @@ sources:
     resource: repo://apps/server/langchain_chess_server/app.py
   - id: openwiki-source-c9b903d37e22daedc4499a4b
     resource: repo://apps/server/langchain_chess_server/graph.py
+  - id: openwiki-source-e3b0d2af80ee0702b2be4a6b
+    resource: repo://apps/server/langchain_chess_server/settings.py
   - id: openwiki-source-f5485618fdea35eba238fd7b
     resource: repo://apps/server/pyproject.toml
   - id: openwiki-source-99de51df25f29bfc72caf823
@@ -53,7 +55,7 @@ sources:
     resource: repo://pyproject.toml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T04:03:54.007Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
 ---
 
 # Package map and dependency direction
@@ -152,6 +154,21 @@ flowchart TD
 - **Game-rule, record, pricing or grading helpers** that more than one adapter needs belong in `libs/chess` (as with `rules`, `pricing`, `engine`, `grading`). Don't put them in an adapter and then import across adapters.
 - **Adapters stay outside the graph.** A new transport (a new CLI command, a UCI option, a bot integration) goes in `libs/cli` or a new leaf package. Changes to what the hosted graph exposes (context knobs, routes, settings) go in `apps/server`; see [Agent Server integration](../integrations/agent-server.md). Adapters configure the agent with `create_chess_agent(..., middleware=[...])`. They must not reach into or mutate core-owned state.
 - **UI components shared by both web apps** (board, move list, ply details, formatting, selectors, state types) go in `packages/chess-ui`. Components used by only one app stay in that app. See [Web frontends](../architecture/web-frontends.md).
+- **Never add an import that points upward.** Examples: `langchain_chess` importing `langchain_chess_systemone`, any library importing `langchain_chess_cli` or `langchain_chess_server`, or a JS package importing Python-generated code.
+
+## Related pages
+
+- [Quickstart](../quickstart.md)
+- [Middleware contract](../concepts/middleware-contract.md)
+- [Web frontends](../architecture/web-frontends.md)
+- [Agent Server integration](../integrations/agent-server.md)
+- [Deployment](../operations/deployment.md)
+./quickstart.md)
+- [Middleware contract](../concepts/middleware-contract.md)
+- [Web frontends](../architecture/web-frontends.md)
+- [Agent Server integration](../integrations/agent-server.md)
+- [Deployment](../operations/deployment.md)
+electors, state types) go in `packages/chess-ui`. Components used by only one app stay in that app. See [Web frontends](../architecture/web-frontends.md).
 - **Never add an import that points upward.** Examples: `langchain_chess` importing `langchain_chess_systemone`, any library importing `langchain_chess_cli` or `langchain_chess_server`, or a JS package importing Python-generated code.
 
 ## Related pages
