@@ -32,7 +32,7 @@ jobs:
       - name: Install
         run: |
           uv sync --all-packages --all-groups --locked
-          pnpm --dir apps/web install --frozen-lockfile
+          pnpm install --frozen-lockfile
 
       - name: Check
         run: mise run check

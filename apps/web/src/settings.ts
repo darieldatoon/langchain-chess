@@ -1,4 +1,4 @@
-import { DEFAULT_CONTEXT, type ChessContext } from "./types";
+import { DEFAULT_CONTEXT, type ChessContext } from "@langchain-chess/chess-ui";
 
 type Check<T> = (value: unknown) => value is T;
 

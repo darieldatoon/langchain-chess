@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { configurableOf } from "../src/settings";
 import { loadGame } from "../src/storage";
 import { fake, lastOptions, resetFake } from "./support/fakeStream";
-import { AFTER_E4, E4_E5, turn } from "./support/fixtures";
-import { DEFAULT_CONTEXT, START_FEN } from "../src/types";
+import { AFTER_E4, E4_E5, turn } from "@langchain-chess/chess-ui/testing";
+import { DEFAULT_CONTEXT, START_FEN } from "@langchain-chess/chess-ui";
 import { threadFromUrl, useGame, writeThreadToUrl } from "../src/useGame";
 
 vi.mock("@langchain/react", async () => (await import("./support/fakeStream")).useStreamMock());

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { apiUrl, configurableOf, DEV_API_URL, sanitizeContext, withKnob } from "../src/settings";
-import { DEFAULT_CONTEXT } from "../src/types";
+import { DEFAULT_CONTEXT } from "@langchain-chess/chess-ui";
 
 describe("sanitizeContext", () => {
   it("validates every knob's type and range", () => {

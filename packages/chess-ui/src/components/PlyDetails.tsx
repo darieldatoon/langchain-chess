@@ -8,8 +8,7 @@ import { useState } from "react";
 import { sanAt } from "../chess";
 import { costText, percent, seconds, sourceClass, sourceLabel, type SourceClass } from "../format";
 import { systemOneMeta, turnCost } from "../selectors";
-import type { RankedMove, SystemOneMeta } from "../types";
-import type { Reply } from "../useGame";
+import type { RankedMove, Reply, SystemOneMeta } from "../types";
 import { Analysis } from "./Analysis";
 
 const BADGE_COLORS: Record<SourceClass, "primary" | "special" | "secondary" | "warning" | "plain"> =

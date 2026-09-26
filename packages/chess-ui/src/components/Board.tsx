@@ -15,7 +15,7 @@ interface Props {
 }
 
 // react-chessboard takes style objects, so board colours are CSS variables defined per theme
-// in src/index.css from semantic tokens.
+// in src/styles.css from semantic tokens.
 const light = { backgroundColor: "var(--board-light)" };
 const dark = { backgroundColor: "var(--board-dark)" };
 

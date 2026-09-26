@@ -1,11 +1,10 @@
-# Hooks for both halves. The lefthook binary comes from mise (`mise install`); the frontend
-# commands live in apps/web/lefthook.yml and run with that directory as root.
-extends:
-  - apps/web/lefthook.yml
-
+# Hooks for both halves. The lefthook binary comes from mise (`mise install`).
 pre-commit:
   parallel: true
   commands:
+    frontend-check:
+      glob: "*.{ts,tsx,css,json}"
+      run: pnpm exec vp check
     ruff-format:
       glob: "*.py"
       run: uv run --all-packages ruff format --check {staged_files}

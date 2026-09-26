@@ -8,13 +8,19 @@ import { Text } from "@langchain/macaw-components/Text";
 import { ThinkingState } from "@langchain/macaw-components/ThinkingState";
 import { GearSixIcon } from "@phosphor-icons/react/dist/ssr/GearSix";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Board,
+  MoveList,
+  opposite,
+  PlyDetails,
+  sideToMove,
+  START_FEN,
+  type ChessContext,
+  type Side,
+} from "@langchain-chess/chess-ui";
 import { checkApiKey, type KeyCheck } from "./auth";
-import { opposite, sideToMove } from "./chess";
 import { AppSettingsDialog } from "./components/AppSettingsDialog";
-import { Board } from "./components/Board";
-import { MoveList } from "./components/MoveList";
 import { NewGameDialog } from "./components/NewGameDialog";
-import { PlyDetails } from "./components/PlyDetails";
 import { ResultCard } from "./components/ResultCard";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { describeError, isAuthError, isBusyRejection, statusLine } from "./format";
@@ -28,7 +34,6 @@ import {
   saveSetup,
   type AppSettings,
 } from "./storage";
-import { START_FEN, type ChessContext, type Side } from "./types";
 import { threadFromUrl, useGame, writeThreadToUrl } from "./useGame";
 
 /** One game on screen: its pinned side and context. */

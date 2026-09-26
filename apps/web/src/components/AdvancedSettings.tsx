@@ -7,7 +7,13 @@ import { useState } from "react";
 import { parseKnob, parseNullableKnob, sliderValue } from "../format";
 import { CONTEXT_CHECKS } from "../settings";
 import type { Knobs, Sections } from "../setup";
-import type { DescriptionStyle, DrawClaims, GateSignal, Memory, ReasoningEffort } from "../types";
+import type {
+  DescriptionStyle,
+  DrawClaims,
+  GateSignal,
+  Memory,
+  ReasoningEffort,
+} from "@langchain-chess/chess-ui";
 
 export type SetKnob = <K extends keyof Knobs>(key: K, value: Knobs[K] | undefined) => void;
 

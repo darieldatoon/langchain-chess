@@ -16,6 +16,7 @@ shortlist, and the LLM may still play any legal move.
 | `libs/cli` (`langchain-chess-cli`) | `langchain_chess_cli` | `lcchess uci`, `lcchess play` and `lcchess grade` |
 | `apps/server` (private) | `langchain_chess_server` | The `chess` graph and the `/ui` app for LangSmith Deployments |
 | `apps/web` | | The React UI served at `/ui` |
+| `packages/chess-ui` | `@langchain-chess/chess-ui` | The board, move list, ply details and state types the web apps share |
 
 ## Quickstart
 
@@ -237,7 +238,11 @@ mise run build   # the web UI into apps/server/.../static, served at /ui
 mise provides every tool (node, pnpm, uv, lefthook, `sfw`, fastchess, Stockfish); Python comes
 from uv.
 Add dependencies with `sfw uv add --package <distribution> <dependency>` (root dev tools:
-`sfw uv add --group dev <tool>`) and `sfw pnpm add <pkg>` in `apps/web`. Pull requests
+`sfw uv add --group dev <tool>`) and `sfw pnpm add <pkg>` in the JS package that needs it. The
+JS side is one pnpm workspace managed by Vite+: `vp check` runs at the root (lint and format
+config live only in the root `vite.config.ts`), `vp run -r test` and `vp run -r build` run per
+package, and versions used by more than one package live in the `pnpm-workspace.yaml`
+catalog. `packages/chess-ui` is consumed as TypeScript source, with no build step. Pull requests
 run `mise run check` and `mise run test` (`.github/workflows/ci.yml`). Pushing to `main` runs
 both and then `mise run deploy` (`.github/workflows/deploy.yml`), which deploys `langchain-chess-app`. The pre-push hook runs `mise run test`; the pre-commit hook checks
 only the staged files.

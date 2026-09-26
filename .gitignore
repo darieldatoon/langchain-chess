@@ -1,6 +1,9 @@
 # local plans, never committed
 plans/
 
+# javascript
+node_modules/
+
 # python
 __pycache__/
 *.py[cod]
@@ -30,6 +33,7 @@ htmlcov/
 # the web build lives inside the server package so the image can serve it; CI builds it
 /apps/server/langchain_chess_server/static/
 /apps/web/coverage/
+/packages/*/coverage/
 
 # local dev server state (langgraph dev)
 /.langgraph_api/

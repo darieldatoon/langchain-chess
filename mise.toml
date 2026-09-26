@@ -15,7 +15,7 @@ lefthook = "2"
 description = "Install Python and web dependencies, then git hooks"
 run = [
   "uv sync --all-packages --all-groups",
-  "pnpm --dir apps/web install --frozen-lockfile",
+  "pnpm install --frozen-lockfile",
   "lefthook install",
 ]
 
@@ -67,12 +67,12 @@ run = [
   "uv run --all-packages ruff format --check libs apps",
   "uv run --all-packages ruff check libs apps",
   "uv run --all-packages ty check",
-  "pnpm --dir apps/web exec vp check",
+  "pnpm exec vp check",
 ]
 
 [tasks.test]
 description = "Python and web tests with 100% coverage gates"
-run = ["uv run --all-packages pytest -q", "pnpm --dir apps/web exec vp test --run --coverage"]
+run = ["uv run --all-packages pytest -q", "pnpm exec vp run -r test"]
 
 [tasks."test:live"]
 description = "The live tests against the real LLM Gateway (costs a few cents)"

@@ -6,10 +6,15 @@ import { checkApiKey, type KeyCheck } from "../src/auth";
 import { DEFAULT_SETUP } from "../src/setup";
 import { APP_KEY, loadGame, loadSetup, saveAppSettings, saveGame, saveSetup } from "../src/storage";
 import { fake, lastOptions, optionsLog, resetFake } from "./support/fakeStream";
-import { AFTER_E4, E4_E5, ply, turn } from "./support/fixtures";
+import { AFTER_E4, E4_E5, ply, turn } from "@langchain-chess/chess-ui/testing";
 import { WEB_TRACE } from "../src/useGame";
 import { renderWithProviders as render } from "./support/renderApp";
-import { DEFAULT_CONTEXT, START_FEN, type ChessContext, type Side } from "../src/types";
+import {
+  DEFAULT_CONTEXT,
+  START_FEN,
+  type ChessContext,
+  type Side,
+} from "@langchain-chess/chess-ui";
 
 interface BoardOptions {
   position: string;

@@ -22,7 +22,7 @@ import {
   type SideChoice,
   type SystemOneChoice,
 } from "../setup";
-import type { ChessContext } from "../types";
+import type { ChessContext } from "@langchain-chess/chess-ui";
 import { AdvancedSettings, Field, type SetKnob } from "./AdvancedSettings";
 
 interface Props {

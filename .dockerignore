@@ -22,6 +22,7 @@ plans/
 docs/
 **/tests/
 apps/web/
+packages/
 .uci-match/
 .langgraph_api/
 .DS_Store

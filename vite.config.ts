@@ -1,0 +1,41 @@
+import { defineConfig } from "vite-plus";
+
+// Lint and format live here only: Vite+ ignores `lint` and `fmt` blocks in nested configs.
+export default defineConfig({
+  // Scoped to the JS workspace; the Python side has its own formatter.
+  fmt: {
+    ignorePatterns: [
+      "**/coverage/**",
+      "/*.md",
+      "/*.toml",
+      "/*.yml",
+      ".github/**",
+      "apps/server/**",
+      "libs/**",
+    ],
+  },
+  lint: {
+    plugins: ["react", "typescript", "oxc"],
+    rules: {
+      "react/rules-of-hooks": "error",
+      "react/only-export-components": [
+        "warn",
+        {
+          allowConstantExport: true,
+        },
+      ],
+      "vite-plus/prefer-vite-plus-imports": "error",
+    },
+    options: {
+      typeAware: true,
+      typeCheck: true,
+    },
+    jsPlugins: [
+      {
+        name: "vite-plus",
+        specifier: "vite-plus/oxlint-plugin",
+      },
+    ],
+    ignorePatterns: ["**/coverage/**", "**/dist/**", "apps/server/**"],
+  },
+});
