@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:4ce09d0a90b81e4d370172ac39b7171d6d9899ac7a7620113a35bd8fad3e47c8",
+  "claims": [
+    {
+      "id": "claim_da924ca86b624259b9fe4f9d0bcf3c46",
+      "statement": "model_identity strips the langsmith: prefix, splits vendor:model on the colon, and for a vendor/model name the slash vendor wins over the provider argument (the gateway's ls_provider 'openai' is the transport); bare names fall back to the provider or 'unknown'. canonical_model formats vendor:model, the form stored in every Call.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/models.py#L1-L26",
+          "version": "repo-lines-v1:sha256:8240e2f8873ab853229664cf493dd3db629aeb178e8e1ca4f6efa3583a790092:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlZmJmYjc2ZDA2YmYxNDk4ZDQwMmU4OWQ5NTRiZTIwYWQyNWRlYTkzMWMwODU4NTU2YjYwZDk4ZmM0NWFiZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MDU0ZmNkYjE0ZmIyYjg1MTdiYTBkMDFhNzQ5MjMwNmNmMGY3ZTM4YzdhMWM3NWY4ZDBjZDhkYWY5YzdkYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://libs/chess/tests/test_pricing.py#L20-L32",
+          "version": "repo-lines-v1:sha256:378d664258778364c2b8a6ce525db086e349e9659ea0cb8cf2f2e86953447275:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzMzQ2NmI4ODkzOGNiMjBhZjI1NWMxNjVhZmViOWY5ZTE0MmE4ZTQxMDYwMTMxNTViNDQyMDY0YjAyODc1MTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4NWVhMDA1NGNmMzM5NjY1MGRiZDIwNDBlNDUzODE0OWRkZGY5MmIxMmYwODNiM2YxNzcyNjVjNGI2NWY3ZmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhZDVkOTU0MmJkYWEwOThlYjVjYWVlZjIwYTE1NzA2NzJmNGNmZjgxMjNmMTI1YTZkY2NkM2ZlODQwYmQ3YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkZGYxOTcxMzZlMmZjMjMwMDMzZGZhM2U0ZjhmYmVjM2UwMTIxNjRlNmM1ZWE1OWVjMDc3YTcwNGIxM2UzNTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_83f35e061b544a33a139604b187b6cd2",
+      "statement": "The server and CLI build chat models with init_chat_model using max_tokens=32000 (the cap covers reasoning), the configured reasoning_effort, a name equal to the model part for trace spans, and a PROFILES max_input_tokens profile only for langsmith: specs because the gateway's ChatOpenAI has no profile.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L22-L44",
+          "version": "repo-lines-v1:sha256:3c9766daae276e2ca7ef59a69a6cd9ea5d5e026343d2bd450de4a9ef7ca39ffa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5N2YxZTM5YzUzYmE3NTBmNWQ0NDFkMzM2MTYxYTM0NDA4OTNmMmVkMjA2ZDUyMzE4MjA4NjkxYThhMjliOTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzZGIyMTNkMzlhODhjZGFkZGM1MDNlMzQ5YmM2NGEzMzVlMGIxMmM1NTg3ZWM2YmI2MDg3MGM4M2E2NjAyMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmNzI5ZjhkOTFmYjVjMjZkNGJmNjNlZDljNTk2ZDgzNjAzNTI4MTIyMzE5ZGM2MmNhZWRhYmFhMWFjMTVkOGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhOTM2NmViNmU2OTkzMGVhODcxMTgwNzgxOWMxZmIxNDdkYjE0MTk4Mzk3YjI3MTFlZTE0MGQ3ZWI0MTU4YjIifQ"
+        },
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/models.py#L14-L35",
+          "version": "repo-lines-v1:sha256:1ac3b405cd7ab5a76db9530af0aecaf7b8421d1c013528589aa393e4b827542d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5N2YxZTM5YzUzYmE3NTBmNWQ0NDFkMzM2MTYxYTM0NDA4OTNmMmVkMjA2ZDUyMzE4MjA4NjkxYThhMjliOTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzZGIyMTNkMzlhODhjZGFkZGM1MDNlMzQ5YmM2NGEzMzVlMGIxMmM1NTg3ZWM2YmI2MDg3MGM4M2E2NjAyMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5MjkwYmIxZTQ3ZjgyYWU0YTIwYjYzZGVhNGFkZTNiOWY0OTFmYTJkYmJlN2I0ZWYwNmM1NWIwYzM5ODhlNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d27848ae5aa4ab59a68f3f07a482739",
+      "statement": "The server's default model is langsmith:anthropic/claude-opus-5-5 and the default System 1 model is semif-qwen3.5-4b, with typesafe/jev-latest as the alternative.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/context.py#L38-L61",
+          "version": "repo-lines-v1:sha256:7cf97635f8d9f12568a0d8674a278b0331f8a9699dcb838f8cfa5a9fef0a53e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzYjQyYmQ2YzBmYmVmYzUwNzA4MGEyYjA5OGUxM2MyYTUwOTUyMTRiZmFjNWFkZjdiOGJmZGUxNjMyOWQwYzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzNjkwY2UxYWVlZjgyMjAwMDk1YTQ0ZDA4MjI0MzA5ZTJjMGZkYWVhOGY4OWYyNzZiMzRjOGU0NTZkOTQwNDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwNmIzYzMwNWY0ZDAxMzI2MDRjNzI0MzZmYmEyYmI1NjIxNDlmMDc1MTRjNmFlOGIyMGQ1OTY4YWRiMGFmM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4NDA2NDhlMjA1OTlhYjEwZjNlMGI1NmNjZmE2ZTA2NTYxOGExNzIwZmZhYjZkMjI1ZDMxODdmYjJjYTliMzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_34f8c18deb8b4b839d83cc322d613720",
+      "statement": "ServerSettings rejects a set-but-empty LANGSMITH_GATEWAY_API_KEY, TYPESAFE_API_KEY or TYPESAFE_BASE_URL because the .env template's ${LC_GATEWAY_KEY} expansion yields an empty string that langchain-core would silently replace with the tracing key; it is instantiated in make_graph, and typesafe() raises when either TypeSafe variable is unset.",
+      "evidence": [
+        {
+          "resource": "repo://.env.example#L18-L30",
+          "version": "repo-lines-v1:sha256:8e85758f24ca7be10eb01aacb03d75fe52fa96f096229105bda6eb94cddc5db7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhY2Y1MDYzNDQ0YWEyOTFhZjJmZDZjNWNiNTFjMTNkOWI2NjY5NjdlYzUwMzQ0YzE2MjEwMWVjYzA1NjhjMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NWVmNjQ1NDE0MTM0ZTE5ZmVjNDU3NTI2NDc3ZTA5YTZjNjM0NzFhZGJmOTg5MmQ2NjEwMDQxZThhOGY5ZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkMTlkMTlmM2Y4YWJmMTE2ODk0ZDgyMTk3YjIxYmIxODAxMmMzYjQ3YjllYTZkZTgwMWM0ZjQ2ZjFmMGIyM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L112-L114",
+          "version": "repo-lines-v1:sha256:57f5f5e29036908b6d89cbdac18498175a41d3c99b9ad10180e4545bd9aa5841:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmIwYWY1ODgzNjgwMjIwY2Y2NWUyZGU3MDU4OGEzODY0Y2RjNDI2NWUwNmVlMDc3MzRjMmQwYTc3NzA2YWU2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTY1ODI5NjFlYTNlZDRlMmI4MzA1MDFlNWQ2YTBkYzY3NmJjMGY2Zjg2Y2Q1YzRlYjgzYzdlNGViNzJhMjEzNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGNjNGE3ZDFjYzc5NmFiYTNlNDY3MjMzMjdmNTE3ZTlmODExOTgyZDI1MGYwNzAyOTg2ZTRiNTc2NGFkOTU4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L66-L69",
+          "version": "repo-lines-v1:sha256:fe88bcdb5d682f92993e28f3fb309e923489e8b07d115d68ac3fb954ddad0b65:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODI0MTI1NWM4OTA0NjU4M2I3NjZjZjM3OGJlYzM1NDk1Y2JmZDM2YWEzZjI3MzBmZDYzNTYyM2NiOWZkYmYwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTI5YWJhYzJhNjY0ZGI2YWU1YWQzM2EyYmI1NDhkODJjY2EyYzlkM2VkNWNjNzQ1YmRkNzMxNzljMjBkZDBhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGNjNGE3ZDFjYzc5NmFiYTNlNDY3MjMzMjdmNTE3ZTlmODExOTgyZDI1MGYwNzAyOTg2ZTRiNTc2NGFkOTU4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmE5YjdmZWNlOTMwZTZkMzgyMjAxZTQxNjViM2I0YjhmMjA4YWE2ZDc4OGI0OGZmNGU2YjM2ODI4YzQ0NjBkYiJ9"
+        },
+        {
+          "resource": "repo://apps/server/langchain_chess_server/settings.py#L1-L43",
+          "version": "repo-lines-v1:sha256:a32755775f313a1845956568a40e067618e63d16e05e3cfa5c550dcf4ae3cd98:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExYTIwZDAzNTMxODAyY2ZiZDc0OGQ0ZTVlOGFhZjA5NWU5ZTU5ODIyYjE3NmE0ZWM4YWE0YWNjYmEzOTYzMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMzdiYzZhMTc4YmQ0YmZjNThhZDVmYzk1YjI5ZGQyYzJiNjUxZWM0OTYzY2M4MGFhNDBmOTNjZDA1ODUyODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_43b24479800e44f2a776c404e2d1d8f0",
+      "statement": "The CLI enforces no credential rules; it relies on langchain-core's gateway resolution and the provider's own environment.",
+      "evidence": [
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/models.py#L1-L5",
+          "version": "repo-lines-v1:sha256:d20b1d200bd139b4875d2a400ea6c12f6718a9e141a4c9bb9bf31be496820347:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmM0ZTkwZWEwOWJhZmNiOTJhMWIwNWVjMTMzNWNlYzdiMjczODczNDJkZjA0MjliODNlOTliZjdlN2I1MmIwNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTQzNjBlNmY5OTY4Yzc2ZDUyYTJhNmVjOTJhYWRlMTE2ZGEzYTdlODc2NjM5NjVkNDNlY2IyMDhkMDgxMTdmMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1447d7220ba043e586a0069089d19d35",
+      "statement": "create_chess_agent creates one CallRecorder, passes it to ChessCore and ChessSummarization, and attaches it to the compiled graph via with_config(callbacks=[recorder]).",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/agent.py#L89-L124",
+          "version": "repo-lines-v1:sha256:f01c7cb7e4c61d01c8803f7a993a98b30232979baaf35a7605ec2b14ff0c6a45:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhNmMxNmU0MTcxOTY1MzMxYmQ5MmY5Yjc0N2Q3MGM1ZTczMDliNmRhZTU5NGQ5NDU1Mzg0NTcyY2MzN2ViNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1Y2I0NmQ5ZWU3YWMxZDg4OTk2ZDYwZmE5OTcyYTA5NTE2YWEyYzlkMGE0NThhZGE1ZmQ0MzAyYTAxZjc3NTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZTFjNmRmMTI2OWUzNDA5OWUyYjQ1YmE0ODNhMGJiNGFjMDUxYTUxOGFkMTczZmMxZjZmN2ZkNDFhNWNhYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5e2f0d166dac4074918d14a893926d0e",
+      "statement": "CallRecorder records only inside a sink held in a ContextVar: ChessCore's wrap_model_call/awrap_model_call open sink('llm') around the handler and ChessSummarization's before_model opens sink('summary'); every chat-model response inside, including inner retries and fallbacks, is appended and then added to the current turn's calls. Calls are never keyed by the callback run tree because tracing spans sit between node and provider.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/middleware/core.py#L391-L430",
+          "version": "repo-lines-v1:sha256:68978fdc1d843e9fa77ae2b1cc01b08a8ca7cf1884877bc954a1e11974358ac4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3ZDFhZjYzODVkZGEwZThhM2JmYmZjNDczNGI1MjIzZTJjM2JkYzYxYjIyYTIxN2VjODY3ZGMzODYwNGY2ZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3ZGU2MTVmZWFiNWNiYTFkOWQxNTc4Nzk3MWY5ZmRmNTg5OTIyMDEyYWZhYjg0NTk2OTZkYjkwOTk2MWYzYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkYTNmMmRkNzdhNmI1MDM0MzY0NWYxZjBhMjAxZTY1OWVmMjExMDMwMTAwZjVmN2Y2MGE1YTM0YWExY2UwZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5NDdiZjM4YTg0MGQ2MTQyMWJkZDRkYjBlM2RjOWM3MTg1MjgwMDEyMjRhN2E1N2UxMmFkY2FhN2ExNTI1YTYifQ"
+        },
+        {
+          "resource": "repo://libs/chess/langchain_chess/middleware/summarization.py#L100-L113",
+          "version": "repo-lines-v1:sha256:e17d71bfc7be51c896aa76c313af757d3fe0b049866f694d2a3eb26f0cdb1614:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkZTY3N2I2OTA3MjQwM2ZjZjNjMDNjOTMwNzBhMzJiYjA1YmUwNmViYjFlOGEzNjI4MGNhYjdiOWNiMjg0NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmMjQ3N2QwNjMxMmRjMzVlNTQ3NzAyYmEwNmIzZDI4MDc2ZGJjYWEyMmE1NzBiZGI3OGI0MzdjNWYzMDAwMzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhYzViNjUzMmEwOTQ5NDgxODFiZDNhZjkxYTAwZmRmNzk0NTZiNmViOTQyY2IyYjVmMDE3OTAxMGZlZWEzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://libs/chess/langchain_chess/recorder.py#L1-L67",
+          "version": "repo-lines-v1:sha256:45905fb270178c61ba3fb914dc2580c95669d721ff31447e5e98ce762a51e6cc:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzODlmZDQ1YzViNjM3YzFjZWExMTExMDg0YjY3YzU5YzE5YmY5ZGQ0MmIwZDcxN2RkY2ZjYjJiNzllNWJiZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhOWI2ZWY0MzAyOTUxMThlNGE2Y2UyODgyNjgyMDQ5ODc3YzhjZjhhM2MxYmI2ZmIzNWM2NmQzNmY2MWViZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjZjA3ZTk0MzNlZDZlZTBkNDE0Y2NkODkyNDI2OWFhNjk3MmI0ZDJjZGUyYjBkZmVlZDM5YzEyZDJhZjU5ZTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b9ebf5c583a8486e80377c3f0b6a7c51",
+      "statement": "CallRecorder ignores callbacks outside a sink, records a Call on on_llm_end only for a ChatGeneration with an AIMessage (using ls_model_name and ls_provider captured at start and the start time as called_at), and on_llm_error drops the pending entry so failed attempts produce no Call.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/recorder.py#L69-L112",
+          "version": "repo-lines-v1:sha256:46b824387b1a17bf3fecc61af212c3635776ba0bd311e62bb0dd356f61442d15:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2Yjc2YTI5YzNkZmNmZGU4YTRiNTczNWRhMTA1MjBlNDdjODY0MGNkNGM4MzM2YzE2NTFhMGRkMmY2MjMxOTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlOTUxMGFiYzc5OWZkOTFlMGI5ZjJmNDE1MDFhM2FlYzhlYTAwZjQ5ZGQyYTljOWNkMzQ2ZmM3NTliNTUyYzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlOTNmMWU3MDEzOGNjNDczNDBmMGM2ZTFkMTVjZDk2ZmZiYzZjNGMzNTc2YWQ5ZjZlZDE2OTg1ODFhYWIwNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://libs/chess/tests/test_recorder.py#L16-L37",
+          "version": "repo-lines-v1:sha256:918d54de32286c7f5453326cd5812477fb8e62c32639d9d297cb2ece6ce6920d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNWU2NTc1YmE1YWU1YzAyYWFhNGEzZmEzZTEzODgxN2RmZDVmZjcyOTViOGMzMzc3MjMzYjlhYWU1NjM1NGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ZGZkNzM5NTdmNDMxZDFkNjE3N2ZiYWI2NDkyMTc3ZjE4M2RiM2YzZjBkODMxZTQ0MmY2YzY0YTVkYWJjMTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1NjM4NDNhNTJkMWUzM2M3ZmNiYzA3YWYyZjcxZGYzZjdhYzIyZmJhZmI0NGI4NGJjOTdmNTY5MWJhNWM3YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MzdmOTdkM2JlNTQyOTlmYjBkMWJhZDQ0MWJkNWUxOWUxNzA1MjU1MDhhNjNjNmRlOWRkMmVjMDg3OTFjMDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9be978f7cb574e53a23406e7917c32a7",
+      "statement": "System 1 calls bypass CallRecorder: GatewayRanker builds its own systemone Call via make_call with provider 'typesafe' from the classifier response usage, and CallKind is one of llm, systemone or summary.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/state.py#L29-L69",
+          "version": "repo-lines-v1:sha256:38bae8ae366d000a66025387a76063e27ebe4db272315886033998e0ddb603ff:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NDRkZTZmNWIxZThkMGUxYjY1NjBkNjgwZWM5YTM0MWI3YzY1ODIzNDYwOTViMjU4ZTEzZGE5MzBhZjQ2Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlZDI0ZjYwYjBiZDU1ODU0NmZmMzY0YTg3MWMwY2Q1YWIwMDEzZWY3MGJlYzcxNjQyMDk3MjM2Y2M3ZDYxN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2MTAxMWNiOGUyMjkzODVlZDM2ZGY0ODMwODNmMDU1Yzk1MDUwYTE5MGRmNmM3OTBhODMyMWE1MmI4OTU5NzUifQ"
+        },
+        {
+          "resource": "repo://libs/systemone/langchain_chess_systemone/ranker.py#L308-L320",
+          "version": "repo-lines-v1:sha256:feff3f4db61000318d65a8c7633d8cd7cf456e44d337ac07cf0e12245f4d8203:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZGVmYThlNzIwNTg5Mzg2ZjJmMTRiNDk4OTg4M2QzZTA4Yzk0NTUwMjRmMTgxYTY0ODNjZjA5Njk4MGU4MDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwYTAwNzEwN2IzODBmZDZmZTBiMTE5ZjAxMmZhNDVlMDU1ZjBjYzgzMDJjMzNmZGFjMjIwMWYzNDUyMDRlODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxYWQ1NGMyZTM2NjcyNjRjM2UwMjA1YThlZGJhODUwNGJhZGM0YzJlMWYxN2Y2ZWIxZjVkNjUwODk4YTc3ODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1NWE3MGUwNzk0MGNmNWViNjIxOTg2NWY5NmNiMjM0MDY2YTdmMjZmYzdhNGUzNDcwMzQxNWJkZTI4NGE0ZmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8fcf3cf89b7c43d9a61fa73780a412ee",
+      "statement": "Costs are computed locally from usage_metadata with genai-prices' bundled snapshot (pinned 0.1.9) because no gateway route returns a cost; update_prices is never called and each priced Call records the genai-prices version in priced_with.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/pricing.py#L1-L19",
+          "version": "repo-lines-v1:sha256:209b0161bee740b034ef0b0d576e42544ba3d4865693ada848eb15152bc430e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkOTc1Y2UzZDMyZTFjYWM5MDA4Y2RkNDNiMGNhNzZjZDY4OThhOTMzZGEyOTI5ZTBhMTg2ODljMGIzNDJjOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2NjA0MDljYzA4YzM1YmUwZGU2NWRjODMyZDY0OTIwNGI4N2Q2N2JlYmRiMjFlMDQyMzE2OGRkZmFhNjI0MWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiNGZmODE1ZjIxOWI2Yzg3MzYwNGU5YzhiZmI3ZGRiM2NmZDRiYWQxZDk4ZGFiMzg1OGVlZDJhNjFlYjkzOTEifQ"
+        },
+        {
+          "resource": "repo://libs/chess/pyproject.toml#L11-L11",
+          "version": "repo-lines-v1:sha256:b265db97936fa0865616aaefa88fbb11aec471f418edf480e74907bfe2e89c22:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjI2NWRiOTc5MzZmYTA4NjU2MTZhYWVmYTg4ZmJiMTFhZWM0NzFmNDE4ZWRmNDgwZTc0OTA3YmZlMmU4OWMyMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjI2NWRiOTc5MzZmYTA4NjU2MTZhYWVmYTg4ZmJiMTFhZWM0NzFmNDE4ZWRmNDgwZTc0OTA3YmZlMmU4OWMyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAyMWZiYjIzYTk3MjYwYjE0NjM0OTJlMThjMGVkYjBiNzVkMTA5NGUxZmYwOTY1ZmE3ZGEzODg2ZGE2NmE1NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjgzYzQ0ZDczNmNjOWQ2Nzk2OGJmZDk5MTA3ZGFjMWQ3YjE5MTk1MGU1OTY2MTAyNDIwYTc5MTQ1YzM3YTUzNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_db3db3b29bf34d98968dee62d952d985",
+      "statement": "tokens_from_usage treats missing usage as unknown (None, not zero), sums Anthropic ephemeral 5m/1h keys into cache_write with a 1h subset or else counts cache_creation as 5-minute writes, and marks tokens approximated when non-zero unmapped input or output detail keys (e.g. priority_cache_read) appear.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/pricing.py#L21-L80",
+          "version": "repo-lines-v1:sha256:0f7ecded05a585331be90be1a1e627f782a90c3c549c9062ee0b2c9551f7b231:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3NThjOGFmNzI0NjJlMmZiMTZlZGM3ZWQzMzU1ZWRhNTI0MjgyNDU4MTE4NmIzMDgxNDczYmY1MmZlYTUzNDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4OWFlZTNkNTIxYTg1NGFiZjFhMGFmN2EyYWE4ZDk2MjYwMTY4ODJmY2U2NTMzNzU1NGViMTZiMjQ1YmYzMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkNzMwNmI4MDVlZDEzNTc2MGUyYmJlODQ2YjliYjMyM2Q0ZmY1NDQwMmNhMGE0ZTZiMzU3MDZiMTM3ZTc3ODcifQ"
+        },
+        {
+          "resource": "repo://libs/chess/tests/test_pricing.py#L11-L70",
+          "version": "repo-lines-v1:sha256:5d0411b46261d8e8338dcd3e2c61fcf29f74a2b02ee365e16f5a91c86ff1ef51:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZGRlMzBmMTJlMTM0MjQ2OTVlZDE2NDE4OTZmOTAxZWVlMjcwODg2NWQ4NTdmNTc3NDk2MzJkNzM3ZDdjYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5MzZhMDAxZWFmMzMwOGVhOGNmMGUwMTg5OTE1OTc3MzNiOGQxOWE0ZGVhMTVjNzU5MTZhNzcwZTE3ZTE5ZTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlZWQwMjA2MDZlZjgyNWZlNjlkNzE4ZWZhOGE2ZjZmYWU2YjkzZWMxZDlhNTAzYWFhY2E0MzViNjdiN2VkYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjZmY1YjRmYTNkN2E2MTQ1N2JjYjg1MzAwMjJiZTM5Yjk4MzA2N2I2ZGNjNDRiYzQwM2Q4YTQwOGIzMmI4MjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f1ae488935854bdfb125793cc84e8531",
+      "statement": "price returns (None, False) for unreported usage or a model genai-prices doesn't know (LookupError), otherwise the USD total with complete equal to not approximated; SemIf is unpriced while typesafe:jev-latest is priced.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/pricing.py#L83-L120",
+          "version": "repo-lines-v1:sha256:1c2c1f19837ab60eecb42000ac9097c9be9ad4904ca92da824525e5b81b99f12:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiYmViODlkNjI2OTQyYTk4MWZkMmQ1MjhlMjRlOWU1ZjVkYWIyNDZjZGM4ZmNhODg3YTM4MTRjM2E2YmE0NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4ZTMxZWY1OTUxOGQ1NzIyOWY5MDMwN2FmZDQxMTMzNGY4NWIyYjkzNThjOTczNGZlZWU5MTQ0ZTMwZWEwOTcifQ"
+        },
+        {
+          "resource": "repo://libs/chess/tests/test_pricing.py#L50-L67",
+          "version": "repo-lines-v1:sha256:aec74f8ef60415597c6b7af71fe1efd057aacbc32427a22194d6711f5159bb5f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNmFmNjQ5YzM4NmIzZTNkOWJkYTlmNGNmMDc2Yjg1YWNkNjJlYzcxODExYTU1MDIyNjEyMTcyYjU4NzI3MmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2OWViNzcxZGZiY2VhYzcxYjNlNzE0YWFhMTUyMTc2NzlkODNkMmMxN2RjOWM1NjEyZGMxYWMxZDY5ODUwMjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0ZDlmZWU2ZThjM2FlMWYyNmI4ZGFlMTZjYjYxMGY0N2QyMmU3ZWQxODJlMmViZDc1OTAzMzU2ZWY4MGM2ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljMjViMTJkNTMxYWVkZDQ5OTNmMGM5OWVkMjliM2M5NjBlOTFkYTA0NWE5NmYxNWNmNWQzNTA4NGQ2NDAyODUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e0b551e23eda467ea9994cd5d6a59038",
+      "statement": "turn_cost sums priced calls of a turn, returns None when no call is priced, and marks the total complete only if every call has a cost and cost_complete is true; the TUI shows an em dash for None and prefixes incomplete totals with ≥.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/pricing.py#L123-L129",
+          "version": "repo-lines-v1:sha256:6c63a373bd6cd011c44c2018f76800fe951fa171191715ffcae6c2283627c6ec:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWEzN2RjMWZiNTNkZGU0NWFmNDFlM2VjZjczODY0ODM5ZTdjMjhlZjdmY2Y4ZTFjMzFiYmQ3MzMxNDdlYzdkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDQ2MWRhOTdmYWYyYWVkMDE5MGNlOGI3MDdhNjU3M2VlNmU3ODZlMDUzOWQyZGJkZDk5ZWQ2MDQ2YzYxMWMzNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGNjNGE3ZDFjYzc5NmFiYTNlNDY3MjMzMjdmNTE3ZTlmODExOTgyZDI1MGYwNzAyOTg2ZTRiNTc2NGFkOTU4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://libs/chess/tests/test_pricing.py#L77-L82",
+          "version": "repo-lines-v1:sha256:0cdc0ba13814d9a4128108b0ad43800e4de82e0f8e75d5081bba20ec430d76c4:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTQ4YjkyNTIyNzA2OTIzNjZkODlhMzJmMWM0MTAxZWU3ZTE5ODEzMTU3MjQwZDIwOTMyNWJhZTAyN2NmMWNjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQ4M2NjZjQ5YjE4ZGVkMjE3NzFjMjViOTkwMzI3MDNjZTBhNTJiMTlkNjUwMmFiYzlmMzFhZjhkNGNjNTZjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTU2NWQyYzRjNjZhNmM0OGI0NmYzOTkwMzE0ZGY0YzkyOTZjZWI1OGI3YWFiMjIzOGY1YWQyNzNhYjU3ODk3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/tui/view.py#L31-L36",
+          "version": "repo-lines-v1:sha256:46408e0466c4a4f823aef02ba9982ff939e82d379f177d7d02aa255b0db1d7ce:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzhmZDcyNDY2MmI3YmY5Njc3YjcyNDlkOTYwYzE5ZGRhNTMxNzc1N2I1ZDlmMDY4YWI1YmZhMzI3MTVkYzUyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM3N2VhMTA1NjcwYmI4MDM5ZGY4NDA1YjY4MTcwZGFmYzgxYTYyZTYxNTU4ZWNlMDJhY2M2MDBkM2NjYWIzMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjU4MjJiNzRmNTJkOTExZGU0MGMwNzE3ZjU4YTIzMzgzNDVmNjVhYThlMWU4NzQ4ZTgzMjY4NDRlMTIzNTczMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTZhYmY0NTE2YzY1YjhjODlhNTFjMTMwMDg2YTk3ODg0MzdlOTYzZDE2NjA4MGNhYWFkMTE4MmY4NWFiNjcxYSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-26T04:03:54.007Z"
+  }
+}

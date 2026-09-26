@@ -117,6 +117,28 @@ run = [
   "uv run --all-packages langgraph deploy --no-remote --name langchain-chess-app --deployment-type dev",
 ]
 
+# OpenWiki is pinned per task, not in [tools]: every CI job runs `mise install`, which skips
+# task tools, so only the wiki tasks install it. Bump these three pins and the one in
+# .github/workflows/openwiki-update.yml together.
+[tasks."wiki:init"]
+description = "Generate the OpenWiki from scratch (replaces openwiki/ except INSTRUCTIONS.md)"
+tools = { "npm:openwiki" = "0.6.0" }
+run = [
+  "bash scripts/openwiki.sh code --init --print",
+  # --init keeps only INSTRUCTIONS.md from openwiki/ and drops the committed connector config.
+  "git checkout -- openwiki/.langsmith.json",
+]
+
+[tasks."wiki:update"]
+description = "Update the OpenWiki pages that changed code made stale (a no-op when nothing did)"
+tools = { "npm:openwiki" = "0.6.0" }
+run = "bash scripts/openwiki.sh code --update --print"
+
+[tasks."wiki:view"]
+description = "Browse the OpenWiki locally"
+tools = { "npm:openwiki" = "0.6.0" }
+run = "openwiki visualize"
+
 [tasks."test:uci"]
 description = "Smoke match under fastchess: SemIf-only lcchess against itself with another seed"
 # Runs inside .uci-match/ (gitignored): fastchess writes its config.json to the working directory.

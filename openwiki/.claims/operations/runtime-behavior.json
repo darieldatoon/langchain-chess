@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:fb8ab22d4b8ff32d4db2a2d1218df0ec3be18d0d021218b26d065a56469ccb58",
+  "claims": [
+    {
+      "id": "claim_1ecbc2d3d50a4a449821ccdc61c6422b",
+      "statement": "Web UI submits are traced with run_name \"chess-web\", tag \"web\" and metadata surface \"web\", and every submit carries the full knob set in config.configurable, which lets web traffic be separated from Studio/SDK runs in LangSmith.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/useGame.ts#L120-L130",
+          "version": "repo-lines-v1:sha256:22866c1027f0d30571490d61fa242106dd82ca81007d5b2f21ddfec8e4b25985:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExOWM4ODZkZmY1OWRlZGMyNmQ5YmRhMjhjMzg5MTA1NTNlNDUzZTgzMjZmOTc3YjJkYjZiNGQzYzhhNTVkMzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4YWZiYTE5MWQyOGI1YTU3YzU3N2Q1YTdmMmU1OTc5ZjI0MzVhZTY1NWVhMzNkZDMwM2YyZDRmYTYwNjU3Y2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2Nzk5ZDY0MjZjODk3NDgwMTI3MGM0M2QxNzZlZjVjMjA5MDBmNGE5MWE4YmMyODAxZDY2MGU5NGQ2ZTY4ZTgifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/useGame.ts#L21-L23",
+          "version": "repo-lines-v1:sha256:b4cd75ed715d80abbebaaae21a93a5d4900487ee5ef2c6024c68cf7033400df5:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWViYTVlYjA4MjA2ZGQ1MzUxNGM5ZTVmNDhhOWUwYTQwYzgxZGZmN2RlZWRkZTc1M2U1MDc2OTVmMWNjMjk3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBmNTYyZDQ2NTNmN2Q1NTQxZTI5MmIzZWNlNTZiZTQ2ZGMxMGEzMmVhMjM3ZTRiYWNmMTkwYzIyZDA0ODQxYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODgzZGUxMDA4YzE0NTcyZWRkZTc5MjdhZWFiOGU3YTBkMzJmZjI3MzNlM2IwMzNjNzEzOWU2NzNiOWQwMmMxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWU5ODI2NmMzNWI0YmRkYjViZmY0MzY1ZWVjNjNlYjI1MWZjYWVhZjY3MGI5N2ZkNTMwZDExMTYyMDg2YWIwZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_62ca7a5acf4244dcbc4c669b4ebff42f",
+      "statement": "The web client's retry sends an empty input to resume a pending turn, because a fresh go would be rejected while a turn is pending.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/useGame.ts#L155-L157",
+          "version": "repo-lines-v1:sha256:eca0ed9680004a80942ab816a9fef567b077c0eb0614d61cf7a5de6740452831:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTIwYzE3MDE5NjU4Y2Q1MDEyMjZlOTQxMWNhZTI1MGM2MjUyZmU5NTUxNDZlN2YzNDA5MTY0ZWQyNjQ2ODNjMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjNmMzFkNjQ4MDBlZGFlMTY3MGE3MzhmMTIxNjA4MDljNDc0Zjg3NjYwZDRjYTUxYjgwYjU3MWU2ZTM1MWZmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRhZjdjM2FmZDgwY2EzZTE3NTZkNzUxNDQxOWE1ZjIxZmYzOWJlYTM2ZTM1OGEyZTkzNzRiNjExNzkwZTJmOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzEyYTI4NTIwNTYyZTE5ZDVhNmFiMjQ2ZjVlZDQ2NWZmZjY5MGQ0OWYxZTNjMDQyYzIzNTg1OGM3ZTkwZjIxZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_dc45b589e018421f8812b80cffa9e095",
+      "statement": "The server passes the model name as the chat model's name so gateway LLM spans appear under the model name rather than ChatOpenAI, and caps output at MAX_TOKENS = 32000 including reasoning.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L22-L44",
+          "version": "repo-lines-v1:sha256:3c9766daae276e2ca7ef59a69a6cd9ea5d5e026343d2bd450de4a9ef7ca39ffa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5N2YxZTM5YzUzYmE3NTBmNWQ0NDFkMzM2MTYxYTM0NDA4OTNmMmVkMjA2ZDUyMzE4MjA4NjkxYThhMjliOTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzZGIyMTNkMzlhODhjZGFkZGM1MDNlMzQ5YmM2NGEzMzVlMGIxMmM1NTg3ZWM2YmI2MDg3MGM4M2E2NjAyMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmNzI5ZjhkOTFmYjVjMjZkNGJmNjNlZDljNTk2ZDgzNjAzNTI4MTIyMzE5ZGM2MmNhZWRhYmFhMWFjMTVkOGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhOTM2NmViNmU2OTkzMGVhODcxMTgwNzgxOWMxZmIxNDdkYjE0MTk4Mzk3YjI3MTFlZTE0MGQ3ZWI0MTU4YjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3bb84cfa40b14d7ea34a95fd839bb8ab",
+      "statement": "System 1 classifier requests are traced under the run names systemone.rank, systemone.heats and systemone.final.",
+      "evidence": [
+        {
+          "resource": "repo://libs/systemone/langchain_chess_systemone/ranker.py#L69-L71",
+          "version": "repo-lines-v1:sha256:07ae07bcd379ec1926173222bd0432d6fa7d0b8a953b7c4cde7106c732276f1a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODIwMzY1ZWM0YmZlZGY4YjFiZDMzNWMxY2U2MGIzYTM0MTU0OWJhY2VmMTY1NjA2ZDUyNzU0YTI0NWQzNTUxOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2EyOTE4MmY5NjkwNzQ0NWEyYWQ0NzQ1ZjhiNDE2NDU5ODM5ODA5NzQ1OTA1MTcxNWQ5Mjg5ZGEzNWEyMGZkMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzIyYmE4ZTVmZTA3OGIzMGJhNWY5ZTkyMjNkZDQ2MTZmODYyNGY4OTc4ZTM0N2FhOWFkYTQ2ZjIyMzk0MzFjNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjYyNDliMWVlMTk2MGI5ZjUyNjFiNWI5MjkwYjMzZjhhM2FiYTM1ZTlhODRjMDA1MjhhZTJmMzg1NWI3M2MyMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a26e1bd0f3ac4ee0bb1496b94abfa49f",
+      "statement": "GatewayRanker retries only transient errors, with max_attempts=3 total and backoff_seconds between attempts, and the server builds its TypeSafeClassifier with a 15 s timeout, so a request whose attempts all time out blocks for roughly 46.5 s before RankingFailed.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L47-L49",
+          "version": "repo-lines-v1:sha256:aa0881dab8ab772625b9aaa0b32e00d2c5df098fcbf6705d0a59ff271738bc35:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGJhNDQxYmExZWJiZWQzYjc4NjI2YWJhNTNjOGEzYzE3MTlkYTYxZDQ2NThlNGFhYjY0ZmM5MWMxNGM5MGNkZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTBhMTFmZDQwMzg3NDQ2ZWU3NGUyNWQwZTAwMzRmNzk5MGVhOTRhYjM3YjI0NDE4MTIwOGVmMTc5MzY4ZDA2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjBmNjA4ZjQ1NTcxOGZkMGVkZDM2ZWRhMjYwNGE0ZjllOGJjNzE1MzNlZjU0OTA0YTFmMjFiMDg1MjhiMTBjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzJjOWI2YWJiYjEwZjAzNTk3OWFkNDBkNmQ0MjJiYTkwOGU0OTQwNzNhNzAzZDI3NzYzOGUzMDIzOGI0ZTJhMyJ9"
+        },
+        {
+          "resource": "repo://libs/systemone/langchain_chess_systemone/ranker.py#L148-L149",
+          "version": "repo-lines-v1:sha256:776a0af867f9812ece1a251e05e5812930bd4cb9259f149f58cfe5d6d2a0f386:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDYyMmUwNGZjZGI3ZTY5NTk4ZGM5MzdmZGEyYzFmMDFjZWQzMjBiOWVjYjZmNDVjZDZhZDkzZDE2NDgxM2FhOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2UyYmFjNmU2NTRlZDYxMjNkMmIzMTVhOGFkMTEwNWU1ZGIzOWI1MmM1ZjA4YzQxZDIwZTJmN2RjMTE3MzhkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDU5NzUyYzdlODEyYmY3NmUxNDAwYjU4YzljZTAxYzI1MWFlOTZiZWQ1MTRlYmYxOTQ4ZjlmZGVhMzdhZGNiMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzliMjg3NjIyMDUxMjQzNzFiYWZmY2RiNDVkODVmMjhiMmNhMWUyMGZjZWZhNWRhMWY0MWFmZTM0ZDY0ZjZlMCJ9"
+        },
+        {
+          "resource": "repo://libs/systemone/langchain_chess_systemone/ranker.py#L322-L338",
+          "version": "repo-lines-v1:sha256:1302d7c66697b0bbcc70b4d5a0929b6104ee32917c2280bfcd6aced02395645c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkY2I5NjU5M2QzZDc0NDBiOTBhMDY4NTRkNTU4ZWExZDJiYTZhODY0YTY5NmQzMjk4OGQ5YmE1M2FhZGExNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMzJhMzk1YWFiM2NlNDdhMGQ3NTNlODM1ZjY4Yjg2NTI5OGE5MmVhYjk0MWVlMjRiYmY4Y2I5ZmFlY2UzYjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiNjMzY2UxZGEyZTViMDY2ZDI0ZDRjYTAwYTliNjRiNTc3ODdlYWU1Mjk3NTZhODcxMmRhODJkYmZjYjNkMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliZTc3NTc2MGZmYzYxZDMxNjBiODczN2ZmNmNhOWMzNDViNDY3MTAzZjVhNjRiNmUzMDI3YmMxODNkNjIxYTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fb513e2f1e5f48a995b1831bead2949f",
+      "statement": "A skipped System 1 decision records latency_ms=0.0 regardless of how long the failed attempts took, so ply telemetry does not reflect time lost to failed rankings; only trace spans show it.",
+      "evidence": [
+        {
+          "resource": "repo://libs/systemone/langchain_chess_systemone/middleware.py#L163-L184",
+          "version": "repo-lines-v1:sha256:8eaa2f67ce09e84e7bc069c9eaa0ee58a5c9ec93c2b3876fea9520c24a41ebf8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MmY3OTM5M2ViODA4NmE4Y2E3ZTEzNzExNGRlMzM5MTMwOTI5Y2JkNzZiOWU0ODY2MmMxM2QzNWVlYTBhZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkY2NmYmU4OTc4MDA3YTJiMjVjZjhhOGY2MTI5ZjI0MmNlOGY5N2UzYjM0ZmI5YjIwY2ExNGQ2MDI0YjU5MTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhNDRlZGZiY2E5NDhjYWQzNzdjMmE5MGE0NTJkN2NlNWE4ODMzNjBhMmJlMmZjYTQ0NDMyNjk2YjZmYTYxOTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3cb42b5c8c034c8081340b3393947dd6",
+      "statement": "When ranking fails, a middleware with has_model=True freezes a skipped decision and the LLM plays unaided, while has_model=False (policy systemone on the server) re-raises RankingFailed and fails the run.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L66-L86",
+          "version": "repo-lines-v1:sha256:7464b41a6704fd8c6471cf644682fcbca604e50cf81783da7c41d7c7ef645752:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNDEyNTVjODkwNDY1ODNiNzY2Y2YzNzhiZWMzNTQ5NWNiZmQzNmFhM2YyNzMwZmQ2MzU2MjNjYjlmZGJmMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2ZGVjNzllMGNhZmE0ZDVhMjI1ODIyNTVmOGViNGRmMWZkMTQxMzg5YjZmMmYyYzNiZDc2YzZmMDJhMjQ3YmUifQ"
+        },
+        {
+          "resource": "repo://libs/systemone/langchain_chess_systemone/middleware.py#L215-L223",
+          "version": "repo-lines-v1:sha256:790de498aeb5d144e6102f6a0b31addc5f9d5185a1a9f61eea8e3381724b4a2d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTkwMGEwZGMzZWM1OGE0MDQ3YjgyYzFhMWUxNTJjOGMwMDY1MzhkMTZlMTA3ZGRhYzllMGEwZmZmNjhmM2Q5MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2U2NzM5MmE3Yjc0OTJjOTRmNTRhZDExYzRhMjIwNTllNTZhNzEwOGU5NzQyNjQwOWYyYTc4YTRmNDAyNTA4MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjc3NzRmODE3NDBlY2Y5YWU4OTZhMzllMWE0MjdhZDZhMjg3MGJjYjhjNDk1ZTI2Njc2ZTQwOTZiYTZhNzA4ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2Y2ZTQxMGQwNTNjZmNjNzQ1YWQyM2I3MTUzY2U4ZDMyZTBiYjJiYzBlZGYyNzllYmY2MDQwZTI4MTU5MmFmZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2d72bf1d045745dab928f2f0c39c55fd",
+      "statement": "CallRecorder records a Call only when a provider response ends and drops errored provider calls in on_llm_error, so a turn's recorded calls undercount failed attempts that traces still show.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/recorder.py#L87-L106",
+          "version": "repo-lines-v1:sha256:9140af855f8fcd095f35a07dec9442b4c59dc6121dea9da96bb733ed6060b90a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyM2YwZWQxYmFiYjc3OGYyYjY2ZjQ0MTc2NDNmNjRlZjY5MGU3YzFlYmFmZWVhOGUyNDFmMzQ0N2Y3MjUwMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExMDA2MWFkNzNjMzhlNzgxYjlmOGZjOGNjNWY5NTg0ZDg4Yzk4YjBlMzhiM2ZhMjhhYTE4MjQxZWVkYjRhYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhMTc5YjkyYWI4M2QzODViMGQwZWVmZDQ2MGNmNjNiYmY1YmM5NWFmOTk1YzdlZjljMjljYzE1YjgxNWVjYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiNjM1MTdhYWI1MjU4ZjA0M2YzMWVkNDQwOWMzZDlkOGU5MWVmZDMzZmJhMmJjYzUzYmYwNjg1NTgxZTVmZTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8a1969856527434b976216b89871c745",
+      "statement": "turn.latency_ms accumulates only the wall time inside ChessCore.wrap_model_call, so it excludes System 1 ranking and summarization and is lower than root-trace latency.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/middleware/core.py#L378-L417",
+          "version": "repo-lines-v1:sha256:4824d6aec4d038970ff8a0e59d3f8cfed08e4c1ccea5aa2c86e24fad20a3cfcb:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyMTFlMjkyMGVkODZlMWJhZjMxNTEwMjRkMTJmYjM3NzU3YzQ0Mjk1YjY4NzFkZDU3ZjNlNTg5MmZiOWI0YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3ZGU2MTVmZWFiNWNiYTFkOWQxNTc4Nzk3MWY5ZmRmNTg5OTIyMDEyYWZhYjg0NTk2OTZkYjkwOTk2MWYzYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzNmE1NjcwNTJkZGU2YTU1MWIwODQ3ZGM0ZDQwMDM2MTIxNzFmOTk5MmY1YjNlMjYzN2ExNWFkYjU3MGViZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiY2Y0ZDkyZjRjYmIwODAyOWM3ODVmM2ExMTUyMDA5NmFhZWNlY2U4ZTE2NzRlMWRmMjI3YmE5MjkyOGZkNTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4a307658433143c4af9a17b86f35d15d",
+      "statement": "Each illegal or unparseable reply triggers another model call while attempts < max_retries (default 3); after that a resignation terminal_intent with reason illegal_moves is set, so a turn makes at most four LLM calls.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/agent.py#L59-L74",
+          "version": "repo-lines-v1:sha256:9cf51f397a98377cc295cebc9499a361fe465b943471806ccefe2c26f68cf603:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4ZTg3OGRhZDBjYjI3NWQxOWUzMzRmYjM2NjE4NzAzNzcwMGY2NTcyODNjNWJhZTgzMzNmN2MzZDk3NDZlM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyYjlhODRhZDBiOTYyNjY0ZjA1M2VhZGMxNGE4YTAwMjZmMzYwNTNhYjE3MTRiNTgyZTkyM2I4MTBkOTA4NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxZjc2YzkzMjRjZDE1OTQ0OGIxZjFkOWQwM2M3OWI4ODMxMmExNTcxMjE0NzE5ZDI3MDIxNWZiNmNlYjY0OTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkMGU1Y2FhNzJmN2EwY2RmZjY3NjY0MGZiODQwNzlmNGZiMDg0NjcyZmQ3NmYyYzhkNjY0NzYwNTc0MmRhNjQifQ"
+        },
+        {
+          "resource": "repo://libs/chess/langchain_chess/middleware/core.py#L442-L488",
+          "version": "repo-lines-v1:sha256:ca496e3b397651800757dffc033cce1aedb419fe11304f1b76fdfe329e8564c6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyMDc1NjVjYzkwZWUyMTVkMjEwYjhiZTc3YTdhMjhiYmIzNTIzOWI3NTgwYjVjNTk3MGY3MmM3YmQwNTIwNzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzYTJiOWVkMTFhYzMzYzEzNGZiZDI2ZjdhOWMwZGUzOWZlMjJjMjFhOTkwMGEyOGQ5NGQ4Mjg0MGNlOTE2M2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmMmIxNDUxMTNhNzA2MzQwYTIwOWIzNTZhYzhmYmViYjg5OTkxY2U3YjBmYjEwMDZkZmU4MGIzZGRlNDI3NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiNDQxN2YwYzg2OWUzYjdmMDY5YzlhMTIyOTcwNWZiMTcyMzU1ZTlhMDQ1NWI4NzY1ZDBhODhlZDg4MjNjNDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e02242a1390e4ba7a89bf89f3dfb7b07",
+      "statement": "Provider exceptions that look like context overflow are re-raised from wrap_model_call as ContextBudgetError.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/middleware/core.py#L406-L430",
+          "version": "repo-lines-v1:sha256:fc3eaef9682947cbe988c5963a6544601a1f448effe1d7396e3dbd29eebcf6f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNzFhMGExMzM4YjZlODZjZGFiNjVjNjliODU0NzgxNzIxNWJkYjA0M2MxMDY3ZGM0MTU4MmUwMjE1ZWVmZTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3ZGU2MTVmZWFiNWNiYTFkOWQxNTc4Nzk3MWY5ZmRmNTg5OTIyMDEyYWZhYjg0NTk2OTZkYjkwOTk2MWYzYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5NTBmZGQ2MGRkMzljN2M4ZGNjNWE0NTliMmY0NDcwYjNlM2RhNmM0YTFkNjJlMjhiZTY4MGRiMTY1Mzg3OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5NDdiZjM4YTg0MGQ2MTQyMWJkZDRkYjBlM2RjOWM3MTg1MjgwMDEyMjRhN2E1N2UxMmFkY2FhN2ExNTI1YTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4d5c2df2b38443c797391f8908032166",
+      "statement": "The server defaults are policy hybrid, memory none, threshold 0.9 with the margin gate, systemone_model semif-qwen3.5-4b, with_eval and with_nouls off, and summary_trigger_tokens unset, so summarization only runs when a caller opts into memory summarize.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/context.py#L27-L110",
+          "version": "repo-lines-v1:sha256:c0254071bc95d44a56081ae080214391fb96a1e4719f72b3aa00dac7f087f9e0:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNTllYjgyYzUyNDRhMTEyZTNkM2VmYjNkZmJkZmE0ZDA1Mjc1YjMwYzUxYTIxYjdkZTdmMDU1MmZmZjc4MGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4ZmQ0NGM3ZTkzYjI3ZTY0ZjY4ODY1ZTkyNGMxMTM3ZjY0MTY1YmMxOTljNmI1NWYyMWQ3NWIwOTE4MTcyOTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkYTc3YTY2ZGU5YTViY2FiZTU1ZTY2ZmUyNTkxZTI2NjA4OTY5NjdiNmU5NTEyN2ZlNDUxN2YwMDk5Nzk5ZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4OTQ4NTQ1N2Y1OGZhMjUxN2E5M2JmNjFlYTRiMzQ4ZGI4MmE5MTczYmE5OTU2ZTIzY2U0OTkwNjhlZWRkYTgifQ"
+        },
+        {
+          "resource": "repo://libs/chess/langchain_chess/agent.py#L100-L105",
+          "version": "repo-lines-v1:sha256:588376ede941594d57dbc23afb6f684a23ff0543201c7cab3ae8389b14372ae0:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFjNGU4NjlmZWEwZjE4YmE2NmY3MGY2MzU4YjFmMDdkZjJiMTIxNDdiMjcyMDg3NGU2MDNjNDFkOWE3OTIyMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDZiNWM1NzMyMjc5ZTkyYjE1ZTk3NDEzNGJlZDFjNzJlMGRmNGRkNTcyOWRmM2RiMTNkMjAxYTIzZjlmOTg3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTBlOGY0YWVhYzQ3ZTY1MWNiNjE0MDVlODYxOWM1Yjk4NGNkZjZkOTk0Y2U4MDYzY2M2Nzc2ZTNiZDBlZTI3MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWI5MjhkYmU0NjYxZjEwYjVjMWRhNDFjMjQzYTBhOTY3YjhiOTQ3Y2NiODdjNDRjMzc0MTYyOWM3MmFjNTYyYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f4b9720cc7e54801a681b9e00a43ce58",
+      "statement": "The UCI adapter's fallback bestmove is System 1's fallback_move when it is in the root pool, otherwise a seeded random legal move, or 0000 when no move is available.",
+      "evidence": [
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/uci/completion.py#L47-L53",
+          "version": "repo-lines-v1:sha256:1dfdb46fe366348bcbc95923c3a2f08679765e81fc4ff1cca41ad5abd0106b8e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJiYWEzNDA5MGYyNWRmYmU4Mjk4YWMxZWIxYWY0Y2ZlNjQ4OGUxN2YzNzM5NThjZDJmMmRhZWI0Y2Q4YTE3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWY1ZWEwNjJiNTY1OTM0ZDY5ZGNlMmYxMjViNTM0MTBmNTQ0ZjU3YmE0MTM3NmRmYWVlNDFlMmQ5MjU4YzlhYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGEyNzgxOGQzZDVjMTU0ZmVkMWU1ODI3Zjk1ZTQ2MWU4ZjkzMmZjOGE3MzM3YTU3N2I4NWU3NmE1NTI1ODhjMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmJlMzk4MTA2MzcxZTJiNTQyY2ZlNzUxNTY5ZWNlNDJjZWZiZWY5NzYyYzMxZjM1NjY1MGI4ZGE0YjFlNGU4ZCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-26T04:03:54.007Z"
+  }
+}

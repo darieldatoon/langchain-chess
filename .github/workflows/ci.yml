@@ -2,7 +2,7 @@ name: ci
 
 on:
   pull_request:
-    paths-ignore: ["**/*.md", "plans/**"]
+    paths-ignore: ["**/*.md", "plans/**", "openwiki/**"]
   # deploy.yml calls this, so the checks a merge deploys behind are these same checks.
   workflow_call:
 

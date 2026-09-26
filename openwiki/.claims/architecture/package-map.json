@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:712ce18b80343750c709182b3a6afb8917ee104f851dfd4df0ba04ddbad54910",
+  "claims": [
+    {
+      "id": "claim_0117f80bd80c4697a23b4910e5778096",
+      "statement": "The Python side is a virtual uv workspace whose members are listed explicitly as libs/chess, libs/systemone, libs/cli and apps/server, because a glob over apps/ would include apps/web, which has no pyproject.toml.",
+      "evidence": [
+        {
+          "resource": "repo://pyproject.toml#L1-L4",
+          "version": "repo-lines-v1:sha256:fa2f49b0cfe941372f7f36755b935c58ae826de240dbb355e79e539d785cefd9:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMThkNTkzNGIxNTQ0ZmE5MDgwN2JiMTNiZjQ3YWE2ZTc2MDk5ODk2N2U0M2NiYmFlMGY0ZTIzNTcwYWJiYjQ3YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODFjZDAyZDcyY2MwODUzNTkyNWQ2YzkzMmRlMzNhMGIyMWM4YTc3NjRmZDNkM2FjZTJmNzE0MjY0YTMxZjEzMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTI4YTAwNTY3NGQ3Y2Y1MTZjOGVjZDliOTU0MmRkYjcwYmY1MmRjNzIxYzgyNGMzMDFlNDc1N2NkZjdkY2U0NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_53b79900d848439a9ec4066453753950",
+      "statement": "The pnpm workspace contains apps/web, apps/review and packages/*, and a shared version catalog in pnpm-workspace.yaml keeps the apps and packages/chess-ui from drifting on shared dependencies.",
+      "evidence": [
+        {
+          "resource": "repo://pnpm-workspace.yaml#L1-L34",
+          "version": "repo-lines-v1:sha256:917fea0ac505368828e3137d98ede266c693cb2012c78ebcfd9503cb5d398118:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MmVmNjg2MGFjMWY3Nzg1MzA2YTFiODI4MTQ0ZTBkZTAxYjU3ZjNmOWY2MzdiYjM1ZTVjZWNiNWVhOWU1MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzZTdmODEyOGM3OGY1OTY2MjNiYTEwZDYzMDViM2U2OTVmN2NmMTdiZTk3Y2E4YTQ3Mzg3NTBkNDQ4ZGRiNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjZmYxMGExNzM1YzVjODIyOTU1MGUzZmVlZWUwZGM1Y2RiNjZiOTNiMjMwOWE4ZWVlMjg1MWIwZTI5MDJjNGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b4b7d57bf1a14a04be98b909b9aaa288",
+      "statement": "langchain-chess-systemone depends on langchain-chess; its SystemOneMiddleware builds on ChessMiddleware, ChessState and PositionView, and its ranker records calls using langchain_chess pricing and state types.",
+      "evidence": [
+        {
+          "resource": "repo://libs/systemone/langchain_chess_systemone/middleware.py#L18-L19",
+          "version": "repo-lines-v1:sha256:f23cfbb8fb3597ab42c9858170c9d5f99bee56cc6d628cb4ce2a3ba9b943eba0:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUwYWY3YmNjZWFiNmM2ZWY3ZjdhZTFjN2I5MTNlNzg4NTgwNzcwYWMyZWFmYmUyMTg1Mjg2YzljNDMxZWVlNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWFkODUwYTNiYTA3MTMzNzk4ZTM3MGI0MjFjNDQ1MjQ5NzUyYTk3NjI0ZWQzN2I5YjdlMTYzOWIzYWU2YThlMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzUyMzg3ZjUwYjg4M2JiZGMyNzIyMzJjZmY0NDljODFiYWVhNjVmMGE1NDU0MDc5ZDU5ZjIxZjlkN2YzNWEzNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjI5MzE5MjkyM2E3NjdkNGY1ZWY3MGZkNzc3MjNiYjk5NzliZmJkMDQ5OTJiZjA4YjZjNjkwOGI3NjM0ZGY1OSJ9"
+        },
+        {
+          "resource": "repo://libs/systemone/langchain_chess_systemone/ranker.py#L33-L34",
+          "version": "repo-lines-v1:sha256:6da26d088b7a27a586d6ac7c20c63ee6e359c20dfad06b1fc62200d59bb8c715:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzYzNDllMDA5Y2MwNzJmMWM0OTAzZDYwM2MzYzQ1MTU1Njg4OTE2MzBhY2I1OTNiNTNhN2MxOWIwYTYxMzY2YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2U1NjYwNGEwMDBiOGM1ZTUyNTVhMDc4MTM3NTkzNDY0NDRkZjJiMThmMTZkYmJlNzAxY2FmNDA1ODc0Mzk3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmMzNzEwODRjNWYxNzQxOGNhMDRhMjJkZDhjNDZjY2U4M2I1NWViOTQzNzk0NWJmZTk2NWIwYjk0ZTIyZTI0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWUyMjZlNzBmNTVhZTQ3MmUxMjM5M2YzYzUxYTdkY2M4NzQ1MTczYWU2Y2RkZmQyNGMwNGE0ZjdkNDE1MDJiOCJ9"
+        },
+        {
+          "resource": "repo://libs/systemone/pyproject.toml#L9-L12",
+          "version": "repo-lines-v1:sha256:f457740ec13defd4618333b97aa9c4320cc7ba80ace06e46788c231f77cd8685:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5NWY1ZTllZGUwMTgxNjA0M2MwNzk3YWNlOGRhMmFjNGU5OWE4YTZhNjEwZmE5ODU3MGVmMzRiOTM1NjEwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTZkZjNhMzBlNjcyMTM3ZjRjNWIxYTg3NDNlMDkzMDkwOTcyNTYyYjM2YWIzM2E3YjM2N2Q4NDkyMjgzZTJmYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTUyNWM4NGQzMjJlZjE1N2RhODk4MTgwY2U4ZTJmYmNiOTg5OTY4MTBhMmQ5OTc3ZjRlZDZlNTkwMDNkNzdkYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6f28ef10061249d399aa4d3f3476f6c7",
+      "statement": "langchain-chess does not import langchain_chess_systemone; its only reverse link is an optional `systemone` extra that installs the sibling package, which the CLI uses via `langchain-chess[systemone]`.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/__init__.py",
+          "version": "repo-file-v1:sha256:ee95f3e5c1449ef6bbfd71a4c938c8f51f7a1c59e03ab20740d86be8cea70566"
+        },
+        {
+          "resource": "repo://libs/chess/pyproject.toml#L16-L17",
+          "version": "repo-lines-v1:sha256:4aa0bfacae448660265182461adb49cd8ca3f23a3e03729dc92fb728d539b7d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTkyMThkYzRjZTk3MWNiZTNkMzhkNzc0MzBlNjM5OTE4ODg0ZGQ3N2Q3MTg0YzdiOTNkZmRjMmU5OTg2OTFiNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmU0MDAwODlhNmRjYzJlNzZiNzU3NWU4MmU3ZDdmOWYyYWM3MGE0MjJkMTQ2YzIzODQwNDM4OGZlMWE4ZTFmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzhiYmY4MzE3ZWZlODNlNjM4ZGNjODlkMmE5N2EzNWM0NGYwNzdkNTE1Yjc4NTI5Yjg3Yzc1YmUwYmRjMTM3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTUyNWM4NGQzMjJlZjE1N2RhODk4MTgwY2U4ZTJmYmNiOTg5OTY4MTBhMmQ5OTc3ZjRlZDZlNTkwMDNkNzdkYiJ9"
+        },
+        {
+          "resource": "repo://libs/cli/pyproject.toml#L9-L16",
+          "version": "repo-lines-v1:sha256:fede9a6d856324eec7a29e66a153401f07e42b5a2ed215874f80bbb767de9ef8:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5NWY1ZTllZGUwMTgxNjA0M2MwNzk3YWNlOGRhMmFjNGU5OWE4YTZhNjEwZmE5ODU3MGVmMzRiOTM1NjEwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTZkZjNhMzBlNjcyMTM3ZjRjNWIxYTg3NDNlMDkzMDkwOTcyNTYyYjM2YWIzM2E3YjM2N2Q4NDkyMjgzZTJmYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWZhNzA0ZWZkMDE3ZjYxNzljYmFmZmJkYjkzYWRkMDhlYjkwMGFkNTllNTFjOTA3M2QwZmQ4NTU1ODZhNThkMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d63a616dcea430c8fa3d8de1c348c20",
+      "statement": "Both adapters (the CLI and the server) depend on langchain-chess and langchain-chess-systemone and construct the agent themselves with create_chess_agent plus a SystemOneMiddleware.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L15-L20",
+          "version": "repo-lines-v1:sha256:297dda21dd501229f8adf7917b763de58b7e7ae630e19c54360049ea719089d0:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjY4NGE4ZDY4NjE2M2VlZDZjZWFmODAwM2RjNTEwZDM2OWYzZjU4ZjgwNDM2ODNhNGRiYjhlZTc5MTViNWY1ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjMyOWY0MWNiZjQzNjliN2VmOTA2MDkzZjRhY2U3ZDdjZDBjZjEyOGNhY2RkZjEwNmJhMzZhMjU2ZDU1NzM1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODYxMWVlZmU0MDA4YjFkMjEzMzVhZjg5OGRmNTgzMDRiYjQ0MGFjNjFhZDVlMjI5ZjI3NmFhYjdkN2RkMGFlOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODg2NzNhOWU4N2JhOGQxM2JiNGE0ZGQwYzJhMTM1MmY5Y2UzMTU2ZjZiYmZmYzM4NDE1MDAwNmYxZDMwOTkxZCJ9"
+        },
+        {
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L89-L109",
+          "version": "repo-lines-v1:sha256:febde7c7251a2ad204e4f30cf3fa9d76278a0226a8c6beae16989a36c66c3c00:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3YTY3M2I5NGYzZDBiYzRiZTcwMGRjOTVjZDQ4OGM5NDcyMjVhMDY1MGYzNWFlZDU3MWUzZDM2NDQzN2EwNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwOTMyZWNhZTc1Mzg3Mjg1NzlhY2RiNzdiMjQyYjM4NTE4NDVhODY4NWM0NjhjY2I0MjZjMDY2MGQ0YTllMTQifQ"
+        },
+        {
+          "resource": "repo://apps/server/pyproject.toml#L9-L15",
+          "version": "repo-lines-v1:sha256:514779eb21317006c57745e16ed2856a03b2429373777f46343eb1fedd13e930:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5NWY1ZTllZGUwMTgxNjA0M2MwNzk3YWNlOGRhMmFjNGU5OWE4YTZhNjEwZmE5ODU3MGVmMzRiOTM1NjEwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTFhMjNhMmNmNjUxYjc3MDMwNzExMGMyMzY5NDQ5NDBjYmJmZDAzYjBhNWI1Yzk0YmJiZGFkODY1Y2Y3YzM1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTUyNWM4NGQzMjJlZjE1N2RhODk4MTgwY2U4ZTJmYmNiOTg5OTY4MTBhMmQ5OTc3ZjRlZDZlNTkwMDNkNzdkYiJ9"
+        },
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/options.py#L13-L17",
+          "version": "repo-lines-v1:sha256:b700237135fd1063f1b876ad9cb78285037f1756c31973a6a9f2476b7edc0352:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjY4NGE4ZDY4NjE2M2VlZDZjZWFmODAwM2RjNTEwZDM2OWYzZjU4ZjgwNDM2ODNhNGRiYjhlZTc5MTViNWY1ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTI3M2RhOThiYWIyNzJmMjA2ZGJkOTVkMmZkOGU1NzQwZDE2YmQzMDcxZTk0ODg2NmZiN2I3NzU1MzgwMjg5NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmE3Y2ZhOTY2ZjFiMGZhYjM5M2M1NmMwYTcyMGMzOGE3MjA4OWRjODIwNTRkYjZlODRlNzFkMDU2ZjRkZjY2NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWE2NDU4ZjhlYTAxMTQ2NDUyMzJkZGZmYWZjM2M0Njg5ZjhjMzgyMTI5ZDJiNDg2NzQxMjFhODI5NTAzODQ2ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cbc5e24bab3643958aefe60a7f9abe53",
+      "statement": "The CLI's grade command reuses langchain_chess.engine and langchain_chess.grading from the core library rather than implementing grading itself.",
+      "evidence": [
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/grade/batch.py#L15-L16",
+          "version": "repo-lines-v1:sha256:12ec462dca45d787cef56d56c95f1e3e3a627510745c01650ba5476f57520b18:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2MxM2VmNGE1NWRkNDEyNWNkZGE2MzllOWYxMzg0MTRlMDI5ZDczMmUxOTQ0NDI0MzJhODlkOGUzNDU4NjZmZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzcwMDhiOTFmYmM0YzVmOTliZWMxNDRlYzI1MDNlMmNlZmU3NTU3ODljM2Q1MDkyOWM2ZWUwNWUzYWZjOTIyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTJmMTFlZmY3YjMyOGVjNmM4ZDBmOTQzYzdjYTE0MTAxYjZkYzE2Nzg5NTI0MTAzODFmMGI5YTllZTE5NjM0OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDg0Nzk4MDJkNGZmMDNmYWU5YTcyNTI0MWEyOTc0YTcyZTE2NTY2ODU5ZjBmNjBhM2QwZmExMzlhY2ZiY2Q1ZCJ9"
+        },
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/main.py#L223-L226",
+          "version": "repo-lines-v1:sha256:d1566cbcf1d99e2cbdbe4fa30bca360d1025f5a6c911eeb847a75fac7ab61e66:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBlNDYyYTNjZWU2M2FiZmVhMWY2Nzk1ZGY0NGViNjY3NjIzY2VjYzM5NGUwNzZmODg4M2JhMmE4ZGU1NWZiMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWE1MDdlMjM1ZTU3YzVkZGVjMzQyZDI1MDE5NTVmNzgyY2JjNTEwZjdjNmRiNjZhNmZhMzAwMjA0ODExYzJmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWU5M2YyMTEwNTk5MTM2MTFiMTJhMWE3ODkwOGQzYThhM2NkMDMyYTUxNWZlZTJiMjNiNzY1NDk4ZWVhODE2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2U4MTczMTFhYWE5YjU5M2FhYTY4YzYwOGExZWIyZmNiYWJhYTgzZmFmY2ZiZDBhMzg0NjhkNTE1NzcyZTZiOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fd70613303334d52a78fc5a149d9c22b",
+      "statement": "langchain-chess-server is a private, never-published distribution (classifier `Private :: Do Not Upload`), and the CLI exposes the `lcchess` script from langchain_chess_cli.main:app.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/pyproject.toml#L1-L8",
+          "version": "repo-lines-v1:sha256:b6a407bbca01a4864e88549d6da596998ef5113d24f7730a10fc7dd7efd20898:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzAyYTgxYzM4MzZlZGVmMmQwYmExMWQyMzUzZmI2ZGFiYzc3NzE1MGE3Y2E4M2VhMGQ5ZTlhNzAzMTNmZWFiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDA4M2Q1MjQ0ZDJhNmQwMTQ4MzgyZTZjMzMwOWZmNTJiYTEyYzM0MWRiODQ0ZDczYTk0NzYyOWNlOWYzMDc1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjM1Njc1ZGJlZTk2ZTM2NzQzYjExMjg5OWI3NGE1Y2U5NjJlMmI5MzEyYzlmYTEzNDVlNWYyM2NmYWYyZDcyZCJ9"
+        },
+        {
+          "resource": "repo://libs/cli/pyproject.toml#L18-L19",
+          "version": "repo-lines-v1:sha256:9a324d26c09c85a1ddd78885a60f8704dedd123a8bae52f2bf46bb7834dc3b12:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGVhYjRlYzYzZGU1MTdkYTRjZDhlNWM4MzA3ZmIyYzc3MzdkMzkxOTBhYjY5ZjMyYTVlOWVmODFlYTQ0MTZkZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzc3NmE3M2YzY2Y0ZTQ2ZjE1YzM3YzM1N2I0OGJiZWQwZThkYmE3NjIyZjJlNWNmMDU0YTBkZWUxOGZiNzIyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDU3YjI5ZWZhYWQyMTliNjY5MTI5ZTQxY2UwMmZjZmU3YzE1MDRmZjg5M2E3NGUxNDM5YTlmNzU5ZjhjNGUwNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjUyNmNhNDVhMTUzZGNiMzRjMTFjM2EzODRiM2Q2OTg2OGIwMzc2NTQ0YTZjMTQxMGZmNTRkNTZhZjFiN2YwYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6fcc81bce27146d0879efdfddaa11219",
+      "statement": "apps/web and apps/review both depend on @langchain-chess/chess-ui via workspace:*, and chess-ui's package exports point directly at TypeScript source (src/index.ts, src/styles.css, src/testing.ts) with no build step.",
+      "evidence": [
+        {
+          "resource": "repo://apps/review/package.json#L14-L15",
+          "version": "repo-lines-v1:sha256:01811f201c17721582651253f257653398a59c25b7d328f34f37da01d2d3d89a:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEzYjQ2OWQ5ZTA5NzU3MjI0NjY2NzM0YzllZjdiMjU0ZDg4NTM0ZjVkNWJiNzA5ODk2MDgwNWM1NTNkYzMwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGRkZjk0ZWFmMWE5Nzk4MGEwNzZlYmM0YjU1NGNkZTQwYzBiZmIwMTcxZGU0YWM2N2JhZTgzMmFkYTk5OTY0NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmY5YTNkZDdkNzM2MzA0ZWU0NTUyODgzZGFmNzNiOGU0ZDAxNDRmOTY2MmY0MWYwZjJiNTcwMDc1OTE5Yjg3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDYxOTkyYTUzNDgxOTg1NzVkYzlkNzQ1ZWE3MWEzMTY2ODRiM2U4NDcxODFlZGM2MTNkYTNkMDhmM2JmMDk5MCJ9"
+        },
+        {
+          "resource": "repo://apps/web/package.json#L13-L14",
+          "version": "repo-lines-v1:sha256:01811f201c17721582651253f257653398a59c25b7d328f34f37da01d2d3d89a:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEzYjQ2OWQ5ZTA5NzU3MjI0NjY2NzM0YzllZjdiMjU0ZDg4NTM0ZjVkNWJiNzA5ODk2MDgwNWM1NTNkYzMwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGRkZjk0ZWFmMWE5Nzk4MGEwNzZlYmM0YjU1NGNkZTQwYzBiZmIwMTcxZGU0YWM2N2JhZTgzMmFkYTk5OTY0NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjgyZjllMjRhNGRlYTM3ZTMzMGI5MjhiNDUwOTY1ZGVlMjFkZWVkMWYwZWY4NWRlMzBhMWJmZjJlMzNlOTE3YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmExYjMwYTdhMjAyNTM1MWQzMzY3MzBjNDFmNGEwZDcyNjY1NzNjMTc3ZDE1MjkyODdjM2M3MzliNjg3YzM1ZSJ9"
+        },
+        {
+          "resource": "repo://packages/chess-ui/package.json#L7-L11",
+          "version": "repo-lines-v1:sha256:c595120f99c585856317e493eaa7c2eafe4314ee18220e8b843c9469a5243e67:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2MwNWJiOWY0YThiOTg0NTEwZjgxNWE1ZmM0MDc4ZDc3YzVhMjBlOTNmMzM3M2RjNWRkZTRhMzQxZDFiNDBjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDNjMzVlZDUzM2IzZGRkMzdiMmZkNTljM2ZiZDRlMjEwMTQ2ODNkNThmMzc3MGU1NTI3MGM4ZWUzM2RhNmZhNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjdkOWVmY2NkMjBkNjdiYWI1MTE5MmUwMjU0ZmNmMGNmZTBlMDM4MDk1ZDM4MTdjMzkzMjBhMmRhYzRhZTA5NiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_30cb5a76dbcd420886acfed9820b873a",
+      "statement": "apps/web reaches the Python agent only over HTTP, driving the `chess` graph with useStream from @langchain/react.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/useGame.ts#L1-L21",
+          "version": "repo-lines-v1:sha256:88012a936ba8d39792a44d821c56f4980996048479f57b0192f8a6d661375ebc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmZDA3N2MyYmNmMjBiNDhiYjE1ODM2ZTY3N2E5MjgwMTUwMDQxZmZhOTcyZDVlYzUwMjEzMTI3ZTFkMWFhNTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllYmE1ZWIwODIwNmRkNTM1MTRjOWU1ZjQ4YTllMGE0MGM4MWRmZjdkZWVkZGU3NTNlNTA3Njk1ZjFjYzI5NzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3Njk5MTViNzIyMWEzOWU2Nzg1ZWU2ZGY1OWUzMTQ0ZGQxODFlYTRmY2IzOGM1MDM3MDE0N2JmODhhOWNmZjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e6c6ef27d1f9400fb6a370111694c5df",
+      "statement": "apps/review does not talk to the agent; it reads threads and the grader's game_review feedback from the LangSmith API through window.langsmith.call, and because it depends on chess-ui via workspace:* it can only be built from a checkout of this repo.",
+      "evidence": [
+        {
+          "resource": "repo://apps/review/README.md#L22-L36",
+          "version": "repo-lines-v1:sha256:db1f21b72d1434a0e103a5d48d404f1811e8c2583a940fcd54b960ed607ca0f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0OWZlMjZmZGVkMzE2OTFiYjVjMjI2ZDRmY2QzYWZhOGI5M2I1NWRhZjIwMTJmYTM5YTJkY2IxMDk5MWEwMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5YmQ3NDZiMWRjNWU3OWMwZDE0N2FmZjA2YmM2NmUyMGY5MzA1MmQ5NmFkY2UwM2Q5ZmVkYWQ2YTE1YjhkZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlNzdhYTdiYzY4NTFmMjA0ODZiY2YyNjA2MmNlMGU5OWQxNDEzMTRhYmYyZTFiYmEzNGFlZTBhMGExNGI5ZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzMDFiNGY3NmFkNDNmMzZlODZiOTc2NTk1MzdhMGIyZDQ5N2ViNmE1ZGRkYzIwZGZlN2I4OGIxNjk5NjA0MzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cf288ba161124e9eafdf1ee7d4fd8c74",
+      "statement": "The TS state types in packages/chess-ui/src/types.ts are hand-maintained mirrors of langchain_chess/state.py, langchain_chess_systemone/types.py and the server's ChessContext, with no generated contract.",
+      "evidence": [
+        {
+          "resource": "repo://packages/chess-ui/src/types.ts#L1-L2",
+          "version": "repo-lines-v1:sha256:cdabfe8ecba307d87d7ad42cf69ab5e1e6f639585e7f371f8184a491242f1575:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTAyNGIzMzhlOGQ4MTQ3YWE0OTM3YjU3NjlhMzExZTNiYzg0YzYzZjdhNzJkNmFmZWNmYzQ5ZWM0YTg1ZTE1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzExMDNmMmEzNGZjYTJmMWM5YzVjYjExOGM5MWVjZmE2Nzg5NDM4Y2ZkOTcxOTQ4YzdiNTNkNGMzMDg4YmUwZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjEyYzYzNzkwNWVlODdlMzg1NjBmODRjZGZjYWNhNzRkNDRmYzBjMzliMjQ3OGYxMWEyYTI1ODI2NDdhNmI3NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_dc21526ada924662ace28924a0cf7945",
+      "statement": "Workspace sources (`workspace = true`) are declared only in the root pyproject.toml so `uvx --from git+…#subdirectory=libs/cli` resolves unpublished siblings from the same commit; member-level workspace sources fail in the Agent Server image.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L261-L266",
+          "version": "repo-lines-v1:sha256:ed5fe6d0b0e836530d07222f5423ccdc30900fcd3845abca9ef0e37fc30d01d5:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjFjY2EwYmQwYzZlMGY2ZTRiMmQyM2UyM2Y0ZDk1YWY1MWYzMTFhNzZhZGMzZTY5N2RmNWNkZmUzNjc1ZGM2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Y3ZjU0ZTZkM2NmNmM4ZjU3NGU0M2I0ZjY1NWRiYjVlZTY4ODUzZjYyZTkxM2U3NTJiYjE2NjhhY2Y5MmIxMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNThkM2I3YTBiODc1MmJmODM3ZGEwMDVkYWFjOTMyOWU5OTJkYTJjMjhjMjZiYzhjMjA4ZDNjZTg3MTRkYmJmMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTUyMDJiOWNkM2NhNjhkMGZiZTU0ODBiNjJiM2U2NzQ2NWViNWY5NzNhYjk3ZDM4MjQ5OGIwZTRjOGMyNjJhMCJ9"
+        },
+        {
+          "resource": "repo://pyproject.toml#L6-L12",
+          "version": "repo-lines-v1:sha256:7ac77ce2986d8ea57aaed4e4082f42a679522423f097019f065c2cf8958a169b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDI1MzA2N2JiNDVmNGI5YWYwOWUxMGNmM2UyMzU1MjJlY2IwOWRjZjc3YWUwMGI4MzUzMGY5YWY0MGI5MmI5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGY5OGY0MmNjNjFlNzBhNmZhMjA0NDQwYzhmZTIwODEyNzliMjU1OTI3NzkzZjA0MjRlMmE0MDY3NzBmMWI1NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTBiOTFkNWUyMWE1NWVlNWEzZmMwMmM2YTA0NWUwYmJiMmRlNzFmNjMzYmI0NGI5NGFlYTdlYjE3MzA5Y2Y4NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjg0Yjg2YjYyMTI4YjZiYmQ0YTUyZDRkMzg2NjNhNmY3OTc1YzAwM2Y3YWZlNTc3MTAwNDc1OWY1OWVhYmZkNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0c10371e41974f6990b57fb0fc0f5bd9",
+      "statement": "The Agent Server image builds from the uv workspace with langchain-chess-server as the package, and langgraph.json's dockerfile_lines must ADD every workspace member's pyproject.toml; it also wires the `chess` graph to graph.py:make_graph and the HTTP app to app.py:app.",
+      "evidence": [
+        {
+          "resource": "repo://langgraph.json#L5-L22",
+          "version": "repo-lines-v1:sha256:e6966a8c6011d944650f8469361740b0a483552f4e8c9f3fb8f2558fbe0a4d12:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmYWQ3YWNkNWZiYWY0MmNlNzJmZDgxODQ1MGMwYmRkMWFlYjc2YTlkNDFkNmZjZTI4Y2NkMzNlZTJiZjIzN2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5YmZmMzY3YmVlYmNkMTY5ZGRmZmQ3MDcyNGQxNzc2MzA3MTYxYjQ5YTcxNDQ5ZTYwZWYyODQzMjc4ZmEzY2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_298cd2996bdf4d3795976540f62a7282",
+      "statement": "The web app's Vite build outputs into apps/server/langchain_chess_server/static, which the server mounts at /ui only when that directory exists.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/app.py#L33-L56",
+          "version": "repo-lines-v1:sha256:0810d6f2a805320c0fc9f26909a2a3f711c3ab0ab364d5bc2735374c1e91fede:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5Y2Y1ZjJmNmQxZDFhM2M4MmY3NzUzZTQzMDQ3ZmJjYjNiY2MzNTEzNjBjNjY3Zjg5NmIwYzgwZjY5NmI3ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkNjdiNDY2Mzc4NzVjM2JiN2Y5MDNiMWRiODczNGI0YTI5NjY4NWRmNGRiZTY2YTRmNmNlZjdmZGM0MTE2M2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3ZjdlNzJkYTFjMTA1MmNjMDBhY2U2MDBjMGNlZjljODAzZGViYWM5NmFlN2ZjYmY5MGViMTlmZjlmMTNhMTQifQ"
+        },
+        {
+          "resource": "repo://apps/web/vite.config.ts#L9-L9",
+          "version": "repo-lines-v1:sha256:dc12a94557fadd1d58960b4dec4edb36ce484247a949212a50e8058d47d83837:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMxMmE5NDU1N2ZhZGQxZDU4OTYwYjRkZWM0ZWRiMzZjZTQ4NDI0N2E5NDkyMTJhNTBlODA1OGQ0N2Q4MzgzNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMxMmE5NDU1N2ZhZGQxZDU4OTYwYjRkZWM0ZWRiMzZjZTQ4NDI0N2E5NDkyMTJhNTBlODA1OGQ0N2Q4MzgzNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzIzYjZkNTVmYTFiNTJiNTZiOWIxNDkwNzcyMjc0ZDI0YzIzYjg2MGMyMThlOTZjMjMyN2U3OGU1MDIyN2Q4MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDU1M2YyZWUzZTZlMTgzMGY0Y2Y4YTY4YmQ2OTQ5ZTc5N2I2Y2MzNTFmNTU3MTBkN2FlNzVmMjUwYzAzODg5ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c78ee7865f894c5698ff87b218fb53ec",
+      "statement": "Python tests run from the root over all four packages' test directories with 100% branch coverage required across all four import packages, and live tests are excluded by default.",
+      "evidence": [
+        {
+          "resource": "repo://pyproject.toml#L57-L78",
+          "version": "repo-lines-v1:sha256:605be6332c0c4b6a06a922aed48022210452c6eb8b73ef39eaf1d6c720b518e5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2NzZlNjQxNDY1YTY1NTFlOWU5Y2ZmZDdmYWExZTZhNDJmOWI3MjQ4MDk4MTNjOTAzZDdlZGNiNTJmMzAwNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNWZlNjJhNzJjZDM0YzdjZjFiNDBkOWZkYjUxZmQ2ZjBhODY2MDUxODVhY2Q1YTQ2ZmE3MWM1NjAwNzIwNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ZGVhNmIwNDc2YWEyZGEzMDQ5MmI3ZmUxNDc3YjU3NWU5NzBkODNmNzg4ZDc2MTdhMDBlNzJhNjI5YTBhMWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5MTg5MjZmZWZhZWQ3ZDQzNjUyMDY2NDU4NTViYmUwMjQ4MTk2MTdkOTNhODJhNWM5OWYzZDM3MTc3NjI0ZjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_722cbffd36a148ea9b8012c5ba197a53",
+      "statement": "The project's architectural rule is that everything shaping how a move is chosen is middleware, while everything that talks to the agent (UCI engine, Agent Server app with web UI, terminal UI) is an adapter outside the graph.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L3-L6",
+          "version": "repo-lines-v1:sha256:6a7933ac15ad226c36b6534413ccea6bc7dd03f381021b612f12cfb266dbbbba:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDMyOTVmZmM1Yjk4MDZkMjYxYzViOTNjY2JlNTVjODM0OGRkZmVjYTQ5MTlkMGM1OTQ3NzZhNDdmZWVhZWY3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTRmMThiY2Q5OWRhMjU3NWU2Y2U2OTVlMDQ1ZTA5OTAxMzU0NTJhMWNlMDZhYmQ2OThiYjZiNzA3OWFkY2JkNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTY2YTdjYjliZWUxMTMxNjI5ZWRjNDM2YjRiY2MxYWU1NDcwM2VlZGExZGI2YTkyMzMxZDlmYjRkNWNjMzdhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGU4MjRmNDY2Nzc2ODM2OTNjNTZmMjk4YWU4OTRjNDYwYTI2MmUyYmViYTVlMmQyNzdiMzE4MjYwOTJmYzJkMSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-26T04:03:54.007Z"
+  }
+}

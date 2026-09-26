@@ -1,0 +1,216 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:f8f37c358f2be64e09dcdb7c9bf13aa5df4ac9e7f2ed2dfc68c2b4515a829aee",
+  "claims": [
+    {
+      "id": "claim_3f5f773704a149dbbd89165ee1bc2078",
+      "statement": "Root pytest config excludes live tests by default (-m \"not live\"), uses --import-mode=importlib, measures coverage for the four workspace import packages and fails under 100%, with branch coverage enabled.",
+      "evidence": [
+        {
+          "resource": "repo://pyproject.toml#L57-L81",
+          "version": "repo-lines-v1:sha256:61b4976757a1d76a2f45306f7e5bde195aa6e541b1bae427459d8759e3d22f01:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2NzZlNjQxNDY1YTY1NTFlOWU5Y2ZmZDdmYWExZTZhNDJmOWI3MjQ4MDk4MTNjOTAzZDdlZGNiNTJmMzAwNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1OTc3ZGY5NTNmYmEzY2NjZTg1OGZhMjdlMzhjNzkzZTlmYWJmZGRmODBmZmVjMmY4NzA4M2NiYjNjNDNkNTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ZGVhNmIwNDc2YWEyZGEzMDQ5MmI3ZmUxNDc3YjU3NWU5NzBkODNmNzg4ZDc2MTdhMDBlNzJhNjI5YTBhMWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_86ba9405f0834d6faf3dd50cd3d1f385",
+      "statement": "xdist parallelism (-n auto) is set in the mise test:python task rather than pytest addopts so a bare pytest stays serial for -k, --pdb and --snapshot-update.",
+      "evidence": [
+        {
+          "resource": "repo://mise.toml#L96-L99",
+          "version": "repo-lines-v1:sha256:d295abbe078937aaf6dfa12c04e5f2ab9395882d4882aa653f7e0b2fe3037dd7:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWU0YjM5YmJlMzAxMjY0YWYzMzE5ZWRhMWI3N2MzNTc0ZmM2NzkzOWNhYzlkMjg4YTgzMTUxYzgwOGYwNzdhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQ0MGE1MTM4MjhiZWU0OGQ5NDZlZDc2YmQ0YWE0YzM0YWRiZjk4YzZjNGE0ODcwYjdhMTc0NzY1MGJjNmNkNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzU1ZjY5OTJlZjkyY2M4MDc5Yzg3YzZhNzEyNjcyMGFlZDhlYzFjMjA0NTc2NDVlNTg0ODdjNTcyMjE3YjZhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGYyZTM5NTc5ZmVlN2U4ODM4NDYyOWJiMTMzOTc4MzM2NGY2NWQ3NmVhZTBiMjU2OGJmNTkzOTVhNDc5OThhYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7b49a32142a14151b5fc9404d9989f4d",
+      "statement": "The repo-root conftest disables LangSmith tracing (LANGSMITH_TRACING=false) unless the marker expression selects live tests.",
+      "evidence": [
+        {
+          "resource": "repo://conftest.py#L1-L10",
+          "version": "repo-lines-v1:sha256:5c2a462c80c9489dd023ff58bf07e0fac8cc9931a65f51c5e9e62bf6603fb6b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MjdhNjAzNWI3ZjE0NDRiNTk3NTMzZDBiZDFiNWY2ZDFhNTJiZjJiMjc5MDE3NTE2MTNkZmE2ZTkyMzc5OTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyOGIzMDZhZTAyZGQ3NzJmZDI2MzRhODM1MzA1ZTRhNTQ5ZDZlN2FiYWNmYmRhYzEzNDhkMDI4YTNhNGIyNTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c3e16ef317a848938d1f6b1463889d80",
+      "statement": "The JS packages (apps/web, apps/review, packages/chess-ui) run Vitest via `vp test --run --coverage` in jsdom with v8 coverage thresholds of 100% for lines, functions, branches and statements; mise test:web runs them via `pnpm exec vp run -r test`.",
+      "evidence": [
+        {
+          "resource": "repo://apps/review/vite.config.ts#L21-L35",
+          "version": "repo-lines-v1:sha256:b9d49d19b394c9e326f236378628f50adbda5b103fe140350aa5dd122d71f328:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MzZkZjdhNWEzYWFmMTgwY2ZmZDFkNjVjNjQ2ZWY2YWVhMzUyY2MyNzc3NDY4NjE5OWNkOGZiM2U4OTljN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3MWM4MmUyODJhNTFlOTMyZDIzMjVkMzJhOWEzYTI2NmQxZDk3MzgwMGYyODcwNjJlZWYxMmJjZWZmY2YxNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2NTA4MjAxNzAxY2Q2MjYwM2ZjMDg3ODFhNWMzYTI5NzZhOGZiYzBiYTBkM2M0MzMyMzQ4NjllNzQyMjUxNjgifQ"
+        },
+        {
+          "resource": "repo://apps/web/package.json#L7-L12",
+          "version": "repo-lines-v1:sha256:22013ca93b0bdf9df5e716dd4dbd5cf3869d47e837f63daa7cdcf658e6a34704:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQ4MzNkNTk0OWMwM2E0MGNhOTUyNDkxNjEwYTY2NTk2NDRiM2FhNDY2MzYyZjc5OTAyMGRiZjE5ODE1NDdkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDNjMzVlZDUzM2IzZGRkMzdiMmZkNTljM2ZiZDRlMjEwMTQ2ODNkNThmMzc3MGU1NTI3MGM4ZWUzM2RhNmZhNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzhmNGNhN2EyOTMyNzliYjA1OGZhYzViODc4MzdiNDA4OWY4MjkxNDc1ZDY0Y2QzZDJjODUxMWU3NThjZTIwMCJ9"
+        },
+        {
+          "resource": "repo://apps/web/vite.config.ts#L43-L55",
+          "version": "repo-lines-v1:sha256:6a7b0449c60400d5d2b4d19951bfb1ede70fc7e309e64a5f0252a13c0cdaeb8a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MzZkZjdhNWEzYWFmMTgwY2ZmZDFkNjVjNjQ2ZWY2YWVhMzUyY2MyNzc3NDY4NjE5OWNkOGZiM2U4OTljN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0OGRkNzVmMzBkMGE1ZjQ3MDRkNDg5MDI5OGE1YTI3NzM5ZTE3MDc4YjQ3OTQ2NjA1ZTdmZTRlYzkyMzZhMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2NTA4MjAxNzAxY2Q2MjYwM2ZjMDg3ODFhNWMzYTI5NzZhOGZiYzBiYTBkM2M0MzMyMzQ4NjllNzQyMjUxNjgifQ"
+        },
+        {
+          "resource": "repo://mise.toml#L101-L103",
+          "version": "repo-lines-v1:sha256:3e11c7a247f591eb2a10607865eb41b7b2d89469353690b59e6475f60342eded:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzEzMTk2MTI5MTFlYmRiZDBhYjc3Njg2N2FlZTdiNTVjYWI3NTEwY2ZmZmNkYjdiMjMyNGY5MjNmMjI1ZmJjNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGVjMjYwZDFlYjdhNTVjODM0ZjZmMGM3ZTJjMTNhYWNhMWE2YzQyYTc0ZmY0MmI2NTQ4MzRkMDgxNGM3ZTgwNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGIwODBkZjQwYzhjYjEwMjgwZWRiMmQwOWNmY2NhMTVmYjhmN2U0NmVkNmUxZDQzOGYyODViYzViZWY1Yzg1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDEwNTJhNDA2ZmZiMjkzZDNkODRlZDk4YzA4N2QyMTgzNDQ3MWYzNTJmMDJlODAxZWU5MzZmZjI5YmJiNTE5ZSJ9"
+        },
+        {
+          "resource": "repo://packages/chess-ui/vite.config.ts#L5-L18",
+          "version": "repo-lines-v1:sha256:6d90b513876018d9c22c7090b61a28b02cab78c7a13408e0a637bcf56a24763f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyY2VjYjE0NGE0NmY1ZGNmMTJhNjE2OWZjZWVkNzY5NWU4Mjk0YjA5MGRlNzZmMzY2MWNkZDAyNDkzMDAxNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1Y2E1NTFlNTYyNzdjNGQxMTQ2OWU4ODgxYzYyNGVmYWVkMWRmNThlNWEwYTBkZmQ2OWUyOGE1ODUwOTU5OTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2NTA4MjAxNzAxY2Q2MjYwM2ZjMDg3ODFhNWMzYTI5NzZhOGZiYzBiYTBkM2M0MzMyMzQ4NjllNzQyMjUxNjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f16da9946e546d581671cb4c0b5413a",
+      "statement": "apps/review writes coverage outside the app directory because `langsmith apps push` uploads the directory without reading .gitignore.",
+      "evidence": [
+        {
+          "resource": "repo://apps/review/vite.config.ts#L26-L33",
+          "version": "repo-lines-v1:sha256:c602e8131f8abd79d1d735d9c27953a19f4a59d6f73c3f52119c3f2753426a31:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTgwODAyNjdkNDNlZjBkYjc4OGZhYTc0MWIwODYyNzUxZTdmNWMzMzcwZmZhNDc4NDYzMWUzYjM5NzQ1NWJkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDNlN2E4ZDdiYjZiOGQxMzNiZmU1ZmJlZWY0Y2EwNDIxNmI5NGU4OTRiZjgyNDI0ZjVhMDJjYmFlZjYzYThiNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTgzYWNlMjQ0NzU0YWE4NWY1NzM2YWEzZjgxMzkyYmY1MDQ5Y2NkM2FlODJhOWNhNGZhZGFhY2RlMDQxZTQwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2ZhODY3OGUwOWU0MmUzNWM4YzZlMzIyOWI1YjczN2UwZDliMGY0ZDJmNTY2MTI4NzAyNzEwNWI5Y2Q1NDg4YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b815da990a6467494b7fd1adf847b79",
+      "statement": "The lefthook pre-push hook runs `mise run test`, and CI runs check:python/test:python and check:web/test:web as separate jobs; neither runs live tests or the UCI smoke match.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/ci.yml#L17-L56",
+          "version": "repo-lines-v1:sha256:0468c888d9f8d0d66030382d10e4f68ff1483715abe3568537395fb69750e477:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZDgwMTU0ZWQ0MmZjNWM3NzliMTMzMTU3OGI1OGI4OWM4MDFlYWNlNzRmMjRjZDQ4ZWI0YTIzNTc5NDBhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4NGY4ZTRiZDllNDNlMzIzYWIxZTEzYmU1MDVkNjI3ZTlhYjA5ZTY5ODk4OGE4NjQ3N2M2NDY5ZjBjN2UzZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3ZWJiYzI0YTZlMjA3MWRmMGExZjNjN2U3NTMyZWQ3YzBhNDEzNjNkNTNmOWIwYjQ4ZmE3ZTFmZGE4NWM2MzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://lefthook.yml#L24-L28",
+          "version": "repo-lines-v1:sha256:63074e7fc5464a969f8680c353d2870105634b25d3fdf13ad148dbed5adf293f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDI4ZWQ3MjE4ZTdlMmMwOTRhZTk5ODk1MmQ4NDhiODcxMjE4ZWMyM2Q2YzIzNWQ4MWQ5ZDVlY2VmM2FmNjc0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYThiZjIyZDQ3NzQ0YjUxNjZiMzFkZTFmNjUxMjQyM2IyZjRmNjU3ZGU1ZDZkYjUwNGI5ZGM0MmQ0NzZlMzk4OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTFiNTljNTI5ZGY5Yjk5MDllNTE2ZDUzZjljMWExYWQ0MGQ1Njc2MDNkM2E5NGNjNTY1MmMyMTMzZjc1MzI5ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9a73445c594141aeb68c2a7a8536777a",
+      "statement": "ScriptedModel is a real BaseChatModel that replies from a script of strings, callables or exceptions, records requests, reports a provider/model for pricing, and raises AssertionError when the script is exhausted.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/testing.py#L27-L83",
+          "version": "repo-lines-v1:sha256:3e3631e34d8e82717e5493c902da61e68bd548adc2ecd8295cdba62fe19ed26a:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiMzI1NWFlY2NiMWFiY2IxNjM2NzJmZjkwMDFjZmVmYWM4MjMyYTBmNzEyMWM1OGNjYmM5NmQ0ZWQ4MDE5MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxYjkwOGRkZTk5MDMyZjViZjdkZGIxZDNjNDZkMGM5NjhjYTlkMDUxOTI3YTAzMWQ0MjdkM2VhNzU1YzI0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5OTAwZGE0NWRmZjc5MTIxYjljYWYyMjY5YzdhMDQ0OGZiMDVkZmVkYzRiNmUwYjAxNGQ5MTdlYzI1YjI5Y2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_687fb1a7d9de4e2b8806985631f23438",
+      "statement": "fake_engine writes an executable deterministic UCI engine (FakeFish 1) using the current Python interpreter that ranks moves by mate-in-one, then material, then UCI order, and supports MultiPV.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/testing.py#L106-L174",
+          "version": "repo-lines-v1:sha256:977d4ca59f56b596ee6f173e9fd4a11a67d41b57e5dd3dd60c7211133d2c0547:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5ZjFhMjIyZTA1ODNkYzhjMDhhNjI3YWRhZjU1NWMwYTZhMzMzZjc5OTVhOTVmNjk4ZTU5OTk3MzRkMjYxOWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlMDFkZTA0ZGY3MmMzMGRjZTk5MWU3M2E0MTQ5NDYxNjM4MTcxZDQwNGRlZjlmZWFjZTZlYWIyZGExNDcxOGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhYTk2YmVkYWJjNmUyYjBhOGE1M2QyZTJlMTIwY2M2N2VkZDk3NjhlMDA2ZmNmMGQyNzcxODUxMzkxZTAyODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_abc3f880d3aa4431bb9fb0f7b229d58a",
+      "statement": "The chess tests' `run` fixture is parametrized over sync and async so tests exercise both invoke and ainvoke; `make_agent` defaults to an InMemorySaver checkpointer.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/tests/conftest.py#L15-L38",
+          "version": "repo-lines-v1:sha256:104242f1698b707bc82ce666eca1df413db3fc444bf822930cac1b63a3976c02:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzZjM2NmI5YmQ5YThkMGYzNDBhMmJjMGJlMWUyMmVlYTIwNTY4ZGQ3OGE0NTI4MWI3MjFiMzBmMjJkMDg3ZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMjkyZTc2N2EwYzc4YTJhOWYxNTRjZDEzNTJiNDJjMThiMjE3OTcyNTllM2IxMmFmYzIwM2ZiNTQ2MTU2YzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzZDIwYjI1NDMxN2QzMmNjMThkNTM2NWRmZDM1N2Q2MzE2MTA1Yzc1YTFhNDFkNGI3ZmRiNTFmN2NkYWMwZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_72667ffee499497887c0676e4a905b98",
+      "statement": "The server tests' env fixture clears gateway env vars, chdirs to tmp_path to isolate from the repo .env, and sets known-good settings.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/tests/conftest.py#L1-L19",
+          "version": "repo-lines-v1:sha256:f845f59f16b75e995b08840418d5b685c9190cec533667a6d26b94c7a860b36f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3NWE4MzAyYzYyMTkwNzQ2Y2Q4ZmMyMjljNjE4NmYxMWZiNTMxNDIxOGIyMGQxYjc0MjkyMDMwMWE0OTViNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmMjljZGMyMGUyNTY0MzU5ZDFmNjdjMzhlZWM5YTNhNDU5MDM0YzZlNjYzY2RkNzQ2NmUyYWQ2OTA4NDQ5NTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_18294a9b4f964776a5c8850742c1da72",
+      "statement": "FakeRanker returns scripted MoveDistributions or raises scripted errors while recording RankRequests; FakeTypeSafeClient stands in for TypeSafeClassifier and, when semif is set, enforces 2-16 options per Choice and at most 32 questions by raising a 422 TypeSafeAPIError.",
+      "evidence": [
+        {
+          "resource": "repo://libs/systemone/langchain_chess_systemone/testing.py#L26-L154",
+          "version": "repo-lines-v1:sha256:57461ea88ef879af94376a1a7dd0edd858eb8b318f2ca0d6d3145120d2781ecb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMDAzY2YzNmMwZWY2MjYwZjFmZjUwNDhiYzg0Y2ZhNmZjM2Q0NDJkZmRlYTg0ZWFiYjRkNzNiNzdjMmIwNGJmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5NjcwYjI5MDQ0ZWFlNjEzMTkyOTI5ZDM4NTBiODA0NWMyZmQwYTBjZDg5ZWU2ZWExNjZiM2M3ZGIxMzY5MzQ0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhY2UzNGM4MmQ1ZGZkOGY1NTgxN2VmNjYzZWNjOGFhNjQwZTYzMjhjNmMyODlhZjk0MzI2NmI3N2M1ZTNiYTViIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_f6c846399d6744c1a1ffef996b189801",
+      "statement": "fakeStream replaces @langchain/react's useStream via vi.mock with a mutable fake supporting per-thread overrides, a late-bound submit, option logging, and resetFake for cleanup.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/tests/support/fakeStream.ts#L1-L60",
+          "version": "repo-lines-v1:sha256:94a6cc96ab9d460a68a16bea907681cfb69a078bd923c3046d576dd823467376:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3NzRlOTNjOTU3Y2UzMWNhM2QyYjE1YjU4OGM5YWRlODMyZDM5MzY4MDUyOWFjZGY4M2ZjMGRiZDc5NmY2NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://apps/web/tests/useGame.test.tsx#L11-L11",
+          "version": "repo-lines-v1:sha256:a1e1bbfa97c1b67d1ad2a951defed4441b1922d93f60a98df350fe5bb5595d14:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFlMWJiZmE5N2MxYjY3ZDFhZDJhOTUxZGVmZWQ0NDQxYjE5MjJkOTNmNjBhOThkZjM1MGZlNWJiNTU5NWQxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFlMWJiZmE5N2MxYjY3ZDFhZDJhOTUxZGVmZWQ0NDQxYjE5MjJkOTNmNjBhOThkZjM1MGZlNWJiNTU5NWQxNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTMxODQ2ZGZhMThlNWVkZWZiNzhkZjM5YzlmNmNlMDM2MmVjNWU2MmI0ODI3YTE2N2QxNGE3ZTc0ZTU1NzU5MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmQ5YTJmOGFmOTBlMzVmY2E4MGE5MmE0ZTNjNjE5OGM0ODYxYTdkYmYzZThkNGNiZGNhNTEzZjA1NDM2MTIyNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_be4b3016b09947c2b47cd3ccee7cc24c",
+      "statement": "packages/chess-ui exports a ./testing entry with call, turn, ply and systemOne factories plus the E4_E5 fixture game and AFTER_E4 FEN.",
+      "evidence": [
+        {
+          "resource": "repo://packages/chess-ui/package.json#L7-L11",
+          "version": "repo-lines-v1:sha256:c595120f99c585856317e493eaa7c2eafe4314ee18220e8b843c9469a5243e67:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2MwNWJiOWY0YThiOTg0NTEwZjgxNWE1ZmM0MDc4ZDc3YzVhMjBlOTNmMzM3M2RjNWRkZTRhMzQxZDFiNDBjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDNjMzVlZDUzM2IzZGRkMzdiMmZkNTljM2ZiZDRlMjEwMTQ2ODNkNThmMzc3MGU1NTI3MGM4ZWUzM2RhNmZhNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjdkOWVmY2NkMjBkNjdiYWI1MTE5MmUwMjU0ZmNmMGNmZTBlMDM4MDk1ZDM4MTdjMzkzMjBhMmRhYzRhZTA5NiJ9"
+        },
+        {
+          "resource": "repo://packages/chess-ui/src/testing.ts#L1-L98",
+          "version": "repo-lines-v1:sha256:51ea45c20e7d227daccf6a10050fd5d86d149b1ffed6ccda3b767d224504f9b5:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMmNjZGVhMDJlZjU3YzVlMzg3MmJkYjJjZGVmOWNmNmFhYmM5Zjg3ZjcxMGNhNjY5ODhhOGFlZDE3MjhhZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxODhjZTBlNjgxYTE3ZGM5MGYzYWM2MmRkYTgyNTNhM2MzY2E5OGI1ZTQ2YTAzNTFiOTVmYjI4MGQ0MDNiZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2e58d3292434408e9a7825c94fd95138",
+      "statement": "Textual TUI snapshot tests use snap_compare for board sizes, piece selection, black's view with cursor, the promotion dialog and the full game screen with a ScriptedModel; `pytest --snapshot-update` rewrites them.",
+      "evidence": [
+        {
+          "resource": "repo://libs/cli/tests/test_tui_snapshots.py#L1-L91",
+          "version": "repo-lines-v1:sha256:7d2108d1aafa9ae6c2971601e89c129e3740aba83492ab9eb597b1b1b496fb62:eyJzZWxlY3RlZExpbmVDb3VudCI6OTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzMDJmNzZkNzQxOTk3OTFiY2U1OTg3MjBhNTRiODI1YTVkOWVmMWM3ZWNjODQ2MjVhMTY5ZDhlOWQyYzljMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNzJlYWVjYzRmN2JhMGRjYmY1MjE5OTI3ZmNiYzg0MWU0OGNmZGZkMzc0YWE4NWFkNGIzMmRjZDBiZDRiOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_34ffc539b4e349e68d4be595f776fc1f",
+      "statement": "Live tests run with `mise run test:live` (pytest -m live --no-cov with .env), hit the real LLM Gateway and cost a few cents.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/tests/test_live.py#L1-L51",
+          "version": "repo-lines-v1:sha256:9a31701f2691d90813911fb166c16871cd6d1ca8fcb02269aaef8862390b0962:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZGVlODA1NmIyNjNmM2VhNmRiNWY3OWUwM2UwYmExY2IwYzM0NzFhZWJiNWQyMmMyOWVhMjI1OTczNTZjYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiZDEyNGFiYzc4YzBhZjBkZGYzNGYyZmY4Yjc1YTViODcwOTNkNmRhOWFmM2Q1OTIyYTY1NWRmZjVkNWMwNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://mise.toml#L105-L107",
+          "version": "repo-lines-v1:sha256:517cbc47fa374049960d11db8d1bfe2de0ebe12b640be1b56bb2f45d2e890d2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTVlNzcwMjJhNDUzMmNhYjZiMjA1NWIxMTQxMWM4YzM5N2JiNzc1MWEwOTBlNWY1ZjRmODJiYjI4NDU4NWQ2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2M1NWU1NmE1MjVkOTBkNzZiYjFhNzI2M2IzMTU0MjMwYTM1NmY3ZmZjOTcwNjViNDZlMzg1ZGE0YjY1Y2Q3MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDAzYjE0MmE0ZjlmZTVjZDk4ZmY0YWMzOGFjMzhjNjNjZmJjOTZkM2RlMmQwZjhiNTU0OGNjMDBhNmZmMzc0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWNjMGQ4N2I5YmU4ZjI5ZDk2ZmJiOTRmODA5MDY5Njk3MjI2ZDY1YTJhMWRmZTc3Y2U3ODZmOThkNWUzZWZjYyJ9"
+        },
+        {
+          "resource": "repo://pyproject.toml#L60-L62",
+          "version": "repo-lines-v1:sha256:042da8f6178c1c4cd264e2b1b09378eec9cd3cf719cf1fd784dcce44030f0746:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTliYTAxMWJmN2FjZjE0NWZhMzJiZmU5YzQ5Mjk0NTM1M2U1ZmI2YjM1YjIzMmM3NmI4NjlmYjRmZTM0OWUxNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDJlNmUwZTY3ZmE3MjFlODhhMjUyOWUwZWNmY2Q4NmI2OWM3ODc4YjI0YmMzYjk2OGRiNWJmZGU2YzczZWUxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTVhM2U0ZmFhNTU4YmNkZWNlODBiNDQ3MWI4NmYxMmQ3ZTgxOTQwNmE5NGIxNjQzYTM4YmNlOWJlZWRmZTdiMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8c6fbb9e81454a7bb6d6ba0367ac6bd8",
+      "statement": "The server live test starts a real `langgraph dev` on a free port from a temp directory with an absolute-path copy of langgraph.json, polls /ok for up to 90 s, and checks the /ui mount, a chat game, assistant context reaching the factory via runtime, and priced LLM calls.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/tests/test_live.py#L1-L152",
+          "version": "repo-lines-v1:sha256:35b35714aa3ca0bbfe7c4dd73b0b3f3a2b7b8c48760a5c933057d7ecfcad9ec9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5MDVkMjgwOWQ4ZDQ4ZDUxNTAyOTIwNzBiZTFhY2I3YzRjZTFjZGJmNDFmM2FlYTY4ZjIzYmQxOWI3MmM3ZWZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhM2FjNGQ5Y2E0ZDMxZDE5MzhjMjc0ZjA0ZDlkNDY1YTcxNjQ3NzlmYjAyMzAzZDE4YjZkYjMxYzFlNmMyZDI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_23c437f623c24cce87be87e3e93eaa8a",
+      "statement": "`mise run test:uci` runs a 2-game fastchess match of `lcchess uci --policy systemone` seeds 1 vs 2 in .uci-match/ and passes only if both games have a result and no termination other than normal or adjudication.",
+      "evidence": [
+        {
+          "resource": "repo://mise.toml#L138-L153",
+          "version": "repo-lines-v1:sha256:5ea39d409d57d2eb00b9b0ecb70b1915668acf7e7e2b58455809625ef0891f17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NWYwN2ViMmFiZjI0ZDMxNGJkOTZhNWNhM2I1MmEzNzExMTU1ZDBhZTgwZTc3N2Y0MTM2NTE5MWM0MDI3NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiODBiMjk4MWQwNjM5OTdjNWFkOGEzZDBmMWEwMGQ2NTUwYzAwZThiODZmZmQ2NThjYmNiYjM5NGQ1NjExMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-26T04:03:54.007Z"
+  }
+}
