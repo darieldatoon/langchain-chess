@@ -1,0 +1,5 @@
+# Files
+
+- [Agent Server graph and the /ui mount](agent-server.md) - How the LangGraph Agent Server builds the `chess` graph per run (make_graph, build_agent, the llm/systemone/hybrid policies), how ChessContext knobs are resolved from assistant context and run `configurable`, what ServerSettings validates, and why the web UI is served by a custom FastAPI app under /ui.
+- [Terminal UI (lcchess play) and CLI options](terminal-ui.md) - How `lcchess play` runs a Textual game against an in-process chess agent (board widget, move input, key bindings, start/retry/new game), how the shared AgentOptions, build_agent and run_config configure every CLI command, and how to install the CLI with uv.
+- [UCI engine adapter (lcchess uci)](uci-engine.md) - How `lcchess uci` wraps a langchain-chess agent as an in-process UCI engine — the one-search state machine that prints exactly one bestmove per go, time-control deadlines, fallback moves (System 1 top move else seeded random), abandoned pending turns, bestmove 0000 forfeits, UCI options, draw_claims "never", and the fastchess smoke test.

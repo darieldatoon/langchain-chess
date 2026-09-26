@@ -1,0 +1,6 @@
+# Files
+
+- [The middleware contract and write guard](middleware-contract.md) - How chess extensions plug into create_chess_agent. Covers the ChessMiddleware helpers, the write guard that gives each hook a detached copy of state and checks every write, the rules for allowed_moves, proposal, candidates and fallback_move, and the idempotent before_model with a frozen per-turn decision that SystemOneMiddleware uses.
+- [Model specs, the LLM Gateway and cost accounting](models-gateway-and-cost.md)
+- [Prompt, model view and memory modes](prompt-and-memory.md) - How ChessCore builds each move request from a filtered view of stored messages plus a freshly rendered position block, how show_legal_moves and candidates appear in it, what memory none/full/summarize let the model see, how ChessSummarization is configured and validated, and how context overflow becomes ContextBudgetError.
+- [The public state record and threads](state-record.md) - The six ChessState keys clients may read (start_fen, moves, plies, turns, outcome, error), the Ply, TurnRecord and Call shapes, the two input keys (messages and position with restrict), and the one-run-one-turn, one-thread-one-game rules, including which commands are rejected.
