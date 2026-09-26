@@ -35,6 +35,9 @@ htmlcov/
 /apps/web/coverage/
 /packages/*/coverage/
 
+# the review app's LangSmith link; CI writes it from the CUSTOM_APP_ID variable
+/apps/review/.langsmith/
+
 # local dev server state (langgraph dev)
 /.langgraph_api/
 

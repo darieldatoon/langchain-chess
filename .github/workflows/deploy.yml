@@ -56,3 +56,16 @@ jobs:
         env:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
         run: mise run deploy -- --no-input
+
+      # The app id is a repository variable, not committed: the CLI reads it only from
+      # .langsmith/app.json, so it is written here. Skipped until CUSTOM_APP_ID is set.
+      - name: Publish the review app
+        if: vars.CUSTOM_APP_ID != ''
+        working-directory: apps/review
+        env:
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          CUSTOM_APP_ID: ${{ vars.CUSTOM_APP_ID }}
+        run: |
+          mkdir -p .langsmith
+          printf '{"app_id":"%s","name":"langchain-chess-review"}\n' "$CUSTOM_APP_ID" > .langsmith/app.json
+          langsmith apps push

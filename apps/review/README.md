@@ -14,6 +14,11 @@ mise run review:size   # build, then check what `langsmith apps push` would uplo
 cd apps/review && langsmith apps push --name langchain-chess-review   # first push creates the app
 ```
 
+- **Publishing.** Pushes to `main` publish the app (`.github/workflows/deploy.yml`) once the
+  `CUSTOM_APP_ID` repository variable is set. The first push above creates the app and writes its
+  id to `.langsmith/app.json`, which is gitignored: copy the `app_id` into the variable. CI writes
+  the file from the variable, since the CLI reads the id from nowhere else. The deploy key
+  (`LANGSMITH_API_KEY`) must be able to manage custom apps in the workspace.
 - **Data.** Games are threads (`POST /api/v2/threads/query`). Each page reads the threads' last
   root runs (their outputs hold the game record) and the grader's `game_review` feedback on them,
   in one call each. `game_review` carries every eval, every move's grade and the run that played
