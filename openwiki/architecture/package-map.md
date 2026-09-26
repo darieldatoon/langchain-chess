@@ -5,7 +5,7 @@ description: The Python (uv) and JavaScript (pnpm) packages in langchain-chess, 
 tags: [architecture, packages, dependencies, monorepo, uv, pnpm, layering]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-26T13:04:36.303Z
+    at: 2026-09-26T14:00:37.632Z
 sources:
   - id: openwiki-source-c2ad925c3422b92574d65d56
     resource: repo://apps/review/package.json
@@ -65,7 +65,7 @@ sources:
     resource: repo://pyproject.toml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T14:00:37.632Z" }
 ---
 
 # Package map and dependency direction
@@ -144,7 +144,7 @@ There is no generated contract between Python and TS. `packages/chess-ui/src/typ
 - **The web build output** goes to `apps/server/langchain_chess_server/static` (the `outDir` in `apps/web/vite.config.ts`). The server mounts that directory at `/ui` as `StaticFiles` only when it exists. Otherwise `/ui/` returns a 404 "UI not built" response, while `/ui/config` and `/ui/model-limit` still answer. This is a build-artifact link, not a code dependency.
 - **Tests and coverage** run from the root. `testpaths` covers all four Python packages, and coverage is measured over all four import packages with `--cov-fail-under=100`. Live tests (`-m live`) are excluded by default. Vitest runs per JS package, also at 100% coverage.
 - **Shared JS versions** live in the `pnpm-workspace.yaml` `catalog`, so the apps and `packages/chess-ui` can't drift apart on React, chess.js, react-chessboard, Vite+, and so on.
-- **Measured design decisions** (prompt caching, memory and analysis length) are recorded in [docs/decisions.md](../../docs/decisions.md), not in the packages.
+- **Measured design decisions** (prompt caching, memory and analysis length) are recorded in [Decisions and measurements](../concepts/decisions.md), not in the packages.
 
 ## Where does a new feature go?
 
@@ -174,6 +174,7 @@ flowchart TD
 ## Related pages
 
 - [Quickstart](../quickstart.md)
+- [Design decisions](../concepts/decisions.md)
 - [Middleware contract](../concepts/middleware-contract.md)
 - [Web frontends](../architecture/web-frontends.md)
 - [Agent Server integration](../integrations/agent-server.md)

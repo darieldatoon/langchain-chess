@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:609906a36c88985476abec604abd194a65ccdf3f25042c319fa09b702d3274de",
+  "pageVersion": "sha256:212191d53735ed984d863eaca1fafaced87c70314aea57a8936950cf3f5cac69",
   "claims": [
     {
       "id": "claim_85cbdba34eb6480d8e1c23f0d585f593",
@@ -234,15 +234,11 @@
     },
     {
       "id": "claim_d6302272340747ad9ab0348a94dd8ed1",
-      "statement": "The only memory modes are none and summarize; measured design decisions live in docs/decisions.md.",
+      "statement": "The only memory modes are none and summarize; the README states that design decisions and measurements live in the OpenWiki rather than in a separate docs file.",
       "evidence": [
         {
           "resource": "repo://README.md#L240-L240",
-          "version": "repo-lines-v1:sha256:9bb04f58db70c26322495a7e5f3ffc6af7607cce5c0c2beb5ed90708a353669b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJiMDRmNThkYjcwYzI2MzIyNDk1YTdlNWYzZmZjNmFmNzYwN2NjZTVjMGMyYmViNWVkOTA3MDhhMzUzNjY5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJiMDRmNThkYjcwYzI2MzIyNDk1YTdlNWYzZmZjNmFmNzYwN2NjZTVjMGMyYmViNWVkOTA3MDhhMzUzNjY5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODY2MTI5MGVmYzM2YWY1ZTc4MjQzMmU0OTA1ZWRiNmY3ODJhZWU5MzgzNzQwNDU5YTA0OGRhODBiMzFlYzMwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzQ5NDZiNDE2ZmUxNGZiM2NmYzAyZGE1NjhjZDg4YWFiMjBiNDk4Y2ZjYzQxZmM1MDgxOGE0Y2JjMzc5NzY5ZSJ9"
-        },
-        {
-          "resource": "repo://docs/decisions.md#L1-L23",
-          "version": "repo-lines-v1:sha256:58e09a10b09085ed708f6d8c4932ea0c2009c777705c41de06e58f191a002c3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNGIwMmZjMzRhMmQ5YmY1NTVmYzczNjQ0ZWZmNTBiZjIzMjNkMDg5ZjliNDVlZmQyODFhMjM5ZGFmYmY0ZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiNWZiZWViZTMwMTY2YjQzZjJhNzI4Y2YzM2EwZTdhYjA3NjdkM2YzNjhiZjliYmIyNGIwMDllZmUyODQzNGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:5f28a9b634bad228b3590c272dfdfb68bb252672cedc721003ef278960ea29d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYyOGE5YjYzNGJhZDIyOGIzNTkwYzI3MmRmZGZiNjhiYjI1MjY3MmNlZGM3MjEwMDNlZjI3ODk2MGVhMjlkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYyOGE5YjYzNGJhZDIyOGIzNTkwYzI3MmRmZGZiNjhiYjI1MjY3MmNlZGM3MjEwMDNlZjI3ODk2MGVhMjlkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODY2MTI5MGVmYzM2YWY1ZTc4MjQzMmU0OTA1ZWRiNmY3ODJhZWU5MzgzNzQwNDU5YTA0OGRhODBiMzFlYzMwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzQ5NDZiNDE2ZmUxNGZiM2NmYzAyZGE1NjhjZDg4YWFiMjBiNDk4Y2ZjYzQxZmM1MDgxOGE0Y2JjMzc5NzY5ZSJ9"
         },
         {
           "resource": "repo://libs/chess/langchain_chess/prompt.py#L17-L17",
@@ -253,6 +249,6 @@
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-26T13:04:36.303Z"
+    "at": "2026-09-26T14:00:37.632Z"
   }
 }

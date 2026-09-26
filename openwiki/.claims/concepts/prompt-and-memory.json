@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3f785899bc299abb51f78542fbccae9bc61103fcebe818f71bacd7fa86964d6c",
+  "pageVersion": "sha256:6346a5bfd3ab2998d53a18ee83d2eef7595c65eee676b24ba40586e9a9e60d1d",
   "claims": [
     {
       "id": "claim_1e04440fcede48b59fda3c9a8f524f91",
@@ -378,21 +378,21 @@
     },
     {
       "id": "claim_5452907e7ace43fea0c344da1a7f3c23",
-      "statement": "The full memory mode was removed; docs/decisions.md records the measurements (about 520 input tokens per move under memory='none' vs about 1,000 under full, and analysis length 97 vs 213 characters) and why Anthropic prompt caching was not shipped.",
+      "statement": "The full memory mode was removed: the Memory type admits only \"none\" and \"summarize\", and the position block built by render_position is the trailing per-turn message of every move request.",
       "evidence": [
-        {
-          "resource": "repo://docs/decisions.md#L1-L23",
-          "version": "repo-lines-v1:sha256:58e09a10b09085ed708f6d8c4932ea0c2009c777705c41de06e58f191a002c3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNGIwMmZjMzRhMmQ5YmY1NTVmYzczNjQ0ZWZmNTBiZjIzMjNkMDg5ZjliNDVlZmQyODFhMjM5ZGFmYmY0ZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiNWZiZWViZTMwMTY2YjQzZjJhNzI4Y2YzM2EwZTdhYjA3NjdkM2YzNjhiZjliYmIyNGIwMDllZmUyODQzNGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
-        },
         {
           "resource": "repo://libs/chess/langchain_chess/prompt.py#L17-L17",
           "version": "repo-lines-v1:sha256:87e1e231f01ab964ccf7e53dfdcf27b77008ba55bbf847c75db0023b2ed25717:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODdlMWUyMzFmMDFhYjk2NGNjZjdlNTNkZmRjZjI3Yjc3MDA4YmE1NWJiZjg0N2M3NWRiMDAyM2IyZWQyNTcxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODdlMWUyMzFmMDFhYjk2NGNjZjdlNTNkZmRjZjI3Yjc3MDA4YmE1NWJiZjg0N2M3NWRiMDAyM2IyZWQyNTcxNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTNmYTNkNzQ0NzUzYmNiODc2NzJjNGRkNjBkZjc4ZjJkMjU2OTg3MWMyYmE0ZjIyNTRjNDExMWQ3NjM0MDNkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDZhZjc0MjY5MzIyNjI2N2I4OTNlMjFlYzY2MjI5MzJlZWRlMzVmNGM2ZTQwOTBhNDVkNTVjOWJmM2I3YTcyZSJ9"
+        },
+        {
+          "resource": "repo://libs/chess/langchain_chess/prompt.py#L29-L38",
+          "version": "repo-lines-v1:sha256:84beafd425be5102c6c9437044d86aac89e6695d11d2b896eb9007de43c7958f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlOWI2NDNkZTM1NDBkZmMxYThhNWQ2YWIxNDg1OGQ2ZmZkYTc0MjRhM2JhNWU2ZWNhYjRlOTFjN2NiYmMwOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNWNlZjE5YWQ3MTJjOGVkZjE0ZmNhYTE4OTAzNTQwZTBkZjg0ZmJjMzMxNzZiNGQwYjgzOGYxYjM3YzJhYjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5OTZkYTQ2MWY3ZjNiMTUwOGMxYzQ2ZDljMmY1YjYyN2M4ZDM5OTI4M2U2N2ZkN2RjMzdiMjhhN2Q5ZTc3ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwMTc4MGUwY2JiZWYyYjU2NTc4ZmNkZDEwNDcxYjBjMDdlYzY3NzNmMWMxZDM4ODJlNzQyYzhkZDAyNDQ4N2EifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-26T13:04:36.303Z"
+    "at": "2026-09-26T14:00:37.632Z"
   }
 }

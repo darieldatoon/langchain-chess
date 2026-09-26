@@ -3,9 +3,6 @@ type: concept
 title: Prompt and memory
 description: How ChessCore builds each move request from a filtered view of stored messages plus a freshly rendered position block, how show_legal_moves and candidates appear in it, what memory none/summarize let the model see, how ChessSummarization is configured and validated (including the shared chat_model input-limit profiles and the summarize eligibility check), and how context overflow becomes ContextBudgetError.
 tags: [prompt, memory, summarization, model-view, context-window, langchain-chess]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T13:04:36.303Z
 sources:
   - id: openwiki-source-b9886f4aee6bc16bdaea61ff
     resource: repo://apps/server/langchain_chess_server/app.py
@@ -15,8 +12,6 @@ sources:
     resource: repo://apps/server/langchain_chess_server/graph.py
   - id: openwiki-source-08efc3f1935724156208ec17
     resource: repo://apps/server/tests/test_graph.py
-  - id: openwiki-source-5e8cfa6ef22542c9ea8aaf4a
-    resource: repo://docs/decisions.md
   - id: openwiki-source-3ae14faf8cc85a90b40ed182
     resource: repo://libs/chess/langchain_chess/agent.py
   - id: openwiki-source-65bee4ff16ecbe51243c1e47
@@ -39,7 +34,10 @@ sources:
     resource: repo://libs/chess/tests/test_text.py
   - id: openwiki-source-595fa5f62bc6bdbfd212eed8
     resource: repo://libs/cli/langchain_chess_cli/options.py
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T14:00:37.632Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T14:00:37.632Z
 ---
 
 # Prompt and memory
@@ -110,7 +108,7 @@ Lines, in order:
 
 ### The removed `full` mode
 
-There used to be a third mode, `full`, which showed every earlier turn verbatim with no compaction. It has been removed: `Memory` no longer includes it, and the server's `ChessContext` rejects `memory="full"` with a validation error. The measurements behind that decision (prompt size per move, and analysis length under `none` vs. `full`) are recorded in [docs/decisions.md](/docs/decisions.md).
+There used to be a third mode, `full`, which showed every earlier turn verbatim with no compaction. It has been removed: `Memory` no longer includes it, and the server's `ChessContext` rejects `memory="full"` with a validation error. The measurements behind that decision (prompt size per move, and analysis length under `none` vs. `full`) and the condition for revisiting it are on the [decisions and measurements](/openwiki/concepts/decisions.md) page.
 
 ### Adapter knobs
 
@@ -175,7 +173,7 @@ Whether summary calls actually fire in deployed games is a runtime question. See
 
 ## Measurements
 
-[docs/decisions.md](/docs/decisions.md) records the choices here that look like gaps, with their numbers. Anthropic prompt caching was not shipped: the gateway's single request-level breakpoint lands on the per-turn position block, and prompts are small (about 520 input tokens per move with `memory="none"`). It also records the memory-mode comparison that preceded removing `full`. Read the numbers there, since they change.
+The [decisions and measurements](/openwiki/concepts/decisions.md) page records the choices here that look like gaps, with their numbers. Anthropic prompt caching was not shipped, because the gateway's single request-level breakpoint lands on the per-turn position block (the trailing message `render_position` builds), so it would never hit, and prompts under `memory="none"` are small. That page also records the memory-mode comparison that led to removing `full`. The numbers are kept only there, so check that page for current values.
 
 ## Tests that matter
 
@@ -183,3 +181,4 @@ Whether summary calls actually fire in deployed games is a runtime question. See
 - [test_memory.py](/libs/chess/tests/test_memory.py): summarization rewrites during a turn and on a retried turn, the keep floor and prompt checks, `input_limit` reading the profile, a profileless model failing and a profiled one getting the `SummarizationMiddleware.before_model` node, a fixed topology keeping a summarization node that never summarizes, call ordering and checkpointing of `summary` calls, and what `summarize` memory shows across turns before any summary fires.
 - [test_graph.py](/apps/server/tests/test_graph.py): every policy × memory setting builds the same topology as a read graph (including the summarization node). Gateway profiles are `window - 64000`, and a small window is split in half. `summarize` builds for gateway and native models with known limits and is rejected for an unknown-limit model (but not under `systemone`). `memory="full"` is rejected, and `model_limit` agrees with the agent.
 - [test_lifecycle.py](/libs/chess/tests/test_lifecycle.py): `memory="none"` sees only the current turn, an empty reply is stored as the placeholder and triggers the reasoning-budget feedback, and `ContextBudgetError` leaves the turn pending.
+t_lifecycle.py): `memory="none"` sees only the current turn, an empty reply is stored as the placeholder and triggers the reasoning-budget feedback, and `ContextBudgetError` leaves the turn pending.

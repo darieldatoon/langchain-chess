@@ -3,9 +3,6 @@ type: architecture component
 title: System 1 (SystemOneMiddleware)
 description: How SystemOneMiddleware ranks the allowed moves with a System 1 classifier (SemIf or Jev via the TypeSafeClassifier-backed GatewayRanker), gates on margin or confidence to either play the top move or suggest a shortlist, runs a seeded tournament when there are more options than one request holds (16 for SemIf), keeps the graph shape with NoSystemOne, and behaves when ranking fails with and without an LLM.
 tags: [systemone, middleware, ranker, tournament, semif, jev, gate, typesafe]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T13:04:36.303Z
 sources:
   - id: openwiki-source-b9886f4aee6bc16bdaea61ff
     resource: repo://apps/server/langchain_chess_server/app.py
@@ -41,7 +38,10 @@ sources:
     resource: repo://libs/systemone/tests/test_tournament.py
   - id: openwiki-source-fd0e9360c0eb5b2cec5ea440
     resource: repo://packages/chess-ui/src/types.ts
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T14:00:37.632Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T14:00:37.632Z
 ---
 
 # System 1 (SystemOneMiddleware)
@@ -139,7 +139,7 @@ same string. The `terse` style keeps only the SAN plus the first tactical phrase
   when set; otherwise `threshold` applies. A final over fewer moves inflates the margin, and
   SemIf's confidence depends on the option count, so a tournament gets its own threshold. The
   applied value is recorded as `threshold_used`. Design decisions and measurements are
-  collected in [docs/decisions.md](../../docs/decisions.md). At the time of writing that file
+  collected in [design decisions](../concepts/decisions.md). At the time of writing that page
   does not yet record numbers behind the `0.9` default or the tournament threshold.
 - **Plays** when `threshold < 1.0 and signal >= threshold`. So `threshold=0` always plays
   (System 1 alone) and `threshold=1` never plays (a pure pruner), even for a distribution

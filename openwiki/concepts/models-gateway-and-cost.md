@@ -1,11 +1,8 @@
 ---
 type: "Reference"
-title: "Model specs, LLM Gateway and cost"
+title: "Models, gateway and cost"
 description: "How chess agents name models (init_chat_model specs and the langsmith: gateway provider), how the shared chat_model builder sizes output budgets, reasoning effort and input-limit profiles, how CallRecorder captures every provider response, and how calls are priced locally with genai-prices and summed into a possibly incomplete turn cost."
 tags: [models, llm-gateway, langsmith, pricing, cost, callbacks, genai-prices]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T13:04:36.303Z
 sources:
   - id: openwiki-source-5f5b95b3d6a215fa02ceb945
     resource: repo://.env.example
@@ -49,7 +46,10 @@ sources:
     resource: repo://libs/cli/langchain_chess_cli/tui/view.py
   - id: openwiki-source-79af0d552c660a058f4241b8
     resource: repo://libs/systemone/langchain_chess_systemone/ranker.py
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T14:00:37.632Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T14:00:37.632Z
 ---
 
 # Model specs, LLM Gateway and cost
@@ -316,7 +316,7 @@ exported from `langchain_chess`, so other clients should use them rather than su
 `cost_usd` themselves.
 
 For prompt caching and measured prompt sizes, see
-[Decisions and measurements](../../docs/decisions.md). It records why Anthropic prompt caching is
+[Decisions and measurements](decisions.md). It records why Anthropic prompt caching is
 not used on the `langsmith:` route and how large prompts are. Those numbers change, so they are
 not repeated here.
 

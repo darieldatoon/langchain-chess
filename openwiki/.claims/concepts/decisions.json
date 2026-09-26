@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:8503dd6397ad5420b7e040f6b8166885de23dd34307be1189264008d4dabe286",
+  "claims": [
+    {
+      "id": "claim_9f075e3d01cd449b8916e4aba98bfd35",
+      "statement": "The per-turn position (move list, FEN, board, candidates, legal moves) is rendered as the trailing human message appended to every move request and is never stored, so any cache breakpoint on the last message lands on content that changes every turn.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/prompt.py#L29-L61",
+          "version": "repo-lines-v1:sha256:e3844bb0c87d9797cc3828c410b6e27b7ce03cfd5f31756cc5f3650823c2214a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlOWI2NDNkZTM1NDBkZmMxYThhNWQ2YWIxNDg1OGQ2ZmZkYTc0MjRhM2JhNWU2ZWNhYjRlOTFjN2NiYmMwOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzZTdiYjMxNTZkZjFmNzcyOGY0NTMxOTM0NDlhYTc0NmQ3MWE1NDEzYTQ0M2FjZGVkMTZkYzcwNTI2Nzg0ODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5OTZkYTQ2MWY3ZjNiMTUwOGMxYzQ2ZDljMmY1YjYyN2M4ZDM5OTI4M2U2N2ZkN2RjMzdiMjhhN2Q5ZTc3ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmYTE5MjQ3MWU0NmNhNTY0ZDc5MTA0N2UxY2EwNzM2ZDg4MDUxNjczNDM1ZDE0NTZiZDdjN2U1ZmYxZDM2MWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c290529dbd284ec68b76a8c6fd3fd48d",
+      "statement": "When a non-LLM source such as System 1 plays a ply, ChessCore stores only a bare AIMessage of the form `MOVE: <san>` for it in the conversation.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/middleware/core.py#L565-L574",
+          "version": "repo-lines-v1:sha256:41bb22feec702d321e39c67e324e89f18834ccea53903065bfa2c3491ca77bed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiNTlhZWFhMmE2OTg2ODAzYjg5NmQ5ODk3ODgzYzEzNTU5OTY5MGQwZTMyMjg0NWUzNjdhY2NkYTAxZGMyYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMTY4MDU1OGUxNjAzZTZiZWNhY2YyNjEwZjIyNDQyZWRlNDc4MTliZDY0OWRlNWRkM2NmMGEzNmY3MTQ2YmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5ZDcyYWNkM2EzNTNmNjQzNWQ0MTE2MzllMTkyNzczMTdmOWVkNjhkZWY3MzAwZWJlNmI3OGYyNjMxY2U3ZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0ZjZhMzdjYTEzZDdkODgxMDFjODE3ZjEzMjQwZmU5MmU4Yzk3MDFlYTYzNjA4MzY4NjFmMzU5NTdiMWRlMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1c01de555136455fbb9b0305909bbe20",
+      "statement": "The full memory mode has been removed: Memory is Literal[\"none\", \"summarize\"] with default \"none\", and the server's ChessContext rejects memory=\"full\" with a validation error.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/context.py#L18-L77",
+          "version": "repo-lines-v1:sha256:8ea0469716e963f8bc07032f30cd764872ee67525c37b10d5f011db008911320:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ZTFlMjMxZjAxYWI5NjRjY2Y3ZTUzZGZkY2YyN2I3NzAwOGJhNTViYmY4NDdjNzVkYjAwMjNiMmVkMjU3MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlMTkzNzMwNGIzMzY1OGYzYTU4NzBmMjc5MzYzNzYyOWE1MmYxN2VkMTkwNDg0YzJkNzVhNWQyNmNiODU1NzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhNjQ1OGY4ZWEwMTE0NjQ1MjMyZGRmZmFmYzNjNDY4OWY4YzM4MjEyOWQyYjQ4Njc0MTIxYTgyOTUwMzg0NmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1MWU3MmFkMTIwZTQ5NTRjZDJmMmM3YWUzOGQ1MjBmMmI4YWU0NmVjZTkyMGZkODJmNjY0NTIzODhjZTQwMDUifQ"
+        },
+        {
+          "resource": "repo://apps/server/tests/test_graph.py#L248-L250",
+          "version": "repo-lines-v1:sha256:57a4e26d72786b20ac6bb2230c8337761f476e18d0f19c9d7a8968fd9f5ce334:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmZkMWUyZTJmYzUxYjE0MjJhMjM2OWRhNmFhMjNlMjczZjdiNTg0OTdjMDdjNDljNmJlMzFiM2JkODJjZjZhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGI2MmIyODkyYWEzYjY1NGQ5YjFjMGJkMTcwNjE0NzhmZDFlMmFlOGRhNWYzZWNjZDg0MjZjYTRhOTYzNjI2ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGIwZTI3NTkxNTNlOTgzYjhiNWIxNmJkMjMxMzRjODBmMGJhYjU3MDFkOTBiOGQyYWEwZGM5Yjc1YjgxNjg4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTJhNmYzMjE5YjU1YzhiYjM0Yzk0Mjc0ZDA4MDkwZWE3ZmM1MWZiOThmZWVkMDllM2ZlNzBiYzE1NWJlYWIwZiJ9"
+        },
+        {
+          "resource": "repo://libs/chess/langchain_chess/prompt.py#L17-L17",
+          "version": "repo-lines-v1:sha256:87e1e231f01ab964ccf7e53dfdcf27b77008ba55bbf847c75db0023b2ed25717:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODdlMWUyMzFmMDFhYjk2NGNjZjdlNTNkZmRjZjI3Yjc3MDA4YmE1NWJiZjg0N2M3NWRiMDAyM2IyZWQyNTcxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODdlMWUyMzFmMDFhYjk2NGNjZjdlNTNkZmRjZjI3Yjc3MDA4YmE1NWJiZjg0N2M3NWRiMDAyM2IyZWQyNTcxNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTNmYTNkNzQ0NzUzYmNiODc2NzJjNGRkNjBkZjc4ZjJkMjU2OTg3MWMyYmE0ZjIyNTRjNDExMWQ3NjM0MDNkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDZhZjc0MjY5MzIyNjI2N2I4OTNlMjFlYzY2MjI5MzJlZWRlMzVmNGM2ZTQwOTBhNDVkNTVjOWJmM2I3YTcyZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_13f8f4cc737146b59ed9115fac1b63df",
+      "statement": "Under memory=\"none\" the model view starts at the current turn's opened message, so the history prefix does not grow over a game; under summarize the full history is kept (minus earlier turns' rejected attempts and feedback) until summarization.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/prompt.py#L98-L126",
+          "version": "repo-lines-v1:sha256:36bb2db5363f4a7df7c4157416f1c2835075f73dc4153f4dd90a1c4323ccd60c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NmYzMTYyMzUwMjA0YzdmZDYzNjI2NTk4Y2Y0NTljZGVmMzBhNDUzNzNhOWJkNDJhZjExOGVjOGZhNDVlNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDI0NDU4MmI2ZmIwM2QyM2I4NDE1YWJlY2QzNDZiMGM5ZjQ2NmI2Zjc1MmIwNjgxODljZTdlOWEyZGMzNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmYjc1ZDcxMTE0MDkwYWYxNDc1MTFlNGMwYmEzYTI0ZmNhZGNjN2QzZTRkMjU1ZDZlZmZiNjYwZTE1Y2Y0YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_54c2f48b9ff7485b86eebede823d6c4d",
+      "statement": "memory=\"summarize\" requires a model with a known input limit; the server refuses it otherwise with an error pointing to memory='none', and memory is forced to none when there is no model (systemone policy).",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/context.py#L69-L77",
+          "version": "repo-lines-v1:sha256:b8a89b99533019d2c93da3d1acb1e22ce75e51b7ea34ed159c9a4c4be1fcf283:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2M4N2M1MTU4MDU4NzZlY2FkOTRlNDRkN2YwOGZmYmRlMThiM2JiMDEwMjk2OWU0ODk1ZTAxNGNmOTg3ZjEzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGUxOTM3MzA0YjMzNjU4ZjNhNTg3MGYyNzkzNjM3NjI5YTUyZjE3ZWQxOTA0ODRjMmQ3NWE1ZDI2Y2I4NTU3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2RmZWM1MmVjZWExNDBjNWY1OTE2MmI2MzIxMWFkYWYxOWM2NDZhZWMxY2FmMTQ4ZjRjOGMxOTEwYzllODE3MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODUxZTcyYWQxMjBlNDk1NGNkMmYyYzdhZTM4ZDUyMGYyYjhhZTQ2ZWNlOTIwZmQ4MmY2NjQ1MjM4OGNlNDAwNSJ9"
+        },
+        {
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L85-L96",
+          "version": "repo-lines-v1:sha256:c08624b78e7a0576fbf8194e340db5ed139b9ab5b18038b29268d02a53cbfdaa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmODlmMTJmNzYxOTg5NjhjZjY2NmVlYjk5MWRiNDBjZDE2Njg3MjI0NDc5NGI4NjFiMDFjMzY4YWNkMWM5NmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzRkNjViNmZlYTY5YTFiY2ZkZjAxNTRmN2UxZGZhOGEyZTY3MTgyNjZkZTgwZDA4NzdlNmUxYjA1NzM4ZTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlNThlODRjNzk2NDQ4YWEyNmNkM2QzOTM4NWFjMjg4Zjc4MGMxNGZkNDBlNDVmN2RiNjM2ZDlmNTVmOGVkY2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyYTBjNjM4NWZhOWEzOTIwMzI2Y2IyZTA5NTVmMzk3Y2JkZDEwOGY0MWJjODA0YjIzY2YwM2Y4ZDE5ZTE4OWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ecb4f83800c7416f851a1e2a30c1addc",
+      "statement": "Pricing already normalises and records cache read and write tokens (including ChatAnthropic's TTL-split 5-minute and 1-hour writes) on each Call, so adding caching later would be priced without recorder changes.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/pricing.py#L20-L80",
+          "version": "repo-lines-v1:sha256:7fbd1ec1e90b51a4eda18eea630ccf3ae03d0a007384ab6d0d9df47c2152cd87:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmMGFkNmMxZDM1MmI4MzE2NDIyZmY3NzQ2YTQ0NTBhMTYzMzkzYjA0Yjg2NzE1ZjZjOGNmYTYzYzNiZWE2NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkNzMwNmI4MDVlZDEzNTc2MGUyYmJlODQ2YjliYjMyM2Q0ZmY1NDQwMmNhMGE0ZTZiMzU3MDZiMTM3ZTc3ODcifQ"
+        },
+        {
+          "resource": "repo://libs/chess/langchain_chess/state.py#L56-L60",
+          "version": "repo-lines-v1:sha256:ecbfe18470eab33fd9c978f604221cfdda4607fb1134122f796c223e31608fd5:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjZiY2YzN2NjNWFlM2IyOGNlODUwNWQwMDFkOGJkMzkwZWU5YmZmNTljYjFkZDI4NDFkZTZmYjlmZTA2ZGZhNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWIyMmE4ZDM4ODRiMmY3ZWY4NTkxZjVlZDE1NTRhYzFhYzI5M2VhMjc1Njc3MTk2YjBmODllNTRiOWNlOTQwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTljZWZlOGIzYzQ4ZTU1ZmQ0NDQyY2RmZTg2NGEyOGIzZDZjMjk3MWI4ZWIxM2Q5MmU0N2Q4ZTk3NmUwZTkzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGFhOWVlYWEwM2YxYjRlMjM3MmQzYTExZjE3ZWUwM2E5Y2FjNDY5ODU5Y2YyNzRjMDQ3ZjRmZmU1ZmQ4MjcwMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f2e870ff7656475f9117ef95cd48d495",
+      "statement": "The System 1 gate defaults are threshold=0.9 (plays when the gate signal is at least the threshold; 1 never plays) and tournament_threshold=None, which falls back to threshold after a tournament.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/context.py#L101-L120",
+          "version": "repo-lines-v1:sha256:f6e8aa132d780e35dbfc0fe35cda70cacc4ee61f5b799e813686506723961ea4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMTVkM2ZhN2E4NjI0Yzg5ZWRkODQxZjg5YWMyYmVjNGE0MWM5MmQ1M2M3ODMyMzY1N2M4ZGI4OTQwNTk4ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4ZmQ0NGM3ZTkzYjI3ZTY0ZjY4ODY1ZTkyNGMxMTM3ZjY0MTY1YmMxOTljNmI1NWYyMWQ3NWIwOTE4MTcyOTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmOWY1OGU2ODI3MDQzZjA2OGE3MDM1ZjhlNTE2NWU2YmYzNjhkZGY0YTI3NzYzN2VjNWRlN2ZkZDVmZjdlYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmYTI4NGJkNjYwMDEwZjNjNmEyMWZmOThkNmE4NDVjN2M5NDA2NzU5MWMxZjY0MzkyMmQxMzBmZTFmY2Y0YTEifQ"
+        },
+        {
+          "resource": "repo://libs/systemone/langchain_chess_systemone/middleware.py#L85-L140",
+          "version": "repo-lines-v1:sha256:9f74352ccb9c8dd72f190213193e71679072aee6a100d301406a9c4acc2db520:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4NTYzYmRhYThmMzlhZjhmY2IxNzQ0NGE2ZjRkNThiYzc0ZDY1YmNlODdiNWUzNjJkMGY0ZmU2MzMyMWUzZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxZjI5MTJhMGZkMzNhZWUyMTEzMGRmMzBlMWYzY2I5MjA3M2U3MjZhMTZhODYwYmEwMjhjZWI2ZDMzZjdhZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjYzczMzgwY2NlMTdhYzg0MjM1N2QwNjdmZWY0MmI5ZjQ5YzRlMTY0Y2VhZGI4MTExM2RlOTRmMDk0YTZmODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3NGQ2MzhjODhkNzZmMDI0YmMwZjQyYjExZTllMDM4NDUxNzIwMjJiZmQ1NTIwMzJhMGRlNWU3ZGFiMDJkMzgifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-26T14:00:37.632Z"
+  }
+}
