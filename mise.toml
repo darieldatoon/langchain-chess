@@ -16,8 +16,8 @@ lefthook = "2"
 [tasks.setup]
 description = "Install Python and web dependencies, then git hooks"
 run = [
-  "uv sync --all-packages --all-groups",
-  "pnpm install --frozen-lockfile",
+  "sfw uv sync --all-packages --all-groups",
+  "sfw pnpm install --frozen-lockfile",
   "lefthook install",
 ]
 

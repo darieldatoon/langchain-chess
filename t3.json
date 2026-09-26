@@ -1,0 +1,29 @@
+{
+  "$schema": "https://t3.codes/schema/t3.json",
+  "iconPath": "apps/web/public/favicon.svg",
+  "scripts": [
+    {
+      "name": "Setup worktree",
+      "command": "bash scripts/setup-worktree.sh",
+      "icon": "configure",
+      "runOnWorktreeCreate": true,
+      "async": false
+    },
+    {
+      "name": "Dev",
+      "command": "mise run dev",
+      "icon": "play",
+      "previewUrl": "http://localhost:5173/ui/"
+    },
+    {
+      "name": "Test",
+      "command": "mise run test",
+      "icon": "test"
+    },
+    {
+      "name": "Check",
+      "command": "mise run check",
+      "icon": "lint"
+    }
+  ]
+}
