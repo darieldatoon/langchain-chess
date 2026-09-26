@@ -75,16 +75,32 @@ run = "uv run --all-packages --env-file .env lcchess uci"
 
 [tasks.check]
 description = "Format check, lint and type check, Python and web"
+depends = ["check:python", "check:web"]
+
+[tasks."check:python"]
+description = "Ruff format check, ruff lint and ty"
 run = [
   "uv run --all-packages ruff format --check libs apps",
   "uv run --all-packages ruff check libs apps",
   "uv run --all-packages ty check",
-  "pnpm exec vp check",
 ]
+
+[tasks."check:web"]
+description = "Vite+ format, lint and type check"
+run = "pnpm exec vp check"
 
 [tasks.test]
 description = "Python and web tests with 100% coverage gates"
-run = ["uv run --all-packages pytest -q", "pnpm exec vp run -r test"]
+depends = ["test:python", "test:web"]
+
+[tasks."test:python"]
+description = "Python tests across CPU cores, with the 100% coverage gate"
+# -n here, not in pytest addopts: a bare `pytest` stays serial for -k, --pdb and --snapshot-update.
+run = "uv run --all-packages pytest -q -n auto"
+
+[tasks."test:web"]
+description = "Web tests with the 100% coverage gates"
+run = "pnpm exec vp run -r test"
 
 [tasks."test:live"]
 description = "The live tests against the real LLM Gateway (costs a few cents)"

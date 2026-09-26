@@ -3,42 +3,90 @@ name: deploy
 on:
   push:
     branches: [main]
+  # Ignores the path filters: the way to retry a failed deploy that no later push will redo.
   workflow_dispatch:
+    inputs:
+      target:
+        description: What to deploy
+        type: choice
+        options: [both, agent, review]
+        default: both
 
 permissions:
   contents: read
 
-concurrency:
-  group: deploy
-  cancel-in-progress: false
-
 jobs:
-  deploy:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      agent: ${{ steps.filter.outputs.agent }}
+      review: ${{ steps.filter.outputs.review }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      # A path missing here is a silent stale deploy: when a deployable gains a dependency, add
+      # it. Over-include rather than under.
+      - id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+          TARGET: ${{ inputs.target }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          agent=false review=false
+          if [[ "$EVENT" == workflow_dispatch ]]; then
+            case "$TARGET" in
+              both) agent=true review=true ;;
+              agent) agent=true ;;
+              review) review=true ;;
+            esac
+          elif ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            # A new branch or a force push: there is no previous tip to diff against.
+            agent=true review=true
+          else
+            while read -r path; do
+              case "$path" in
+                libs/chess/* | libs/systemone/* | libs/cli/pyproject.toml | apps/server/* | \
+                  apps/web/* | uv.lock | pyproject.toml | .python-version | langgraph.json | \
+                  .dockerignore)
+                  agent=true ;;
+                apps/review/*)
+                  review=true ;;
+                packages/chess-ui/* | pnpm-lock.yaml | pnpm-workspace.yaml | package.json | \
+                  vite.config.ts | tsconfig.json | mise.toml | mise.lock | \
+                  .github/actions/setup/* | .github/workflows/deploy.yml)
+                  agent=true review=true ;;
+              esac
+            done < <(git diff --name-only "$BEFORE" "$GITHUB_SHA")
+          fi
+          echo "agent=$agent review=$review"
+          echo "agent=$agent" >> "$GITHUB_OUTPUT"
+          echo "review=$review" >> "$GITHUB_OUTPUT"
+
+  ci:
+    needs: changes
+    if: needs.changes.outputs.agent == 'true' || needs.changes.outputs.review == 'true'
+    uses: ./.github/workflows/ci.yml
+
+  agent:
+    needs: [changes, ci]
+    if: needs.changes.outputs.agent == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Per job, not per workflow: a queued run replaces the pending one in its group, and a later
+    # run that skips this job must not replace a pending deploy of it.
+    concurrency:
+      group: deploy-agent
+      cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v5
-
-      - uses: socketdev/action@ba6de6cc0565af1f42295590380973573297e31f
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          mode: firewall-free
+          persist-credentials: false
 
-      - uses: jdx/mise-action@v3
-        with:
-          install: true
-          cache: true
-
-      # `mise run setup`, but failing on a stale uv.lock and without git hooks.
-      - name: Install
-        run: |
-          uv sync --all-packages --all-groups --locked
-          pnpm install --frozen-lockfile
-
-      - name: Check
-        run: mise run check
-
-      - name: Test
-        run: mise run test
+      - uses: ./.github/actions/setup
 
       # `langgraph deploy` re-sends the env file as the revision's secrets on every deploy, so
       # the file must carry the full runtime set or a redeploy could drop them.
@@ -57,10 +105,26 @@ jobs:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
         run: mise run deploy -- --no-input
 
-      # The app id is a repository variable, not committed: the CLI reads it only from
-      # .langsmith/app.json, so it is written here. Skipped until CUSTOM_APP_ID is set.
+  # The app id is a repository variable, not committed: the CLI reads it only from
+  # .langsmith/app.json, so it is written here. Skipped until CUSTOM_APP_ID is set.
+  review:
+    needs: [changes, ci]
+    if: needs.changes.outputs.review == 'true' && vars.CUSTOM_APP_ID != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: deploy-review
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          python: false
+
       - name: Publish the review app
-        if: vars.CUSTOM_APP_ID != ''
         working-directory: apps/review
         env:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
