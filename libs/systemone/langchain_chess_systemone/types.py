@@ -1,6 +1,7 @@
 """SystemOne's domain types and its JSON telemetry. Ranks are one-based.
 
-The telemetry TypedDicts are mirrored by hand in `apps/web/src/types.ts`; keep them in step.
+The telemetry TypedDicts are mirrored by hand in `packages/chess-ui/src/types.ts`; keep them in
+step.
 """
 
 from collections.abc import Sequence
