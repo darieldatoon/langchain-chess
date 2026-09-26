@@ -144,8 +144,7 @@ There is no generated contract between Python and TS. `packages/chess-ui/src/typ
 - **The web build output** goes to `apps/server/langchain_chess_server/static` (the `outDir` in `apps/web/vite.config.ts`). The server mounts that directory at `/ui` as `StaticFiles` only when it exists. Otherwise `/ui/` returns a 404 "UI not built" response, while `/ui/config` and `/ui/model-limit` still answer. This is a build-artifact link, not a code dependency.
 - **Tests and coverage** run from the root. `testpaths` covers all four Python packages, and coverage is measured over all four import packages with `--cov-fail-under=100`. Live tests (`-m live`) are excluded by default. Vitest runs per JS package, also at 100% coverage.
 - **Shared JS versions** live in the `pnpm-workspace.yaml` `catalog`, so the apps and `packages/chess-ui` can't drift apart on React, chess.js, react-chessboard, Vite+, and so on.
-<!-- openwiki: broken internal link [../../docs/decisions.md] file "../../docs/decisions.md" does not exist. Fix the href or restore the target, then delete this comment. -->
-- **Measured design decisions** (prompt caching, memory and analysis length) are recorded in [docs/decisions.md](../../docs/decisions.md), not in the packages.
+- **Measured design decisions** (prompt caching, memory and analysis length) are recorded in [Decisions and measurements](../concepts/decisions.md), not in the packages.
 
 ## Where does a new feature go?
 

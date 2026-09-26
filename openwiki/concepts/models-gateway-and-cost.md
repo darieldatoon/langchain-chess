@@ -316,8 +316,7 @@ exported from `langchain_chess`, so other clients should use them rather than su
 `cost_usd` themselves.
 
 For prompt caching and measured prompt sizes, see
-<!-- openwiki: broken internal link [../../docs/decisions.md] file "../../docs/decisions.md" does not exist. Fix the href or restore the target, then delete this comment. -->
-[Decisions and measurements](../../docs/decisions.md). It records why Anthropic prompt caching is
+[Decisions and measurements](decisions.md). It records why Anthropic prompt caching is
 not used on the `langsmith:` route and how large prompts are. Those numbers change, so they are
 not repeated here.
 
