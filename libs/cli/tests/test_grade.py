@@ -123,13 +123,14 @@ def test_a_side_that_never_moved_gets_no_accuracy():
 
 def test_the_review_holds_what_the_app_draws():
     record = game_record("t", web_game("t", ITALIAN[:2]))
-    value = review(_grade(record), GRADER_A)
+    value = review(record, _grade(record), GRADER_A)
     assert value["version"] == 1
     assert value["engine"] == "FakeFish 1"
     assert value["accuracy"] == {"white": 100.0, "black": 100.0}
     assert value["evals"] == [{"cp": 0}] * 3
     assert value["plies"][0] == {
         "ply": 0,
+        "run_id": "t-r0",
         "side": "white",
         "uci": "e2e4",
         "best_move": "e2e4",
@@ -139,7 +140,8 @@ def test_the_review_holds_what_the_app_draws():
         "accuracy": 100.0,
         "lines": [{"eval": {"cp": 0}, "pv": ["e2e4"]}],
     }
-    single = review(_grade(game_record("t", web_game("t", ITALIAN[:1]))), GRADER_A)
+    one = game_record("t", web_game("t", ITALIAN[:1]))
+    single = review(one, _grade(one), GRADER_A)
     assert single["accuracy"] == {"white": 100.0, "black": None}
 
 

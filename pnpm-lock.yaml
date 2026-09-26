@@ -273,6 +273,79 @@ importers:
         specifier: 'catalog:'
         version: 0.3.3(@types/node@24.13.6)(@vitest/coverage-v8@4.1.11)(jiti@1.21.7)(jsdom@30.1.0)(typescript@6.0.3)(yaml@2.9.1)
 
+  apps/review:
+    dependencies:
+      '@langchain-chess/chess-ui':
+        specifier: workspace:*
+        version: link:../../packages/chess-ui
+      '@langchain/macaw-components':
+        specifier: 'catalog:'
+        version: 1.0.0-beta.0(@babel/runtime@7.29.7)(@codemirror/autocomplete@6.20.3)(@codemirror/search@6.7.2)(@codemirror/theme-one-dark@6.1.3)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(codemirror@6.0.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(tailwindcss@3.4.19(yaml@2.9.1))
+      '@langchain/macaw-tokens':
+        specifier: 'catalog:'
+        version: 1.0.0-beta.0
+      '@phosphor-icons/react':
+        specifier: 'catalog:'
+        version: 2.1.10(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react:
+        specifier: 'catalog:'
+        version: 19.3.0
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.3.0(react@19.3.0)
+    devDependencies:
+      '@testing-library/jest-dom':
+        specifier: 'catalog:'
+        version: 7.0.1(@testing-library/dom@10.4.2)(vitest@4.1.11)
+      '@testing-library/react':
+        specifier: 'catalog:'
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@testing-library/user-event':
+        specifier: 'catalog:'
+        version: 14.6.7(@testing-library/dom@10.4.2)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.6
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: 'catalog:'
+        version: 6.1.1(@voidzero-dev/vite-plus-core@0.3.3(@types/node@24.13.6)(jiti@1.21.7)(typescript@6.0.3)(yaml@2.9.1))
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 4.1.11(@vitest/browser@4.1.11)(vitest@4.1.11)
+      autoprefixer:
+        specifier: 'catalog:'
+        version: 10.6.1(postcss@8.5.28)
+      jsdom:
+        specifier: 'catalog:'
+        version: 30.1.0
+      postcss:
+        specifier: 'catalog:'
+        version: 8.5.28
+      react-chessboard:
+        specifier: 'catalog:'
+        version: 5.12.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 3.4.19(yaml@2.9.1)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite:
+        specifier: 'catalog:'
+        version: '@voidzero-dev/vite-plus-core@0.3.3(@types/node@24.13.6)(jiti@1.21.7)(typescript@6.0.3)(yaml@2.9.1)'
+      vite-plus:
+        specifier: 'catalog:'
+        version: 0.3.3(@types/node@24.13.6)(@vitest/coverage-v8@4.1.11)(jiti@1.21.7)(jsdom@30.1.0)(typescript@6.0.3)(yaml@2.9.1)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@types/node@24.13.6)(@vitest/browser-preview@4.1.11)(@vitest/coverage-v8@4.1.11)(@voidzero-dev/vite-plus-core@0.3.3(@types/node@24.13.6)(jiti@1.21.7)(typescript@6.0.3)(yaml@2.9.1))(jsdom@30.1.0)
+
   apps/web:
     dependencies:
       '@langchain-chess/chess-ui':

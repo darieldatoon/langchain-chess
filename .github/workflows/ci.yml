@@ -36,3 +36,7 @@ jobs:
 
       - name: Test
         run: mise run test
+
+      # `langsmith apps push` uploads apps/review whole: 5 MiB, 500 files, text only.
+      - name: Review app upload budget
+        run: mise run review:size

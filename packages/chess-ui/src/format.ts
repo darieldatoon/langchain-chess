@@ -1,6 +1,6 @@
 import { fullmoveNumber, opposite, sideToMove } from "./chess";
 import type { TurnCost } from "./selectors";
-import type { DrawReason, Outcome, Side } from "./types";
+import type { DrawReason, Outcome, Quality, Side } from "./types";
 
 export function money(usd: number): string {
   return usd < 0.01 ? `$${usd.toFixed(4)}` : `$${usd.toFixed(3)}`;
@@ -60,6 +60,21 @@ export interface MoveEntry {
   ply: number;
   san: string;
   source: string;
+  quality?: Quality;
+}
+
+/** The annotation a graded move is shown with; best and good moves get none. */
+export function qualitySymbol(quality: Quality | undefined): string {
+  switch (quality) {
+    case "inaccuracy":
+      return "?!";
+    case "mistake":
+      return "?";
+    case "blunder":
+      return "??";
+    default:
+      return "";
+  }
 }
 
 export type MoveRow = [number, MoveEntry | undefined, MoveEntry | undefined];

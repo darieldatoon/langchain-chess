@@ -16,6 +16,7 @@ shortlist, and the LLM may still play any legal move.
 | `libs/cli` (`langchain-chess-cli`) | `langchain_chess_cli` | `lcchess uci`, `lcchess play` and `lcchess grade` |
 | `apps/server` (private) | `langchain_chess_server` | The `chess` graph and the `/ui` app for LangSmith Deployments |
 | `apps/web` | | The React UI served at `/ui` |
+| `apps/review` | | The LangSmith custom app that replays graded games |
 | `packages/chess-ui` | `@langchain-chess/chess-ui` | The board, move list, ply details and state types the web apps share |
 
 ## Quickstart
@@ -189,6 +190,8 @@ uv run --all-packages --env-file .env lcchess grade --project langchain-chess-ap
   in the web UI) are graded in `game_review` and the accuracies, but get no per-turn feedback.
 - Every entry's source info records the engine (its UCI `id name`), the settings and their
   fingerprint.
+- The review app (`apps/review`, a LangSmith custom app) replays graded games as an analysis
+  board: `mise run dev:review` runs it locally. See its README.
 
 ### Install the CLI without cloning
 
@@ -235,8 +238,8 @@ mise run build   # the web UI into apps/server/.../static, served at /ui
 `test:live`, `test:uci`, and the rest. Options after `--` pass through, as in
 `mise run dev:tui -- --side black`.
 
-mise provides every tool (node, pnpm, uv, lefthook, `sfw`, fastchess, Stockfish); Python comes
-from uv.
+mise provides every tool (node, pnpm, uv, lefthook, `sfw`, fastchess, Stockfish, the `langsmith`
+CLI); Python comes from uv.
 Add dependencies with `sfw uv add --package <distribution> <dependency>` (root dev tools:
 `sfw uv add --group dev <tool>`) and `sfw pnpm add <pkg>` in the JS package that needs it. The
 JS side is one pnpm workspace managed by Vite+: `vp check` runs at the root (lint and format

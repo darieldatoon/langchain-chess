@@ -114,12 +114,12 @@ def feedback(record: GameRecord, grade: GameGrade, grader: Grader) -> tuple[Feed
             entries.append(
                 Feedback(record.last_run, f"accuracy_{side}", info, score=round(accuracy, 1))
             )
-    entries.append(Feedback(record.last_run, REVIEW_KEY, info, value=review(grade, grader)))
+    entries.append(Feedback(record.last_run, REVIEW_KEY, info, value=review(record, grade, grader)))
     return tuple(entries)
 
 
-def review(grade: GameGrade, grader: Grader) -> dict[str, JSONValue]:
-    """Everything the review app draws, in one value."""
+def review(record: GameRecord, grade: GameGrade, grader: Grader) -> dict[str, JSONValue]:
+    """Everything the review app draws, in one value; `run_id` saves it reading every turn."""
     return {
         "version": 1,
         "engine": grader.engine,
@@ -129,6 +129,7 @@ def review(grade: GameGrade, grader: Grader) -> dict[str, JSONValue]:
         "plies": [
             {
                 "ply": p.ply,
+                "run_id": record.ply_runs[p.ply].id,
                 "side": p.side,
                 "uci": p.played,
                 "best_move": p.best_move,

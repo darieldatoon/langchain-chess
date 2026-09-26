@@ -42,6 +42,51 @@ checksum = "sha256:007ce550dc809510b34622a1aeb43fd443d40284045bef5c1bc39c8941114
 url = "https://github.com/Disservin/fastchess/releases/download/v1.8.2-alpha/fastchess-windows-x86-64.zip"
 url_api = "https://api.github.com/repos/Disservin/fastchess/releases/assets/490616746"
 
+[[tools."github:SocketDev/sfw-free"]]
+version = "1.15.2"
+backend = "github:SocketDev/sfw-free"
+specifiers = ["1.15.2"]
+
+[[tools."github:langchain-ai/langsmith-cli"]]
+version = "0.2.59"
+backend = "github:langchain-ai/langsmith-cli"
+specifiers = ["v0.2.59"]
+
+[tools."github:langchain-ai/langsmith-cli"."platforms.linux-arm64"]
+checksum = "sha256:7e3d8ddb90779c7d33dcb45f7226d36050966834c833b9a84dcd1d5bd8981830"
+url = "https://github.com/langchain-ai/langsmith-cli/releases/download/v0.2.59/langsmith_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/langchain-ai/langsmith-cli/releases/assets/582143794"
+
+[tools."github:langchain-ai/langsmith-cli"."platforms.linux-arm64-musl"]
+checksum = "sha256:7e3d8ddb90779c7d33dcb45f7226d36050966834c833b9a84dcd1d5bd8981830"
+url = "https://github.com/langchain-ai/langsmith-cli/releases/download/v0.2.59/langsmith_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/langchain-ai/langsmith-cli/releases/assets/582143794"
+
+[tools."github:langchain-ai/langsmith-cli"."platforms.linux-x64"]
+checksum = "sha256:0dfa0ca253231677bfa51dc5f64347f1e66052679dacdb5394bc0eb1c5c96857"
+url = "https://github.com/langchain-ai/langsmith-cli/releases/download/v0.2.59/langsmith_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/langchain-ai/langsmith-cli/releases/assets/582143793"
+
+[tools."github:langchain-ai/langsmith-cli"."platforms.linux-x64-musl"]
+checksum = "sha256:0dfa0ca253231677bfa51dc5f64347f1e66052679dacdb5394bc0eb1c5c96857"
+url = "https://github.com/langchain-ai/langsmith-cli/releases/download/v0.2.59/langsmith_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/langchain-ai/langsmith-cli/releases/assets/582143793"
+
+[tools."github:langchain-ai/langsmith-cli"."platforms.macos-arm64"]
+checksum = "sha256:120dca6f815f2fe5b4bf29656f724ec45766be1f0f6979ee6514cf7d8a7ea84e"
+url = "https://github.com/langchain-ai/langsmith-cli/releases/download/v0.2.59/langsmith_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/langchain-ai/langsmith-cli/releases/assets/582143803"
+
+[tools."github:langchain-ai/langsmith-cli"."platforms.macos-x64"]
+checksum = "sha256:3a88250256888b63c347547787c43c85433c42bc84fd7eb19665ad78b011e8c8"
+url = "https://github.com/langchain-ai/langsmith-cli/releases/download/v0.2.59/langsmith_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/langchain-ai/langsmith-cli/releases/assets/582143792"
+
+[tools."github:langchain-ai/langsmith-cli"."platforms.windows-x64"]
+checksum = "sha256:8bd2b3e796b2c0480ec2a0d8c4b46fc7e1f20be4fb7bc59b329132f11d878536"
+url = "https://github.com/langchain-ai/langsmith-cli/releases/download/v0.2.59/langsmith_windows_amd64.zip"
+url_api = "https://api.github.com/repos/langchain-ai/langsmith-cli/releases/assets/582143833"
+
 [[tools."github:official-stockfish/Stockfish"]]
 version = "sf_19"
 backend = "github:official-stockfish/Stockfish"

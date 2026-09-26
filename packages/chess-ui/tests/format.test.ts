@@ -6,6 +6,7 @@ import {
   money,
   outcomeLine,
   pairs,
+  qualitySymbol,
   percent,
   seconds,
   sourceClass,
@@ -82,6 +83,15 @@ describe("outcomeLine", () => {
     expect(outcomeLine({ kind: "resignation", winner: "black", reason: "illegal_moves" })).toBe(
       "White resigns after repeated illegal moves. 0-1",
     );
+  });
+});
+
+describe("qualitySymbol", () => {
+  it("annotates only the moves that lost something", () => {
+    expect(["best", "good", undefined].map((q) => qualitySymbol(q as never))).toEqual(["", "", ""]);
+    expect(qualitySymbol("inaccuracy")).toBe("?!");
+    expect(qualitySymbol("mistake")).toBe("?");
+    expect(qualitySymbol("blunder")).toBe("??");
   });
 });
 

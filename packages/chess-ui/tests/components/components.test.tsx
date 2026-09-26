@@ -31,6 +31,53 @@ describe("MoveList", () => {
     expect(screen.getByText("3.")).toBeInTheDocument();
   });
 
+  it("marks graded moves and, given onSelect, makes each move a button", () => {
+    const onSelect = vi.fn();
+    const graded: MoveEntry[] = [
+      { ...e4, quality: "best" },
+      { ...e5, quality: "inaccuracy" },
+      { ...nf3, quality: "mistake" },
+      { ...nc6, quality: "blunder" },
+    ];
+    const { rerender } = render(<MoveList entries={graded} startFen={START_FEN} />);
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.getByText("?!")).toHaveClass("text-warning-secondary");
+    expect(screen.getByText("?")).toHaveClass("text-warning-primary");
+    expect(screen.getByText("??")).toHaveClass("text-error-primary");
+
+    rerender(<MoveList entries={graded} startFen={START_FEN} selected={2} onSelect={onSelect} />);
+    const nf3Button = screen.getByRole("button", { name: "Nf3?" });
+    expect(nf3Button).toHaveAttribute("aria-current", "step");
+    expect(screen.getByRole("button", { name: "e4" })).not.toHaveAttribute("aria-current");
+    fireEvent.click(screen.getByRole("button", { name: "Nc6??" }));
+    expect(onSelect).toHaveBeenCalledWith(3);
+  });
+
+  it("scrolls the list, not the page, to keep the selected move in view", () => {
+    const entries: MoveEntry[] = [e4, e5, nf3, nc6];
+    // The list spans 100-200; e4 sits 40 above it, Nc6 10 below, the rest inside.
+    const spy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect");
+    spy.mockImplementation(function (this: HTMLElement) {
+      if (this.getAttribute("aria-label") === "move list")
+        return { top: 100, bottom: 200 } as DOMRect;
+      const top = this.textContent === "e4" ? 60 : this.textContent === "Nc6" ? 190 : 110;
+      return { top, bottom: top + 20 } as DOMRect;
+    });
+    const list = (selected: number | null) => (
+      <MoveList entries={entries} startFen={START_FEN} selected={selected} onSelect={vi.fn()} />
+    );
+    const { rerender } = render(list(null));
+    const el = screen.getByLabelText("move list");
+    el.scrollTop = 50;
+    rerender(list(1));
+    expect(el.scrollTop).toBe(50);
+    rerender(list(3));
+    expect(el.scrollTop).toBe(60);
+    rerender(list(0));
+    expect(el.scrollTop).toBe(20);
+    spy.mockRestore();
+  });
+
   it("numbers a black-to-move root from its fullmove number", () => {
     render(<MoveList entries={[{ ...e5, ply: 0 }]} startFen={AFTER_E4} />);
     expect(screen.getByText("1.")).toBeInTheDocument();
@@ -79,6 +126,11 @@ function details(r: Reply | null) {
 }
 
 describe("PlyDetails", () => {
+  it("takes a title", () => {
+    renderWithProviders(<PlyDetails reply={null} title="Move 3" />);
+    expect(screen.getByRole("heading", { name: "Move 3" })).toBeInTheDocument();
+  });
+
   it("shows a hint without a reply", () => {
     details(null);
     expect(screen.getByText(/Make a move/)).toBeInTheDocument();

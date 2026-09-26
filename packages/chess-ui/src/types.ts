@@ -162,6 +162,9 @@ export const SYSTEMONE_META_KEY = "SystemOneMiddleware";
  * The shape both `stream.messages` (core `BaseMessage` instances) and a submitted command share.
  * Structural so the plain `{ type: "human", id, content }` a command sends type-checks too.
  */
+/** A graded move's class. Mirrors `Quality` in libs/chess/langchain_chess/grading.py. */
+export type Quality = "best" | "good" | "inaccuracy" | "mistake" | "blunder";
+
 /** The latest opponent ply with its turn and the position it was chosen from. */
 export interface Reply {
   ply: Ply;
