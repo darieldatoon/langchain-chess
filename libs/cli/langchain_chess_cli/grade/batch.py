@@ -162,8 +162,12 @@ async def grade_batch(
             report(Graded(record, grade, done, len(fens), clock() - started))
 
         try:
-            await asyncio.gather(*(finish(r) for r in records))
+            # Every game settles before a failure surfaces, so no finished game's write is cut off.
+            results = await asyncio.gather(*(finish(r) for r in records), return_exceptions=True)
         finally:
             for task in tasks.values():
                 task.cancel()
+    failure = next((r for r in results if isinstance(r, BaseException)), None)
+    if failure is not None:
+        raise failure
     return Summary(graded=len(records), skipped=skipped, positions=len(fens))
