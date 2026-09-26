@@ -1,0 +1,10 @@
+@import "@langchain/macaw-components/styles.css";
+@import "@langchain-chess/chess-ui/styles.css";
+
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: var(--bg-surface-level-1);
+  color: var(--text-primary);
+}
