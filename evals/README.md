@@ -25,9 +25,17 @@ classical only), labelled by Stockfish at depth 16 with a line for **every legal
 - **Splits:** `dev` (40 per band, 200 in all) for quick passes, and `full` (400 per band,
   2,000 in all).
 - **Inputs** are `RankRequest`'s shape: `{start_fen, moves, legal}`. **Reference outputs** are
-  the eval of every legal move, the best move and the top 3. **Metadata** has the game URL,
+  the eval of every legal move, the engine's order (`ranked`), the best move and the top 3.
+  Read the order from `ranked`, never from `evals`: LangSmith returns object keys sorted. **Metadata** has the game URL,
   both ratings, the band, phase, time control, ply, legal move count, `tactic`, and the move
   the human played (`played_move`).
+
+The dataset carries JSON Schemas for its inputs and outputs
+([`positions/schema.py`](langchain_chess_evals/positions/schema.py)), with a description of each
+field, and LangSmith rejects any example that breaks them. `upload` creates the dataset with
+them. It stops if an existing dataset has other schemas: changing them makes LangSmith re-check
+every stored example in one request, which fails on a full dataset, so delete that dataset (its
+experiments go with it) or upload under another `--dataset`. Metadata has no schema in LangSmith.
 
 The manifest records the source months and their sha256, the filters, quotas and seed, the
 engine and its settings, the git SHA, and counts per split, band and phase. A new build is a new

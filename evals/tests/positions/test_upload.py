@@ -2,10 +2,14 @@ import json
 from dataclasses import replace
 from types import SimpleNamespace
 
+import pytest
+
 from langchain_chess.grading import Cp
 from langchain_chess_evals.positions.examples import Reference, Row
+from langchain_chess_evals.positions.schema import INPUTS_SCHEMA, OUTPUTS_SCHEMA
 from langchain_chess_evals.positions.upload import (
     Stored,
+    UploadError,
     description,
     plan_sync,
     read_rows,
@@ -70,7 +74,7 @@ def test_upload_creates_then_syncs(tmp_path):
 
     third = upload([replace(row(1), split="dev"), row(3)], MANIFEST, client, dataset="d", tag="v2")
     assert (len(third.sync.create), len(third.sync.update), len(third.sync.delete)) == (1, 1, 1)
-    assert client.calls[-3:] == ["create 1", "update 1", "delete 1"]
+    assert client.calls[-4:-1] == ["create 1", "update 1", "delete 1"]
     assert sorted(client.tags) == ["v1", "v2"]
 
 
@@ -84,3 +88,32 @@ def test_description():
     text = description(MANIFEST)
     assert "(2018-06, 2018-07)" in text
     assert "Stockfish 19 at depth 16" in text
+
+
+def test_a_new_dataset_gets_its_schemas_before_any_example():
+    client = FakeDatasetClient()
+    done = upload([row(1)], MANIFEST, client, dataset="d", tag="v1")
+    assert client.schemas[done.dataset_id] == {"inputs": INPUTS_SCHEMA, "outputs": OUTPUTS_SCHEMA}
+    assert client.calls[:2] == ["create_dataset", "create 1"]
+    # Later uploads only refresh the description and manifest.
+    upload([row(1)], MANIFEST, client, dataset="d", tag="v1")
+    assert client.patches[-1] == {
+        "description": description(MANIFEST),
+        "metadata": {"manifest": MANIFEST},
+    }
+
+
+def test_an_existing_dataset_with_other_schemas_is_refused():
+    client = FakeDatasetClient(datasets={"d": "id-1"})
+    with pytest.raises(UploadError, match="has other inputs or outputs schemas"):
+        upload([row(1)], MANIFEST, client, dataset="d", tag="v1")
+    assert client.calls == []
+
+
+def test_upload_keeps_other_dataset_metadata():
+    client = FakeDatasetClient()
+    done = upload([row(1)], MANIFEST, client, dataset="d", tag="v1")
+    iframe = {"enabled": True, "url": "https://example.com/render.html"}
+    client.metadata[done.dataset_id] = {"manifest": {"old": True}, "iframe_config": iframe}
+    upload([row(1)], MANIFEST, client, dataset="d", tag="v1")
+    assert client.metadata[done.dataset_id] == {"manifest": MANIFEST, "iframe_config": iframe}

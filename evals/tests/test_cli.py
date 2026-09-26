@@ -6,6 +6,7 @@ from typer.testing import CliRunner
 
 from langchain_chess_evals import cli
 from langchain_chess_evals.positions.build import BuildError
+from langchain_chess_evals.positions.upload import UploadError
 from langchain_chess_evals.systemone.experiment import Finished
 from langchain_chess_evals.testing import FakeDatasetClient
 
@@ -145,3 +146,19 @@ def test_baseline(experiments):
         "jev-rich-cap16",
     ]
     assert result.output.count("https://smith/x") == 5
+
+
+def test_upload_error_exits_cleanly(dirs, monkeypatch):
+    positions = dirs / "positions"
+    positions.mkdir()
+    (positions / "v1.jsonl").write_text("")
+    (positions / "v1.manifest.json").write_text("{}")
+
+    def refused(*args, **kwargs):
+        raise UploadError("dataset d has other inputs or outputs schemas")
+
+    monkeypatch.setattr(cli, "langsmith_client", FakeDatasetClient)
+    monkeypatch.setattr(cli, "upload", refused)
+    result = runner.invoke(cli.app, ["positions", "upload"])
+    assert result.exit_code == 1
+    assert "error: dataset d has other" in result.output

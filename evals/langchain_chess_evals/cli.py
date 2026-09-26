@@ -20,7 +20,7 @@ from langchain_chess_evals.positions.build import (
     build,
 )
 from langchain_chess_evals.positions.sampling import Quotas
-from langchain_chess_evals.positions.upload import read_rows, upload
+from langchain_chess_evals.positions.upload import UploadError, read_rows, upload
 from langchain_chess_evals.systemone.experiment import (
     MAX_CONCURRENCY,
     ExperimentSpec,
@@ -103,7 +103,11 @@ def upload_command(version: Version = "v1", dataset: str = DATASET) -> None:
     """Create or update the LangSmith dataset from the committed JSONL, tagged with its version."""
     rows = read_rows(POSITIONS_DIR / f"{version}.jsonl")
     manifest = json.loads((POSITIONS_DIR / f"{version}.manifest.json").read_text())
-    done = upload(rows, manifest, langsmith_client(), dataset=dataset, tag=version, report=say)
+    try:
+        done = upload(rows, manifest, langsmith_client(), dataset=dataset, tag=version, report=say)
+    except UploadError as e:
+        say(f"error: {e}")
+        raise typer.Exit(1) from e
     say(f"{dataset}@{done.tag}: {len(rows)} examples")
 
 

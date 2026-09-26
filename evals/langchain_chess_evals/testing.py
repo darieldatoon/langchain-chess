@@ -76,6 +76,11 @@ class FakeDatasetClient:
     """The slice of `langsmith.Client` that uploads and experiments use, in memory."""
 
     datasets: dict[str, str] = field(default_factory=dict)
+    schemas: dict[str, dict[str, Any]] = field(default_factory=dict)
+    """By dataset id: `inputs` and `outputs`, None when unset."""
+    patches: list[dict[str, Any]] = field(default_factory=list)
+    metadata: dict[str, dict[str, Any]] = field(default_factory=dict)
+    """By dataset id."""
     examples: dict[str, SimpleNamespace] = field(default_factory=dict)
     tags: dict[str, datetime] = field(default_factory=dict)
     calls: list[str] = field(default_factory=list)
@@ -83,13 +88,38 @@ class FakeDatasetClient:
     def has_dataset(self, *, dataset_name: str) -> bool:
         return dataset_name in self.datasets
 
-    def create_dataset(self, dataset_name: str, *, description: str, metadata: dict) -> Any:
+    def create_dataset(
+        self,
+        dataset_name: str,
+        *,
+        description: str,
+        metadata: dict,
+        inputs_schema: dict | None = None,
+        outputs_schema: dict | None = None,
+    ) -> Any:
         self.calls.append("create_dataset")
-        self.datasets[dataset_name] = str(uuid.uuid4())
-        return SimpleNamespace(id=self.datasets[dataset_name], description=description)
+        dataset_id = self.datasets[dataset_name] = str(uuid.uuid4())
+        self.schemas[dataset_id] = {"inputs": inputs_schema, "outputs": outputs_schema}
+        self.metadata[dataset_id] = metadata
+        return self.read_dataset(dataset_name=dataset_name)
 
     def read_dataset(self, *, dataset_name: str) -> Any:
-        return SimpleNamespace(id=self.datasets[dataset_name])
+        dataset_id = self.datasets[dataset_name]
+        schemas = self.schemas.get(dataset_id, {})
+        return SimpleNamespace(
+            id=dataset_id,
+            inputs_schema=schemas.get("inputs"),
+            outputs_schema=schemas.get("outputs"),
+            metadata=self.metadata.get(dataset_id),
+        )
+
+    def request_with_retries(self, method: Any, pathname: str, *, request_kwargs: dict) -> Any:
+        """Only the dataset PATCH an upload sends."""
+        dataset_id = pathname.removeprefix("/datasets/")
+        body = request_kwargs["json"]
+        self.calls.append(f"{method} {sorted(body)}")
+        self.patches.append(body)
+        self.metadata[dataset_id] = body["metadata"]
 
     def _stored(self, example: Mapping[str, Any]) -> SimpleNamespace:
         return SimpleNamespace(

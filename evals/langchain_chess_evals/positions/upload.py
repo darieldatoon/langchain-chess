@@ -1,7 +1,9 @@
 """Sync a committed `vN.jsonl` into a LangSmith dataset and tag the resulting version `vN`.
 
 Example ids derive from row ids, so uploading again creates nothing new: rows that changed are
-updated, and examples no longer in the file are deleted. Only the tag pins a version.
+updated, and examples no longer in the file are deleted. Only the tag pins a version. The
+dataset is created with the inputs and outputs schemas, so LangSmith rejects any row that breaks
+them.
 """
 
 import json
@@ -12,6 +14,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from langchain_chess_evals.positions.examples import Row
+from langchain_chess_evals.positions.schema import INPUTS_SCHEMA, OUTPUTS_SCHEMA
 
 BATCH = 500
 
@@ -20,7 +23,15 @@ class DatasetClient(Protocol):
     """The slice of `langsmith.Client` an upload uses."""
 
     def has_dataset(self, *, dataset_name: str) -> bool: ...
-    def create_dataset(self, dataset_name: str, *, description: str, metadata: dict) -> Any: ...
+    def create_dataset(
+        self,
+        dataset_name: str,
+        *,
+        description: str,
+        inputs_schema: dict,
+        outputs_schema: dict,
+        metadata: dict,
+    ) -> Any: ...
     def read_dataset(self, *, dataset_name: str) -> Any: ...
     def list_examples(self, *, dataset_id: Any) -> Iterator[Any]: ...
     def create_examples(self, *, dataset_id: Any, examples: Sequence[dict]) -> Any: ...
@@ -28,6 +39,14 @@ class DatasetClient(Protocol):
     def delete_examples(self, example_ids: Sequence[str]) -> None: ...
     def list_dataset_versions(self, *, dataset_id: Any, limit: int) -> Iterator[Any]: ...
     def update_dataset_tag(self, *, dataset_id: Any, as_of: datetime, tag: str) -> None: ...
+    def request_with_retries(self, method: Any, pathname: str, *, request_kwargs: dict) -> Any: ...
+
+
+def _patch_dataset(client: DatasetClient, dataset_id: Any, fields: Mapping[str, Any]) -> None:
+    """The SDK has no dataset update; description and metadata go through the REST API."""
+    client.request_with_retries(
+        "PATCH", f"/datasets/{dataset_id}", request_kwargs={"json": dict(fields)}
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,6 +107,10 @@ def description(manifest: Mapping[str, Any]) -> str:
     )
 
 
+class UploadError(RuntimeError):
+    """Shown to the user without a traceback."""
+
+
 @dataclass(frozen=True, slots=True)
 class Uploaded:
     dataset_id: str
@@ -104,14 +127,23 @@ def upload(
     tag: str,
     report: Callable[[str], None] = lambda _: None,
 ) -> Uploaded:
+    about = {"description": description(manifest), "metadata": {"manifest": dict(manifest)}}
     if client.has_dataset(dataset_name=dataset):
         info = client.read_dataset(dataset_name=dataset)
+        if (info.inputs_schema, info.outputs_schema) != (INPUTS_SCHEMA, OUTPUTS_SCHEMA):
+            # Do not patch the schemas instead: LangSmith re-checks every stored example in one
+            # request, which fails with a 500 on a full dataset.
+            msg = (
+                f"dataset {dataset} has other inputs or outputs schemas; delete it in LangSmith "
+                "(its experiments go with it) or pass another --dataset, then upload again"
+            )
+            raise UploadError(msg)
+        # Merge, never replace: the metadata also holds UI settings such as `iframe_config`.
+        about["metadata"] = {**(info.metadata or {}), "manifest": dict(manifest)}
     else:
         report(f"creating dataset {dataset}")
         info = client.create_dataset(
-            dataset,
-            description=description(manifest),
-            metadata={"manifest": dict(manifest)},
+            dataset, inputs_schema=INPUTS_SCHEMA, outputs_schema=OUTPUTS_SCHEMA, **about
         )
     existing = {str(e.id): stored(e) for e in client.list_examples(dataset_id=info.id)}
     sync = plan_sync(existing, rows)
@@ -124,6 +156,7 @@ def upload(
         client.update_examples(dataset_id=info.id, updates=batch)
     for ids in _batches(sync.delete):
         client.delete_examples(ids)
+    _patch_dataset(client, info.id, about)
     latest = next(iter(client.list_dataset_versions(dataset_id=info.id, limit=1)))
     client.update_dataset_tag(dataset_id=info.id, as_of=latest.as_of, tag=tag)
     report(f"tagged {dataset} as {tag}")
