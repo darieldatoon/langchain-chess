@@ -1,5 +1,6 @@
 // Games as the list shows them, built from thread summaries, root runs and reviews. Pure.
 import type { ChessValues, Outcome } from "@langchain-chess/chess-ui";
+import type { Mark } from "./analysis";
 import type { Grading } from "./review";
 import { decodeValues } from "./values";
 
@@ -24,12 +25,16 @@ export interface RootRun {
 export interface Game {
   threadId: string;
   lastRunId: string;
+  /** Null when the run wasn't found. */
+  lastRunStartTime: string | null;
   startedAt: string;
   turns: number;
   matchup: string;
   /** Null when the last run carries no game record (it errored, or it isn't a chess run). */
   values: ChessValues | null;
   grading: Grading;
+  /** The Analyze button's mark, while a job runs or after it failed. */
+  mark: Mark | null;
 }
 
 /** `langsmith:anthropic/claude-opus-5-5` and `anthropic:claude-opus-5-5` read as the model. */
@@ -76,15 +81,18 @@ export function toGame(
   thread: ThreadItem,
   run: RootRun | undefined,
   grading: Grading = UNGRADED,
+  mark: Mark | null = null,
 ): Game {
   const values = decodeValues(run?.outputs);
   return {
     threadId: thread.thread_id,
     lastRunId: thread.last_trace_id,
+    lastRunStartTime: run?.start_time || null,
     startedAt: thread.min_start_time,
     turns: thread.count,
     matchup: matchup(run?.metadata ?? null),
     values,
     grading: against(values, grading),
+    mark,
   };
 }

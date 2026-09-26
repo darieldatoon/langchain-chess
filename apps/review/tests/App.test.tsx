@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { createApi, type Api, type GamesPage } from "../src/api";
 import { App } from "../src/App";
 import { HostTheme } from "../src/HostTheme";
-import { game, review, reviewFeedback, values } from "./support/fixtures";
+import { game, review, reviewFeedback, UNGRADED, values } from "./support/fixtures";
 
 vi.mock("react-chessboard", async () => (await import("./support/mocks")).chessboardMock());
 vi.mock("@langchain/macaw-components/LineChart", async () =>
@@ -30,6 +30,7 @@ function fakeApi(overrides: Partial<Api> = {}): Api & { games: ReturnType<typeof
       async (_p: string, _s: string, cursor?: string | null) => pages[cursor ?? "first"],
     ),
     runUrl: vi.fn().mockResolvedValue("https://smith/trace"),
+    analyze: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   } as Api & { games: ReturnType<typeof vi.fn> };
 }
@@ -111,6 +112,17 @@ describe("App", () => {
     fireEvent.change(screen.getByLabelText("Window"), { target: { value: "1" } });
     await act(async () => resolveFirst({ games: [game()], cursor: null }));
     expect(screen.queryByText("1-0")).toBeNull();
+  });
+
+  it("drops a failure that arrives after its query changed", async () => {
+    let rejectFirst: (e: Error) => void = () => {};
+    const api = fakeApi();
+    api.games.mockImplementationOnce(() => new Promise<GamesPage>((_, r) => (rejectFirst = r)));
+    show(api);
+    await waitFor(() => expect(api.games).toHaveBeenCalledTimes(1));
+    fireEvent.change(screen.getByLabelText("Window"), { target: { value: "1" } });
+    await act(async () => rejectFirst(new Error("stale failure")));
+    expect(screen.queryByText("stale failure")).toBeNull();
   });
 
   it("drops a load-more that settles after the project changed", async () => {
@@ -208,6 +220,86 @@ describe("App", () => {
     api.games.mockRejectedValueOnce(new Error("more failed"));
     fireEvent.click(more);
     expect(await screen.findByText("more failed")).toBeInTheDocument();
+  });
+
+  it("analyzes an ungraded game, then shows it analyzing", async () => {
+    const analyze = vi.fn().mockResolvedValue(undefined);
+    const api = fakeApi({ analyze });
+    const mark = { status: "analyzing" as const, id: "m", startedAt: "2026-09-25T11:59:00Z" };
+    api.games
+      .mockResolvedValueOnce({ games: [game({ grading: UNGRADED })], cursor: null })
+      .mockResolvedValueOnce({ games: [game({ grading: UNGRADED, mark })], cursor: null });
+    show(api);
+    fireEvent.click(await screen.findByText("Not graded"));
+    fireEvent.click(screen.getByRole("button", { name: "Analyze" }));
+    expect(screen.getByRole("button", { name: /Analyze/ })).toBeDisabled();
+    await waitFor(() => expect(api.games).toHaveBeenCalledTimes(2));
+    expect(await screen.findAllByText("Analyzing…")).toHaveLength(2);
+    expect(analyze).toHaveBeenCalledWith(
+      {
+        projectId: "p-app",
+        projectName: "langchain-chess-app",
+        threadId: "thread-1",
+        runId: "run-3",
+        runStartTime: "2026-09-25T12:30:00Z",
+      },
+      { force: false, previous: null },
+    );
+  });
+
+  it("forgets a started launch once the refreshed page is in", async () => {
+    const analyze = vi.fn().mockResolvedValue(undefined);
+    const api = fakeApi({ analyze });
+    let resolve: (page: GamesPage) => void = () => {};
+    api.games
+      .mockResolvedValueOnce({ games: [game()], cursor: null })
+      .mockImplementationOnce(() => new Promise<GamesPage>((r) => (resolve = r)));
+    show(api);
+    fireEvent.click((await screen.findAllByRole("button", { name: /1-0/ }))[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Re-analyze" }));
+    expect(await screen.findByText("Analyzing…")).toBeInTheDocument();
+    expect(analyze).toHaveBeenCalledWith(expect.anything(), { force: true, previous: null });
+    await act(async () => resolve({ games: [game()], cursor: null }));
+    expect(screen.queryByText("Analyzing…")).toBeNull();
+    expect(screen.getByLabelText("engine grade")).toBeInTheDocument();
+  });
+
+  it("retries a failed analysis in place of its mark", async () => {
+    const mark = { status: "failed" as const, id: "m", log: "engine died" };
+    const analyze = vi.fn().mockResolvedValue(undefined);
+    const api = fakeApi({ analyze });
+    api.games.mockResolvedValue({ games: [game({ mark })], cursor: null });
+    show(api);
+    fireEvent.click(await screen.findByText("Analysis failed"));
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    await waitFor(() =>
+      expect(analyze).toHaveBeenCalledWith(expect.anything(), { force: true, previous: mark }),
+    );
+  });
+
+  it("says why an analysis couldn't start", async () => {
+    const api = fakeApi({ analyze: vi.fn().mockRejectedValue(new Error("No sandboxes here.")) });
+    show(api);
+    fireEvent.click((await screen.findAllByRole("button", { name: /1-0/ }))[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Re-analyze" }));
+    expect(await screen.findByText("Analysis couldn't start")).toBeInTheDocument();
+    expect(screen.getByText(/No sandboxes here\./)).toBeInTheDocument();
+    expect(api.games).toHaveBeenCalledTimes(1);
+  });
+
+  it("refreshes the first page in place, and reports a failed refresh", async () => {
+    const api = fakeApi();
+    show(api);
+    fireEvent.click((await screen.findAllByRole("button", { name: /1-0/ }))[0]);
+    api.games.mockImplementationOnce(() => new Promise<GamesPage>(() => {}));
+    fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+    expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
+    // The open game stays up while the page reloads.
+    expect(screen.getByLabelText("game")).toBeInTheDocument();
+    api.games.mockRejectedValueOnce(new Error("refresh failed"));
+    fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+    expect(await screen.findByText("refresh failed")).toBeInTheDocument();
+    expect(api.games).toHaveBeenCalledTimes(3);
   });
 
   it("waits for a project before loading anything", async () => {

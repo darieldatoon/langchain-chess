@@ -1,5 +1,6 @@
 import { START_FEN, type ChessValues, type Quality } from "@langchain-chess/chess-ui";
 import { ply, turn } from "@langchain-chess/chess-ui/testing";
+import { STATUS_KEY } from "../../src/analysis";
 import type { Game } from "../../src/games";
 import { GRADER, REVIEW_KEY, type Eval, type GameReview, type Grading } from "../../src/review";
 
@@ -74,15 +75,38 @@ export function game(overrides: Partial<Game> = {}): Game {
   return {
     threadId: "thread-1",
     lastRunId: "run-3",
+    lastRunStartTime: "2026-09-25T12:30:00Z",
     startedAt: "2026-09-25T12:00:00Z",
     turns: 4,
     matchup: "claude-opus-5-5 + semif-qwen3.5-4b",
     values: values(),
     grading: graded(),
+    mark: null,
     ...overrides,
   };
 }
 
 export function reviewFeedback(runId: string, value: unknown = review(), grader = GRADER) {
   return { key: REVIEW_KEY, run_id: runId, value, feedback_source: { metadata: { grader } } };
+}
+
+export function statusFeedback(
+  runId: string,
+  value: unknown,
+  {
+    id = `${runId}-mark`,
+    createdAt = "2026-09-25T11:58:00Z",
+    comment = null as string | null,
+  } = {},
+  grader = GRADER,
+) {
+  return {
+    id,
+    key: STATUS_KEY,
+    run_id: runId,
+    value,
+    comment,
+    created_at: createdAt,
+    feedback_source: { metadata: { grader } },
+  };
 }

@@ -1,0 +1,91 @@
+name: deploy-grader
+
+on:
+  push:
+    branches: [main]
+    # What the grader snapshot is built from: the packages `lcchess grade` runs, their lockfile
+    # and the image. A path missing here is a silent stale snapshot. Over-include rather than under.
+    paths:
+      - libs/chess/**
+      - libs/systemone/**
+      - libs/cli/**
+      - uv.lock
+      - pyproject.toml
+      - .python-version
+      - docker/grader.Dockerfile
+      - scripts/grader-snapshot.py
+      - mise.toml
+      - mise.lock
+      - .github/actions/setup/**
+      - .github/workflows/ci.yml
+      - .github/workflows/deploy-grader.yml
+      - scripts/superseded.sh
+  # Ignores the path filters: the way to retry a failed build that no later push will redo.
+  # Runs only from main; the jobs skip on any other ref.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# As in deploy-review.yml: builds go out in push order, and a newer run replaces a pending
+# older one, which is safe only because every run here rebuilds the snapshot.
+concurrency:
+  group: deploy-grader-${{ github.ref }}
+  queue: max
+
+jobs:
+  tip:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      sha: ${{ steps.main.outputs.sha }}
+    steps:
+      - id: main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          echo "main is at $sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+  ci:
+    needs: tip
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.tip.outputs.sha }}
+
+  snapshot:
+    needs: [tip, ci]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ needs.tip.outputs.sha }}
+
+      - uses: ./.github/actions/setup
+        with:
+          web: false
+
+      - name: Check no newer commit changes the grader
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TESTED: ${{ needs.tip.outputs.sha }}
+        run: |
+          main=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          git -c "http.extraheader=AUTHORIZATION: basic $auth" fetch --quiet --depth 1 origin "$main"
+          changed=$(bash scripts/superseded.sh .github/workflows/deploy-grader.yml "$TESTED" "$main")
+          if [[ -n "$changed" ]]; then
+            echo "::error::main moved from $TESTED to $main and changed the grader (${changed//$'\n'/, }); re-run all jobs, not just this one."
+            exit 1
+          fi
+
+      # The build runs in a LangSmith sandbox, so the runner needs no Docker.
+      - name: Build the grader snapshot
+        env:
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          LANGSMITH_WORKSPACE_ID: ${{ vars.LANGSMITH_WORKSPACE_ID }}
+        run: uv run --all-packages python scripts/grader-snapshot.py

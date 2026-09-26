@@ -4,7 +4,9 @@ import { Select } from "@langchain/macaw-components/Select";
 import { Text } from "@langchain/macaw-components/Text";
 import { DEFAULT_PLY_VIEW, type PlyView } from "@langchain-chess/chess-ui";
 import { useEffect, useState } from "react";
+import { analysisOf, type LaunchState } from "./analysis";
 import { defaultProject, type Api, type GamesPage, type Project } from "./api";
+import type { Game } from "./games";
 import { GameList } from "./components/GameList";
 import { GameView } from "./components/GameView";
 
@@ -43,6 +45,10 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
   const [error, setError] = useState<string | null>(null);
   // The sandbox has no localStorage and LangSmith no preferences API: this lasts the session.
   const [view, setView] = useState<PlyView>(DEFAULT_PLY_VIEW);
+  // A refresh reloads the first page in place, so the list and the open game stay up meanwhile.
+  const [refreshes, setRefreshes] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [launches, setLaunches] = useState<Record<string, LaunchState>>({});
   const key = `${projectId}|${since}`;
 
   useEffect(() => {
@@ -59,13 +65,25 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
     if (!projectId) return;
     let current = true;
     api.games(projectId, since).then(
-      (page) => current && setLoaded({ ...page, key: `${projectId}|${since}` }),
-      (e: unknown) => current && setError(message(e)),
+      (page) => {
+        if (!current) return;
+        setLoaded({ ...page, key: `${projectId}|${since}` });
+        setRefreshing(false);
+        // The page now carries the marks of the jobs this tab started.
+        setLaunches((all) =>
+          Object.fromEntries(Object.entries(all).filter(([, l]) => l.status !== "started")),
+        );
+      },
+      (e: unknown) => {
+        if (!current) return;
+        setError(message(e));
+        setRefreshing(false);
+      },
     );
     return () => {
       current = false;
     };
-  }, [api, projectId, since]);
+  }, [api, projectId, since, refreshes]);
 
   // Owned by the query like the first page, so a new query cancels it rather than racing it.
   useEffect(() => {
@@ -97,6 +115,41 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
     setMoreFrom(null);
   };
 
+  const refresh = () => {
+    setMoreFrom(null);
+    setError(null);
+    setRefreshing(true);
+    setRefreshes((n) => n + 1);
+  };
+
+  const analyze = (game: Game, project: Project) => {
+    const analysis = analysisOf(game.mark, now());
+    const launch = (state: LaunchState) =>
+      setLaunches((all) => ({ ...all, [game.threadId]: state }));
+    launch({ status: "starting" });
+    api
+      .analyze(
+        {
+          projectId: project.id,
+          projectName: project.name,
+          threadId: game.threadId,
+          runId: game.lastRunId,
+          runStartTime: game.lastRunStartTime,
+        },
+        {
+          force: game.grading.status !== "ungraded",
+          previous: analysis && analysis.status !== "analyzing" ? analysis.mark : null,
+        },
+      )
+      .then(
+        () => {
+          launch({ status: "started" });
+          refresh();
+        },
+        (e: unknown) => launch({ status: "error", message: message(e) }),
+      );
+  };
+
   const openRun = (project: string, runId: string) => {
     api.runUrl(project, runId).then(openUrl, (e: unknown) => setError(message(e)));
   };
@@ -104,6 +157,7 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
   const page = loaded?.key === key ? loaded : null;
   const games = page?.games ?? [];
   const game = games.find((g) => g.threadId === selected);
+  const project = projects.find((p) => p.id === projectId);
   const loading = (projectId !== null && !page && !error) || moreFrom !== null;
 
   return (
@@ -145,15 +199,21 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
           loading={loading}
           onSelect={setSelected}
           onMore={page?.cursor ? () => setMoreFrom(page) : null}
+          onRefresh={refresh}
+          refreshing={refreshing}
+          now={now()}
         />
-        {game?.values && projectId ? (
+        {game?.values && project ? (
           <GameView
             key={game.threadId}
             game={game}
             values={game.values}
             view={view}
             onViewChange={setView}
-            onOpenRun={(runId) => openRun(projectId, runId)}
+            onOpenRun={(runId) => openRun(project.id, runId)}
+            analysis={analysisOf(game.mark, now())}
+            launch={launches[game.threadId]}
+            onAnalyze={() => analyze(game, project)}
           />
         ) : (
           <EmptyState
@@ -161,7 +221,7 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
             description={
               game
                 ? "The thread's last run carries no game record; it may have errored."
-                : "Games are threads in the project; grade them with lcchess grade."
+                : "Games are threads in the project; analyze one to grade it."
             }
           />
         )}

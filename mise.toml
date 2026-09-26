@@ -99,6 +99,10 @@ description = "Build the review app and check what `langsmith apps push` would u
 dir = "apps/review"
 run = ["pnpm exec vp build", "node scripts/upload-size.mjs"]
 
+[tasks."review:snapshot"]
+description = "Build the review app's grader snapshot (Stockfish + lcchess) in your LangSmith workspace"
+run = "uv run --all-packages --env-file .env python scripts/grader-snapshot.py"
+
 [tasks."dev:tui"]
 description = "Play the agent in the terminal (Textual); pass lcchess play options after --"
 run = "uv run --all-packages --env-file .env lcchess play"

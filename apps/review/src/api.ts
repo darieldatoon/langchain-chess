@@ -1,4 +1,5 @@
 // The LangSmith API as the app uses it. `call` is `window.langsmith.call`, injected for tests.
+import { analyze, marksByRun, STATUS_KEY, type Launch, type Target } from "./analysis";
 import { toGame, type Game, type RootRun, type ThreadItem } from "./games";
 import { REVIEW_KEY, reviewsByRun, type FeedbackItem } from "./review";
 
@@ -30,6 +31,7 @@ export interface Api {
   projects(): Promise<Project[]>;
   games(projectId: string, since: string, cursor?: string | null): Promise<GamesPage>;
   runUrl(projectId: string, runId: string): Promise<string>;
+  analyze(target: Target, launch: Launch): Promise<void>;
 }
 
 const PAGE_SIZE = 20;
@@ -44,7 +46,7 @@ export function createApi(call: Call): Api {
       return items.map(({ id, name }) => ({ id, name }));
     },
 
-    /** One page of threads, their last root runs, and this grader's reviews of them. */
+    /** One page of threads, their last root runs, and this grader's reviews and marks on them. */
     async games(projectId, since, cursor = null) {
       const page = (await call("POST /api/v2/threads/query", {
         body: {
@@ -69,14 +71,20 @@ export function createApi(call: Call): Api {
           },
         }) as Promise<{ items: RootRun[] }>,
         call("GET /api/v1/feedback", {
-          params: { run: ids, key: [REVIEW_KEY], limit: "100" },
+          params: { run: ids, key: [REVIEW_KEY, STATUS_KEY], limit: "100" },
         }) as Promise<FeedbackItem[]>,
       ]);
       const byId = new Map(runs.items.map((r) => [r.id, r]));
       const reviews = reviewsByRun(feedback);
+      const marks = marksByRun(feedback);
       return {
         games: page.items.map((t) =>
-          toGame(t, byId.get(t.last_trace_id), reviews.get(t.last_trace_id)),
+          toGame(
+            t,
+            byId.get(t.last_trace_id),
+            reviews.get(t.last_trace_id),
+            marks.get(t.last_trace_id),
+          ),
         ),
         cursor: page.next_cursor,
       };
@@ -89,5 +97,7 @@ export function createApi(call: Call): Api {
       })) as { url: string };
       return url;
     },
+
+    analyze: (target, launch) => analyze(call, target, launch),
   };
 }

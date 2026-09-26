@@ -39,9 +39,12 @@ export interface GameReview {
 }
 
 export interface FeedbackItem {
+  id?: string;
   key: string;
   run_id: string | null;
   value: unknown;
+  comment?: string | null;
+  created_at?: string;
   feedback_source?: { metadata?: Record<string, unknown> | null } | null;
 }
 
