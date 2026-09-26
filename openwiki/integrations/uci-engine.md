@@ -16,6 +16,8 @@ sources:
     resource: repo://libs/cli/langchain_chess_cli/uci/completion.py
   - id: openwiki-source-1dd02340acf0ca7c8c33f18b
     resource: repo://libs/cli/langchain_chess_cli/uci/engine.py
+  - id: openwiki-source-75f1e442bb6ed78ddb1df39d
+    resource: repo://libs/cli/README.md
   - id: openwiki-source-58151a017639a9e1e28df5d3
     resource: repo://libs/cli/tests/test_uci_engine.py
   - id: openwiki-source-d16be866f79937160284e23a
@@ -24,12 +26,10 @@ sources:
     resource: repo://libs/systemone/langchain_chess_systemone/middleware.py
   - id: openwiki-source-72b5d686f860ea86c8592080
     resource: repo://mise.toml
-  - id: openwiki-source-23775c3de52f3ab95a13cb8b
-    resource: repo://README.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-26T05:03:34.528Z
+    at: 2026-09-26T13:04:36.303Z
 ---
 
 # UCI engine adapter (`lcchess uci`)
@@ -199,5 +199,7 @@ The `test:uci` task in `mise.toml` runs inside `.uci-match/`, which is gitignore
 ## Tests
 
 - `libs/cli/tests/test_uci_protocol.py` covers the pure layers: the parse table, deadline arithmetic (safety margin, `MIN_MS` floor, `movestogo`, missing side clock), `root_moves`, and every `complete()` row, including stale-request and out-of-pool fallbacks.
-- `libs/cli/tests/test_uci_engine.py` drives `Engine` with a `ScriptedModel`. It covers the handshake, streamed analysis, game continuation on one thread, takebacks and new roots starting new threads, deadline fallbacks, provider failures, resignation, insufficient material, searchmoves, the `go infinite` / `stop` / `ponderhit` holding rules, one `bestmove` per `go` when `go` or `ucinewgame` interrupts a search, late results being ignored, option queueing and rebuild counts, and `run()` stopping at `quit` or end of input.
+- `libs/cli/tests/test_uci_engine.py` drives `Engine` with a `ScriptedModel`. It covers the handshake, streamed analysis, game continuation on one thread, takebacks and new roots starting new threads, deadline fallbacks, provider failures, resignation, insufficient material, searchmoves, the `go infinite` / `stop` / `ponderhit` holding rules, one `bestmove` per `go` when `go` or `ucinewgame` interrupts a search, late results being ignored, option queueing and rebuild counts, failed rebuilds leaving options untouched, `ReasoningEffort default` mapping to `None`, retired threads being deleted from the checkpointer, multi-line errors that cannot forge commands, and `run()` stopping at `quit` or end of input.
+- `libs/cli/tests/test_options.py` covers `build_agent` (policy stacks, the `summarize` input-limit check) and `run_config` trace naming and metadata.
+ ignored, option queueing and rebuild counts, and `run()` stopping at `quit` or end of input.
 t` or end of input.

@@ -1,11 +1,11 @@
 ---
 type: concept
-title: Prompt, model view and memory modes
-description: How ChessCore builds each move request from a filtered view of stored messages plus a freshly rendered position block, how show_legal_moves and candidates appear in it, what memory none/summarize let the model see, how ChessSummarization is configured and validated (including the server/CLI input-limit profiles), and how context overflow becomes ContextBudgetError.
+title: Prompt and memory
+description: How ChessCore builds each move request from a filtered view of stored messages plus a freshly rendered position block, how show_legal_moves and candidates appear in it, what memory none/summarize let the model see, how ChessSummarization is configured and validated (including the shared chat_model input-limit profiles and the summarize eligibility check), and how context overflow becomes ContextBudgetError.
 tags: [prompt, memory, summarization, model-view, context-window, langchain-chess]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-26T05:03:34.528Z
+    at: 2026-09-26T13:04:36.303Z
 sources:
   - id: openwiki-source-b9886f4aee6bc16bdaea61ff
     resource: repo://apps/server/langchain_chess_server/app.py
@@ -15,12 +15,18 @@ sources:
     resource: repo://apps/server/langchain_chess_server/graph.py
   - id: openwiki-source-08efc3f1935724156208ec17
     resource: repo://apps/server/tests/test_graph.py
+  - id: openwiki-source-5e8cfa6ef22542c9ea8aaf4a
+    resource: repo://docs/decisions.md
   - id: openwiki-source-3ae14faf8cc85a90b40ed182
     resource: repo://libs/chess/langchain_chess/agent.py
+  - id: openwiki-source-65bee4ff16ecbe51243c1e47
+    resource: repo://libs/chess/langchain_chess/chat_models.py
   - id: openwiki-source-fc393bc7c06df7c3f85ece92
     resource: repo://libs/chess/langchain_chess/middleware/core.py
   - id: openwiki-source-4a4d83b98e02f02b6b258e76
     resource: repo://libs/chess/langchain_chess/middleware/summarization.py
+  - id: openwiki-source-c79cd4ef1f60f33f3f30297b
+    resource: repo://libs/chess/langchain_chess/parse.py
   - id: openwiki-source-6c9b823f6aaa5fb3802d7fae
     resource: repo://libs/chess/langchain_chess/pricing.py
   - id: openwiki-source-e92c3d9adb77a4ffddf28116
@@ -31,21 +37,19 @@ sources:
     resource: repo://libs/chess/tests/test_memory.py
   - id: openwiki-source-485da67626463e234bbc471c
     resource: repo://libs/chess/tests/test_text.py
-  - id: openwiki-source-f455a4d6f1caefdab4688388
-    resource: repo://libs/cli/langchain_chess_cli/models.py
   - id: openwiki-source-595fa5f62bc6bdbfd212eed8
     resource: repo://libs/cli/langchain_chess_cli/options.py
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
 ---
 
-# Prompt, model view and memory modes
+# Prompt and memory
 
 Every LLM call the chess agent makes is built in one place: `ChessCore._prepare`, which runs inside `ChessCore.wrap_model_call` ([core.py](/libs/chess/langchain_chess/middleware/core.py)). It replaces the request's messages with:
 
 1. `model_view(messages, turns, memory)`: a filtered, deep-copied view of the stored conversation, and
 2. one trailing `HumanMessage` produced by `render_position(...)`: the current position, which is **never stored**.
 
-The system prompt (`SYSTEM_PROMPT`, or `system_prompt=` passed to `create_chess_agent`) is set by `create_agent` and is unaffected. All the wording lives in [prompt.py](/libs/chess/langchain_chess/prompt.py). That module is pure, and its docstring asks that wording changes be deliberate and come with rendered-prompt tests. For where this fits in a run (turn opening, retries, finalization), see [turn lifecycle](/openwiki/architecture/turn-lifecycle.md).
+The system prompt (`SYSTEM_PROMPT`, or `system_prompt=` passed to `create_chess_agent`) is set by `create_agent` and is unaffected. All the wording lives in [prompt.py](/libs/chess/langchain_chess/prompt.py). That module is pure, and its docstring asks that wording changes be deliberate and come with rendered-prompt tests. For where this fits in a run (turn opening, retries, finalization), see [turn lifecycle](/openwiki/architecture/turn-lifecycle.md). For the fields referenced below (`turns`, `plies`, `allowed_moves`, `candidates`, `consumed_message_ids`), see the [state record](/openwiki/concepts/state-record.md).
 
 ```mermaid
 flowchart TD
@@ -65,8 +69,8 @@ flowchart TD
 Stored `messages` hold only a small working conversation:
 
 - **Opening message of a turn.** For a chat command this is the human's own message (`go`, `e4`, …). For a `position` command, core writes a short delta built by `delta_text`: `New game. You are White.` on a fresh thread, the new movetext since the last turn (for example `1... c5`), or `Your move as Black.` when nothing new was played. The turn record keeps its id in `opened_message_id`.
-- **Model replies**, including reasoning blocks (kept for tracing).
-- **Retry feedback** (`feedback_text`): `Try again, that move was rejected: <reason>. Choose from: <allowed SAN>. …`, or a variant that says the output budget was probably spent on reasoning when the reply had no text. Feedback and rejected reply ids are tracked per turn in `feedback_message_ids` and `rejected_message_ids`.
+- **Model replies**, including reasoning blocks (kept for tracing). A reply with no text is stored as the placeholder `[no text in reply]` (`EMPTY_REPLY`), keeping its id and usage metadata.
+- **Retry feedback** (`feedback_text`): `Try again, that move was rejected: <reason>. Choose from: <allowed SAN>. …`, or, when the reply was the empty placeholder, a variant that says the output budget was probably spent on reasoning. Feedback and rejected reply ids are tracked per turn in `feedback_message_ids` and `rejected_message_ids`.
 - **Result messages** and, in `summarize` mode, the summary message.
 
 Board state never lives in the conversation. The position block is rebuilt from `start_fen`, `plies` (SAN), the replayed board, `allowed_moves` and `candidates` on every call, including retries within a turn. So the model always sees the current position, whatever memory mode dropped or summarized.
@@ -90,7 +94,7 @@ Lines, in order:
 
 ## The model view (`model_view`) and memory modes
 
-`memory` is a `create_chess_agent` argument that `ChessCore` passes to `model_view`. It is typed `Literal["none", "summarize"]` and defaults to `"none"`. There is no `full` mode any more: the server's `ChessContext` rejects `memory="full"` with a validation error. Rules shared by both modes:
+`memory` is a `create_chess_agent` argument that `ChessCore` passes to `model_view`. It is typed `Literal["none", "summarize"]` and defaults to `"none"`. Rules shared by both modes:
 
 - Only `HumanMessage` and `AIMessage` pass through.
 - **Current turn:** every feedback message is kept, but among its rejected replies only the latest is shown. Earlier rejected attempts are hidden, so a third attempt sees the opening message, the feedback lines and the newest bad reply.
@@ -104,13 +108,21 @@ Lines, in order:
 
 `model_view` handles `summarize` as "everything except earlier turns' failures". The summarization itself happens only in `ChessSummarization`, which rewrites stored `messages`.
 
-Adapters pin the mode when there is no LLM: the server graph ([graph.py](/apps/server/langchain_chess_server/graph.py)) and the CLI ([options.py](/libs/cli/langchain_chess_cli/options.py)) force `memory="none"` when `policy="systemone"`. The server exposes `memory` (default `none`, described as "the conversation summarized at 70% of the model's input limit") and `show_legal_moves` as `ChessContext` knobs ([context.py](/apps/server/langchain_chess_server/context.py)). The CLI's `AgentOptions` mirror them with the same defaults, and the UCI engine advertises a `Memory` combo option (`none` / `summarize`). Neither adapter has a summary-trigger knob any more.
+### The removed `full` mode
+
+There used to be a third mode, `full`, which showed every earlier turn verbatim with no compaction. It has been removed: `Memory` no longer includes it, and the server's `ChessContext` rejects `memory="full"` with a validation error. The measurements behind that decision (prompt size per move, and analysis length under `none` vs. `full`) are recorded in [docs/decisions.md](/docs/decisions.md).
+
+### Adapter knobs
+
+Adapters pin the mode when there is no LLM: the server graph ([graph.py](/apps/server/langchain_chess_server/graph.py)) and the CLI ([options.py](/libs/cli/langchain_chess_cli/options.py)) force `memory="none"` when `policy="systemone"`. The server exposes `memory` (default `none`, described as "the conversation summarized at 70% of the model's input limit", needing a model with a known input limit, and ignored for `systemone`) and `show_legal_moves` as `ChessContext` knobs ([context.py](/apps/server/langchain_chess_server/context.py)). The CLI's `AgentOptions` mirror them with the same defaults, and the UCI engine advertises a `Memory` combo option (`none` / `summarize`). Neither adapter has a summary-trigger knob.
 
 ## ChessSummarization
 
 [summarization.py](/libs/chess/langchain_chess/middleware/summarization.py) subclasses LangChain's `SummarizationMiddleware`. It keeps the stock trigger and cutoff logic and adds chess-specific accounting and validation.
 
 **Placement.** `create_chess_agent` appends it only when `memory="summarize"`, and always **last** in the stack ([agent.py](/libs/chess/langchain_chess/agent.py)). It is core-owned and not wrapped by the write guard, and it is the only middleware allowed to rewrite `messages`. Because it runs last in `before_model`, it runs only when a real LLM call is about to happen. When System 1 proposes a move or the forced-move shortcut applies, the run jumps to the end before it runs. Its `name` property returns `"SummarizationMiddleware"`, so graph node names (for example `SummarizationMiddleware.before_model`) stay stable.
+
+**Fixed topology.** With `fixed_topology=True` and `memory="none"`, `create_chess_agent` appends `NoSummarization` in the same slot instead. It has the same name and its `before_model` hooks do nothing, so the graph has the same nodes whatever the memory setting. The server builds every graph with `fixed_topology=True` because the Agent Server reads and updates thread state with a graph built without the run's settings. The CLI does not set it.
 
 **Defaults.**
 
@@ -127,19 +139,26 @@ Adapters pin the mode when there is no LLM: the server graph ([graph.py](/apps/s
 
 **Configuring it in the library.** Pass a preconfigured `SummarizationMiddleware` as `create_chess_agent(summarization=...)`. `ChessSummarization.from_middleware` copies its public settings (`trigger`, `keep`, `summary_prompt`, `trim_tokens_to_summarize`, `token_counter`), and the checks above still apply. Tests use this route to set small message-count triggers.
 
-**How the adapters configure it.** The server and CLI never pass `summarization=`, so deployed games always use the fractional default of 70% of the input limit. Both adapters build their chat model the same way (`chat_model` in the server's [graph.py](/apps/server/langchain_chess_server/graph.py) and the CLI's [models.py](/libs/cli/langchain_chess_cli/models.py)):
+## Input limits and the summarize eligibility check
 
-- The gateway's `ChatOpenAI` ships without a profile. So for `langsmith:` models only, the adapter looks up `context_window(model)` from the pricing snapshot ([pricing.py](/libs/chess/langchain_chess/pricing.py)). That window counts input and output together. If it is known, the adapter attaches `profile={"max_input_tokens": window - MAX_TOKENS}`, where `MAX_TOKENS = 32000` is the output cap.
-- Native providers keep their own full profiles. The adapter never replaces them.
-- Before calling `create_chess_agent`, `build_agent` rejects `memory="summarize"` with a `ChessContractError` ("has no known input limit … use memory='none'") when `input_limit(model)` is `None`. A `systemone` policy is exempt, because its memory is already forced to `none`.
-- The server also serves `GET /ui/model-limit?model=…`, backed by the cached `model_limit()` helper, which builds the same chat model and returns its `input_limit`. The new-game dialog offers `summarize` only when that value is known.
+The server and CLI never pass `summarization=`, so deployed games always use the fractional default of 70% of the input limit. That makes a correct `max_input_tokens` essential. Both adapters now build their chat model with the same shared factory, `chat_model(model, reasoning_effort)` in [chat_models.py](/libs/chess/langchain_chess/chat_models.py). The server's `chat_model(context)` and the CLI's `default_model(options)` are thin wrappers around it. The factory sizes the output budget and the input limit together:
+
+- **Output budget.** `output_budget(window, ceiling)` is `MAX_TOKENS = 64000` (reasoning included), capped by the model's own output limit when known and by half of a small context window. For example, `langsmith:openai/gpt-4` with an 8192-token window gets `max_tokens = 4096`.
+- **Gateway (`langsmith:`) models.** The gateway's `ChatOpenAI` ships without a profile, so the factory reads `context_window(model)` from the pricing snapshot ([pricing.py](/libs/chess/langchain_chess/pricing.py)). That window counts input and output together. The output ceiling comes from the vendor's own LangChain profile, when that integration is installed. If the window is known, the model gets `profile={"max_input_tokens": window - budget}` (for example `1_048_000 - 64000` for the default GLM model). If it is unknown, there is no profile.
+- **Native providers.** The factory keeps the provider's own profile but may lower its `max_input_tokens` to `min(native max_input_tokens, window - budget)`, so the summarize schedule leaves room for the output budget. For a bare spec, the window falls back to the native profile's `max_input_tokens`.
+
+**Eligibility check.** Before calling `create_chess_agent`, both adapters' `build_agent` reject `memory="summarize"` with a `ChessContractError` ("has no known input limit … use memory='none'", or `use memory none` in the CLI's wording) when `input_limit(model)` is `None`. A `systemone` policy is exempt, because it has no model and its memory is already forced to `none`. `memory="none"` with the same unknown model builds fine.
+
+The server also serves `GET /ui/model-limit?model=…` ([app.py](/apps/server/langchain_chess_server/app.py)), backed by the cached `model_limit()` helper in `graph.py`. It builds the same chat model and returns its `input_limit` (or `None` if the model can't be built). The new-game dialog offers `summarize` only when that value is known.
 
 See [models, gateway and cost](/openwiki/concepts/models-gateway-and-cost.md).
 
-**Accounting (`_account`).** `before_model`/`abefore_model` run the stock hook inside `recorder.sink("summary")`. If the stock hook returns a rewrite:
+## Summary accounting
 
-- the summary's own provider calls (kind `summary`) are appended to the current turn's `calls` **in the same state update as the rewrite**, so the summary and its cost are checkpointed together;
-- any id-less `HumanMessage` in the rewrite (the summary) gets a UUID and is added to `consumed_message_ids`, so core's lifecycle never mistakes it for a new chat command.
+`before_model`/`abefore_model` run the stock hook inside `recorder.sink("summary")`. If the stock hook returns a rewrite, `_account`:
+
+- appends the summary's own provider calls (kind `summary`) to the current turn's `calls` **in the same state update as the rewrite**, so the summary and its cost are checkpointed together;
+- gives any id-less `HumanMessage` in the rewrite (the summary) a UUID and adds it to `consumed_message_ids`, so core's lifecycle never mistakes it for a new chat command.
 
 Consequences, verified in [test_memory.py](/libs/chess/tests/test_memory.py):
 
@@ -152,15 +171,15 @@ Whether summary calls actually fire in deployed games is a runtime question. See
 
 ## Overflow detection
 
-`wrap_model_call` and `awrap_model_call` catch exceptions from the handler. If the lowercased error text contains any of `prompt is too long`, `context length`, `context_length`, `maximum context`, `too many tokens` or `input is too long` (`looks_like_overflow`), the exception is re-raised as `ContextBudgetError` (exported from `langchain_chess`), chained to the original. Other exceptions propagate unchanged. Either way the turn stays `pending`, so a later run with no new command retries it. Detection is a heuristic based on provider error strings, so a provider with different wording produces a plain error. Summarization is the proactive defence, and this error is the reactive signal.
+`wrap_model_call` and `awrap_model_call` catch exceptions from the handler. If the lowercased error text contains any of `prompt is too long`, `context length`, `context_length`, `maximum context`, `too many tokens` or `input is too long` (`looks_like_overflow`), the exception is re-raised as `ContextBudgetError` (exported from `langchain_chess`), chained to the original. Other exceptions propagate unchanged. If some provider calls had already completed in that model call, core first records them on the turn (with a `failed_call` marker) and re-raises the same error from `after_model`, so the cost is kept. Either way the turn stays `pending`, so a later run with no new command retries it. Detection is a heuristic based on provider error strings, so a provider with different wording produces a plain error. Summarization is the proactive defence, and this error is the reactive signal.
 
 ## Measurements
 
-Prompt caching was evaluated and not shipped, partly because the gateway's single breakpoint lands on the per-turn position block. Memory mode was also measured against analysis length. Both are recorded in the README's [Decisions and measurements](/README.md#decisions-and-measurements) section. Read the numbers there, since they change.
+[docs/decisions.md](/docs/decisions.md) records the choices here that look like gaps, with their numbers. Anthropic prompt caching was not shipped: the gateway's single request-level breakpoint lands on the per-turn position block, and prompts are small (about 520 input tokens per move with `memory="none"`). It also records the memory-mode comparison that preceded removing `full`. Read the numbers there, since they change.
 
 ## Tests that matter
 
 - [test_text.py](/libs/chess/tests/test_text.py): exact rendered text of `render_position` (legal list, hidden list, candidates ∩ allowed, the permitted-only line, check), `delta_text`, `feedback_text`, and `model_view` for `none` and `summarize` (hidden attempts, earlier turns' failures dropped, reasoning stripping, deep copies).
-- [test_memory.py](/libs/chess/tests/test_memory.py): summarization rewrites during a turn and on a retried turn, the keep floor and prompt checks, `input_limit` reading the profile, a profileless model failing and a profiled one getting the `SummarizationMiddleware.before_model` node, call ordering and checkpointing of `summary` calls, and what `summarize` memory shows across turns before any summary fires.
-- [test_graph.py](/apps/server/tests/test_graph.py): the server builds `summarize` agents for gateway and native models with known limits, rejects an unknown-limit model (but not under `systemone`), rejects `memory="full"`, and `model_limit` equals the context window minus 32000 for gateway models.
-- [test_lifecycle.py](/libs/chess/tests/test_lifecycle.py): `memory="none"` sees only the current turn, and `ContextBudgetError` leaves the turn pending.
+- [test_memory.py](/libs/chess/tests/test_memory.py): summarization rewrites during a turn and on a retried turn, the keep floor and prompt checks, `input_limit` reading the profile, a profileless model failing and a profiled one getting the `SummarizationMiddleware.before_model` node, a fixed topology keeping a summarization node that never summarizes, call ordering and checkpointing of `summary` calls, and what `summarize` memory shows across turns before any summary fires.
+- [test_graph.py](/apps/server/tests/test_graph.py): every policy × memory setting builds the same topology as a read graph (including the summarization node). Gateway profiles are `window - 64000`, and a small window is split in half. `summarize` builds for gateway and native models with known limits and is rejected for an unknown-limit model (but not under `systemone`). `memory="full"` is rejected, and `model_limit` agrees with the agent.
+- [test_lifecycle.py](/libs/chess/tests/test_lifecycle.py): `memory="none"` sees only the current turn, an empty reply is stored as the placeholder and triggers the reasoning-budget feedback, and `ContextBudgetError` leaves the turn pending.
