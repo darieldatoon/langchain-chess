@@ -1,0 +1,26 @@
+[project]
+name = "langchain-chess-evals"
+version = "0.1.0"
+description = "Datasets and LangSmith experiments for langchain-chess. Never published."
+requires-python = ">=3.13"
+license = "MIT"
+authors = [{ name = "Dariel Dato-on" }]
+classifiers = ["Private :: Do Not Upload"]
+dependencies = [
+    "langchain-chess",
+    "langchain-chess-systemone",
+    "langsmith>=0.13",
+    "typer>=0.27",
+    "zstandard>=0.23",
+]
+
+[project.scripts]
+lcchess-evals = "langchain_chess_evals.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.12,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "langchain_chess_evals"
+module-root = ""

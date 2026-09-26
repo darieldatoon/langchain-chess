@@ -18,6 +18,7 @@ Every decision, its cost and its latency are recorded on the game.
 | Play in the terminal | [`lcchess play`](libs/cli#play-in-the-terminal) | `mise run dev:tui` |
 | Pit the agent against engines in a chess GUI | [`lcchess uci`](libs/cli#use-it-as-a-uci-engine) | `mise run dev:uci` |
 | See which moves were blunders | [`lcchess grade`](libs/cli#grade-games) + the [review app](apps/review) | `lcchess grade`, `mise run dev:review` |
+| Measure how well System 1 ranks moves | [LangSmith experiments](evals) over Stockfish-labelled Lichess positions | `mise run eval:systemone -- --model ...` |
 | Build my own chess agent | [`langchain-chess`](libs/chess) and [`langchain-chess-systemone`](libs/systemone) | `create_chess_agent(...)` |
 
 ## How it fits together
@@ -212,6 +213,7 @@ covers the inputs, the game record and writing your own middleware. The
 | [`apps/web`](apps/web) | | The React UI served at `/ui` |
 | [`apps/review`](apps/review) | | The LangSmith custom app that replays graded games |
 | [`packages/chess-ui`](packages/chess-ui) | `@langchain-chess/chess-ui` | Board, move list and move details shared by the two web apps |
+| [`evals`](evals) | `langchain-chess-evals` (private) | The labelled positions dataset and System 1 experiments in LangSmith |
 
 ## Development
 

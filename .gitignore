@@ -49,3 +49,6 @@ htmlcov/
 
 # OpenWiki's resume state for an interrupted run (mise run wiki:*)
 /openwiki/.run.json
+
+# evals downloads, label cache and local run summaries (mise run eval:*)
+/evals/.cache/

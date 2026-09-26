@@ -114,8 +114,8 @@ depends = ["check:python", "check:web"]
 [tasks."check:python"]
 description = "Ruff format check, ruff lint and ty"
 run = [
-  "uv run --all-packages ruff format --check libs apps",
-  "uv run --all-packages ruff check libs apps",
+  "uv run --all-packages ruff format --check libs apps evals",
+  "uv run --all-packages ruff check libs apps evals",
   "uv run --all-packages ty check",
 ]
 
@@ -139,6 +139,22 @@ run = "pnpm exec vp run -r test"
 [tasks."test:live"]
 description = "The live tests against the real LLM Gateway (costs a few cents)"
 run = "uv run --all-packages --env-file .env pytest -m live --no-cov -q"
+
+[tasks."eval:positions:build"]
+description = "Download or reuse a Lichess month, sample and label positions, write evals/datasets/positions/vN.jsonl (one-off; pass options after --)"
+run = "uv run --all-packages lcchess-evals positions build"
+
+[tasks."eval:positions:upload"]
+description = "Create or update the LangSmith dataset from the committed JSONL, tagged vN"
+run = "uv run --all-packages --env-file .env lcchess-evals positions upload"
+
+[tasks."eval:systemone"]
+description = "One System 1 experiment: -- --model ... --style ... [--split dev]"
+run = "uv run --all-packages --env-file .env lcchess-evals systemone run"
+
+[tasks."eval:systemone:baseline"]
+description = "The five System 1 baseline experiments in evals/experiments/systemone-baseline.toml"
+run = "uv run --all-packages --env-file .env lcchess-evals systemone baseline"
 
 [tasks.build]
 description = "Build the web UI into the server package so the image can serve it under /ui"
