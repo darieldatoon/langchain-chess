@@ -46,3 +46,6 @@ htmlcov/
 
 # pytest-textual-snapshot failure report
 /snapshot_report.html
+
+# OpenWiki's resume state for an interrupted run (mise run wiki:*)
+/openwiki/.run.json

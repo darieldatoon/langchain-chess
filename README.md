@@ -255,6 +255,14 @@ run `mise run check` and `mise run test` (`.github/workflows/ci.yml`). Pushing t
 both and then `mise run deploy` (`.github/workflows/deploy.yml`), which deploys `langchain-chess-app`. The pre-push hook runs `mise run test`; the pre-commit hook checks
 only the staged files.
 
+`openwiki/` is an [OpenWiki](https://docs.langchain.com/oss/openwiki/overview) of this repo for
+coding agents; `AGENTS.md` and `CLAUDE.md` point to it. `mise run wiki:update` refreshes the
+pages that changed code made stale, and `mise run wiki:view` browses it. Its model calls go
+through the LLM Gateway (`LC_GATEWAY_KEY`), its traces go to `langchain-chess-openwiki`, and it
+reads `langchain-chess-app`'s traces (`openwiki/.langsmith.json`). `openwiki/INSTRUCTIONS.md` is
+its brief and `.openwikiignore` lists what it never reads. The `openwiki-update` workflow runs
+the same update on demand and opens a `docs: update OpenWiki` PR when pages changed.
+
 The image builds from the uv workspace and its lockfile (`langgraph.json` `source.kind = "uv"`).
 langgraph-cli 0.4.31 copies only the root `pyproject.toml` before `uv export`, so
 `dockerfile_lines` adds each member's `pyproject.toml`; keep that list in step with the

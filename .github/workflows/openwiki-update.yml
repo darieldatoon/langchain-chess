@@ -1,0 +1,82 @@
+name: openwiki-update
+
+on:
+  workflow_dispatch:
+  # Off while the code churns; uncomment once it settles.
+  # push:
+  #   branches: [main]
+  #   paths: ["libs/**", "apps/**", "packages/**"]
+
+permissions:
+  contents: read
+
+# One run at a time: both would push to the same openwiki/update branch.
+concurrency:
+  group: openwiki-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # `--update` diffs HEAD against the commit it last documented; a shallow clone hides it.
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        with:
+          python: false
+          web: false
+
+      # The wiki tasks would install it unguarded; installing first puts it behind Socket Firewall.
+      - name: Install OpenWiki
+        run: sfw mise install npm:openwiki@0.6.0
+
+      - name: Update the wiki
+        id: openwiki
+        continue-on-error: true
+        env:
+          LC_GATEWAY_KEY: ${{ secrets.LC_GATEWAY_KEY }}
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+        run: mise run wiki:update
+
+      - name: Remove transient run state
+        if: ${{ !cancelled() }}
+        run: rm -f -- openwiki/.run.json
+
+      # Opens or updates the PR only when the wiki changed.
+      - name: Open the update PR
+        id: pr
+        if: ${{ !cancelled() }}
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          add-paths: |
+            openwiki
+            AGENTS.md
+            CLAUDE.md
+          branch: openwiki/update
+          commit-message: "docs: update OpenWiki"
+          title: "docs: update OpenWiki"
+          body: |
+            Automated OpenWiki update from `mise run wiki:update`.
+
+            OpenWiki result: `${{ steps.openwiki.outcome }}`
+
+            On `failure` this PR holds only the pages finished before the failure. Merging it
+            makes them the baseline for the next run.
+
+      - name: Link the PR
+        if: ${{ !cancelled() && steps.pr.outputs.pull-request-url != '' }}
+        env:
+          URL: ${{ steps.pr.outputs.pull-request-url }}
+        run: echo "::notice title=OpenWiki update PR::$URL"
+
+      - name: Fail on an OpenWiki failure
+        if: ${{ steps.openwiki.outcome == 'failure' }}
+        run: exit 1

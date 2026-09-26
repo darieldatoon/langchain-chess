@@ -1,0 +1,17 @@
+# OpenWiki never reads these. It does not apply .gitignore to what it reads, so secrets and
+# local-only paths are listed here too.
+.env
+.env.*
+!.env.example
+plans/
+.venv/
+**/node_modules/
+.langgraph_api/
+.uci-match/
+apps/server/langchain_chess_server/static/
+apps/review/.langsmith/
+**/coverage/
+uv.lock
+mise.lock
+**/pnpm-lock.yaml
+libs/cli/tests/__snapshots__/
