@@ -1,5 +1,5 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
-import { act, fireEvent, screen, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import App from "../src/App";
 import { checkApiKey, type KeyCheck } from "../src/auth";
@@ -136,6 +136,13 @@ describe("new game", () => {
         multitaskStrategy: "reject",
       },
     );
+  });
+
+  it("asks the server for the model's input limit with the saved key", async () => {
+    saveAppSettings({ apiKey: "lsv2_k" });
+    const modelLimit = vi.fn(() => Promise.resolve(968000));
+    render(<App modelLimit={modelLimit} />);
+    await waitFor(() => expect(modelLimit).toHaveBeenCalledWith("lsv2_k", DEFAULT_CONTEXT.model));
   });
 
   it("does not open the modal for a game in the URL", () => {
