@@ -62,6 +62,9 @@ Without a checkpointer the agent is stateless and every run must carry a `positi
 - **Resume.** After a failure inside a turn, `agent.invoke(None, config)` continues from the step
   that failed. If a hook after the model call failed, the saved reply is played without calling
   the model again.
+- **Stalls.** When a `langsmith:` model's stream goes silent past langchain-openai's
+  `stream_chunk_timeout` (120 s), the model is called once more in the same turn. A second stall
+  fails the turn, which a retry can pick up.
 - **The record** is `start_fen`, `moves`, `plies`, `turns`, `outcome` and `error`. Read only those
   keys, plus any your own middleware documents (the Agent Server's `setup`, for one). `messages`
   is the model's working context and may be summarized. The thread-state API also returns private
@@ -110,7 +113,8 @@ No gateway response carries a cost, so every provider response inside a model ca
 and priced locally with [genai-prices](https://github.com/pydantic/genai-prices). It uses the
 snapshot bundled with the pinned version and never fetches prices. A move's cost is its turn's
 total: every LLM attempt, every System 1 request, and any summary call. Calls that completed
-before a model call failed are kept on the turn, and a retry doesn't count them again.
+before a model call failed are kept on the turn, and a retry doesn't count them again. A stalled
+attempt isn't priced: its usage would have arrived in the final chunk.
 
 ```python
 from langchain_chess import turn_cost

@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated, Any, NotRequired
 
@@ -13,6 +14,7 @@ from langchain.agents.middleware.types import (
 )
 from langchain_core.messages import AIMessage
 from langchain_core.tools import tool
+from langchain_openai import StreamChunkTimeoutError
 from langgraph.types import Command
 from langsmith import tracing_context
 
@@ -25,8 +27,9 @@ from langchain_chess import (
     turn_cost,
 )
 from langchain_chess.contract import guard
+from langchain_chess.middleware.stall_retry import stall_errors
 from langchain_chess.recorder import _SINK
-from langchain_chess.testing import ScriptedModel, human, position
+from langchain_chess.testing import ScriptedModel, human, position, topology
 
 
 class Pruner(ChessMiddleware):
@@ -455,6 +458,48 @@ async def test_retry_middleware_calls_are_recorded(make_agent, run, cfg):
     out = await run(agent, position(), cfg)
     assert out["moves"] == ["e2e4"]
     assert len(out["turns"][0]["calls"]) == 1
+
+
+def stall() -> StreamChunkTimeoutError:
+    return StreamChunkTimeoutError(120.0, model_name="glm", chunks_received=2)
+
+
+async def test_a_stalled_stream_is_retried_within_the_turn(make_agent, run, cfg):
+    model = ScriptedModel(script=[stall(), "MOVE: e4"])
+    agent = make_agent(model)
+    out = await run(agent, position(), cfg)
+    assert out["moves"] == ["e2e4"]
+    assert model.calls == 2
+    assert len(out["turns"][0]["calls"]) == 1
+    assert out["turns"][0]["illegal_attempts"] == 0
+    assert agent.config["callbacks"][0].pending == 0
+
+
+async def test_a_second_stall_fails_the_turn_and_retry_resumes_it(make_agent, run, cfg):
+    model = ScriptedModel(script=[stall(), stall(), "MOVE: e4"])
+    agent = make_agent(model)
+    with pytest.raises(StreamChunkTimeoutError):
+        await run(agent, position(), cfg)
+    out = await run(agent, None, cfg)
+    assert out["moves"] == ["e2e4"]
+    assert len(out["turns"]) == 1
+
+
+async def test_only_a_stall_is_retried(make_agent, run, cfg):
+    model = ScriptedModel(script=[TimeoutError("read timed out"), "MOVE: e4"])
+    with pytest.raises(TimeoutError, match="read timed out"):
+        await run(make_agent(model), position(), cfg)
+    assert model.calls == 1
+
+
+def test_without_langchain_openai_nothing_is_a_stall(monkeypatch):
+    monkeypatch.setitem(sys.modules, "langchain_openai", None)
+    assert stall_errors() == ()
+
+
+def test_stall_retry_adds_no_node(make_agent):
+    nodes, _, _ = topology(make_agent(ScriptedModel(script=[])))
+    assert not any("StallRetry" in node for node in nodes)
 
 
 async def test_concurrent_async_threads_keep_their_own_calls(make_agent):
