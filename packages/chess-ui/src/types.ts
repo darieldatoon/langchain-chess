@@ -171,6 +171,21 @@ export interface Reply {
   fenBefore: string;
 }
 
+/** What the reply card shows: nothing yet, a move played, or the opponent still choosing one. */
+export type ReplyState =
+  | { status: "none" }
+  | { status: "played"; reply: Reply }
+  /** `reasoning` is the text streamed so far; null before the first token, or with none. */
+  | { status: "thinking"; reasoning: string | null };
+
+/** Which of the reply card's sections are open. The app owns it, so it outlives the card. */
+export interface PlyView {
+  reasoning: boolean;
+  topMoves: boolean;
+}
+
+export const DEFAULT_PLY_VIEW: PlyView = { reasoning: true, topMoves: true };
+
 export interface Message {
   readonly type: string;
   readonly id?: string;

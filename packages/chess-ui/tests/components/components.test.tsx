@@ -1,10 +1,18 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { MoveEntry } from "../../src/format";
 import { AFTER_E4, call, E4_E5, ply, systemOne, turn } from "../../src/testing";
 import { renderWithProviders } from "../support/renderApp";
-import { START_FEN, type Ply, type Reply, type SystemOneMeta } from "../../src/types";
+import {
+  DEFAULT_PLY_VIEW,
+  START_FEN,
+  type Ply,
+  type PlyView,
+  type Reply,
+  type ReplyState,
+  type SystemOneMeta,
+} from "../../src/types";
 import { Board } from "../../src/components/Board";
 import { MoveBar } from "../../src/components/MoveBar";
 import { MoveList } from "../../src/components/MoveList";
@@ -123,9 +131,28 @@ function reply(
   };
 }
 
-function details(r: Reply | null) {
-  return renderWithProviders(<PlyDetails reply={r} />);
+/** The card as an app drives it: the app holds the view. */
+function Details({ reply, initial = DEFAULT_PLY_VIEW }: { reply: ReplyState; initial?: PlyView }) {
+  const [view, setView] = useState(initial);
+  return <PlyDetails reply={reply} view={view} onViewChange={setView} />;
 }
+
+function details(r: Reply | null, initial?: PlyView) {
+  const state: ReplyState = r ? { status: "played", reply: r } : { status: "none" };
+  return renderWithProviders(<Details reply={state} initial={initial} />);
+}
+
+function thinking(reasoning: string | null, initial?: PlyView) {
+  return renderWithProviders(
+    <Details reply={{ status: "thinking", reasoning }} initial={initial} />,
+  );
+}
+
+/** A fact row's value, found by its label. */
+const fact = (label: string, root: HTMLElement = document.body) =>
+  within(root).getByText(label).nextElementSibling?.textContent;
+
+const FACTS = ["Model", "Latency", "Cost", "Reasoning Tokens", "Illegal Attempts"];
 
 describe("MoveBar", () => {
   it("shows a move's SAN and probability, marked when it was played", () => {
@@ -141,7 +168,14 @@ describe("MoveBar", () => {
 
 describe("PlyDetails", () => {
   it("takes a title", () => {
-    renderWithProviders(<PlyDetails reply={null} title="Move 3" />);
+    renderWithProviders(
+      <PlyDetails
+        reply={{ status: "none" }}
+        view={DEFAULT_PLY_VIEW}
+        onViewChange={() => {}}
+        title="Move 3"
+      />,
+    );
     expect(screen.getByRole("heading", { name: "Move 3" })).toBeInTheDocument();
   });
 
@@ -150,11 +184,52 @@ describe("PlyDetails", () => {
     expect(screen.getByText(/Make a move/)).toBeInTheDocument();
   });
 
-  it("streams the opponent's reasoning while it thinks, in place of the last reply", async () => {
-    renderWithProviders(<PlyDetails reply={reply()} live="Weighing **Nf6**" />);
-    expect(screen.getByLabelText("thinking")).toHaveTextContent("Reasoning");
+  it("keeps its shape while the opponent thinks, streaming the reasoning into its section", async () => {
+    thinking("Weighing **Nf6**");
+    const card = screen.getByLabelText("last reply");
+    expect(card).toHaveAttribute("aria-busy", "true");
+    for (const label of FACTS) expect(fact(label)).toBe("");
+    // The move, the five facts, and the top moves.
+    expect(within(card).getAllByRole("img", { name: "loading" })).toHaveLength(7);
+    expect(screen.getByRole("button", { name: "Hide top moves" })).toBeInTheDocument();
     expect(await screen.findByText("Nf6", { selector: ".markdown strong" })).toBeInTheDocument();
-    expect(screen.queryByLabelText("last reply")).not.toBeInTheDocument();
+  });
+
+  it("spins in the reasoning section before the first token", () => {
+    thinking(null);
+    expect(screen.getAllByRole("img", { name: "loading" })).toHaveLength(8);
+    expect(screen.queryByText(/No reasoning/)).not.toBeInTheDocument();
+  });
+
+  it("keeps hidden sections hidden while it thinks, with a spinner on their toggles", () => {
+    thinking("Weighing Nf6", { reasoning: false, topMoves: false });
+    expect(screen.queryByText("Weighing Nf6")).not.toBeInTheDocument();
+    for (const name of ["Show reasoning", "Show top moves"]) {
+      const toggle = screen.getByRole("button", { name });
+      expect(toggle).toHaveAttribute("aria-expanded", "false");
+      expect(toggle.querySelector(".animate-spin")).not.toBeNull();
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Show reasoning" }));
+    expect(screen.getByText("Weighing Nf6")).toBeInTheDocument();
+  });
+
+  it("leaves the view to the app: toggling reports the new view and changes nothing itself", () => {
+    const onViewChange = vi.fn();
+    renderWithProviders(
+      <PlyDetails
+        reply={{ status: "played", reply: reply() }}
+        view={{ reasoning: true, topMoves: false }}
+        onViewChange={onViewChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Show top moves" }));
+    expect(onViewChange).toHaveBeenLastCalledWith({ reasoning: true, topMoves: true });
+    fireEvent.click(screen.getByRole("button", { name: "Hide reasoning" }));
+    expect(onViewChange).toHaveBeenLastCalledWith({ reasoning: false, topMoves: false });
+    expect(screen.getByRole("button", { name: "Show top moves" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("system 1 moves")).not.toBeInTheDocument();
+    // A move played never spins its toggles.
+    expect(document.querySelector(".animate-spin")).toBeNull();
   });
 
   it("shows a System 1 move: source, model, cost, and its top moves with the played one marked", () => {
@@ -167,7 +242,10 @@ describe("PlyDetails", () => {
     expect(screen.getByLabelText("e5 (played) probability")).toHaveAttribute("aria-valuenow", "95");
     expect(screen.getByLabelText("c5 probability")).toHaveAttribute("aria-valuenow", "3");
     expect(screen.queryByText(/Gate/)).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /reasoning/ })).not.toBeInTheDocument();
+    expect(fact("Reasoning Tokens")).toBe("0");
+    expect(fact("Illegal Attempts")).toBe("0");
+    expect(screen.getByLabelText("last reply")).toHaveAttribute("aria-busy", "false");
+    expect(screen.getByText("No reasoning for this move.")).toBeInTheDocument();
   });
 
   it("shows an LLM move with turn cost, System 1's top moves, and the reasoning open", async () => {
@@ -206,8 +284,8 @@ describe("PlyDetails", () => {
     );
     expect(screen.getByText("LLM chose")).toBeInTheDocument();
     expect(screen.getByLabelText("$0.201+ (incomplete estimate)")).toBeInTheDocument();
-    expect(screen.getByText("900")).toBeInTheDocument();
-    expect(screen.getByText("1")).toBeInTheDocument();
+    expect(fact("Reasoning Tokens")).toBe("900");
+    expect(fact("Illegal Attempts")).toBe("1");
     expect(screen.getByLabelText("Nc6 (played) probability")).toHaveAttribute(
       "aria-valuenow",
       "55",
@@ -240,12 +318,13 @@ describe("PlyDetails", () => {
     expect(screen.queryByLabelText(/Nc6/)).not.toBeInTheDocument();
   });
 
-  it("falls back to the shortlist for older games, and shows nothing without either", () => {
+  it("falls back to the shortlist for older games, and says so without either", () => {
     const shortlist = [{ uci: "g8f6", probability: 0.6 }];
     details(reply({}, systemOne({ top: undefined, shortlist })));
     expect(screen.getByLabelText("Nf6 probability")).toBeInTheDocument();
     details(reply({}, systemOne({ top: undefined, played_move_result: null })));
     expect(screen.getAllByLabelText("system 1 moves")).toHaveLength(1);
+    expect(screen.getByText("No System 1 moves.")).toBeInTheDocument();
   });
 
   it("shows why System 1 was skipped", () => {
@@ -256,12 +335,27 @@ describe("PlyDetails", () => {
   });
 
   it("shows forced and unknown sources, and a dash without a turn or model", () => {
-    details(reply({ source: "forced", meta: {} }, undefined, { turn: null }));
+    const forced = details(reply({ source: "forced", meta: {} }, undefined, { turn: null }));
     expect(screen.getByText("Forced move")).toBeInTheDocument();
-    expect(screen.getAllByText("—")).toHaveLength(1);
-    details(reply({ source: "book", model: null, meta: {} }, undefined, { turn: turn() }));
+    expect(FACTS.map((label) => fact(label, forced.container))).toEqual([
+      "semif-qwen3.5-4b",
+      "240 ms",
+      "—",
+      "—",
+      "—",
+    ]);
+    expect(screen.getByText("No System 1 moves.")).toBeInTheDocument();
+    const book = details(
+      reply({ source: "book", model: null, meta: {} }, undefined, { turn: turn() }),
+    );
     expect(screen.getByText("book")).toBeInTheDocument();
-    expect(screen.getAllByText("—")).toHaveLength(3);
+    expect(FACTS.map((label) => fact(label, book.container))).toEqual([
+      "—",
+      "240 ms",
+      "—",
+      "0",
+      "0",
+    ]);
     expect(ply().source).toBe("external");
   });
 });

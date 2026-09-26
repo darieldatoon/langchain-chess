@@ -12,6 +12,7 @@ import {
   type MoveEntry,
   type Outcome,
   type Reply,
+  type ReplyState,
 } from "@langchain-chess/chess-ui";
 import { commandKey, createCommandIds } from "./commands";
 import { apiUrl, configurableOf } from "./settings";
@@ -53,8 +54,8 @@ export interface Game {
   error: string | null;
   /** Null for a thread with no setup this app can read: it can only be shown. */
   record: GameRecord | null;
-  lastReply: Reply | null;
-  liveAnalysis: string | null;
+  /** Thinking for the whole run, so the card never falls back to the previous reply meanwhile. */
+  reply: ReplyState;
   pendingTurn: boolean;
   isThinking: boolean;
   isLoading: boolean;
@@ -197,6 +198,15 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
   const retry = useCallback(() => send({}), [send]);
 
   const isThinking = stream.isLoading;
+  const reply = useMemo(
+    (): ReplyState =>
+      isThinking
+        ? { status: "thinking", reasoning: liveAnalysis(stream.messages, turns, plies) }
+        : lastReply
+          ? { status: "played", reply: lastReply }
+          : { status: "none" },
+    [isThinking, stream.messages, turns, plies, lastReply],
+  );
 
   return {
     startFen,
@@ -206,8 +216,7 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
     outcome: values.outcome ?? null,
     error: values.error ?? null,
     record,
-    lastReply,
-    liveAnalysis: isThinking ? liveAnalysis(stream.messages, turns, plies) : null,
+    reply,
     pendingTurn: isPending(turns),
     isThinking,
     isLoading: isThinking || stream.isThreadLoading,

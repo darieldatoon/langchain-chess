@@ -6,10 +6,13 @@ import {
   DEFAULT_APP_SETTINGS,
   LEGACY_SETTINGS_KEY,
   loadAppSettings,
+  loadPlyView,
   loadSetup,
   saveAppSettings,
+  savePlyView,
   saveSetup,
   SETUP_KEY,
+  VIEW_KEY,
 } from "../src/storage";
 
 const store = (key: string, value: unknown) =>
@@ -116,5 +119,17 @@ describe("unavailable storage", () => {
     } as unknown as Storage;
     expect(saveSetup(DEFAULT_SETUP, full)).toBe(false);
     expect(saveSetup(DEFAULT_SETUP)).toBe(true);
+  });
+});
+
+describe("ply view storage", () => {
+  it("defaults, round-trips, and resets each corrupt toggle on its own", () => {
+    expect(loadPlyView()).toEqual({ reasoning: true, topMoves: true });
+    expect(savePlyView({ reasoning: false, topMoves: true })).toBe(true);
+    expect(loadPlyView()).toEqual({ reasoning: false, topMoves: true });
+    store(VIEW_KEY, { reasoning: "no", topMoves: false });
+    expect(loadPlyView()).toEqual({ reasoning: true, topMoves: false });
+    store(VIEW_KEY, "{not json");
+    expect(loadPlyView()).toEqual({ reasoning: true, topMoves: true });
   });
 });

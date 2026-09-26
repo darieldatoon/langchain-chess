@@ -40,7 +40,7 @@ describe("useGame", () => {
     expect(result.current.outcome).toBeNull();
     expect(result.current.error).toBeNull();
     expect(result.current.record).toEqual(WHITE);
-    expect(result.current.lastReply).toBeNull();
+    expect(result.current.reply).toEqual({ status: "none" });
     expect(result.current.pendingTurn).toBe(false);
     expect(result.current.threadId).toBeNull();
     expect(lastOptions.current).toMatchObject({ assistantId: "chess", apiKey: undefined });
@@ -110,9 +110,10 @@ describe("useGame", () => {
       { ply: 0, san: "e4", source: "external" },
       { ply: 1, san: "e5", source: "systemone" },
     ]);
-    expect(result.current.lastReply?.ply.san).toBe("e5");
-    expect(result.current.lastReply?.turn?.id).toBe("turn-1");
-    expect(result.current.lastReply?.fenBefore).toBe(AFTER_E4);
+    expect(result.current.reply).toMatchObject({
+      status: "played",
+      reply: { ply: { san: "e5" }, turn: { id: "turn-1" }, fenBefore: AFTER_E4 },
+    });
     expect(result.current.pendingTurn).toBe(true);
     expect(result.current.error).toBe("nope");
   });
@@ -201,16 +202,19 @@ describe("useGame", () => {
     expect(result.current.pendingMove).toBeNull();
   });
 
-  it("streams live analysis only while a run is loading", () => {
-    resetFake({}, [
-      new HumanMessage({ id: "h", content: "e2e4" }),
-      new AIMessage({ id: "a", content: "Considering e5." }),
-    ]);
+  it("thinks for the whole run, streaming the analysis once it has text", () => {
+    resetFake(E4_E5, [new HumanMessage({ id: "h", content: "e2e4" })]);
     const idle = renderHook(() => useGame("", WHITE));
-    expect(idle.result.current.liveAnalysis).toBeNull();
+    expect(idle.result.current.reply.status).toBe("played");
     fake.isLoading = true;
+    const started = renderHook(() => useGame("", WHITE));
+    expect(started.result.current.reply).toEqual({ status: "thinking", reasoning: null });
+    fake.messages = [...fake.messages, new AIMessage({ id: "a", content: "Considering e5." })];
     const busy = renderHook(() => useGame("", WHITE));
-    expect(busy.result.current.liveAnalysis).toBe("Considering e5.");
+    expect(busy.result.current.reply).toEqual({
+      status: "thinking",
+      reasoning: "Considering e5.",
+    });
     expect(busy.result.current.isThinking).toBe(true);
   });
 

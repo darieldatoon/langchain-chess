@@ -60,6 +60,19 @@ describe("App", () => {
     expect(runUrl).toHaveBeenCalledWith("p-app", "run-3");
   });
 
+  it("keeps the reply card's toggles from game to game", async () => {
+    show(fakeApi());
+    fireEvent.click(await screen.findByRole("button", { name: "Load more" }));
+    await waitFor(() => expect(screen.getAllByRole("button", { name: /1-0/ })).toHaveLength(2));
+    const [first, second] = screen.getAllByRole("button", { name: /1-0/ });
+    fireEvent.click(first);
+    fireEvent.click(screen.getByRole("button", { name: "Hide top moves" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hide reasoning" }));
+    fireEvent.click(second);
+    expect(screen.getByRole("button", { name: "Show top moves" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show reasoning" })).toBeInTheDocument();
+  });
+
   it("explains a thread without a game record", async () => {
     show(fakeApi());
     fireEvent.click(await screen.findByText("No record"));

@@ -1,6 +1,7 @@
-// localStorage for the two things the UI remembers; a game's own setup is in its thread. Every
+// localStorage for the three things the UI remembers; a game's own setup is in its thread. Every
 // reader tolerates missing, old, or corrupt entries, and blocked storage; every writer reports
 // whether it landed. The pure parsing lives in setup.ts and settings.ts.
+import { DEFAULT_PLY_VIEW, type PlyView } from "@langchain-chess/chess-ui";
 import { isRecord } from "./settings";
 import { DEFAULT_SETUP, sanitizeSetup, setupFromContext, type Setup } from "./setup";
 
@@ -8,6 +9,7 @@ export const SETUP_KEY = "langchain-chess:setup";
 export const APP_KEY = "langchain-chess:app";
 /** Read only while the keys above are absent: one global settings blob held key and knobs. */
 export const LEGACY_SETTINGS_KEY = "langchain-chess:settings";
+export const VIEW_KEY = "langchain-chess:view";
 
 export interface AppSettings {
   apiKey: string;
@@ -92,4 +94,18 @@ export function loadAppSettings(storage = browserStorage()): AppSettings {
 
 export function saveAppSettings(settings: AppSettings, storage = browserStorage()): boolean {
   return write(storage, APP_KEY, settings);
+}
+
+/** Each toggle falls back to its default on its own, so a missing or corrupt one resets only it. */
+export function loadPlyView(storage = browserStorage()): PlyView {
+  const stored = parse(read(storage, VIEW_KEY));
+  const flag = (key: keyof PlyView) => {
+    const value = isRecord(stored) ? stored[key] : undefined;
+    return typeof value === "boolean" ? value : DEFAULT_PLY_VIEW[key];
+  };
+  return { reasoning: flag("reasoning"), topMoves: flag("topMoves") };
+}
+
+export function savePlyView(view: PlyView, storage = browserStorage()): boolean {
+  return write(storage, VIEW_KEY, view);
 }
