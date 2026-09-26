@@ -15,6 +15,7 @@ from langchain_chess.contract import guard
 from langchain_chess.errors import ChessContractError
 from langchain_chess.middleware.core import ChessCore
 from langchain_chess.middleware.forced_move import ForcedMoveMiddleware
+from langchain_chess.middleware.stall_retry import StallRetry
 from langchain_chess.middleware.summarization import ChessSummarization, NoSummarization
 from langchain_chess.prompt import SYSTEM_PROMPT, Memory
 from langchain_chess.recorder import CallRecorder
@@ -109,6 +110,7 @@ def create_chess_agent(
         stack.append(_summarizer(model, summarization, recorder=recorder, max_retries=max_retries))
     elif fixed_topology:
         stack.append(NoSummarization())
+    stack.append(StallRetry())
 
     graph = create_agent(
         model or NoModel(),
