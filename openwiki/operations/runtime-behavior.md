@@ -1,22 +1,23 @@
 ---
 type: operations runtime evidence
-title: Runtime behavior (LangSmith evidence)
-description: Runtime complement to the static docs for the chess graph deployed as langchain-chess-app. It lists code-anchored checks (one model call per turn, illegal-reply retries, System 1 gate and tournament, ranking retries and the skipped path, summarization, MAX_TOKENS, UCI fallbacks), explains how to read LangSmith traces against the code, and holds a dated section for each pull plus a ranked list of runtime findings.
+title: Runtime Behavior
+description: Runtime knobs, defaults and trace-reading guide for the chess graph deployed as langchain-chess-app. It lists server defaults and how knobs are resolved, then code-anchored checks (one model call per turn, illegal-reply retries, System 1 gate and tournament, ranking retries and the skipped path, summarization, MAX_TOKENS, UCI fallbacks), explains how to read LangSmith traces against the code, and holds a dated section for each pull plus a ranked list of runtime findings.
 tags: [runtime, langsmith, traces, latency, cost, operations, systemone, turn-lifecycle]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T04:03:54.007Z
 sources:
   - id: openwiki-source-65aad166aa88a58cc7a8319a
     resource: repo://apps/server/langchain_chess_server/context.py
   - id: openwiki-source-c9b903d37e22daedc4499a4b
     resource: repo://apps/server/langchain_chess_server/graph.py
+  - id: openwiki-source-e3b0d2af80ee0702b2be4a6b
+    resource: repo://apps/server/langchain_chess_server/settings.py
   - id: openwiki-source-611421396243f4b643f6d94a
     resource: repo://apps/web/src/useGame.ts
   - id: openwiki-source-3ae14faf8cc85a90b40ed182
     resource: repo://libs/chess/langchain_chess/agent.py
   - id: openwiki-source-fc393bc7c06df7c3f85ece92
     resource: repo://libs/chess/langchain_chess/middleware/core.py
+  - id: openwiki-source-4a4d83b98e02f02b6b258e76
+    resource: repo://libs/chess/langchain_chess/middleware/summarization.py
   - id: openwiki-source-cf036aa5f44c795ee62f143f
     resource: repo://libs/chess/langchain_chess/recorder.py
   - id: openwiki-source-20ebabb38d27c2e3522a9062
@@ -25,7 +26,10 @@ sources:
     resource: repo://libs/systemone/langchain_chess_systemone/middleware.py
   - id: openwiki-source-79af0d552c660a058f4241b8
     resource: repo://libs/systemone/langchain_chess_systemone/ranker.py
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T04:03:54.007Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T05:03:34.528Z
 ---
 
 # Runtime behavior (LangSmith evidence)
@@ -147,6 +151,30 @@ a code-derived watch item, marked **Correlated** or **Hypothesis**, with no Obse
    strict. If sampled hybrid turns almost always reach the LLM, System 1 adds latency without
    saving LLM calls. *Implication:* check the played/shortlist split before you change
    `threshold` or `tournament_threshold` defaults, and compare with the README measurements.
+5. **Summarization is probably dead under defaults.** (Correlated, check 7.) The server default is
+   `memory="none"`, so `ChessSummarization` is only exercised when someone opts in. When a
+   caller does opt in, it also needs a model whose input limit is known.
+   *Implication:* changes to the summarization path are unlikely to show up in production traces.
+   Rely on `libs/chess/tests` and the opt-in live tests for coverage.
+
+Failing traces: none can be reported for this pull, because the sample was not readable (see
+"Status of evidence").
+
+## This pull
+
+*Scope: the LangSmith pull for the `langsmith` connector used for this wiki revision
+(frontmatter-verified date).*
+
+- **Observed:** no figures. The raw sample was not accessible when this page was generated, so no
+  bucket composition, baseline medians, per-call-kind latency or token totals, LLM calls per
+  turn, System 1 gate split, tournament frequency or error signatures are recorded.
+- **Cost/latency note (observed over the sampled traces):** none available for this pull.
+
+When a later refresh can read the sample, fill in this section with that pull's numbers:
+the bucket counts, baseline medians, the per-kind (`llm`, `summary`, `systemone`) call counts and
+latency or token totals, and the results of the checks above. Keep the durable sections unchanged
+unless the evidence contradicts them.
+`threshold` or `tournament_threshold` defaults, and compare with the README measurements.
 5. **Summarization is probably dead under defaults.** (Correlated, check 7.) The server default is
    `memory="none"`, so `ChessSummarization` is only exercised when someone opts in.
    *Implication:* changes to the summarization path are unlikely to show up in production traces.

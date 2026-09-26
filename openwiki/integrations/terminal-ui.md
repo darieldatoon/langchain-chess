@@ -3,10 +3,9 @@ type: integration
 title: Terminal UI (lcchess play) and CLI options
 description: How `lcchess play` runs a Textual game against an in-process chess agent (board widget, move input, key bindings, start/retry/new game), how the shared AgentOptions, build_agent and run_config configure every CLI command, and how to install the CLI with uv.
 tags: [cli, tui, textual, lcchess, agent-options, tracing, installation]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T04:03:54.007Z
 sources:
+  - id: openwiki-source-4a4d83b98e02f02b6b258e76
+    resource: repo://libs/chess/langchain_chess/middleware/summarization.py
   - id: openwiki-source-abe54986bd51a87223916132
     resource: repo://libs/cli/langchain_chess_cli/main.py
   - id: openwiki-source-f455a4d6f1caefdab4688388
@@ -35,7 +34,10 @@ sources:
     resource: repo://mise.toml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T04:03:54.007Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T05:03:34.528Z
 ---
 
 # Terminal UI (`lcchess play`) and CLI options
@@ -84,8 +86,8 @@ uv tool install "langchain-chess-cli[anthropic] @ git+https://github.com/darield
 
 - For any policy except `llm`, it adds `SystemOneMiddleware` with the System 1 knobs.
 - For `systemone`, no chat model is built, because there is nothing behind System 1. The middleware gets `threshold=0.0`, `tournament_threshold=0.0` and `has_model=False` so that System 1 always plays, and `memory` is forced to `"none"`.
-- If there is a model and `summary_trigger_tokens` is set, it builds a `SummarizationMiddleware` with a token trigger, `DEFAULT_KEEP` and `CHESS_SUMMARY_PROMPT`. Without the flag, `memory="summarize"` relies on the model's profile. Core rejects a profileless model with a `ChessContractError` that mentions `summary_trigger_tokens` ([test_options.py](../../libs/cli/tests/test_options.py)).
-- `default_model` calls `models.chat_model(model, reasoning_effort)`, which runs `init_chat_model` with `max_tokens=32000` and a span name equal to the bare model name. For gateway specs, it also adds a known `max_input_tokens` profile ([models.py](../../libs/cli/langchain_chess_cli/models.py)).
+- The CLI builds no summarization middleware of its own. It passes `memory` to `create_chess_agent`, and core's summarization uses a fractional trigger of the model's input limit. Before building, `build_agent` checks `input_limit(model)` (the profile's `max_input_tokens`). If `memory="summarize"` and the model has no known limit, it raises a `ChessContractError` saying the model "has no known input limit, so it can't use memory summarize; use memory none". With `policy=systemone`, summarize is silently dropped because there is no model ([test_options.py](../../libs/cli/tests/test_options.py)).
+- `default_model` calls `models.chat_model(model, reasoning_effort)`, which runs `init_chat_model` with `max_tokens=32000` and a trace span name equal to the bare model name (from `model_identity`, so gateway models don't all appear as `ChatOpenAI`). It passes `reasoning_effort` only when set, because models without reasoning reject the parameter. For `langsmith:` gateway specs with a context window known to the pricing data, it adds a profile with `max_input_tokens = window - 32000`. Native provider profiles are never replaced ([models.py](../../libs/cli/langchain_chess_cli/models.py)).
 
 Each surface chooses its own draw-claim policy and checkpointer. `play` uses `DRAW_CLAIMS = "auto"` from `tui/app.py` and a fresh `InMemorySaver`. `uci` uses `draw_claims="never"`, which leaves draws to the GUI. Games in the TUI therefore last only as long as the process.
 

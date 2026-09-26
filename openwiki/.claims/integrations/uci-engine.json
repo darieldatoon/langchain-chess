@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:428860f84bfa99f5c0bcb77fd4b2764db993201af9efa661a093c175b2c808c1",
+  "pageVersion": "sha256:fea7deffaf3867c7ce5870d85ed2679365bd59e2cd0d45d44668c0c478256ded",
   "claims": [
     {
       "id": "claim_1df835d94760452295ba3810bdc75772",
@@ -190,19 +190,19 @@
     },
     {
       "id": "claim_2fc8e4761bfb4a21af3d473813d2939b",
-      "statement": "The engine advertises case-insensitive options Model, ReasoningEffort, SystemOneModel, Policy, Threshold (0..1), K (1..255), Memory and Seed (0..2^31-1), not Ponder; invalid or unknown options produce info strings and are ignored.",
+      "statement": "The engine advertises case-insensitive options Model, ReasoningEffort (default/low/medium/high, where default maps to no effort), SystemOneModel, Policy, Threshold (0..1), K (1..255), Memory (none/summarize) and Seed (0..2^31-1), not Ponder; invalid or unknown options produce info strings and are ignored.",
       "evidence": [
         {
-          "resource": "repo://libs/cli/langchain_chess_cli/uci/engine.py#L233-L245",
+          "resource": "repo://libs/cli/langchain_chess_cli/uci/engine.py#L239-L251",
           "version": "repo-lines-v1:sha256:944b6e5e8ac5070b813d940be79f91fccec3e29aa14c7c0bbbff353a4c54f35e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2ZTZmYzBmNjI2MzRmODljZTM2NjMwMWRmZGUyNjVhMTc4NGVlZGIxOTRmYjcwYTFkNDMxZWZlZDM4YjcxODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwNjk5MGEwYjBhZmQ3ZDc0M2U1ODBhYTA4YTdhNmQ0ZWQ3ZGU2ZGUwNzYzNTBkNjk2NDMzOGNmZDc1OWVmYzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhNDllNDhkZGFjY2RmZmRmYzU3NTE0ZTU5NmFiOTlmYThkMjg1YjQ4YzgxNzMxYzlkZDJiNmIyOTcwODEyYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZmE2NjI0MWQyNmM2YTQ0MjY2YjI0Mjg1YzU2Mjc0YzQ0MTJiYWIzM2RjZDkwZjBmNTEwNGQ5ODg4YWFhMDYifQ"
         },
         {
-          "resource": "repo://libs/cli/langchain_chess_cli/uci/engine.py#L91-L125",
-          "version": "repo-lines-v1:sha256:0965767825582142a0603d770ba423c832b8ba3b01e5423f4d96a912eb47dfc8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyY2YzM2I2YzllYjk5ZjVhYjZlMWUzZGM5NDY0ZmY3YTkzNjAxZWJhMjEwOWNjNzhjMDE4ZTcxOTdhZWJjMDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmZTNhOWViNjY4NzM3YWZiM2NmMzEyYzk4OGUyMGU1MWJkN2U1MjkyMzkyODU3NGViODIzMmQxODU0OWU1NjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiOGExOWYyNjNkYTE3NDcxYzdhNDBlZjdlMTc2YjM1ZTI0Y2FmYmZkYzc4NDM4NjllMGZkYzFmOWFhM2Q3MjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjYjkxYTVkOTVkNTRjNTRmZDFjNzJkMjE4MTIwODgyMTgzOGRmODQ4ZDEwOGJlNzJhZGM2NzliNDg3MzI3ODMifQ"
+          "resource": "repo://libs/cli/langchain_chess_cli/uci/engine.py#L72-L131",
+          "version": "repo-lines-v1:sha256:9323f6587cfe34b3a63472f48717795ae819e5680552577655bb476c7a6aa072:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyNWRiNWU5NjZiZTU2ODg0ZjI2NjI0ZjZiZTVlZDY4MjM3ZDkxYjJlOWYwOTJmYzUwNzU0ZTZjMTU3NGYyOTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmZTNhOWViNjY4NzM3YWZiM2NmMzEyYzk4OGUyMGU1MWJkN2U1MjkyMzkyODU3NGViODIzMmQxODU0OWU1NjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiOGExOWYyNjNkYTE3NDcxYzdhNDBlZjdlMTc2YjM1ZTI0Y2FmYmZkYzc4NDM4NjllMGZkYzFmOWFhM2Q3MjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjYjkxYTVkOTVkNTRjNTRmZDFjNzJkMjE4MTIwODgyMTgzOGRmODQ4ZDEwOGJlNzJhZGM2NzliNDg3MzI3ODMifQ"
         },
         {
-          "resource": "repo://libs/cli/tests/test_uci_engine.py#L279-L304",
-          "version": "repo-lines-v1:sha256:5a434d5ef25525c5c0418c3c7d7815fba3a02b002ce137ef8cc963875996f24a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjNjhhZGQ4NWIyZTBlN2JlZGUwZDQyYWQ2NTExNjg0NTJkNTU4MzgwNWNmOGM2YTIzNDkwMTQ1M2U1ZTBjZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiNzBiM2FmY2JiZDE1Mzk3NDMzNzUxMmU2MzM2YzM3Zjc2MTRmNDlhMTY3OTU1NDBkMTg1NTZjMjI2NWZhMjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5ZDU3ZDQ2MDZiMTY3N2JlOWM3ZDYxZTc0NWFjZDI4Zjc3YWMzZTZhZDcyN2Y2MDZmY2Y5NTg2ZDc3OTc3ZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhZThhZjYwNGEwN2IzYzM0NTY2OWYzYzJkMDRjOTBkOWI0ZGFhNTg0ZjIzY2ZhYjgxZTA3NmM4YWRmYTc3ZmMifQ"
+          "resource": "repo://libs/cli/tests/test_uci_engine.py#L283-L318",
+          "version": "repo-lines-v1:sha256:1d496671731c60832bd0bc099e747eb1f896d8aeb2b27faf08dc555f80e9b843:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjNjhhZGQ4NWIyZTBlN2JlZGUwZDQyYWQ2NTExNjg0NTJkNTU4MzgwNWNmOGM2YTIzNDkwMTQ1M2U1ZTBjZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzNjMxMTQxYWExNDMzZDllOWI4YTFjZmE5MGM5MmI2ZDliMThlNmRmMDUxZmNmYzE3YTg5ODM5ODRiYjE4MTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5ZDU3ZDQ2MDZiMTY3N2JlOWM3ZDYxZTc0NWFjZDI4Zjc3YWMzZTZhZDcyN2Y2MDZmY2Y5NTg2ZDc3OTc3ZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhZThhZjYwNGEwN2IzYzM0NTY2OWYzYzJkMDRjOTBkOWI0ZGFhNTg0ZjIzY2ZhYjgxZTA3NmM4YWRmYTc3ZmMifQ"
         }
       ]
     },
@@ -243,11 +243,11 @@
       "statement": "`lcchess uci` runs the agent in-process over stdin/stdout with logging on stderr so stdout carries only protocol output; stdin is read in an executor and end of input is treated as quit.",
       "evidence": [
         {
-          "resource": "repo://libs/cli/langchain_chess_cli/main.py#L68-L117",
-          "version": "repo-lines-v1:sha256:58e22a0bb118aea6f92d09ac57a556e6cba8c4fc1494ff3032c4400f2d6256dd:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NDhiZGVjZGIwZmVhZDY4M2YwY2I4NjVkNmM5YThiZDcyYTMxNzZhYThjOWY5YWM2ZWU5ZWU3ODhkYjY1NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1MDI4YmIwYmE1MzMzNjMxMDU5NTQ0ZGM0YzE5MGM2NWFkYjQwNzFlZmFlNGEwZWNlYTlhZDgzYmEzMGQ3NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzZDE3MWRlNzU0MzFhMDIxYTBkOTRmYTc2ZmFiZjBkNzEzOWM4OThjMWEwYjQ0YjQzY2E2MDkwM2ZhMWI4NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkYjc3YTM0NDUyMTYzYTkwMWVjMTE5M2YxNjY1YWVlNWFjMzZkN2MwMGNkY2JkYWE1ZjU2OWIyY2RmOTk1MzIifQ"
+          "resource": "repo://libs/cli/langchain_chess_cli/main.py#L68-L115",
+          "version": "repo-lines-v1:sha256:d1ccab2d38623c43c0b5ed12cd9b280813c878b7bff92fc954515410b5ec16c0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NDhiZGVjZGIwZmVhZDY4M2YwY2I4NjVkNmM5YThiZDcyYTMxNzZhYThjOWY5YWM2ZWU5ZWU3ODhkYjY1NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1MDI4YmIwYmE1MzMzNjMxMDU5NTQ0ZGM0YzE5MGM2NWFkYjQwNzFlZmFlNGEwZWNlYTlhZDgzYmEzMGQ3NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzZDE3MWRlNzU0MzFhMDIxYTBkOTRmYTc2ZmFiZjBkNzEzOWM4OThjMWEwYjQ0YjQzY2E2MDkwM2ZhMWI4NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkYjc3YTM0NDUyMTYzYTkwMWVjMTE5M2YxNjY1YWVlNWFjMzZkN2MwMGNkY2JkYWE1ZjU2OWIyY2RmOTk1MzIifQ"
         },
         {
-          "resource": "repo://libs/cli/langchain_chess_cli/uci/engine.py#L380-L391",
+          "resource": "repo://libs/cli/langchain_chess_cli/uci/engine.py#L386-L397",
           "version": "repo-lines-v1:sha256:73d9b7e6312644a6b8f0e72ab22f5baca204ce5e1cf2a5460a9d98553f131c4f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4MTM4YWI2OWM2NzQ5M2ZkZjdlZTM4N2FmYTkxYTNkNWUyNmU3YTQwM2Q5Yzg3MTgzZThlZDQzZTUyMGZmYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2YWRmMjIxY2ZlNjYwYTRmNjAzNDYwYTQxYzRhNjBjNmUyYzk5MTc4ODY4MjA5MmRiOTkwODNjMzRiODEzNTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkZGFkZmNiOTdkNDU5YzI2NjllM2Q3Njg0NTJlZjA3OGYyNjlmMzQ0ZWEzNjA4MTg5N2NmMWU3MzVkZDU0YjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -271,10 +271,20 @@
           "version": "repo-lines-v1:sha256:5ea39d409d57d2eb00b9b0ecb70b1915668acf7e7e2b58455809625ef0891f17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NWYwN2ViMmFiZjI0ZDMxNGJkOTZhNWNhM2I1MmEzNzExMTU1ZDBhZTgwZTc3N2Y0MTM2NTE5MWM0MDI3NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiODBiMjk4MWQwNjM5OTdjNWFkOGEzZDBmMWEwMGQ2NTUwYzAwZThiODZmZmQ2NThjYmNiYjM5NGQ1NjExMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_455777332e164299af44760effbaa00b",
+      "statement": "The `lcchess uci` command's `--memory` flag accepts only `none` (default) or `summarize`, and the command has no summary-trigger-tokens flag.",
+      "evidence": [
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/main.py#L62-L106",
+          "version": "repo-lines-v1:sha256:c74f9607c0172461835a177125f2f84aed5be87d615f46d178d38605ddcb03ab:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyNTQ5MDNmMzU1ZDBkNGZjY2EzYjk5YjY0MjBkYjFmOGM2OTZlZmI4MGFlNDA2MGIyMTJiMjMzYTU5ZWNkOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxMDBiMmIyMmQ0YTg1NzVhNWUzZjM0NGRhZGRhYzdiYTkzYzc4MmZlMjEyZDAwMjkyYWQwZDNmYzY3NTBmZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiOTg4YjMwZTE2MmI5MzllMzU5OWNmYTJhZGIzNzNiNTdiMDNhZGFlMjI2NzI1ZjAzMTcxMzI0ZjFmMzIwODQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-26T04:03:54.007Z"
+    "at": "2026-09-26T05:03:34.528Z"
   }
 }

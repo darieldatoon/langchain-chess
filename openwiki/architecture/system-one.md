@@ -3,9 +3,6 @@ type: architecture component
 title: "System 1: SystemOneMiddleware, ranker and tournament"
 description: How SystemOneMiddleware ranks the allowed moves with a System 1 classifier (SemIf or Jev via GatewayRanker), gates on margin or confidence to either play the top move or suggest a shortlist, runs a seeded tournament for more options than one request holds, and behaves when ranking fails with and without an LLM.
 tags: [systemone, middleware, ranker, tournament, semif, jev, gate, typesafe]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T04:03:54.007Z
 sources:
   - id: openwiki-source-65aad166aa88a58cc7a8319a
     resource: repo://apps/server/langchain_chess_server/context.py
@@ -33,7 +30,12 @@ sources:
     resource: repo://libs/systemone/tests/test_ranker.py
   - id: openwiki-source-21c9b563e49d7a2d01a3dfd8
     resource: repo://libs/systemone/tests/test_tournament.py
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T04:03:54.007Z" }
+  - id: openwiki-source-fd0e9360c0eb5b2cec5ea440
+    resource: repo://packages/chess-ui/src/types.ts
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T05:03:34.528Z
 ---
 
 # System 1: SystemOneMiddleware, ranker and tournament
@@ -125,7 +127,8 @@ same string. The `terse` style keeps only the SAN plus the first tactical phrase
 - **Threshold.** The default is `0.9`. After a tournament, `tournament_threshold` replaces it
   when set; otherwise `threshold` applies. A final over fewer moves inflates the margin, and
   SemIf's confidence depends on the option count, so a tournament gets its own threshold. The
-  applied value is recorded as `threshold_used`.
+  applied value is recorded as `threshold_used`. The measurements behind the defaults are in the
+  README's [Decisions and measurements](../../README.md#decisions-and-measurements) section.
 - **Plays** when `threshold < 1.0 and signal >= threshold`. So `threshold=0` always plays
   (System 1 alone) and `threshold=1` never plays (a pure pruner), even for a distribution
   of 1.0/0.0.
@@ -227,6 +230,21 @@ succeeds. `policy="llm"` omits the middleware entirely. `hybrid` (the default) u
 knobs `gate`, `threshold`, `tournament_threshold`, `k`, `top_p`, `style`, `with_eval`,
 `with_nouls` and `systemone_model`.
 
+The two surfaces wire the ranker differently:
+
+- **Server** (`apps/server/langchain_chess_server/graph.py`). `systemone()` builds a
+  `GatewayRanker` itself, passing `style`, `with_eval` and `with_nouls` plus a
+  `TypeSafeClassifier` from an `lru_cache`d factory keyed by model, API key and base URL (15 s
+  timeout). It hands that ranker to `SystemOneMiddleware`, which receives only the gate,
+  threshold, `k`, `top_p` and `has_model` knobs. Graphs built for the same System 1 model and
+  credentials therefore share one client. The knobs are declared on `ChessContext`
+  (`context.py`). `systemone_model` is documented as `semif-qwen3.5-4b` (the default) or
+  `typesafe/jev-latest`. `with_eval` and `with_nouls` default to `False` and are described as
+  telemetry.
+- **CLI** (`libs/cli/langchain_chess_cli/options.py`). It passes `style`, `with_eval` and
+  `with_nouls` straight to `SystemOneMiddleware`. With no `ranker`, the middleware builds its
+  own `GatewayRanker`, whose client is created lazily on first use.
+
 ## Telemetry
 
 `ply_meta` writes `Ply.meta["SystemOneMiddleware"]` (`SystemOneMeta`) with these fields:
@@ -284,3 +302,4 @@ The consolidated findings live in [runtime behavior](../operations/runtime-behav
   - How often do positions exceed 16 allowed moves and so pay for two sequential requests?
   - Do transient-error retries or the `skipped` path fire at all in production?
   - How much of a turn's wall time does System 1 add next to the LLM call?
+ll time does System 1 add next to the LLM call?

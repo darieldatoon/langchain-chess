@@ -3,9 +3,6 @@ type: operations guide
 title: Deployment, image build and CI
 description: How the langchain-chess Agent Server image is built from the uv workspace (langgraph.json source.kind uv), why dockerfile_lines copies every member pyproject.toml, how the web UI is built into apps/server static, and how ci.yml and deploy.yml gate and deploy the agent and review targets.
 tags: [deployment, ci, docker, langgraph, uv-workspace, github-actions]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T04:03:54.007Z
 sources:
   - id: openwiki-source-715dace563ef484b6e8bd1e2
     resource: repo://.dockerignore
@@ -19,6 +16,10 @@ sources:
     resource: repo://.gitignore
   - id: openwiki-source-b9886f4aee6bc16bdaea61ff
     resource: repo://apps/server/langchain_chess_server/app.py
+  - id: openwiki-source-c9b903d37e22daedc4499a4b
+    resource: repo://apps/server/langchain_chess_server/graph.py
+  - id: openwiki-source-e3b0d2af80ee0702b2be4a6b
+    resource: repo://apps/server/langchain_chess_server/settings.py
   - id: openwiki-source-f5485618fdea35eba238fd7b
     resource: repo://apps/server/pyproject.toml
   - id: openwiki-source-0c7af728d91c2bdeaf4f3679
@@ -33,7 +34,10 @@ sources:
     resource: repo://pyproject.toml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T04:03:54.007Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T05:03:34.528Z
 ---
 
 # Deployment, image build and CI
@@ -81,7 +85,7 @@ The image needs three things: the uv workspace (`libs/`, `apps/server/`, the loc
 
 `mise run build` runs `pnpm --dir apps/web exec vp build`. `apps/web/vite.config.ts` sets `base: "/ui/"` and `build.outDir: "../server/langchain_chess_server/static"` with `emptyOutDir: true`, so the bundle goes directly into the Python package.
 
-`app.py` mounts that directory at `/ui` with `StaticFiles(..., html=True)`, but only if the directory exists. In a plain checkout there is no build output. In that case `/ui/` returns a 404 JSON message telling you to run `mise run build`, and `/ui/config` still answers. The UI is mounted under `/ui`, never `/`, because `/` is the Agent Server's health check. It uses `app.mount` rather than `app.frontend()` so that the Agent Server's own `/ui` routes don't shadow it. `apps/server/tests/test_app.py` tests both branches, with `static_dir=None` and with a temporary directory.
+`app.py` builds its FastAPI app through `create_app(static_dir=STATIC_DIR)`, where `STATIC_DIR` is the package's `static/` directory. It mounts that directory at `/ui` with `StaticFiles(..., html=True)`, but only if the directory exists. In a plain checkout there is no build output. In that case `/ui/` returns a 404 JSON message telling you to run `mise run build` (or use `vp dev`). The JSON routes are registered whether or not the build exists, so they keep working without it: `/ui/config` (the graph id `chess`, plus the `ChessContext` schema and defaults) and `/ui/model-limit`. A bare `/ui` redirects to `/ui/`. The UI is mounted under `/ui`, never `/`, because `/` is the Agent Server's health check. It uses `app.mount` rather than `app.frontend()`, because `app.frontend()` routes have low priority and the Agent Server's own `/ui` mount would answer first. `apps/server/tests/test_app.py` tests both branches, with `static_dir=None` and with a temporary directory holding an `index.html` and an asset.
 
 **Ordering matters:** the UI has to be built before the image, or the deployed server has no UI. `mise run deploy` enforces this order:
 

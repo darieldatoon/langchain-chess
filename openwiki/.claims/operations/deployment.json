@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0244d80770b910178ba95e6dac19d199fd0c724ccbdc7fca3042b88271d598af",
+  "pageVersion": "sha256:11f9a4c776e53570c84a8df719528e080458a4763022f99aa8155573c249163e",
   "claims": [
     {
       "id": "claim_43f5f214bfd64eabb5ac8d4b69f8cc47",
@@ -68,11 +68,11 @@
       "evidence": [
         {
           "resource": "repo://apps/server/langchain_chess_server/app.py#L1-L59",
-          "version": "repo-lines-v1:sha256:315bdcecde30301bf32313144080d37630e7b0f7653c0786f74482231af2446c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYzMyODk2NDRhZDViOTg0MjA5OTEzZmVjZWNmYjBjZGNjZTM5YTQ2OWM0MzgzMTBmZWY0ZjMyMmZiNjY4ZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNzUyOGIwMjRjMzQ2YmIwZGJjMmVkZjQ2YjMyZGI1M2I0NzEwMDQwMDg4ZmQyOTRhNWM3NjEzNjkwNzU0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:a18321abd0cf97b18da7923bc356160f472f472468b3dff5e0043f1cb17d96da:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYzMyODk2NDRhZDViOTg0MjA5OTEzZmVjZWNmYjBjZGNjZTM5YTQ2OWM0MzgzMTBmZWY0ZjMyMmZiNjY4ZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNzUyOGIwMjRjMzQ2YmIwZGJjMmVkZjQ2YjMyZGI1M2I0NzEwMDQwMDg4ZmQyOTRhNWM3NjEzNjkwNzU0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://apps/server/tests/test_app.py",
-          "version": "repo-file-v1:sha256:eab8981a0820847fb04b0e52b90c328815632a5e904abac1ddbcc9cc4d70c3c8"
+          "version": "repo-file-v1:sha256:f16c1b35076fff60fd8d89e34ea9e3efe1c773853062684b3f78042eed24414c"
         }
       ]
     },
@@ -195,10 +195,52 @@
           "version": "repo-lines-v1:sha256:3f7f54e6d3cf6c8f574e43b4f655dbb5ee68853f62e913e752bb1668acf92b10:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Y3ZjU0ZTZkM2NmNmM4ZjU3NGU0M2I0ZjY1NWRiYjVlZTY4ODUzZjYyZTkxM2U3NTJiYjE2NjhhY2Y5MmIxMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Y3ZjU0ZTZkM2NmNmM4ZjU3NGU0M2I0ZjY1NWRiYjVlZTY4ODUzZjYyZTkxM2U3NTJiYjE2NjhhY2Y5MmIxMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjAzOTYzNzQ1M2U5ODY4MTQwYzZlMjIyMmJiNWIwOTQ1YjFhMmRjY2UxNzkwNTdhMDgwNjMxODAwZjk0OTNkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTUyMDJiOWNkM2NhNjhkMGZiZTU0ODBiNjJiM2U2NzQ2NWViNWY5NzNhYjk3ZDM4MjQ5OGIwZTRjOGMyNjJhMCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_29c00f0ca9d3416cbddaf4a8bbb9eb96",
+      "statement": "The server's custom app registers /ui/config (graph id, ChessContext JSON schema and defaults) and /ui/model-limit regardless of whether the static build exists, and redirects a bare /ui to /ui/.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/app.py#L25-L62",
+          "version": "repo-lines-v1:sha256:e72f9f32ff3e28d5c7cb8d16e8e2ccded8633fda8a42bfd12900c4eaef28449c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwOTBlZWFkYTBmY2IwOGJkMmM1ZTMyMDNjYzBlZTk1NTNkMmFhMjE1M2MwZDc5YTU4OTdiMDYwOGQ5NTRlZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkNjdiNDY2Mzc4NzVjM2JiN2Y5MDNiMWRiODczNGI0YTI5NjY4NWRmNGRiZTY2YTRmNmNlZjdmZGM0MTE2M2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkYTM4NWEwMmFhOWI5Mjk2NWZjNmIxY2UyNTM5ZDBjMjE3ZjQxNmIwMmYyMjU3NjIwMGUwNDA4NDk2MGQ3NjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3ZjdlNzJkYTFjMTA1MmNjMDBhY2U2MDBjMGNlZjljODAzZGViYWM5NmFlN2ZjYmY5MGViMTlmZjlmMTNhMTQifQ"
+        },
+        {
+          "resource": "repo://apps/server/tests/test_app.py#L16-L32",
+          "version": "repo-lines-v1:sha256:6b00dd508e70061169da03d6d69b4bd616f1db901469af3288282bd251ef48ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjN2E1NWFjZWVhZjgyZTMyYzcyMmJlZTQ1YmM2NDU2NGVhYzBlYzQ0OGNmMzczNGVjN2M1ZDgzOWIyMWJkN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MzU1NDFiYjA1MDJkZjNhZDIzYjBlMzZkOTViNmNkMDAzMTcyYWRlZTEzMGVhZmNjYmM2YTRkNzJkZjVhZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzZGVhZTkyMTI1OWJmMzU1OGU3OTg4MWQwNjAxODZjY2NhYTEwNzEzNTM1ZWJiYzdhYWViZGZhZWViNjdhZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5Y2IxMWRjYjViZWQyMTkxYjRkN2MyNGM2YzBiZTUzNWUwOTBmMjE2ZjEwZGIxMTg0MzlmMDA5YzY3NzUwMTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dcee7ab2a0c747859c85b4db727701c5",
+      "statement": "The UI is mounted with app.mount rather than app.frontend() because frontend routes are low priority and the Agent Server's own /ui mount would otherwise answer first.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/app.py#L50-L53",
+          "version": "repo-lines-v1:sha256:e658dff3a88c0455ff520b195c19c402efc52f068680b57c4761888bbabf8e09:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE0NzdkNTUzZmEwNTJhMjZjOTdkYzY0MTYzNWMyYjg4NjIwMjc2ZDU1YTQ0Mjk2YzkzOWVlMmQyOTMwNThlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWY1NTY5MTEwYTY2NGE2OGExMmE1NWYyMGEwY2MxY2U1MDlmMThlMWVlZGRhNmM0ZWE0NzU5ODNjYmNhZmNhMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjRkMjdjOTdlZDJhNGIyMDhmYzM0NDgxOWUxODIzZmM3NDBkNTkzNzE5Nzg4YjJmZWE2YjE1OTBiZDFhZTZmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQ1NjVlMDMwOGIxYzBjNWMwMzZhNDY5NTM0ZmUyMzM5ZmYxOTI5YTQzNTAyNjQ3ZjFlNTNjZDViMTM2YTg5NiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_05b48146eb514c669636d704ac48a286",
+      "statement": "ServerSettings reads the shell then .env and rejects LANGSMITH_GATEWAY_API_KEY, TYPESAFE_API_KEY or TYPESAFE_BASE_URL when set but blank; make_graph constructs ServerSettings per run, so an empty value written into the deployment .env fails runs rather than falling back silently.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/deploy.yml#L91-L100",
+          "version": "repo-lines-v1:sha256:4a3eb5cb38a63fe09f13b937f9dc64ac2b1b3627e34e21e85728c848faaa803a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMjczNjk0MzhlMmQ3YmJlMzRmZGJhMTlkYjVjODdjY2FiOTYyN2YxNmM0NTQ2NTkxZDQzMjJjNzZkNDFlODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1NzcyOTYzMzZhNmU4NjQ2MWM1MTllNTM0OTU3YmQ0OTA1ZDk0OTU2ZTQyNGU5N2Q3OGJiOGZjNTQzOTdjYjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NTA3OTYyYmEzM2Y2ZWU4OGQ1NTc5Nzg2Mzc2YmZkMjY1NDVhYThmMzFjYjZkY2I0ZDQzOGRmNWE5ZmFkOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3ZmM0OTcwOWJjZjdmNmFkNWNiYTJiYTZjMjIwMTg0OWUzODk5NDk5ZTQ0MTVkNGNhZWVjMzNjZGRiMGQwNjkifQ"
+        },
+        {
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L111-L111",
+          "version": "repo-lines-v1:sha256:96582961ea3ed4e2b830501e5d6a0dc676bc0f6f86cd5c4eb83c7e4eb72a2136:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTY1ODI5NjFlYTNlZDRlMmI4MzA1MDFlNWQ2YTBkYzY3NmJjMGY2Zjg2Y2Q1YzRlYjgzYzdlNGViNzJhMjEzNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTY1ODI5NjFlYTNlZDRlMmI4MzA1MDFlNWQ2YTBkYzY3NmJjMGY2Zjg2Y2Q1YzRlYjgzYzdlNGViNzJhMjEzNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmYxYzBlNTBkN2Y5NjE4ZDMyYmY5ZmI1MjY4MjQyZjNkMjQzNWYxMDYyMDZkNjFkOWFiNzlhZGI2MGZiMTUwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://apps/server/langchain_chess_server/settings.py#L1-L36",
+          "version": "repo-lines-v1:sha256:43f2d5c7d0d2b9d310093c189a7fa8f0014437cf444d5baff60b5ff708f5f99f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExYTIwZDAzNTMxODAyY2ZiZDc0OGQ0ZTVlOGFhZjA5NWU5ZTU5ODIyYjE3NmE0ZWM4YWE0YWNjYmEzOTYzMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlM2NmY2ViMzNlMDExZjliNjk1MDg4ZTBiM2FhODNiMTYwM2Q2OWRiNGRjNjU4MDNhYTgzNjM1M2U4MWIwZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwMTI4YTdkNjUzOTNiMDU1YWQyNDk1NWI1ODgyNWVhNDk5NTU2ZGMwM2YzNzYzOTBiMGVhZThiN2NhZmI0ZjEifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-26T04:03:54.007Z"
+    "at": "2026-09-26T05:03:34.528Z"
   }
 }

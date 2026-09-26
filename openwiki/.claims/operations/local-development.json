@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2cbc15b760dbc66778c02fb9ceec653ba4f3d7bd2f4f1a44999686c50f41d5a0",
+  "pageVersion": "sha256:2b0daeb644a8ebd39de6f13f9a93f78c94e83cd6db41d3ba816424a05d09ad83",
   "claims": [
     {
       "id": "claim_64f9d3d12be44aa4b19129d0e5102977",
@@ -132,15 +132,15 @@
     },
     {
       "id": "claim_068920787d564c63bb077a0bd6eea733",
-      "statement": "OpenWiki is pinned per wiki task rather than in [tools] because CI's mise install skips task tools; the task pins and the workflow's pin must be bumped together.",
+      "statement": "OpenWiki is pinned per wiki task (npm:openwiki 0.6.0 on wiki:init, wiki:update and wiki:view) rather than in [tools] because CI's mise install skips task tools; the three task pins and the workflow's sfw-guarded install pin must be bumped together.",
       "evidence": [
         {
           "resource": "repo://.github/workflows/openwiki-update.yml#L37-L39",
           "version": "repo-lines-v1:sha256:d7bcdf0020116ac75756384a67ad66ee710562fbed2b7e386eebd409a4d9cc52:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y2MzJkN2QwNDg5NTg5ZTI1ZTAyZTNjYzhlYzk3MGE5ZWUxZGIyMzczNGFhOTEwMDQ4NTE4MzRhMzA3ZWIwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTA5ZDk2NTFlYmRlMjUwZjNkYzQ4ZmM0OGJiODNiMWFlM2ZiZTMxYTBhNzA5ZDI3NTYxYTk3NDkwMWZjNGE2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDE3NjJkYjQyNDViZDA0OTUyZjRlMTE3YWZhMTQyMzIwZjMxZDJiOGNiOGRjYzg0NDYzZWE5YjU1OTI1NzU4MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDE2NGQ1NmQ4MDA0MWJiMjUwNjdhZmFjZDE0ODU0MWNjZjdhYTU2NDYzMWNmYTczOWM2MDgyZDAwZDI3ZTBhMiJ9"
         },
         {
-          "resource": "repo://mise.toml#L120-L136",
-          "version": "repo-lines-v1:sha256:e3ff1d7ef4cfd3bda771c8915125b606a50f2e39a8ad4ea50ea6b9ec5efafacb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0YzVkNzcxMTdkZTI1YjZiMjdiNDIwYWMwMWQ0MzRjYzUwMjgxMDNmYjU5MjJlYzViZTVjNGEzNjYxNWYyNjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlNmM5YzhlZjMzNmZiZjI2MDM2OWRlZTBkZmY2OWYxYjRjMzNhOTM5Y2FjOGQwYzFiZWIzOWU5MDUwNzE4ODQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4YjlhZjdkOTg1NWQwNTMxNWY3MzdlMmY5ZjUwOGMyNzdjOWQyZWUxMzZiNTEzZGYxZDExOTZjMTZhYTU0NDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyNGJmNzI2ODhhYjRlOWFmODI4MTk5NGZkZDdiZmJiNGFjNTEyMDAzMzFlNTIyY2JiZDBkMWZlZGI5OGY0NTUifQ"
+          "resource": "repo://mise.toml#L120-L140",
+          "version": "repo-lines-v1:sha256:62736df4b01807cf872bcf0087ddd5a04453b63335e03625efa9d81818874b21:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0YzVkNzcxMTdkZTI1YjZiMjdiNDIwYWMwMWQ0MzRjYzUwMjgxMDNmYjU5MjJlYzViZTVjNGEzNjYxNWYyNjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlNmM5YzhlZjMzNmZiZjI2MDM2OWRlZTBkZmY2OWYxYjRjMzNhOTM5Y2FjOGQwYzFiZWIzOWU5MDUwNzE4ODQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4YjlhZjdkOTg1NWQwNTMxNWY3MzdlMmY5ZjUwOGMyNzdjOWQyZWUxMzZiNTEzZGYxZDExOTZjMTZhYTU0NDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyNGJmNzI2ODhhYjRlOWFmODI4MTk5NGZkZDdiZmJiNGFjNTEyMDAzMzFlNTIyY2JiZDBkMWZlZGI5OGY0NTUifQ"
         }
       ]
     },
@@ -187,10 +187,20 @@
           "version": "repo-lines-v1:sha256:5ea39d409d57d2eb00b9b0ecb70b1915668acf7e7e2b58455809625ef0891f17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NWYwN2ViMmFiZjI0ZDMxNGJkOTZhNWNhM2I1MmEzNzExMTU1ZDBhZTgwZTc3N2Y0MTM2NTE5MWM0MDI3NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiODBiMjk4MWQwNjM5OTdjNWFkOGEzZDBmMWEwMGQ2NTUwYzAwZThiODZmZmQ2NThjYmNiYjM5NGQ1NjExMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_ac407180c6f646ecbe012db05fa825f5",
+      "statement": "The wiki:init task runs scripts/openwiki.sh with --init and then restores openwiki/.langsmith.json via git checkout, because --init keeps only INSTRUCTIONS.md and drops the committed connector config.",
+      "evidence": [
+        {
+          "resource": "repo://mise.toml#L123-L130",
+          "version": "repo-lines-v1:sha256:77fa03fc8321779a0f0f135fe87f917c5d7178c03e420e2b775963ae85006a16:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U0NWZhYjU2MTZkMjNiMzk2NTdmYTIxN2E4OTc0Mjg3NGRhY2NlOTQ1MmNhMzc3Zjk5NDBmNmI3YzIzZjBkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODMwZmYwOGQzMTQ2ZWQ2OTM4NGJlOTFkNGE3OTUyZGUzZWI1N2EyNzlkMTRhM2I4ZmMzYWZmZGRjMTZiMjVkZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNlYWI4ZTczMzgwNWI4NDMyY2Q2YTJjMWUxNGQxZTFkZTdjMmM4NjgwMzFiMDNiNzI5MzYzNmQ4NzdhOWYwYyJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-26T04:03:54.007Z"
+    "at": "2026-09-26T05:03:34.528Z"
   }
 }

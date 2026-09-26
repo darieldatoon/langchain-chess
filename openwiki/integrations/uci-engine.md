@@ -3,9 +3,6 @@ type: integration adapter
 title: UCI engine adapter (lcchess uci)
 description: How `lcchess uci` wraps a langchain-chess agent as an in-process UCI engine — the one-search state machine that prints exactly one bestmove per go, time-control deadlines, fallback moves (System 1 top move else seeded random), abandoned pending turns, bestmove 0000 forfeits, UCI options, draw_claims "never", and the fastchess smoke test.
 tags: [uci, cli, engine, fastchess, fallback, time-control, integration]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T04:03:54.007Z
 sources:
   - id: openwiki-source-fc393bc7c06df7c3f85ece92
     resource: repo://libs/chess/langchain_chess/middleware/core.py
@@ -29,7 +26,10 @@ sources:
     resource: repo://mise.toml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T04:03:54.007Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T05:03:34.528Z
 ---
 
 # UCI engine adapter (`lcchess uci`)
@@ -49,7 +49,7 @@ Related pages: the per-turn lifecycle the adapter relies on (pending, committed,
 
 ## Entry point and wiring
 
-The `uci` Typer command in `libs/cli/langchain_chess_cli/main.py` builds an `AgentOptions` from its flags (`--policy`, `--model`, `--reasoning-effort`, `--systemone-model`, `--threshold`, `--tournament-threshold`, `--k`, `--top-p`, `--gate`, `--style`, `--seed`, `--show-legal-moves`, `--with-eval`, `--with-nouls`, `--memory`, `--summary-trigger-tokens`). It then:
+The `uci` Typer command in `libs/cli/langchain_chess_cli/main.py` builds an `AgentOptions` from its flags (`--policy`, `--model`, `--reasoning-effort`, `--systemone-model`, `--threshold`, `--tournament-threshold`, `--k`, `--top-p`, `--gate`, `--style`, `--seed`, `--show-legal-moves`, `--with-eval`, `--with-nouls`, `--memory`). `--memory` accepts only `none` (the default) or `summarize`. It then:
 
 - sends logging to **stderr** at WARNING, so stdout carries only protocol output;
 - defines a factory `(AgentOptions, Checkpointer) -> CompiledStateGraph` that calls `build_agent(..., draw_claims=DRAW_CLAIMS, checkpointer=...)`. The engine calls it again whenever options change, and it always passes the same checkpointer;
@@ -200,3 +200,4 @@ The `test:uci` task in `mise.toml` runs inside `.uci-match/`, which is gitignore
 
 - `libs/cli/tests/test_uci_protocol.py` covers the pure layers: the parse table, deadline arithmetic (safety margin, `MIN_MS` floor, `movestogo`, missing side clock), `root_moves`, and every `complete()` row, including stale-request and out-of-pool fallbacks.
 - `libs/cli/tests/test_uci_engine.py` drives `Engine` with a `ScriptedModel`. It covers the handshake, streamed analysis, game continuation on one thread, takebacks and new roots starting new threads, deadline fallbacks, provider failures, resignation, insufficient material, searchmoves, the `go infinite` / `stop` / `ponderhit` holding rules, one `bestmove` per `go` when `go` or `ucinewgame` interrupts a search, late results being ignored, option queueing and rebuild counts, and `run()` stopping at `quit` or end of input.
+t` or end of input.

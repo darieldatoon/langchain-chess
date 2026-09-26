@@ -3,9 +3,6 @@ type: quickstart
 title: "Quickstart: working in langchain-chess"
 description: Entry point for coding agents changing langchain-chess — what the repo is, the Python/JS package map and dependency direction, the mise dev/check/test commands, the rules every change must keep, and a task-routing table to the rest of the wiki.
 tags: [quickstart, overview, package-map, development, routing]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T04:03:54.007Z
 sources:
   - id: openwiki-source-c9b903d37e22daedc4499a4b
     resource: repo://apps/server/langchain_chess_server/graph.py
@@ -31,7 +28,10 @@ sources:
     resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-05ccef8d4cf1698187f20464
     resource: repo://pyproject.toml
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T04:03:54.007Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T05:03:34.528Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T05:03:34.528Z
 ---
 
 # Quickstart: working in langchain-chess
@@ -42,19 +42,18 @@ langchain-chess builds chess-playing agents on LangChain's `create_agent`. The d
 
 ## Package map
 
-<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Heuristic: an unescaped angle bracket inside a label breaks rendering; rephrase the label. -->
-```text
+```mermaid
 flowchart TD
-    subgraph Python["Python (uv workspace)"]
-        chess["libs/chess<br/>langchain_chess"]
-        s1["libs/systemone<br/>langchain_chess_systemone"]
-        cli["libs/cli<br/>lcchess uci / play / grade"]
-        server["apps/server<br/>chess graph + /ui app"]
+    subgraph Python["Python - uv workspace"]
+        chess["libs/chess - langchain_chess"]
+        s1["libs/systemone - langchain_chess_systemone"]
+        cli["libs/cli - lcchess uci, play, grade"]
+        server["apps/server - chess graph and /ui app"]
     end
-    subgraph JS["JavaScript (pnpm + Vite+)"]
-        ui["packages/chess-ui<br/>TS source, no build"]
-        web["apps/web<br/>React UI at /ui"]
-        review["apps/review<br/>LangSmith custom app"]
+    subgraph JS["JavaScript - pnpm and Vite+"]
+        ui["packages/chess-ui - TS source, no build"]
+        web["apps/web - React UI at /ui"]
+        review["apps/review - LangSmith custom app"]
     end
     s1 --> chess
     cli --> chess
@@ -158,6 +157,15 @@ Copy `.env.example` to create `.env`. Never commit values. The app refuses to st
 | Add or read a field in `plies`/`turns`, or change input and thread semantics | [The public state record and threads](concepts/state-record.md) |
 | Add a `ChessContext` knob, change policies, or change the `/ui` mount and `/ui/config` | [Agent Server graph and the /ui mount](integrations/agent-server.md) |
 | Change the terminal UI or shared CLI options | [Terminal UI (lcchess play) and CLI options](integrations/terminal-ui.md) |
+| Change the UCI adapter: time management, fallback moves, `bestmove 0000` | [UCI engine adapter (lcchess uci)](integrations/uci-engine.md) |
+| Change grading, feedback keys, or the review app's data | [Grading games and the review app](workflows/grading-and-review.md) |
+| Change the image build, `langgraph.json`, CI, or deploy path filters | [Deployment, image build and CI](operations/deployment.md) |
+| Add a mise task, a git hook, a tool pin, or change the OpenWiki workflow | [Local development toolchain](operations/local-development.md) |
+| Check how the deployed graph actually behaves: calls per turn, latency, cost, failure modes | [Runtime behavior (LangSmith evidence)](operations/runtime-behavior.md) |
+| Add tests, use the fakes, update TUI snapshots, or run live and fastchess tests | [Testing conventions](testing/testing-conventions.md) |
+
+For measured design decisions (prompt caching, memory mode versus analysis length), read the README's [Decisions and measurements](../README.md#decisions-and-measurements) section. It keeps the current numbers, and this wiki doesn't repeat them.
+d CLI options](integrations/terminal-ui.md) |
 | Change the UCI adapter: time management, fallback moves, `bestmove 0000` | [UCI engine adapter (lcchess uci)](integrations/uci-engine.md) |
 | Change grading, feedback keys, or the review app's data | [Grading games and the review app](workflows/grading-and-review.md) |
 | Change the image build, `langgraph.json`, CI, or deploy path filters | [Deployment, image build and CI](operations/deployment.md) |
