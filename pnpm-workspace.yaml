@@ -2,6 +2,7 @@
 packages:
   - apps/web
   - apps/review
+  - evals/reports
   - packages/*
 # Versions shared by more than one package, so the apps and packages/chess-ui can't drift.
 catalog:

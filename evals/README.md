@@ -9,6 +9,7 @@ published: nothing imports it, and changing it never redeploys the agent.
 | `langchain_chess_evals/systemone/` | System 1 experiments over that dataset: target, row scores, summary metrics. |
 | `datasets/positions/vN.jsonl` | The committed dataset, one LangSmith example per line, and `vN.manifest.json` beside it. |
 | `experiments/systemone-baseline.toml` | The baseline grid. |
+| `reports/` | Dated, static HTML reports of experiments and tournaments, written in TSX. See [its README](reports/README.md). |
 | `.cache/` (gitignored) | Lichess downloads, the resumable label cache, local copies of run summaries. |
 
 ## The positions dataset
