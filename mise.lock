@@ -47,6 +47,30 @@ version = "1.15.2"
 backend = "github:SocketDev/sfw-free"
 specifiers = ["1.15.2"]
 
+[tools."github:SocketDev/sfw-free"."platforms.linux-arm64"]
+checksum = "sha256:d3e5490e7a1315ff2ba9bcc903d9d57de042d8dcde83dde1d59536725a470946"
+url = "https://github.com/SocketDev/sfw-free/releases/download/v1.15.2/sfw-free-linux-arm64"
+url_api = "https://api.github.com/repos/SocketDev/sfw-free/releases/assets/566326113"
+provenance = "github-attestations"
+
+[tools."github:SocketDev/sfw-free"."platforms.linux-x64"]
+checksum = "sha256:fea8171808f9d913635c8f55fa70f7e72451cd38b0fca3d694e12ee1a9d7fc68"
+url = "https://github.com/SocketDev/sfw-free/releases/download/v1.15.2/sfw-free-linux-x86_64"
+url_api = "https://api.github.com/repos/SocketDev/sfw-free/releases/assets/566326111"
+provenance = "github-attestations"
+
+[tools."github:SocketDev/sfw-free"."platforms.macos-arm64"]
+checksum = "sha256:28c4d14ed5db09e3a3e299c02036ddaa524c5c476cb28e32deac4f77091acacb"
+url = "https://github.com/SocketDev/sfw-free/releases/download/v1.15.2/sfw-free-macos-arm64"
+url_api = "https://api.github.com/repos/SocketDev/sfw-free/releases/assets/566326107"
+provenance = "github-attestations"
+
+[tools."github:SocketDev/sfw-free"."platforms.macos-x64"]
+checksum = "sha256:3abd6086098e6ad604a8814cd6a5d9e5dd8e64c2108583f9e85c12e08baa7a26"
+url = "https://github.com/SocketDev/sfw-free/releases/download/v1.15.2/sfw-free-macos-x86_64"
+url_api = "https://api.github.com/repos/SocketDev/sfw-free/releases/assets/566326110"
+provenance = "github-attestations"
+
 [[tools."github:langchain-ai/langsmith-cli"]]
 version = "0.2.59"
 backend = "github:langchain-ai/langsmith-cli"
