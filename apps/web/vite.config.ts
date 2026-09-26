@@ -1,5 +1,8 @@
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig, lazyPlugins } from "vite-plus";
+
+const page = (name: string) => fileURLToPath(new URL(name, import.meta.url));
 
 // Served by the Agent Server under /ui (see apps/server/langchain_chess_server/app.py), so the bundle is
 // built straight into the Python package and every asset URL is prefixed.
@@ -11,9 +14,14 @@ export default defineConfig({
     // Vendor code in its own long-lived chunks, so an app-only change re-downloads only the
     // app. Markdown is loaded lazily (components/Analysis.tsx) and gets its own chunk anyway.
     rolldownOptions: {
+      // render.html is LangSmith's custom output renderer for the positions dataset (evals/).
+      input: { main: page("index.html"), render: page("render.html") },
       output: {
         codeSplitting: {
           groups: [
+            // Vite's preload helper, on its own: otherwise it lands in the langchain chunk and
+            // render.html, which needs no LangChain, downloads all of it.
+            { name: "preload", test: /vite\/preload-helper/, priority: 50 },
             {
               name: "react",
               test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,

@@ -67,6 +67,7 @@ Everything but the fixtures imports from the package root.
 | `Board`, `BoardControls`                              | The board (click or drag to move, arrows, highlights, a promotion picker) and first/previous/next/last controls |
 | `MoveList`, `usePlyKeys`                              | The numbered move list, and arrow-key navigation through the plies                                              |
 | `PlyDetails`, `Analysis`                              | Who played a move, with model, latency, cost and System 1's top moves; the LLM's reasoning as Markdown          |
+| `MoveBar`                                             | One of System 1's moves: SAN, probability bar and percentage                                                    |
 | Types (`src/types.ts`)                                | `ChessState`, `Ply`, `TurnRecord`, `ChessContext` and friends, mirrored by hand from the Python packages        |
 | Helpers (`src/selectors.ts`, `chess.ts`, `format.ts`) | Pure functions: turn cost and System 1 telemetry, legal moves and positions, labels and formatting              |
 | `@langchain-chess/chess-ui/testing`                   | Fixture builders for plies, turns and game states                                                               |

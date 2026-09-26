@@ -66,8 +66,15 @@ def test_upload(dirs, monkeypatch):
     client = FakeDatasetClient()
     seen = {}
 
-    def fake_upload(rows, manifest, client_, *, dataset, tag, report):
-        seen.update(rows=rows, manifest=manifest, client=client_, dataset=dataset, tag=tag)
+    def fake_upload(rows, manifest, client_, *, dataset, tag, renderer_url, report):
+        seen.update(
+            rows=rows,
+            manifest=manifest,
+            client=client_,
+            dataset=dataset,
+            tag=tag,
+            renderer_url=renderer_url,
+        )
         return type("Done", (), {"tag": tag})()
 
     monkeypatch.setattr(cli, "langsmith_client", lambda: client)
@@ -80,8 +87,14 @@ def test_upload(dirs, monkeypatch):
         "client": client,
         "dataset": "langchain-chess-positions",
         "tag": "v1",
+        "renderer_url": None,
     }
     assert "langchain-chess-positions@v1: 0 examples" in result.output
+
+    url = "https://chess.example.com/ui/render.html"
+    result = runner.invoke(cli.app, ["positions", "upload", "--renderer-url", url])
+    assert result.exit_code == 0, result.output
+    assert seen["renderer_url"] == url
 
 
 @pytest.fixture

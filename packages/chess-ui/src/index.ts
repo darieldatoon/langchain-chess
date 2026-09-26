@@ -4,6 +4,7 @@ export * from "./selectors";
 export * from "./types";
 export { Analysis } from "./components/Analysis";
 export { Board } from "./components/Board";
+export { MoveBar } from "./components/MoveBar";
 export { MoveList } from "./components/MoveList";
 export { PlyDetails } from "./components/PlyDetails";
 export { BoardControls } from "./components/BoardControls";

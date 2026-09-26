@@ -6,6 +6,7 @@ import { AFTER_E4, call, E4_E5, ply, systemOne, turn } from "../../src/testing";
 import { renderWithProviders } from "../support/renderApp";
 import { START_FEN, type Ply, type Reply, type SystemOneMeta } from "../../src/types";
 import { Board } from "../../src/components/Board";
+import { MoveBar } from "../../src/components/MoveBar";
 import { MoveList } from "../../src/components/MoveList";
 import { PlyDetails } from "../../src/components/PlyDetails";
 
@@ -125,6 +126,18 @@ function reply(
 function details(r: Reply | null) {
   return renderWithProviders(<PlyDetails reply={r} />);
 }
+
+describe("MoveBar", () => {
+  it("shows a move's SAN and probability, marked when it was played", () => {
+    const { rerender } = render(
+      <MoveBar move={{ uci: "e2e4", probability: 0.42 }} fen={START_FEN} />,
+    );
+    expect(screen.getByLabelText("e4 probability")).toBeInTheDocument();
+    expect(screen.getByText("42%")).toBeInTheDocument();
+    rerender(<MoveBar move={{ uci: "e2e4", probability: 0.42 }} fen={START_FEN} played />);
+    expect(screen.getByLabelText("e4 (played) probability")).toBeInTheDocument();
+  });
+});
 
 describe("PlyDetails", () => {
   it("takes a title", () => {
