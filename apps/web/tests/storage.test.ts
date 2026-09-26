@@ -34,11 +34,16 @@ describe("setup storage", () => {
   it("migrates the old global settings", () => {
     store(LEGACY_SETTINGS_KEY, {
       apiKey: "old",
-      context: { policy: "jev", human_side: "black", model: "langsmith:openai/gpt-5.6-sol", k: 3 },
+      context: {
+        policy: "jev",
+        human_side: "black",
+        model: "langsmith:baseten/zai-org/GLM-5.3",
+        k: 3,
+      },
     });
     expect(loadSetup()).toEqual({
       ...DEFAULT_SETUP,
-      llm: "langsmith:openai/gpt-5.6-sol",
+      llm: "langsmith:baseten/zai-org/GLM-5.3",
       knobs: { ...DEFAULT_SETUP.knobs, k: 3 },
     });
     store(LEGACY_SETTINGS_KEY, { context: { policy: "systemone", model: "my-model" } });

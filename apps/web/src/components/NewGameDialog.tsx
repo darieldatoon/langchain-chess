@@ -14,6 +14,8 @@ import { useEffect, useRef, useState } from "react";
 import { keyCheckMessage, type KeyCheck } from "../auth";
 import { withKnob } from "../settings";
 import {
+  LLM_NAMES,
+  LLM_PRESETS,
   matchupLine,
   matchupOf,
   modelOf,
@@ -62,9 +64,7 @@ const SYSTEM_ONES: SelectOption<SystemOneChoice>[] = [
 ];
 
 const LLMS: SelectOption<LlmChoice>[] = [
-  { value: "langsmith:anthropic/claude-opus-5-5", label: "Claude Opus 5.5" },
-  { value: "langsmith:anthropic/claude-opus-5", label: "Claude Opus 5" },
-  { value: "langsmith:openai/gpt-5.6-sol", label: "GPT-5.6 Sol" },
+  ...LLM_PRESETS.map((value) => ({ value, label: LLM_NAMES[value] })),
   { value: "none", label: "None", description: "System 1 plays alone" },
   { value: "custom", label: "Custom model…", description: "Any model spec" },
 ];
@@ -195,7 +195,7 @@ export function NewGameDialog({
                 label="Model Spec"
                 value={setup.customModel}
                 onChange={pick("customModel")}
-                placeholder="openai:gpt-5.6-sol"
+                placeholder="langsmith:baseten/moonshotai/Kimi-K3"
                 hintText="Use the format provider:model, e.g. langsmith:anthropic/claude-opus-5-5."
                 autoFocus
               />

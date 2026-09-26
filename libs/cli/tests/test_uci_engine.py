@@ -59,6 +59,10 @@ async def test_uci_handshake_and_isready():
     assert h.lines[0] == "id name langchain-chess"
     assert h.lines[1] == "id author Dariel Dato-on"
     assert (
+        "option name ReasoningEffort type combo default default"
+        " var default var low var medium var high" in h.lines
+    )
+    assert (
         "option name Policy type combo default hybrid var llm var systemone var hybrid" in h.lines
     )
     assert not any("Ponder" in line for line in h.lines)
@@ -300,10 +304,18 @@ async def test_setoption_rebuilds_when_idle_and_rejects_bad_values():
         "invalid value for K: invalid literal for int() with base 10: 'lots'",
         "invalid value for K: expected an integer within 1..255",
         "unknown option: Nope",
-        "invalid value for ReasoningEffort: expected one of low, medium, high",
+        "invalid value for ReasoningEffort: expected one of default, low, medium, high",
         "invalid value for Memory: expected one of none, summarize",
     ]
     assert len(factory.builds) == 5
+
+
+async def test_reasoning_effort_default_sends_none():
+    h = Harness(Factory([]))
+    await h.send("setoption name ReasoningEffort value high")
+    assert h.engine.options.reasoning_effort == "high"
+    await h.send("setoption name ReasoningEffort value default")
+    assert h.engine.options.reasoning_effort is None
 
 
 async def test_stop_when_idle_unknown_commands_and_blank_lines():

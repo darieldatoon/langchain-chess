@@ -13,7 +13,8 @@ export type SystemOneModel = "semif-qwen3.5-4b" | "typesafe/jev-latest";
 export interface ChessContext {
   policy: PolicyKind;
   model: string;
-  reasoning_effort: ReasoningEffort;
+  /** Null sends no effort: the model's own default, and the only choice for non-reasoners. */
+  reasoning_effort: ReasoningEffort | null;
   show_legal_moves: boolean;
   memory: Memory;
   systemone_model: SystemOneModel;
@@ -31,8 +32,8 @@ export interface ChessContext {
 
 export const DEFAULT_CONTEXT: ChessContext = {
   policy: "hybrid",
-  model: "langsmith:anthropic/claude-opus-5-5",
-  reasoning_effort: "medium",
+  model: "langsmith:baseten/zai-org/GLM-5.3-Flash",
+  reasoning_effort: null,
   show_legal_moves: true,
   memory: "none",
   systemone_model: "semif-qwen3.5-4b",

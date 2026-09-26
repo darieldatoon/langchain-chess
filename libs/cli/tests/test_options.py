@@ -27,10 +27,12 @@ def test_the_cli_chat_model_uses_the_environment(monkeypatch):
     monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
     monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "lsv2_test")
     model = default_model(AgentOptions(reasoning_effort="low"))
-    assert model.model_name == "anthropic/claude-opus-5-5"
+    assert model.model_name == "baseten/zai-org/GLM-5.3-Flash"
     assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
-    assert model.profile == {"max_input_tokens": 1_000_000 - 32000}
-    assert model.get_name() == "claude-opus-5-5"
+    assert model.reasoning_effort == "low"
+    assert model.profile == {"max_input_tokens": 1_048_000 - 32000}
+    assert model.get_name() == "zai-org/GLM-5.3-Flash"
+    assert default_model(AgentOptions()).reasoning_effort is None
     gpt = chat_model("langsmith:openai/gpt-5.6-sol", "low")
     assert gpt.profile == {"max_input_tokens": 1_050_000 - 32000}
     bare = chat_model("gpt-5.6-sol", "low")
@@ -74,7 +76,7 @@ def test_run_config_names_the_trace_by_surface_and_records_every_knob():
     assert metadata["draw_claims"] == "auto"
     assert {k: metadata[k] for k in ("policy", "model", "k", "seed")} == {
         "policy": "llm",
-        "model": "langsmith:anthropic/claude-opus-5-5",
+        "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
         "k": 7,
         "seed": 0,
     }

@@ -69,6 +69,12 @@ def _choice(*values: str) -> Callable[[str], str]:
     return convert
 
 
+def _effort(value: str) -> str | None:
+    """`default` sends no effort, so the model uses its own (and non-reasoners work)."""
+    effort = _choice("default", "low", "medium", "high")(value)
+    return None if effort == "default" else effort
+
+
 def _unit(value: str) -> float:
     number = float(value)
     if not 0.0 <= number <= 1.0:
@@ -95,9 +101,9 @@ def uci_options(defaults: AgentOptions) -> dict[str, Option]:
         Option("model", f"option name Model type string default {d.model}", str),
         Option(
             "reasoning_effort",
-            f"option name ReasoningEffort type combo default {d.reasoning_effort}"
-            " var low var medium var high",
-            _choice("low", "medium", "high"),
+            f"option name ReasoningEffort type combo default {d.reasoning_effort or 'default'}"
+            " var default var low var medium var high",
+            _effort,
         ),
         Option(
             "systemone_model",

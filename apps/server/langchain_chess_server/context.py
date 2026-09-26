@@ -42,10 +42,15 @@ class ChessContext:
             "or `provider:model` and bare names with that provider's package installed.",
             "model",
         ),
-    ] = "langsmith:anthropic/claude-opus-5-5"
+    ] = "langsmith:baseten/zai-org/GLM-5.3-Flash"
     reasoning_effort: Annotated[
-        ReasoningEffort, _knob("Reasoning effort passed to the model.", "model")
-    ] = "medium"
+        ReasoningEffort | None,
+        _knob(
+            "Reasoning effort passed to the model. Empty sends none and uses the model's own "
+            "default; models without reasoning (such as Claude Haiku 4.5) need it empty.",
+            "model",
+        ),
+    ] = None
     show_legal_moves: Annotated[bool, _knob("List the legal moves in the prompt.", "model")] = True
     memory: Annotated[
         Memory,

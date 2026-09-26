@@ -33,7 +33,10 @@ ModelOption = Annotated[
     str, typer.Option(help="init_chat_model spec; a bare name needs its provider's package.")
 ]
 EffortOption = Annotated[
-    Literal["low", "medium", "high"], typer.Option(help="Reasoning effort for the model.")
+    Literal["low", "medium", "high"] | None,
+    typer.Option(
+        help="Reasoning effort; unset uses the model's default (and suits non-reasoners)."
+    ),
 ]
 SystemOneOption = Annotated[str, typer.Option(help="System 1 model (SemIf or Jev).")]
 ThresholdOption = Annotated[
@@ -65,8 +68,8 @@ MemoryOption = Annotated[
 @app.command()
 def uci(
     policy: PolicyOption = "hybrid",
-    model: ModelOption = "langsmith:anthropic/claude-opus-5-5",
-    reasoning_effort: EffortOption = "medium",
+    model: ModelOption = "langsmith:baseten/zai-org/GLM-5.3-Flash",
+    reasoning_effort: EffortOption = None,
     systemone_model: SystemOneOption = "semif-qwen3.5-4b",
     threshold: ThresholdOption = 0.9,
     tournament_threshold: TournamentOption = None,
@@ -119,8 +122,8 @@ SideOption = Annotated[Literal["white", "black"], typer.Option(help="The side yo
 def play(
     side: SideOption = "white",
     policy: PolicyOption = "hybrid",
-    model: ModelOption = "langsmith:anthropic/claude-opus-5-5",
-    reasoning_effort: EffortOption = "medium",
+    model: ModelOption = "langsmith:baseten/zai-org/GLM-5.3-Flash",
+    reasoning_effort: EffortOption = None,
     systemone_model: SystemOneOption = "semif-qwen3.5-4b",
     threshold: ThresholdOption = 0.9,
     tournament_threshold: TournamentOption = None,

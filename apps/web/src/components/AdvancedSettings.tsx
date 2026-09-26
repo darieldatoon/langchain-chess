@@ -24,7 +24,13 @@ interface Props {
   onKnob: SetKnob;
 }
 
-const EFFORTS: SelectOption<ReasoningEffort>[] = [
+/** Select values are strings; `default` stands for null, which sends no effort. */
+const EFFORTS: SelectOption<ReasoningEffort | "default">[] = [
+  {
+    value: "default",
+    label: "Model default",
+    description: "Sends none; needed for models without reasoning",
+  },
   { value: "low", label: "Low" },
   { value: "medium", label: "Medium" },
   { value: "high", label: "High" },
@@ -72,10 +78,10 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set }: Pr
             <Select
               aria-label="Reasoning Effort"
               size="md"
-              value={knobs.reasoning_effort}
+              value={knobs.reasoning_effort ?? "default"}
               options={EFFORTS}
               hideSearch
-              onChange={(v) => set("reasoning_effort", v)}
+              onChange={(v) => set("reasoning_effort", v === "default" ? null : v)}
             />
           </Field>
           <Switch

@@ -16,14 +16,16 @@ MAX_TOKENS = 32000
 """The output cap covers reasoning too; keep it well above any reasoning budget."""
 
 
-def chat_model(model: str, reasoning_effort: str) -> BaseChatModel:
+def chat_model(model: str, reasoning_effort: str | None) -> BaseChatModel:
     name = model_identity(model)[1]
     kwargs: dict[str, Any] = {
-        "reasoning_effort": reasoning_effort,
         "max_tokens": MAX_TOKENS,
         # The trace span's name; through the gateway every vendor would read as `ChatOpenAI`.
         "name": name,
     }
+    # Models without reasoning reject the parameter outright, even as a default.
+    if reasoning_effort is not None:
+        kwargs["reasoning_effort"] = reasoning_effort
     # The gateway's ChatOpenAI has no profile, and summarize's fractional trigger needs one.
     # Native providers ship full profiles; never replace them.
     if model.startswith(GATEWAY_PREFIX) and (window := context_window(model)):

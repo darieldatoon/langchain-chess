@@ -26,8 +26,8 @@ class AgentOptions:
     """Mirrors the server's context knobs, with the same defaults."""
 
     policy: Policy = "hybrid"
-    model: str = "langsmith:anthropic/claude-opus-5-5"
-    reasoning_effort: ReasoningEffort = "medium"
+    model: str = "langsmith:baseten/zai-org/GLM-5.3-Flash"
+    reasoning_effort: ReasoningEffort | None = None
     show_legal_moves: bool = True
     memory: Memory = "none"
     systemone_model: str = "semif-qwen3.5-4b"

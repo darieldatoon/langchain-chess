@@ -12,10 +12,14 @@ import {
 export type SideChoice = Side | "random";
 export type SystemOneChoice = SystemOneModel | "none";
 
+/** Inexpensive models only; anything else is a custom spec. */
 export const LLM_PRESETS = [
-  "langsmith:anthropic/claude-opus-5-5",
-  "langsmith:anthropic/claude-opus-5",
-  "langsmith:openai/gpt-5.6-sol",
+  "langsmith:baseten/zai-org/GLM-5.3-Flash",
+  "langsmith:baseten/zai-org/GLM-5.3",
+  "langsmith:baseten/deepseek-ai/DeepSeek-V4-Flash-0731",
+  "langsmith:fireworks/accounts/fireworks/models/minimax-m3",
+  "langsmith:openai/gpt-6-luna",
+  "langsmith:anthropic/claude-haiku-4-5-20251001",
 ] as const;
 export type LlmPreset = (typeof LLM_PRESETS)[number];
 export type LlmChoice = LlmPreset | "custom" | "none";
@@ -43,7 +47,7 @@ export function knobsOf(context: ChessContext): Knobs {
 export const DEFAULT_SETUP: Setup = {
   side: "white",
   systemOne: DEFAULT_CONTEXT.systemone_model,
-  llm: "langsmith:anthropic/claude-opus-5-5",
+  llm: "langsmith:baseten/zai-org/GLM-5.3-Flash",
   customModel: "",
   knobs: knobsOf(DEFAULT_CONTEXT),
 };
@@ -54,9 +58,12 @@ export const SYSTEM_ONE_NAMES: Record<SystemOneModel, string> = {
 };
 
 export const LLM_NAMES: Record<LlmPreset, string> = {
-  "langsmith:anthropic/claude-opus-5-5": "Claude Opus 5.5",
-  "langsmith:anthropic/claude-opus-5": "Claude Opus 5",
-  "langsmith:openai/gpt-5.6-sol": "GPT-5.6 Sol",
+  "langsmith:baseten/zai-org/GLM-5.3-Flash": "GLM-5.3 Flash",
+  "langsmith:baseten/zai-org/GLM-5.3": "GLM-5.3",
+  "langsmith:baseten/deepseek-ai/DeepSeek-V4-Flash-0731": "DeepSeek V4 Flash",
+  "langsmith:fireworks/accounts/fireworks/models/minimax-m3": "MiniMax M3",
+  "langsmith:openai/gpt-6-luna": "GPT-6 Luna",
+  "langsmith:anthropic/claude-haiku-4-5-20251001": "Claude Haiku 4.5",
 };
 
 const isPreset = oneOf(...LLM_PRESETS);
@@ -119,10 +126,12 @@ export function matchupLine(context: ChessContext): string {
   }
 }
 
-/** The opponent on the game screen, e.g. "SemIf + Claude Opus 5.5 · medium". */
+/** The opponent on the game screen, e.g. "SemIf + GLM-5.3 · medium". */
 export function opponentLabel(context: ChessContext): string {
   const systemOne = SYSTEM_ONE_NAMES[context.systemone_model];
-  const llm = `${modelName(context.model)} · ${context.reasoning_effort}`;
+  const effort = context.reasoning_effort;
+  const llm =
+    effort === null ? modelName(context.model) : `${modelName(context.model)} · ${effort}`;
   switch (context.policy) {
     case "hybrid":
       return `${systemOne} + ${llm}`;

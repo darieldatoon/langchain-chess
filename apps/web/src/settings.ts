@@ -30,7 +30,7 @@ const orNull =
 export const CONTEXT_CHECKS: { [K in keyof ChessContext]: Check<ChessContext[K]> } = {
   policy: oneOf("llm", "systemone", "hybrid"),
   model: isName,
-  reasoning_effort: oneOf("low", "medium", "high"),
+  reasoning_effort: orNull(oneOf("low", "medium", "high")),
   show_legal_moves: isBool,
   memory: oneOf("none", "summarize"),
   systemone_model: oneOf("semif-qwen3.5-4b", "typesafe/jev-latest"),

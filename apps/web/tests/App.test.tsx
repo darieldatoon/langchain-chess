@@ -74,7 +74,7 @@ vi.mock("@langchain/macaw-components/Slider", async () =>
 const LLM_HIGH: ChessContext = {
   ...DEFAULT_CONTEXT,
   policy: "llm",
-  model: "langsmith:anthropic/claude-opus-5",
+  model: "langsmith:openai/gpt-6-luna",
   reasoning_effort: "high",
 };
 
@@ -124,7 +124,7 @@ describe("new game", () => {
     await click("Play");
     expect(dialog()).not.toBeInTheDocument();
     expect(board()).toHaveAttribute("data-orientation", "white");
-    expect(screen.getByText("SemIf + Claude Opus 5.5 · medium")).toBeInTheDocument();
+    expect(screen.getByText("SemIf + GLM-5.3 Flash")).toBeInTheDocument();
     expect(fake.submit).not.toHaveBeenCalled();
     expect(loadSetup()).toEqual(DEFAULT_SETUP);
     await click("drop e2e4");
@@ -184,12 +184,12 @@ describe("new game", () => {
           policy: "random",
           human_side: "black",
           k: 4,
-          model: "langsmith:openai/gpt-5.6-sol",
+          model: "langsmith:baseten/zai-org/GLM-5.3",
         },
       }),
     );
     render(<App />);
-    expect(screen.getByLabelText("LLM")).toHaveValue("langsmith:openai/gpt-5.6-sol");
+    expect(screen.getByLabelText("LLM")).toHaveValue("langsmith:baseten/zai-org/GLM-5.3");
     expect(window.localStorage.getItem(APP_KEY)).toContain("lsv2_old");
     await click("Play");
     expect(board()).toHaveAttribute("data-orientation", "white");
@@ -198,7 +198,7 @@ describe("new game", () => {
     expect(lastConfigurable()).toEqual({
       ...DEFAULT_CONTEXT,
       k: 4,
-      model: "langsmith:openai/gpt-5.6-sol",
+      model: "langsmith:baseten/zai-org/GLM-5.3",
     });
   });
 
@@ -221,12 +221,12 @@ describe("new game", () => {
 
 describe("a game's own setup", () => {
   it("pins the context: a later setup never reaches this game, and a reload restores it", async () => {
-    saveSetup({ ...DEFAULT_SETUP, systemOne: "none", llm: "langsmith:anthropic/claude-opus-5" });
+    saveSetup({ ...DEFAULT_SETUP, systemOne: "none", llm: "langsmith:openai/gpt-6-luna" });
     const view = await playFromModal();
     reportThread("t-1");
     expect(loadGame("t-1")).toEqual({
       side: "white",
-      context: { ...DEFAULT_CONTEXT, policy: "llm", model: "langsmith:anthropic/claude-opus-5" },
+      context: { ...DEFAULT_CONTEXT, policy: "llm", model: "langsmith:openai/gpt-6-luna" },
     });
 
     // Changing the last setup, in the modal or in storage, leaves the game on screen alone.
@@ -237,7 +237,7 @@ describe("a game's own setup", () => {
     await click("drop e2e4");
     expect(lastConfigurable()).toMatchObject({
       policy: "llm",
-      model: "langsmith:anthropic/claude-opus-5",
+      model: "langsmith:openai/gpt-6-luna",
     });
 
     // A new game takes the new setup; the old one keeps its own.
@@ -255,7 +255,7 @@ describe("a game's own setup", () => {
     await click("drop e2e4");
     expect(lastConfigurable()).toMatchObject({
       policy: "llm",
-      model: "langsmith:anthropic/claude-opus-5",
+      model: "langsmith:openai/gpt-6-luna",
     });
   });
 
@@ -264,7 +264,7 @@ describe("a game's own setup", () => {
     render(<App />);
     expect(board()).toHaveAttribute("data-orientation", "black");
     expect(screen.getByText("abc")).toBeInTheDocument();
-    expect(screen.getByText("Claude Opus 5 · high")).toBeInTheDocument();
+    expect(screen.getByText("GPT-6 Luna · high")).toBeInTheDocument();
     expect(optionsLog.at(-1)).toMatchObject({ threadId: "abc" });
     expect(fake.submit).not.toHaveBeenCalled();
     await click("Start");
@@ -284,7 +284,7 @@ describe("a game's own setup", () => {
     window.history.replaceState(null, "", "?thread=old");
     render(<App />);
     expect(board()).toHaveAttribute("data-orientation", "black");
-    expect(screen.getByText("SemIf + Claude Opus 5.5 · medium")).toBeInTheDocument();
+    expect(screen.getByText("SemIf + GLM-5.3 Flash")).toBeInTheDocument();
   });
 });
 
@@ -384,7 +384,7 @@ describe("after the game", () => {
   });
 
   it("opens the modal pre-filled with the last setup from the result card", async () => {
-    saveSetup({ ...DEFAULT_SETUP, llm: "langsmith:openai/gpt-5.6-sol" });
+    saveSetup({ ...DEFAULT_SETUP, llm: "langsmith:baseten/zai-org/GLM-5.3" });
     onThread("t-1");
     fake.threads["t-1"] = {
       values: { ...E4_E5, outcome: { kind: "draw", reason: "threefold" } },
@@ -397,7 +397,7 @@ describe("after the game", () => {
       );
     });
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
-    expect(screen.getByLabelText("LLM")).toHaveValue("langsmith:openai/gpt-5.6-sol");
+    expect(screen.getByLabelText("LLM")).toHaveValue("langsmith:baseten/zai-org/GLM-5.3");
   });
 });
 

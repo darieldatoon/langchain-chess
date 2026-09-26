@@ -27,11 +27,13 @@ def chat_model(context: ChessContext) -> BaseChatModel:
     model = context.model
     name = model_identity(model)[1]
     kwargs: dict[str, Any] = {
-        "reasoning_effort": context.reasoning_effort,
         "max_tokens": MAX_TOKENS,
         # The trace span's name; through the gateway every vendor would read as `ChatOpenAI`.
         "name": name,
     }
+    # Models without reasoning reject the parameter outright, even as a default.
+    if context.reasoning_effort is not None:
+        kwargs["reasoning_effort"] = context.reasoning_effort
     # The gateway's ChatOpenAI has no profile, and summarize's fractional trigger needs one.
     # Native providers ship full profiles; never replace them.
     if model.startswith(GATEWAY_PREFIX) and (window := context_window(model)):

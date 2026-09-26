@@ -65,7 +65,7 @@ describe("NewGameDialog", () => {
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "White" })).toBeChecked();
     expect(matchup()).toHaveTextContent(
-      "SemIf plays confident moves; Claude Opus 5.5 decides the rest.",
+      "SemIf plays confident moves; GLM-5.3 Flash decides the rest.",
     );
     expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
@@ -140,12 +140,12 @@ describe("NewGameDialog", () => {
     change("System 1", "none");
     expect(matchup()).toHaveTextContent("Pick a System 1, an LLM, or both.");
     expect(play()).toBeDisabled();
-    change("LLM", "langsmith:openai/gpt-5.6-sol");
-    expect(matchup()).toHaveTextContent("GPT-5.6 Sol plays every move.");
+    change("LLM", "langsmith:baseten/zai-org/GLM-5.3");
+    expect(matchup()).toHaveTextContent("GLM-5.3 plays every move.");
     await clickPlay();
     expect(onPlay.mock.calls[0][1]).toMatchObject({
       policy: "llm",
-      model: "langsmith:openai/gpt-5.6-sol",
+      model: "langsmith:baseten/zai-org/GLM-5.3",
     });
     change("System 1", "typesafe/jev-latest");
     await clickPlay();
@@ -159,7 +159,7 @@ describe("NewGameDialog", () => {
     const { onPlay } = open();
     change("LLM", "");
     await clickPlay();
-    expect(onPlay.mock.calls[0][1].model).toBe("langsmith:anthropic/claude-opus-5-5");
+    expect(onPlay.mock.calls[0][1].model).toBe("langsmith:baseten/zai-org/GLM-5.3-Flash");
   });
 
   it("takes any model spec as a custom LLM, and needs one to play", async () => {
@@ -198,7 +198,7 @@ describe("NewGameDialog", () => {
     expect(screen.getByText(/gate and shortlist apply when an LLM plays too/)).toBeInTheDocument();
     expect(screen.getByLabelText("Move Descriptions")).toBeInTheDocument();
 
-    change("LLM", "langsmith:anthropic/claude-opus-5");
+    change("LLM", "langsmith:openai/gpt-6-luna");
     change("System 1", "none");
     expect(screen.queryByLabelText("Move Descriptions")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Reasoning Effort")).toBeInTheDocument();
@@ -245,6 +245,22 @@ describe("NewGameDialog", () => {
     });
   });
 
+  it("sends no effort with Model default, as models without reasoning need", async () => {
+    const { onPlay } = open({
+      ...DEFAULT_SETUP,
+      knobs: { ...DEFAULT_SETUP.knobs, reasoning_effort: "medium" },
+    });
+    change("LLM", "langsmith:anthropic/claude-haiku-4-5-20251001");
+    advanced();
+    expect(screen.getByLabelText("Reasoning Effort")).toHaveValue("medium");
+    change("Reasoning Effort", "default");
+    await clickPlay();
+    expect(onPlay.mock.calls[0][1]).toMatchObject({
+      model: "langsmith:anthropic/claude-haiku-4-5-20251001",
+      reasoning_effort: null,
+    });
+  });
+
   it("turns summarize off for a model with no known input limit", async () => {
     const glm = "langsmith:fireworks/accounts/fireworks/models/glm-5p3";
     const summarizing = {
@@ -257,7 +273,7 @@ describe("NewGameDialog", () => {
       { kind: "ok" },
       { [glm]: null },
     );
-    expect(matchup()).toHaveTextContent("Checking whether Claude Opus 5.5 can summarize…");
+    expect(matchup()).toHaveTextContent("Checking whether GLM-5.3 Flash can summarize…");
     expect(play()).toBeDisabled();
     await settled();
     expect(play()).toBeEnabled();
@@ -266,7 +282,7 @@ describe("NewGameDialog", () => {
     change("Model Spec", glm);
     await settled();
     expect(modelLimit.mock.calls.map(([model]) => model)).toEqual([
-      "langsmith:anthropic/claude-opus-5-5",
+      "langsmith:baseten/zai-org/GLM-5.3-Flash",
       glm,
     ]);
     advanced();
@@ -296,9 +312,9 @@ describe("NewGameDialog", () => {
       />,
     );
     await settled();
-    change("LLM", "langsmith:openai/gpt-5.6-sol");
+    change("LLM", "langsmith:baseten/zai-org/GLM-5.3");
     await act(async () => answers[0](null));
-    expect(matchup()).toHaveTextContent("Checking whether GPT-5.6 Sol can summarize…");
+    expect(matchup()).toHaveTextContent("Checking whether GLM-5.3 can summarize…");
     await settled();
     await act(async () => answers[1](KNOWN));
     expect(play()).toBeEnabled();
