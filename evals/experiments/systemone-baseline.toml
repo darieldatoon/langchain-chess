@@ -1,0 +1,28 @@
+# `mise run eval:systemone:baseline`: the model × description style grid, plus a control that
+# forces SemIf's 16-option tournament onto Jev, so the tournament's own cost shows on one model.
+
+[[experiment]]
+name = "semif-rich"
+model = "semif-qwen3.5-4b"
+style = "rich"
+
+[[experiment]]
+name = "semif-terse"
+model = "semif-qwen3.5-4b"
+style = "terse"
+
+[[experiment]]
+name = "jev-rich"
+model = "typesafe/jev-latest"
+style = "rich"
+
+[[experiment]]
+name = "jev-terse"
+model = "typesafe/jev-latest"
+style = "terse"
+
+[[experiment]]
+name = "jev-rich-cap16"
+model = "typesafe/jev-latest"
+style = "rich"
+max_options = 16

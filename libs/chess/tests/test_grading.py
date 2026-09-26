@@ -6,6 +6,7 @@ from langchain_chess.grading import (
     Cp,
     Line,
     Mate,
+    cp_loss,
     engine_fens,
     eval_json,
     first_runs,
@@ -14,6 +15,7 @@ from langchain_chess.grading import (
     judge,
     move_accuracy,
     positions,
+    win_pct_loss,
     win_percent,
     winning_chances,
 )
@@ -70,6 +72,16 @@ def test_mate_judgements(before, after, expected):
 def test_judgements_are_from_the_movers_side():
     assert judge(Cp(0), Cp(180), "black") == "blunder"
     assert judge(Cp(0), Mate(4, "white"), "black") == "blunder"
+
+
+def test_move_losses_are_from_the_movers_side():
+    assert cp_loss(Cp(50), Cp(20), "white") == 30
+    assert cp_loss(Cp(50), Cp(20), "black") == 0
+    assert cp_loss(Mate(2, "white"), Mate(1, "black"), "white") == 2000
+    assert win_pct_loss(Cp(50), Cp(20), "white") == pytest.approx(
+        win_percent(Cp(50), "white") - win_percent(Cp(20), "white")
+    )
+    assert win_pct_loss(Cp(20), Cp(50), "white") == 0.0
 
 
 def test_move_accuracy():

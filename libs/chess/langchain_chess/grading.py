@@ -169,6 +169,15 @@ def _by_cp(cp: int) -> Judgement:
     return "blunder"
 
 
+def cp_loss(best: Eval, chosen: Eval, mover: Side) -> int:
+    """Centipawns `chosen` gives up against `best`, each clamped to ±`CP_CEILING` (a mate is it)."""
+    return max(0, _signed_cp(best, mover) - _signed_cp(chosen, mover))
+
+
+def win_pct_loss(best: Eval, chosen: Eval, mover: Side) -> float:
+    return max(0.0, win_percent(best, mover) - win_percent(chosen, mover))
+
+
 def move_accuracy(win_before: float, win_after: float) -> float:
     """Win percents for the mover. The `+ 1` is lila's uncertainty bonus."""
     if win_after >= win_before:
@@ -222,8 +231,8 @@ def grade_game(
                 played=played,
                 best_move=best,
                 quality="best" if played == best else (judge(before, after, mover) or "good"),
-                cp_loss=max(0, _signed_cp(before, mover) - _signed_cp(after, mover)),
-                win_pct_loss=max(0.0, win_before - win_after),
+                cp_loss=cp_loss(before, after, mover),
+                win_pct_loss=win_pct_loss(before, after, mover),
                 accuracy=move_accuracy(win_before, win_after),
                 lines=analysis.lines,
             )

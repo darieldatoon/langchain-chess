@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 members = [
     "langchain-chess",
     "langchain-chess-cli",
+    "langchain-chess-evals",
     "langchain-chess-server",
     "langchain-chess-systemone",
 ]
@@ -954,6 +955,27 @@ requires-dist = [
     { name = "typer", specifier = ">=0.27" },
 ]
 provides-extras = ["anthropic"]
+
+[[package]]
+name = "langchain-chess-evals"
+version = "0.1.0"
+source = { editable = "evals" }
+dependencies = [
+    { name = "langchain-chess" },
+    { name = "langchain-chess-systemone" },
+    { name = "langsmith" },
+    { name = "typer" },
+    { name = "zstandard" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "langchain-chess", editable = "libs/chess" },
+    { name = "langchain-chess-systemone", editable = "libs/systemone" },
+    { name = "langsmith", specifier = ">=0.13" },
+    { name = "typer", specifier = ">=0.27" },
+    { name = "zstandard", specifier = ">=0.23" },
+]
 
 [[package]]
 name = "langchain-chess-server"

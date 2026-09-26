@@ -1,7 +1,7 @@
 # Virtual workspace root: no package of its own. Members are listed explicitly because a glob
 # over apps/ would include apps/web, which has no pyproject.toml.
 [tool.uv.workspace]
-members = ["libs/chess", "libs/systemone", "libs/cli", "apps/server"]
+members = ["libs/chess", "libs/systemone", "libs/cli", "apps/server", "evals"]
 
 # `workspace = true` for every member is what lets `uvx --from git+…#subdirectory=libs/cli`
 # resolve the unpublished siblings from the same commit.
@@ -10,6 +10,7 @@ langchain-chess = { workspace = true }
 langchain-chess-systemone = { workspace = true }
 langchain-chess-cli = { workspace = true }
 langchain-chess-server = { workspace = true }
+langchain-chess-evals = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -31,7 +32,7 @@ prerelease = "if-necessary"
 [tool.ruff]
 line-length = 100
 target-version = "py313"
-src = ["libs/chess", "libs/systemone", "libs/cli", "apps/server"]
+src = ["libs/chess", "libs/systemone", "libs/cli", "apps/server", "evals"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N", "SIM", "RUF", "PT", "TCH", "ANN"]
@@ -47,7 +48,7 @@ docstring-code-format = true
 python-version = "3.13"
 
 [tool.ty.src]
-include = ["libs", "apps/server"]
+include = ["libs", "apps/server", "evals"]
 
 # Tests build state and requests from loose dict literals; the packages stay strict.
 [[tool.ty.overrides]]
@@ -55,7 +56,13 @@ include = ["**/tests/**"]
 rules = { invalid-argument-type = "ignore", invalid-assignment = "ignore", not-subscriptable = "ignore", unresolved-attribute = "ignore", invalid-key = "ignore" }
 
 [tool.pytest.ini_options]
-testpaths = ["libs/chess/tests", "libs/systemone/tests", "libs/cli/tests", "apps/server/tests"]
+testpaths = [
+    "libs/chess/tests",
+    "libs/systemone/tests",
+    "libs/cli/tests",
+    "apps/server/tests",
+    "evals/tests",
+]
 asyncio_mode = "auto"
 markers = [
     "live: hits the real LLM Gateway (run with -m live --no-cov)",
@@ -67,6 +74,7 @@ addopts = [
     "--cov=langchain_chess_systemone",
     "--cov=langchain_chess_cli",
     "--cov=langchain_chess_server",
+    "--cov=langchain_chess_evals",
     "--cov-report=term-missing",
     "--cov-fail-under=100",
 ]
