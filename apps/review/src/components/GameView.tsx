@@ -1,6 +1,7 @@
 import { Banner } from "@langchain/macaw-components/Banner";
 import { Button } from "@langchain/macaw-components/Button";
 import { IconButton } from "@langchain/macaw-components/IconButton";
+import { Card } from "@langchain/macaw-components/Card";
 import { Text } from "@langchain/macaw-components/Text";
 import {
   CHART_STATUS_COLORS,
@@ -10,13 +11,10 @@ import {
 import {
   Board,
   fenOrStart,
-  fullmoveNumber,
   MoveList,
   outcomeLine,
   PlyDetails,
-  qualitySymbol,
   replay,
-  sideToMove,
   turnOf,
   type ChessValues,
   type MoveEntry,
@@ -48,13 +46,6 @@ const STEPS: Record<string, (index: number, last: number) => number> = {
   Home: () => 0,
   End: (_, last) => last,
 };
-
-/** `12.` for White's move and `12…` for Black's, numbered from the game's root. */
-function moveNumber(startFen: string, ply: number): string {
-  const offset = sideToMove(startFen) === "black" ? 1 : 0;
-  const number = fullmoveNumber(startFen) + Math.floor((ply + offset) / 2);
-  return (ply + offset) % 2 === 0 ? `${number}.` : `${number}…`;
-}
 
 export function GameView({ game, values, onOpenRun }: Props) {
   const startFen = fenOrStart(values.start_fen);
@@ -114,129 +105,134 @@ export function GameView({ game, values, onOpenRun }: Props) {
       color: resolve(CHART_STATUS_COLORS.positive),
     });
   }
-  const title = ply ? `${moveNumber(startFen, index - 1)} ${ply.san}` : "Start";
+  const lineCount = review?.settings.multipv ?? 0;
 
   return (
     <div
-      className="grid min-h-0 items-start gap-space-4 overflow-auto lg:grid-cols-[minmax(280px,560px)_minmax(280px,1fr)]"
+      className="grid min-h-0 items-start gap-space-4 overflow-auto lg:grid-cols-[minmax(320px,560px)_minmax(260px,1fr)]"
       aria-label="game"
     >
       <section className="flex flex-col gap-space-3">
-        <div className="flex items-stretch gap-space-2">
-          {review && <EvalBar value={review.evals[index]} flipped={orientation === "black"} />}
-          <div className="min-w-0 flex-1">
-            <Board
-              fen={fens[index]}
-              orientation={orientation}
-              humanSide={orientation}
-              lastMove={played}
-              locked
-              arrows={arrows}
-            />
+        <Card intent="neutral" className="flex flex-col gap-space-3">
+          <div className="flex items-stretch gap-space-2">
+            {review && <EvalBar value={review.evals[index]} flipped={orientation === "black"} />}
+            <div className="min-w-0 flex-1">
+              <Board
+                fen={fens[index]}
+                orientation={orientation}
+                humanSide={orientation}
+                lastMove={played}
+                locked
+                arrows={arrows}
+              />
+            </div>
           </div>
-        </div>
-        <div className="flex items-center justify-between gap-space-2">
-          <div className="flex items-center gap-space-1">
-            <IconButton
-              icon={CaretDoubleLeftIcon}
-              label="First move"
-              size="sm"
-              variant="outlined"
-              color="secondary"
-              onClick={() => go(0)}
-              disabled={index === 0}
-            />
-            <IconButton
-              icon={CaretLeftIcon}
-              label="Previous move"
-              size="sm"
-              variant="outlined"
-              color="secondary"
-              onClick={() => go(index - 1)}
-              disabled={index === 0}
-            />
-            <IconButton
-              icon={CaretRightIcon}
-              label="Next move"
-              size="sm"
-              variant="outlined"
-              color="secondary"
-              onClick={() => go(index + 1)}
-              disabled={index === last}
-            />
-            <IconButton
-              icon={CaretDoubleRightIcon}
-              label="Last move"
-              size="sm"
-              variant="outlined"
-              color="secondary"
-              onClick={() => go(last)}
-              disabled={index === last}
-            />
+          <div className="flex items-center justify-between gap-space-2">
+            <div className="flex items-center gap-space-1">
+              <IconButton
+                icon={CaretDoubleLeftIcon}
+                label="First move"
+                size="sm"
+                variant="outlined"
+                color="secondary"
+                onClick={() => go(0)}
+                disabled={index === 0}
+              />
+              <IconButton
+                icon={CaretLeftIcon}
+                label="Previous move"
+                size="sm"
+                variant="outlined"
+                color="secondary"
+                onClick={() => go(index - 1)}
+                disabled={index === 0}
+              />
+              <IconButton
+                icon={CaretRightIcon}
+                label="Next move"
+                size="sm"
+                variant="outlined"
+                color="secondary"
+                onClick={() => go(index + 1)}
+                disabled={index === last}
+              />
+              <IconButton
+                icon={CaretDoubleRightIcon}
+                label="Last move"
+                size="sm"
+                variant="outlined"
+                color="secondary"
+                onClick={() => go(last)}
+                disabled={index === last}
+              />
+            </div>
+            <Text variant="sm" color="secondary" className="truncate">
+              {values.outcome ? outcomeLine(values.outcome) : "In progress"}
+            </Text>
+            <div className="flex items-center gap-space-1">
+              <IconButton
+                icon={ArrowsDownUpIcon}
+                label="Flip board"
+                size="sm"
+                variant="plain"
+                color="secondary"
+                onClick={() => setOrientation((o) => (o === "white" ? "black" : "white"))}
+              />
+              <Button
+                variant="outlined"
+                color="secondary"
+                size="sm"
+                rightDecorator={ArrowSquareOutIcon}
+                onClick={() => onOpenRun(grade?.run_id ?? game.lastRunId)}
+              >
+                Open trace
+              </Button>
+            </div>
           </div>
-          <IconButton
-            icon={ArrowsDownUpIcon}
-            label="Flip board"
-            size="sm"
-            variant="plain"
-            color="secondary"
-            onClick={() => setOrientation((o) => (o === "white" ? "black" : "white"))}
-          />
-        </div>
+        </Card>
         {review ? (
-          <EvalGraph evals={review.evals} index={index} onSelect={go} />
+          <>
+            <GradeCard
+              move={
+                grade && ply
+                  ? {
+                      grade,
+                      san: ply.san,
+                      fenBefore: fens[index - 1],
+                      before: review.evals[index - 1],
+                      after: review.evals[index],
+                    }
+                  : null
+              }
+              engine={review.engine}
+              lineCount={lineCount}
+            />
+            <Card intent="neutral" className="select-none" aria-label="evaluation graph">
+              <EvalGraph evals={review.evals} index={index} onSelect={go} />
+            </Card>
+          </>
         ) : (
           <Banner intent="info" title="Not graded yet">
             Grade it with <code>lcchess grade --thread {game.threadId}</code> to see engine
             evaluations here.
           </Banner>
         )}
+      </section>
+
+      <aside className="flex flex-col gap-space-3">
         <MoveList
           entries={entries}
           startFen={startFen}
           selected={index - 1}
           onSelect={(p) => go(p + 1)}
         />
-      </section>
-
-      <section className="flex flex-col gap-space-3">
-        <div className="flex items-center justify-between gap-space-2">
-          <Text variant="h3" as="h2">
-            {title}
-            {grade && qualitySymbol(grade.quality)}
-          </Text>
-          <Button
-            variant="outlined"
-            color="secondary"
-            size="sm"
-            rightDecorator={ArrowSquareOutIcon}
-            onClick={() => onOpenRun(grade?.run_id ?? game.lastRunId)}
-          >
-            Open trace
-          </Button>
-        </div>
-        {values.outcome && index === last && (
-          <Text variant="sm" color="secondary">
-            {outcomeLine(values.outcome)}
-          </Text>
-        )}
-        {grade && review && ply && (
-          <GradeCard
-            grade={grade}
-            san={ply.san}
-            fenBefore={fens[index - 1]}
-            before={review.evals[index - 1]}
-            after={review.evals[index]}
-            engine={review.engine}
-          />
-        )}
         {ply && (
           <PlyDetails
             title="Who Played It"
             reply={{ ply, turn: turnOf(ply, values.turns ?? []), fenBefore: fens[index - 1] }}
           />
         )}
-      </section>
+      </aside>
     </div>
   );
 }

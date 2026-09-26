@@ -10,11 +10,13 @@ export function EvalBar({ value, flipped }: { value: Eval; flipped: boolean }) {
   const white = whiteWinPercent(value);
   return (
     <div
-      className="flex w-space-5 shrink-0 flex-col items-center gap-space-1"
+      // A fixed width, wider than any label ("+14.0", "-#12"): a column that sized to its label
+      // would resize the board beside it from move to move.
+      className="flex w-12 shrink-0 flex-col items-center gap-space-1"
       aria-label={`evaluation ${evalText(value)}`}
     >
       <div
-        className={`flex w-full flex-1 overflow-hidden rounded-sm ${flipped ? "flex-col" : "flex-col-reverse"}`}
+        className={`flex w-5 flex-1 overflow-hidden rounded-sm ${flipped ? "flex-col" : "flex-col-reverse"}`}
       >
         <div style={{ ...WHITE, height: `${white}%` }} data-testid="eval-white" />
         <div style={{ ...BLACK, height: `${100 - white}%` }} />

@@ -20,7 +20,8 @@ const renderView = (g = game(), onOpenRun = vi.fn()) =>
     </HostTheme>,
   );
 const key = (k: string) => fireEvent.keyDown(window, { key: k });
-const heading = () => screen.getByRole("heading", { level: 2, name: /\.|…|Start/ });
+/** The move the board shows, as the move list marks it. */
+const current = () => document.querySelector('[aria-current="step"]')?.textContent ?? "Start";
 
 describe("EvalBar", () => {
   it("fills White's share from the bottom, or the top when flipped", () => {
@@ -35,29 +36,48 @@ describe("EvalBar", () => {
 
 describe("GradeCard", () => {
   const blunder = review().plies[5];
-  const props = {
+  const move = {
+    grade: blunder,
     san: "Nf6",
     fenBefore: "r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 3 3",
     before: { cp: 30 },
     after: { mate: 1, winner: "white" } as const,
-    engine: "Stockfish 19",
   };
 
-  it("shows the grade, the better move and the engine's lines", () => {
-    render(<GradeCard grade={blunder} {...props} />);
-    expect(screen.getByText("Blunder")).toBeInTheDocument();
+  it("shows the grade, the better move and the engine's lines, padded to the line count", () => {
+    render(<GradeCard move={move} engine="Stockfish 19" lineCount={2} />);
+    expect(screen.getByText("Blunder: Nf6")).toBeInTheDocument();
     expect(screen.getByText("+0.3 → #1")).toBeInTheDocument();
     expect(screen.getByText("38.4%")).toBeInTheDocument();
     expect(screen.getByText("d5")).toBeInTheDocument();
-    expect(within(screen.getByLabelText("engine lines")).getByText("d5 Bxd5")).toBeInTheDocument();
+    const lines = screen.getByLabelText("engine lines");
+    expect(within(lines).getByText("d5 Bxd5")).toBeInTheDocument();
+    // The header plus two rows: the line and an empty one holding its place.
+    expect(lines.children).toHaveLength(3);
   });
 
-  it("leaves out the best move when it was played, and lines when there are none", () => {
-    render(<GradeCard grade={{ ...blunder, quality: "best", lines: [] }} {...props} />);
-    expect(screen.queryByText("Best Move")).toBeNull();
+  it("keeps its rows at the start and for a best move, with dashes for what's missing", () => {
+    const { rerender } = render(<GradeCard move={null} engine="Stockfish 19" lineCount={1} />);
+    expect(screen.getByText("Start position")).toBeInTheDocument();
+    expect(screen.getAllByText("—")).toHaveLength(5);
+    expect(screen.getByLabelText("engine lines").children).toHaveLength(2);
+    rerender(
+      <GradeCard
+        move={{ ...move, grade: { ...blunder, quality: "best", lines: [] } }}
+        engine="Stockfish 19"
+        lineCount={0}
+      />,
+    );
+    expect(screen.getAllByText("—")).toHaveLength(1);
     expect(screen.queryByLabelText("engine lines")).toBeNull();
-    render(<GradeCard grade={{ ...blunder, best_move: null }} {...props} />);
-    expect(screen.queryByText("Best Move")).toBeNull();
+    rerender(
+      <GradeCard
+        move={{ ...move, grade: { ...blunder, best_move: null } }}
+        engine="x"
+        lineCount={1}
+      />,
+    );
+    expect(screen.getAllByText("—")).toHaveLength(1);
   });
 });
 
@@ -111,7 +131,7 @@ describe("GameList", () => {
 describe("GameView", () => {
   it("opens on the final position with its grade, result and who played it", () => {
     renderView();
-    expect(heading()).toHaveTextContent("4. Qxf7#");
+    expect(current()).toBe("Qxf7#");
     expect(screen.getByText("Checkmate, White wins. 1-0")).toBeInTheDocument();
     expect(screen.getByLabelText("engine grade")).toBeInTheDocument();
     expect(screen.getByText("Who Played It")).toBeInTheDocument();
@@ -122,34 +142,35 @@ describe("GameView", () => {
   it("steps through the game by button, key, graph and move list", () => {
     renderView();
     fireEvent.click(screen.getByRole("button", { name: "Previous move" }));
-    expect(heading()).toHaveTextContent("3… Nf6??");
+    expect(current()).toBe("Nf6??");
     // The blunder: the move played and the better one.
     expect(board.options?.arrows).toHaveLength(2);
-    expect(screen.queryByText("Checkmate, White wins. 1-0")).toBeNull();
+    // The result stays put on every move, so nothing below it shifts.
+    expect(screen.getByText("Checkmate, White wins. 1-0")).toBeInTheDocument();
     key("Home");
-    expect(heading()).toHaveTextContent("Start");
+    expect(current()).toBe("Start");
     expect(board.options?.arrows).toEqual([]);
     expect(screen.getByRole("button", { name: "First move" })).toBeDisabled();
     key("ArrowLeft");
-    expect(heading()).toHaveTextContent("Start");
+    expect(current()).toBe("Start");
     key("ArrowRight");
-    expect(heading()).toHaveTextContent("1. e4");
+    expect(current()).toBe("e4");
     key("End");
-    expect(heading()).toHaveTextContent("4. Qxf7#");
+    expect(current()).toBe("Qxf7#");
     key("a");
-    expect(heading()).toHaveTextContent("4. Qxf7#");
+    expect(current()).toBe("Qxf7#");
     fireEvent.click(screen.getByRole("button", { name: "First move" }));
     fireEvent.click(screen.getByRole("button", { name: "Next move" }));
-    expect(heading()).toHaveTextContent("1. e4");
+    expect(current()).toBe("e4");
     fireEvent.click(screen.getByRole("button", { name: "Last move" }));
-    expect(heading()).toHaveTextContent("4. Qxf7#");
+    expect(current()).toBe("Qxf7#");
     const graph = screen.getByRole("button", { name: "White's winning chances by ply" });
     expect(graph).toHaveAttribute("data-x", "ply 3");
     expect(graph).toHaveAttribute("data-y", "50%");
     fireEvent.click(graph);
-    expect(heading()).toHaveTextContent("2. Qh5");
+    expect(current()).toBe("Qh5");
     fireEvent.click(screen.getByRole("button", { name: "Nc6" }));
-    expect(heading()).toHaveTextContent("2… Nc6");
+    expect(current()).toBe("Nc6");
   });
 
   it("ignores keys typed into a field", () => {
@@ -157,7 +178,7 @@ describe("GameView", () => {
     const input = document.createElement("input");
     document.body.appendChild(input);
     fireEvent.keyDown(input, { key: "Home" });
-    expect(heading()).toHaveTextContent("4. Qxf7#");
+    expect(current()).toBe("Qxf7#");
     input.remove();
   });
 
@@ -182,14 +203,14 @@ describe("GameView", () => {
     expect(screen.queryByLabelText("engine grade")).toBeNull();
   });
 
-  it("numbers moves from a Black-to-move root, and copes with missing lists", () => {
+  it("copes with missing plies, turns and moves", () => {
     const root = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 5";
     const bare = game({
       review: null,
       values: values({ start_fen: root, moves: ["e7e5"], plies: undefined, turns: undefined }),
     });
     renderView(bare);
-    expect(heading()).toHaveTextContent("Start");
+    expect(current()).toBe("e7e5");
     expect(screen.getByRole("button", { name: "e7e5" })).toBeInTheDocument();
     const once = game({
       review: null,
@@ -199,7 +220,7 @@ describe("GameView", () => {
     expect(screen.getAllByRole("button", { name: "Last move" }).at(-1)).toBeDisabled();
   });
 
-  it("numbers Black's reply after a Black-to-move root", () => {
+  it("steps through a game that starts with Black to move", () => {
     const root = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 5";
     const g = game({
       review: null,
@@ -214,8 +235,9 @@ describe("GameView", () => {
       }),
     });
     renderView(g);
-    expect(heading()).toHaveTextContent("6. Nf3");
+    expect(current()).toBe("Nf3");
+    expect(screen.getByText("In progress")).toBeInTheDocument();
     key("ArrowLeft");
-    expect(heading()).toHaveTextContent("5… e5");
+    expect(current()).toBe("e5");
   });
 });
