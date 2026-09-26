@@ -8,6 +8,8 @@ uv = "0.12"
 lefthook = "2"
 "github:SocketDev/sfw-free" = { version = "1.15.2", bin = "sfw" }
 "github:Disservin/fastchess" = "v1.8.2-alpha"
+# `lcchess grade` runs it; the release binaries are named per platform.
+"github:official-stockfish/Stockfish" = { version = "sf_19", bin = "stockfish" }
 
 [tasks.setup]
 description = "Install Python and web dependencies, then git hooks"

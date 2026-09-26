@@ -42,6 +42,53 @@ checksum = "sha256:007ce550dc809510b34622a1aeb43fd443d40284045bef5c1bc39c8941114
 url = "https://github.com/Disservin/fastchess/releases/download/v1.8.2-alpha/fastchess-windows-x86-64.zip"
 url_api = "https://api.github.com/repos/Disservin/fastchess/releases/assets/490616746"
 
+[[tools."github:official-stockfish/Stockfish"]]
+version = "sf_19"
+backend = "github:official-stockfish/Stockfish"
+specifiers = ["sf_19"]
+
+[tools."github:official-stockfish/Stockfish"."platforms.linux-arm64"]
+checksum = "sha256:fe26cfd1d9db4c8af3d21e24d9ff34cacb31c1f940085a7583da11796f2bac01"
+url = "https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-linux-arm64-universal.tar.gz"
+url_api = "https://api.github.com/repos/official-stockfish/Stockfish/releases/assets/545574906"
+provenance = "github-attestations"
+
+[tools."github:official-stockfish/Stockfish"."platforms.linux-arm64-musl"]
+checksum = "sha256:fe26cfd1d9db4c8af3d21e24d9ff34cacb31c1f940085a7583da11796f2bac01"
+url = "https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-linux-arm64-universal.tar.gz"
+url_api = "https://api.github.com/repos/official-stockfish/Stockfish/releases/assets/545574906"
+provenance = "github-attestations"
+
+[tools."github:official-stockfish/Stockfish"."platforms.linux-x64"]
+checksum = "sha256:9defc0d4e55d49c65a6d042f3e571a39fcea499ade6dbe741b53b8c65e03611f"
+url = "https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-linux-x86-64-universal.tar.gz"
+url_api = "https://api.github.com/repos/official-stockfish/Stockfish/releases/assets/545574859"
+provenance = "github-attestations"
+
+[tools."github:official-stockfish/Stockfish"."platforms.linux-x64-musl"]
+checksum = "sha256:9defc0d4e55d49c65a6d042f3e571a39fcea499ade6dbe741b53b8c65e03611f"
+url = "https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-linux-x86-64-universal.tar.gz"
+url_api = "https://api.github.com/repos/official-stockfish/Stockfish/releases/assets/545574859"
+provenance = "github-attestations"
+
+[tools."github:official-stockfish/Stockfish"."platforms.macos-arm64"]
+checksum = "sha256:a1f0e3bcc5a6927a11fe6fc8e54a779754645f3c2bae2cf13420fd1957adaa77"
+url = "https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-macos-universal.tar.gz"
+url_api = "https://api.github.com/repos/official-stockfish/Stockfish/releases/assets/545574939"
+provenance = "github-attestations"
+
+[tools."github:official-stockfish/Stockfish"."platforms.macos-x64"]
+checksum = "sha256:a1f0e3bcc5a6927a11fe6fc8e54a779754645f3c2bae2cf13420fd1957adaa77"
+url = "https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-macos-universal.tar.gz"
+url_api = "https://api.github.com/repos/official-stockfish/Stockfish/releases/assets/545574939"
+provenance = "github-attestations"
+
+[tools."github:official-stockfish/Stockfish"."platforms.windows-x64"]
+checksum = "sha256:3c8bf1f9ea66a09350a40df4f632288285ac206d99f33ab5842c408fc30b48a7"
+url = "https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-windows-x86-64-universal.zip"
+url_api = "https://api.github.com/repos/official-stockfish/Stockfish/releases/assets/545574910"
+provenance = "github-attestations"
+
 [[tools.lefthook]]
 version = "2.1.14"
 backend = "aqua:evilmartians/lefthook"
