@@ -237,7 +237,7 @@ mise tasks           # every task
 - **OpenWiki.** [`openwiki/`](openwiki) is a generated wiki of this repo for coding agents.
   `mise run wiki:update` refreshes stale pages; `mise run wiki:view` browses it.
 
-Design decisions and measurements live in [docs/decisions.md](docs/decisions.md).
+Design decisions and measurements live in the [OpenWiki](openwiki/index.md).
 
 ## Troubleshooting
 
