@@ -170,7 +170,7 @@ export function NewGameDialog({
                 value={setup.customModel}
                 onChange={pick("customModel")}
                 placeholder="openai:gpt-5.6-sol"
-                hintText="Bare names route through the LLM Gateway; provider:model goes direct."
+                hintText="Use the format provider:model, e.g. langsmith:anthropic/claude-opus-5-5."
                 autoFocus
               />
             )}
