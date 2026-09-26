@@ -21,6 +21,7 @@ dev = [
     "langgraph-cli[inmem]==0.4.31",
     "httpx>=0.28.1",
     "pytest-textual-snapshot>=1.0.0",
+    "pytest-xdist>=3.8",
 ]
 
 [tool.uv]

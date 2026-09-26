@@ -2,40 +2,54 @@ name: ci
 
 on:
   pull_request:
+    paths-ignore: ["**/*.md", "plans/**"]
+  # deploy.yml calls this, so the checks a merge deploys behind are these same checks.
+  workflow_call:
 
 permissions:
   contents: read
 
+# A called run gets its own group: a new merge must not cancel the checks of a deploy in flight.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  test:
+  python:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
-
-      - uses: socketdev/action@ba6de6cc0565af1f42295590380973573297e31f
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          mode: firewall-free
+          persist-credentials: false
 
-      - uses: jdx/mise-action@v3
+      - uses: ./.github/actions/setup
         with:
-          install: true
-          cache: true
-
-      - name: Install
-        run: |
-          uv sync --all-packages --all-groups --locked
-          pnpm install --frozen-lockfile
+          web: false
 
       - name: Check
-        run: mise run check
+        run: mise run check:python
 
       - name: Test
-        run: mise run test
+        run: mise run test:python
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          python: false
+
+      - name: Check
+        run: mise run check:web
+
+      - name: Test
+        run: mise run test:web
 
       # `langsmith apps push` uploads apps/review whole: 5 MiB, 500 files, text only.
       - name: Review app upload budget
