@@ -3,9 +3,6 @@ type: quickstart
 title: "Quickstart: working in langchain-chess"
 description: Entry point for coding agents changing langchain-chess — what the repo is, the Python/JS package map and dependency direction, the mise dev/check/test commands, the rules every change must keep, and a task-routing table to the rest of the wiki.
 tags: [quickstart, overview, package-map, development, routing]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T13:04:36.303Z
 sources:
   - id: openwiki-source-88d085345a1ecd09c61f7ab0
     resource: repo://apps/server/langchain_chess_server/game_setup.py
@@ -17,8 +14,6 @@ sources:
     resource: repo://apps/server/pyproject.toml
   - id: openwiki-source-611421396243f4b643f6d94a
     resource: repo://apps/web/src/useGame.ts
-  - id: openwiki-source-5e8cfa6ef22542c9ea8aaf4a
-    resource: repo://docs/decisions.md
   - id: openwiki-source-5bbba7b2a8ea8360ff233d63
     resource: repo://langgraph.json
   - id: openwiki-source-3ae14faf8cc85a90b40ed182
@@ -43,7 +38,10 @@ sources:
     resource: repo://pyproject.toml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-26T14:00:37.632Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-26T14:00:37.632Z
 ---
 
 # Quickstart: working in langchain-chess
@@ -184,5 +182,6 @@ Copy `.env.example` to create `.env`. Never commit values. The server's settings
 | Add a mise task, a git hook, a tool pin, or change the OpenWiki workflow | [Local development](operations/local-development.md) |
 | Understand how turns fail and recover at runtime: model errors, System 1 failures, context validation, what the UI shows | [Runtime behavior and failure modes](operations/runtime-behavior.md) |
 | Add tests, use the fakes, update TUI snapshots, or run live and fastchess tests | [Testing conventions](testing/testing-conventions.md) |
+| Find out why something that looks like a gap was left out on purpose (no Anthropic prompt caching, the removed `full` memory mode), the measurements behind it, and when to revisit | [Decisions and measurements](concepts/decisions.md) |
 
-For measured design decisions (prompt caching, memory mode versus analysis length), read [docs/decisions.md](../docs/decisions.md). It keeps the current numbers, and this wiki doesn't repeat them.
+The only memory modes are `none` and `summarize`. The earlier `full` mode was removed. Measured design decisions (prompt caching, memory mode versus analysis length) are on the [Decisions and measurements](concepts/decisions.md) page, which replaces the deleted `docs/decisions.md`. The README also points to the OpenWiki for these decisions. That page holds the current numbers, and no other page in this wiki repeats them.
