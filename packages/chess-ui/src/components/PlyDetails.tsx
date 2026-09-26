@@ -8,8 +8,7 @@ import { useState } from "react";
 import { sanAt } from "../chess";
 import { costText, percent, seconds, sourceClass, sourceLabel, type SourceClass } from "../format";
 import { systemOneMeta, turnCost } from "../selectors";
-import type { RankedMove, SystemOneMeta } from "../types";
-import type { Reply } from "../useGame";
+import type { RankedMove, Reply, SystemOneMeta } from "../types";
 import { Analysis } from "./Analysis";
 
 const BADGE_COLORS: Record<SourceClass, "primary" | "special" | "secondary" | "warning" | "plain"> =
@@ -25,9 +24,10 @@ interface Props {
   reply: Reply | null;
   /** The opponent's reasoning as it streams, while it thinks; it replaces the last reply. */
   live?: string | null;
+  title?: string;
 }
 
-export function PlyDetails({ reply, live = null }: Props) {
+export function PlyDetails({ reply, live = null, title = "Last Reply" }: Props) {
   const [showReasoning, setShowReasoning] = useState(true);
   if (live !== null) {
     return (
@@ -45,7 +45,7 @@ export function PlyDetails({ reply, live = null }: Props) {
     return (
       <Card intent="neutral" className="flex flex-col gap-space-3">
         <Text variant="h4" as="h2" color="secondary">
-          Last Reply
+          {title}
         </Text>
         <Text variant="sm" color="tertiary">
           Make a move to see how the opponent decided.
@@ -63,7 +63,7 @@ export function PlyDetails({ reply, live = null }: Props) {
   return (
     <Card intent="neutral" className="flex flex-col gap-space-3" aria-label="last reply">
       <Text variant="h4" as="h2" color="secondary">
-        Last Reply
+        {title}
       </Text>
       <div className="flex items-center gap-space-2">
         <Badge color={BADGE_COLORS[source]} size="sm">

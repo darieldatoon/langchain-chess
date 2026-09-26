@@ -9,6 +9,7 @@ authors = [{ name = "Dariel Dato-on" }]
 dependencies = [
     "langchain-chess[systemone]",
     "langchain-openai>=1.6.2",
+    "langsmith>=0.13",
     "rich>=15",
     "textual>=6",
     "typer>=0.27",

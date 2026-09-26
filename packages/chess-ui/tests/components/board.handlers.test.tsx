@@ -11,6 +11,7 @@ interface Captured {
   }) => boolean;
   onSquareClick?: (args: { piece: { pieceType: string } | null; square: string }) => void;
   squareStyles?: Record<string, unknown>;
+  arrows?: unknown[];
   onPieceDrop?: (args: {
     piece: { pieceType: string };
     sourceSquare: string;
@@ -30,6 +31,25 @@ vi.mock("react-chessboard", () => ({
 const piece = (pieceType: string) => ({ piece: { pieceType }, square: "e2", isSparePiece: false });
 
 describe("Board handlers", () => {
+  it("draws the arrows it is given, and none of its own otherwise", () => {
+    const arrow = { startSquare: "e2", endSquare: "e4", color: "green" };
+    const { rerender } = render(
+      <Board fen={START_FEN} orientation="white" humanSide="white" lastMove={null} locked />,
+    );
+    expect(captured.options?.arrows).toBeUndefined();
+    rerender(
+      <Board
+        fen={START_FEN}
+        orientation="white"
+        humanSide="white"
+        lastMove={null}
+        locked
+        arrows={[arrow]}
+      />,
+    );
+    expect(captured.options?.arrows).toEqual([arrow]);
+  });
+
   it("lets the human drag only their own pieces on their turn", () => {
     const onMove = vi.fn();
     render(

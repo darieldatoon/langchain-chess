@@ -13,9 +13,11 @@ shortlist, and the LLM may still play any legal move.
 |---|---|---|
 | `libs/chess` (`langchain-chess`) | `langchain_chess` | `create_chess_agent`, the state, the middleware contract |
 | `libs/systemone` (`langchain-chess-systemone`) | `langchain_chess_systemone` | `SystemOneMiddleware` and the gateway ranker |
-| `libs/cli` (`langchain-chess-cli`) | `langchain_chess_cli` | `lcchess uci` and `lcchess play` |
+| `libs/cli` (`langchain-chess-cli`) | `langchain_chess_cli` | `lcchess uci`, `lcchess play` and `lcchess grade` |
 | `apps/server` (private) | `langchain_chess_server` | The `chess` graph and the `/ui` app for LangSmith Deployments |
 | `apps/web` | | The React UI served at `/ui` |
+| `apps/review` | | The LangSmith custom app that replays graded games |
+| `packages/chess-ui` | `@langchain-chess/chess-ui` | The board, move list, ply details and state types the web apps share |
 
 ## Quickstart
 
@@ -161,6 +163,36 @@ pieces are chess-tui's). `ctrl+s` starts as Black, `ctrl+r` retries a failed mov
 starts a new game, `ctrl+f` switches sides. Board colours are `chess-board--*` component
 classes, so CSS can restyle them.
 
+### Grading games
+
+`lcchess grade` replays games from their traces, grades every move with a UCI engine, and
+writes the grades back to the traces as feedback. `mise install` provides Stockfish.
+
+```sh
+uv run --all-packages --env-file .env lcchess grade --thread <thread-id>        # one game
+uv run --all-packages --env-file .env lcchess grade --project langchain-chess-app \
+  --since 2026-09-01 --metadata surface=web --limit 50 --dry-run                # a filtered batch
+```
+
+- Each distinct position is evaluated once across the batch, on `--workers` engines (default:
+  cores / `--engine-threads`). Each game's feedback is written as soon as it is graded.
+- Games already graded with the same engine and settings are skipped; `--force` re-grades.
+  Re-grading replaces this grader's earlier feedback on the game and leaves other feedback alone.
+- Search: `--depth` (default 16), `--nodes` or `--movetime`; `--multipv`, `--hash`,
+  `--engine-threads`, and `--engine` (or `STOCKFISH_PATH`). With one engine thread, `--nodes`
+  gives the same grades on any machine. Each position starts with a cleared hash, so a grade
+  never depends on which positions its engine searched before.
+- Classification, loss and accuracy follow Lichess (`langchain_chess.grading` cites the
+  sources). Each agent turn's root run gets `move_quality` (`best`, `good`, `inaccuracy`,
+  `mistake`, `blunder`), `cp_loss`, `win_pct_loss` and `best_move`. The game's last root run
+  gets `accuracy_white`, `accuracy_black` and `game_review`: every position's eval and every
+  move's grade and engine lines, for the review app. Moves that came in as input (the human's,
+  in the web UI) are graded in `game_review` and the accuracies, but get no per-turn feedback.
+- Every entry's source info records the engine (its UCI `id name`), the settings and their
+  fingerprint.
+- The review app (`apps/review`, a LangSmith custom app) replays graded games as an analysis
+  board: `mise run dev:review` runs it locally. See its README.
+
 ### Install the CLI without cloning
 
 The packages aren't on PyPI, so only uv can install it: it resolves the sibling packages from
@@ -206,9 +238,14 @@ mise run build   # the web UI into apps/server/.../static, served at /ui
 `test:live`, `test:uci`, and the rest. Options after `--` pass through, as in
 `mise run dev:tui -- --side black`.
 
-mise provides every tool (node, pnpm, uv, lefthook, `sfw`, fastchess); Python comes from uv.
+mise provides every tool (node, pnpm, uv, lefthook, `sfw`, fastchess, Stockfish, the `langsmith`
+CLI); Python comes from uv.
 Add dependencies with `sfw uv add --package <distribution> <dependency>` (root dev tools:
-`sfw uv add --group dev <tool>`) and `sfw pnpm add <pkg>` in `apps/web`. Pull requests
+`sfw uv add --group dev <tool>`) and `sfw pnpm add <pkg>` in the JS package that needs it. The
+JS side is one pnpm workspace managed by Vite+: `vp check` runs at the root (lint and format
+config live only in the root `vite.config.ts`), `vp run -r test` and `vp run -r build` run per
+package, and versions used by more than one package live in the `pnpm-workspace.yaml`
+catalog. `packages/chess-ui` is consumed as TypeScript source, with no build step. Pull requests
 run `mise run check` and `mise run test` (`.github/workflows/ci.yml`). Pushing to `main` runs
 both and then `mise run deploy` (`.github/workflows/deploy.yml`), which deploys `langchain-chess-app`. The pre-push hook runs `mise run test`; the pre-commit hook checks
 only the staged files.

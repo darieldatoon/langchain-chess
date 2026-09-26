@@ -1,8 +1,8 @@
 import { Button } from "@langchain/macaw-components/Button";
 import { Card } from "@langchain/macaw-components/Card";
 import { Text } from "@langchain/macaw-components/Text";
-import { outcomeLine, resultHeadline } from "../format";
-import type { Outcome, Side } from "../types";
+import { outcomeLine, type Outcome, type Side } from "@langchain-chess/chess-ui";
+import { resultHeadline } from "../format";
 
 interface Props {
   outcome: Outcome;

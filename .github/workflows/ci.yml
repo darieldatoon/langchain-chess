@@ -29,10 +29,14 @@ jobs:
       - name: Install
         run: |
           uv sync --all-packages --all-groups --locked
-          pnpm --dir apps/web install --frozen-lockfile
+          pnpm install --frozen-lockfile
 
       - name: Check
         run: mise run check
 
       - name: Test
         run: mise run test
+
+      # `langsmith apps push` uploads apps/review whole: 5 MiB, 500 files, text only.
+      - name: Review app upload budget
+        run: mise run review:size

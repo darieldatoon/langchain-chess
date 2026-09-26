@@ -14,8 +14,9 @@ Tailwind v3 preset).
 One thread is one game; its id stays in the URL (`?thread=`). Moves are human chat messages
 whose content is the UCI move (`go` asks the opponent to open), each with a stable id so a
 resend is a no-op; an empty submit retries a pending turn. The UI reads only `start_fen`,
-`moves`, `plies`, `turns`, `outcome`, `error`, and `messages`; `src/types.ts` mirrors the Python
-state by hand.
+`moves`, `plies`, `turns`, `outcome`, `error`, and `messages`. `packages/chess-ui/src/types.ts`
+mirrors the Python state by hand; that package also holds the board, move list and ply details
+this app shares with the review app.
 
 A game starts from the New game dialog (it opens by itself when the URL has no thread): play as
 White, Black, or Random, pick a System 1 and an LLM (both set is `hybrid`, one alone is

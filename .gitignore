@@ -1,6 +1,9 @@
 # local plans, never committed
 plans/
 
+# javascript
+node_modules/
+
 # python
 __pycache__/
 *.py[cod]
@@ -30,6 +33,10 @@ htmlcov/
 # the web build lives inside the server package so the image can serve it; CI builds it
 /apps/server/langchain_chess_server/static/
 /apps/web/coverage/
+/packages/*/coverage/
+
+# the review app's LangSmith link; CI writes it from the CUSTOM_APP_ID variable
+/apps/review/.langsmith/
 
 # local dev server state (langgraph dev)
 /.langgraph_api/

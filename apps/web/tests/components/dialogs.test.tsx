@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { KeyCheck } from "../../src/auth";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { DEFAULT_SETUP, type Setup } from "../../src/setup";
-import { DEFAULT_CONTEXT } from "../../src/types";
+import { DEFAULT_CONTEXT } from "@langchain-chess/chess-ui";
 import { AppSettingsDialog } from "../../src/components/AppSettingsDialog";
 import { NewGameDialog } from "../../src/components/NewGameDialog";
 import { ResultCard } from "../../src/components/ResultCard";

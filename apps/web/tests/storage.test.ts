@@ -12,7 +12,7 @@ import {
   saveSetup,
   SETUP_KEY,
 } from "../src/storage";
-import { DEFAULT_CONTEXT } from "../src/types";
+import { DEFAULT_CONTEXT } from "@langchain-chess/chess-ui";
 
 const store = (key: string, value: unknown) =>
   window.localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));

@@ -14,7 +14,7 @@ import {
   setupFromContext,
   type Setup,
 } from "../src/setup";
-import { DEFAULT_CONTEXT, type ChessContext } from "../src/types";
+import { DEFAULT_CONTEXT, type ChessContext } from "@langchain-chess/chess-ui";
 
 const setup = (overrides: Partial<Setup> = {}): Setup => ({ ...DEFAULT_SETUP, ...overrides });
 

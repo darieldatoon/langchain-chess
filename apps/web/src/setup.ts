@@ -1,7 +1,12 @@
 // The new-game setup: what the human picks in the modal, and the ChessContext it pins to a game.
 // Pure: storage lives in storage.ts.
 import { isRecord, oneOf, sanitizeContext } from "./settings";
-import { DEFAULT_CONTEXT, type ChessContext, type Side, type SystemOneModel } from "./types";
+import {
+  DEFAULT_CONTEXT,
+  type ChessContext,
+  type Side,
+  type SystemOneModel,
+} from "@langchain-chess/chess-ui";
 
 export type SideChoice = Side | "random";
 export type SystemOneChoice = SystemOneModel | "none";

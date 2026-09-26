@@ -1,9 +1,12 @@
-"""The `lcchess` command line: `uci` and `play`."""
+"""The `lcchess` command line: `uci`, `play` and `grade`."""
 
 import asyncio
 import logging
+import os
 import sys
-from typing import Annotated, Literal
+from datetime import datetime
+from pathlib import Path
+from typing import TYPE_CHECKING, Annotated, Literal
 
 import typer
 from langgraph.graph.state import CompiledStateGraph
@@ -11,9 +14,12 @@ from langgraph.types import Checkpointer
 
 from langchain_chess_cli.options import AgentOptions, build_agent
 
+if TYPE_CHECKING:
+    from langsmith import Client
+
 app = typer.Typer(
     name="lcchess",
-    help="Play langchain-chess agents as a UCI engine or in the terminal.",
+    help="Play langchain-chess agents as a UCI engine or in the terminal, and grade their games.",
     no_args_is_help=True,
     add_completion=False,
 )
@@ -162,3 +168,101 @@ def play(
         return build_agent(options, draw_claims=DRAW_CLAIMS, checkpointer=InMemorySaver())
 
     ChessApp(factory, options, side=side).run()
+
+
+PositiveOption = Annotated[int | None, typer.Option(min=1)]
+
+
+@app.command()
+def grade(
+    thread: Annotated[
+        list[str] | None, typer.Option(help="A thread (game) to grade; repeatable.")
+    ] = None,
+    threads_file: Annotated[
+        Path | None,
+        typer.Option(exists=True, dir_okay=False, help="Thread ids, one per line."),
+    ] = None,
+    project: Annotated[
+        str | None, typer.Option(envvar="LANGSMITH_PROJECT", help="The tracing project.")
+    ] = None,
+    since: Annotated[
+        datetime | None, typer.Option(help="Games with a turn at or after this (local time).")
+    ] = None,
+    until: Annotated[datetime | None, typer.Option(help="Games with a turn before this.")] = None,
+    limit: Annotated[
+        int | None, typer.Option(min=1, help="At most this many games, newest first.")
+    ] = None,
+    metadata: Annotated[
+        list[str] | None, typer.Option(help="key=value on the runs, e.g. surface=web; repeatable.")
+    ] = None,
+    force: Annotated[
+        bool, typer.Option(help="Re-grade games graded with the same settings.")
+    ] = False,
+    dry_run: Annotated[
+        bool, typer.Option(help="List what would be graded; write nothing.")
+    ] = False,
+    engine: Annotated[
+        str, typer.Option(envvar="STOCKFISH_PATH", help="A UCI engine binary.")
+    ] = "stockfish",
+    depth: Annotated[int | None, typer.Option(min=1, help="Search depth (default 16).")] = None,
+    nodes: Annotated[
+        int | None,
+        typer.Option(min=1, help="Nodes per position: the same grades on any machine."),
+    ] = None,
+    movetime: Annotated[int | None, typer.Option(min=1, help="Milliseconds per position.")] = None,
+    multipv: Annotated[int, typer.Option(min=1, help="Lines per position.")] = 1,
+    engine_threads: Annotated[
+        int, typer.Option(min=1, help="Per engine; more than one is nondeterministic.")
+    ] = 1,
+    hash_mb: Annotated[int, typer.Option("--hash", min=1, help="Hash per engine, in MB.")] = 256,
+    workers: Annotated[
+        int | None, typer.Option(min=1, help="Engines in parallel (default: cores / threads).")
+    ] = None,
+) -> None:
+    """Grade games with a UCI engine and write the grades to their traces as feedback."""
+    from langchain_chess.engine import EngineConfig, EnginePool
+    from langchain_chess_cli.grade import cli
+    from langchain_chess_cli.grade.batch import grade_batch
+    from langchain_chess_cli.grade.store import LangSmithStore
+
+    try:
+        chosen = cli.selection(
+            project,
+            cli.thread_ids(thread or [], threads_file),
+            since=since,
+            until=until,
+            limit=limit,
+            metadata=cli.metadata_pairs(metadata or []),
+        )
+        config = EngineConfig(
+            path=engine,
+            limit=cli.search_limit(depth, nodes, movetime),
+            multipv=multipv,
+            threads=engine_threads,
+            hash_mb=hash_mb,
+        )
+    except cli.OptionError as e:
+        raise typer.BadParameter(str(e)) from e
+
+    def echo(line: str) -> None:
+        typer.echo(line, err=True)
+
+    summary = asyncio.run(
+        grade_batch(
+            chosen,
+            LangSmithStore(make_client()),
+            lambda n: EnginePool(config, n),
+            workers=workers or max(1, (os.cpu_count() or 1) // engine_threads),
+            force=force,
+            dry_run=dry_run,
+            report=cli.printer(echo),
+        )
+    )
+    if not dry_run:
+        echo(f"done: {summary.graded} graded, {summary.skipped} skipped")
+
+
+def make_client() -> "Client":
+    from langsmith import Client
+
+    return Client()

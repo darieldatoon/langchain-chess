@@ -1,4 +1,4 @@
-import { Chessboard } from "react-chessboard";
+import { Chessboard, type Arrow } from "react-chessboard";
 import { useMemo, useState } from "react";
 import { isOwnPiece, sideToMove, tryMove } from "../chess";
 import { lastMoveStyles } from "../format";
@@ -12,14 +12,15 @@ interface Props {
   locked: boolean;
   /** Absent for a board that only shows a position. */
   onMove?: (uci: string, fenAfter: string) => void;
+  arrows?: readonly Arrow[];
 }
 
 // react-chessboard takes style objects, so board colours are CSS variables defined per theme
-// in src/index.css from semantic tokens.
+// in src/styles.css from semantic tokens.
 const light = { backgroundColor: "var(--board-light)" };
 const dark = { backgroundColor: "var(--board-dark)" };
 
-export function Board({ fen, orientation, humanSide, lastMove, locked, onMove }: Props) {
+export function Board({ fen, orientation, humanSide, lastMove, locked, onMove, arrows }: Props) {
   const canMove = onMove !== undefined && !locked && sideToMove(fen) === humanSide;
   // Click-to-move: the first click selects one of the human's pieces, the second moves it.
   const [selected, setSelected] = useState<string | null>(null);
@@ -52,6 +53,7 @@ export function Board({ fen, orientation, humanSide, lastMove, locked, onMove }:
         lightSquareNotationStyle: { color: "var(--board-notation-on-light)", fontSize: "11px" },
         boardStyle: { borderRadius: "var(--radius-md, 6px)", overflow: "hidden" },
         squareStyles,
+        ...(arrows && { arrows: [...arrows] }),
         canDragPiece: ({ piece }) => canMove && isOwnPiece(piece.pieceType, humanSide),
         onPieceDrop: ({ sourceSquare, targetSquare }) => {
           setSelected(null);

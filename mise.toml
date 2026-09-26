@@ -8,12 +8,16 @@ uv = "0.12"
 lefthook = "2"
 "github:SocketDev/sfw-free" = { version = "1.15.2", bin = "sfw" }
 "github:Disservin/fastchess" = "v1.8.2-alpha"
+# `lcchess grade` runs it; the release binaries are named per platform.
+"github:official-stockfish/Stockfish" = { version = "sf_19", bin = "stockfish" }
+# `langsmith apps dev` and `langsmith apps push` for apps/review.
+"github:langchain-ai/langsmith-cli" = { version = "v0.2.59", bin = "langsmith" }
 
 [tasks.setup]
 description = "Install Python and web dependencies, then git hooks"
 run = [
   "uv sync --all-packages --all-groups",
-  "pnpm --dir apps/web install --frozen-lockfile",
+  "pnpm install --frozen-lockfile",
   "lefthook install",
 ]
 
@@ -51,6 +55,16 @@ trap 'kill "$announcer" "$server" 2>/dev/null || true' EXIT
 VITE_API_URL="http://localhost:$port" pnpm --dir apps/web exec vp dev --port "$web_port" --strictPort
 '''
 
+[tasks."dev:review"]
+description = "The review custom app in a local LangSmith sandbox, rebuilt on save"
+dir = "apps/review"
+run = "langsmith apps dev"
+
+[tasks."review:size"]
+description = "Build the review app and check what `langsmith apps push` would upload"
+dir = "apps/review"
+run = ["pnpm exec vp build", "node scripts/upload-size.mjs"]
+
 [tasks."dev:tui"]
 description = "Play the agent in the terminal (Textual); pass lcchess play options after --"
 run = "uv run --all-packages --env-file .env lcchess play"
@@ -65,12 +79,12 @@ run = [
   "uv run --all-packages ruff format --check libs apps",
   "uv run --all-packages ruff check libs apps",
   "uv run --all-packages ty check",
-  "pnpm --dir apps/web exec vp check",
+  "pnpm exec vp check",
 ]
 
 [tasks.test]
 description = "Python and web tests with 100% coverage gates"
-run = ["uv run --all-packages pytest -q", "pnpm --dir apps/web exec vp test --run --coverage"]
+run = ["uv run --all-packages pytest -q", "pnpm exec vp run -r test"]
 
 [tasks."test:live"]
 description = "The live tests against the real LLM Gateway (costs a few cents)"

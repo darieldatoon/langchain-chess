@@ -10,7 +10,7 @@ import {
   type GameRecord,
   type Setup,
 } from "./setup";
-import { DEFAULT_CONTEXT } from "./types";
+import { DEFAULT_CONTEXT } from "@langchain-chess/chess-ui";
 
 export const SETUP_KEY = "langchain-chess:setup";
 export const APP_KEY = "langchain-chess:app";

@@ -1,12 +1,22 @@
 import { useStream } from "@langchain/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fenOrStart, replay } from "./chess";
+import {
+  fenOrStart,
+  isPending,
+  lastPolicyPly,
+  liveAnalysis,
+  replay,
+  turnOf,
+  type ChessContext,
+  type ChessValues,
+  type MoveEntry,
+  type Outcome,
+  type Reply,
+  type Side,
+} from "@langchain-chess/chess-ui";
 import { commandKey, createCommandIds } from "./commands";
-import type { MoveEntry } from "./format";
-import { isPending, lastPolicyPly, liveAnalysis, turnOf } from "./selectors";
 import { apiUrl, configurableOf } from "./settings";
 import { saveGame } from "./storage";
-import type { ChessContext, ChessValues, Outcome, Ply, Side, TurnRecord } from "./types";
 
 export const CHESS_GRAPH = "chess";
 /** The trace name and tags. `run_name` is missing from the SDK's `Config` type; the server honours it. */
@@ -27,13 +37,6 @@ export function writeThreadToUrl(threadId: string | null, history: History = win
 export interface PendingMove {
   uci: string;
   fen: string;
-}
-
-/** The latest opponent ply with its turn and the position it was chosen from. */
-export interface Reply {
-  ply: Ply;
-  turn: TurnRecord | null;
-  fenBefore: string;
 }
 
 export interface Game {
