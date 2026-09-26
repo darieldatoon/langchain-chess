@@ -4,21 +4,20 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from typing import Literal
 
-from langchain.agents.middleware import SummarizationMiddleware
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Checkpointer
 
-from langchain_chess import create_chess_agent
-from langchain_chess.middleware.summarization import CHESS_SUMMARY_PROMPT, DEFAULT_KEEP
+from langchain_chess import ChessContractError, create_chess_agent
+from langchain_chess.middleware.summarization import input_limit
 from langchain_chess.rules import DrawClaims
 from langchain_chess_cli.models import chat_model
 from langchain_chess_systemone import SystemOneMiddleware
 
 type Policy = Literal["llm", "systemone", "hybrid"]
 type ReasoningEffort = Literal["low", "medium", "high"]
-type Memory = Literal["none", "full", "summarize"]
+type Memory = Literal["none", "summarize"]
 type Surface = Literal["tui", "uci"]
 
 
@@ -27,8 +26,8 @@ class AgentOptions:
     """Mirrors the server's context knobs, with the same defaults."""
 
     policy: Policy = "hybrid"
-    model: str = "langsmith:anthropic/claude-opus-5-5"
-    reasoning_effort: ReasoningEffort = "medium"
+    model: str = "langsmith:baseten/zai-org/GLM-5.3-Flash"
+    reasoning_effort: ReasoningEffort | None = None
     show_legal_moves: bool = True
     memory: Memory = "none"
     systemone_model: str = "semif-qwen3.5-4b"
@@ -41,7 +40,6 @@ class AgentOptions:
     k: int = 5
     top_p: float | None = None
     seed: int = 0
-    summary_trigger_tokens: int | None = None
 
 
 type ModelFactory = Callable[[AgentOptions], BaseChatModel]
@@ -77,20 +75,18 @@ def build_agent(
             )
         )
     model = None if alone else model_factory(options)
-    summarization = None
-    if model is not None and options.summary_trigger_tokens is not None:
-        summarization = SummarizationMiddleware(
-            model,
-            trigger=("tokens", options.summary_trigger_tokens),
-            keep=DEFAULT_KEEP,
-            summary_prompt=CHESS_SUMMARY_PROMPT,
+    memory = "none" if model is None else options.memory
+    if model is not None and memory == "summarize" and input_limit(model) is None:
+        msg = (
+            f"{options.model} has no known input limit, so it can't use memory summarize; "
+            "use memory none"
         )
+        raise ChessContractError(msg)
     return create_chess_agent(
         model,
         middleware=middleware,
         show_legal_moves=options.show_legal_moves,
-        memory="none" if model is None else options.memory,
-        summarization=summarization,
+        memory=memory,
         draw_claims=draw_claims,
         seed=options.seed,
         checkpointer=checkpointer,

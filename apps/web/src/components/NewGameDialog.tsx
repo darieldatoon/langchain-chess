@@ -14,12 +14,16 @@ import { useEffect, useRef, useState } from "react";
 import { keyCheckMessage, type KeyCheck } from "../auth";
 import { withKnob } from "../settings";
 import {
+  LLM_NAMES,
+  LLM_PRESETS,
   matchupLine,
   matchupOf,
+  modelOf,
   sectionsOf,
   type LlmChoice,
   type Setup,
   type SideChoice,
+  type Summarize,
   type SystemOneChoice,
 } from "../setup";
 import type { ChessContext } from "@langchain-chess/chess-ui";
@@ -36,7 +40,12 @@ interface Props {
   onOpenSettings: (draft: Setup) => void;
   /** Runs on Play; the game starts only once the server accepts the key. */
   checkKey: () => Promise<KeyCheck>;
+  /** The model's input limit, or null: `summarize` is offered only when it is known. */
+  modelLimit: (model: string) => Promise<number | null>;
 }
+
+/** Waits out typing in the custom model field before asking the server. */
+export const LIMIT_DELAY_MS = 300;
 
 const SIDES: { value: SideChoice; label: string; icon: React.ReactNode }[] = [
   { value: "white", label: "White", icon: <CrownIcon aria-hidden size={24} weight="regular" /> },
@@ -55,9 +64,7 @@ const SYSTEM_ONES: SelectOption<SystemOneChoice>[] = [
 ];
 
 const LLMS: SelectOption<LlmChoice>[] = [
-  { value: "langsmith:anthropic/claude-opus-5-5", label: "Claude Opus 5.5" },
-  { value: "langsmith:anthropic/claude-opus-5", label: "Claude Opus 5" },
-  { value: "langsmith:openai/gpt-5.6-sol", label: "GPT-5.6 Sol" },
+  ...LLM_PRESETS.map((value) => ({ value, label: LLM_NAMES[value] })),
   { value: "none", label: "None", description: "System 1 plays alone" },
   { value: "custom", label: "Custom model…", description: "Any model spec" },
 ];
@@ -70,6 +77,7 @@ export function NewGameDialog({
   onClose,
   onOpenSettings,
   checkKey,
+  modelLimit,
 }: Props) {
   const [setup, setSetup] = useState(initial);
   const [advanced, setAdvanced] = useState(false);
@@ -81,8 +89,26 @@ export function NewGameDialog({
       setSetup((s) => withKnob(s, key, value));
   const setKnob: SetKnob = (key, value) =>
     setSetup((s) => ({ ...s, knobs: withKnob(s.knobs, key, value) }));
-  const matchup = matchupOf(setup);
+  const model = modelOf(setup);
+  const [limit, setLimit] = useState<{ model: string; tokens: number | null } | null>(null);
+  const summarize: Summarize =
+    limit?.model !== model ? "checking" : limit.tokens === null ? "no" : "yes";
+  const matchup = matchupOf(setup, summarize);
   const mounted = useRef(true);
+
+  useEffect(() => {
+    if (!model) return;
+    let current = true;
+    const timer = setTimeout(() => {
+      void modelLimit(model).then((tokens) => {
+        if (current) setLimit({ model, tokens });
+      });
+    }, LIMIT_DELAY_MS);
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
+  }, [model, modelLimit]);
 
   useEffect(() => {
     mounted.current = true;
@@ -169,7 +195,7 @@ export function NewGameDialog({
                 label="Model Spec"
                 value={setup.customModel}
                 onChange={pick("customModel")}
-                placeholder="openai:gpt-5.6-sol"
+                placeholder="langsmith:baseten/moonshotai/Kimi-K3"
                 hintText="Use the format provider:model, e.g. langsmith:anthropic/claude-opus-5-5."
                 autoFocus
               />
@@ -204,6 +230,7 @@ export function NewGameDialog({
                 <AdvancedSettings
                   knobs={setup.knobs}
                   sections={sectionsOf(setup)}
+                  summarize={summarize}
                   onKnob={setKnob}
                 />
               </div>

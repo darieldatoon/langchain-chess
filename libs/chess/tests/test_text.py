@@ -129,11 +129,10 @@ def test_model_view_memory_modes():
     none = model_view(messages, turns, "none")
     assert [m.id for m in none] == ["h2", "f2", "a4", "f3"]
     assert none[2].content[0] == thinking  # the latest attempt keeps its blocks
-    full = model_view(messages, turns, "full")
-    assert [m.id for m in full] == ["h1", "a2", "h2", "f2", "a4", "f3"]
-    assert full[1].content == [{"type": "text", "text": "good1"}]
-    assert full[0] is not messages[0]
-    assert model_view(messages, turns, "summarize") == full
+    summarize = model_view(messages, turns, "summarize")
+    assert [m.id for m in summarize] == ["h1", "a2", "h2", "f2", "a4", "f3"]
+    assert summarize[1].content == [{"type": "text", "text": "good1"}]
+    assert summarize[0] is not messages[0]
 
 
 def test_parse_move_skips_null_moves():

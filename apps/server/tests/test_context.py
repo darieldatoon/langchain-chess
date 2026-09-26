@@ -24,9 +24,10 @@ def test_defaults():
     context = resolve_context(ChessContext)
     assert (context.policy, context.model, context.systemone_model) == (
         "hybrid",
-        "langsmith:anthropic/claude-opus-5-5",
+        "langsmith:baseten/zai-org/GLM-5.3-Flash",
         "semif-qwen3.5-4b",
     )
+    assert context.reasoning_effort is None
     assert context.draw_claims == "auto"
     assert context.tournament_threshold is None
 

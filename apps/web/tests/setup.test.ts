@@ -19,7 +19,7 @@ import { DEFAULT_CONTEXT, type ChessContext } from "@langchain-chess/chess-ui";
 const setup = (overrides: Partial<Setup> = {}): Setup => ({ ...DEFAULT_SETUP, ...overrides });
 
 function contextOf(s: Setup): ChessContext {
-  const matchup = matchupOf(s);
+  const matchup = matchupOf(s, "yes");
   if (!matchup.ok) throw new Error(matchup.reason);
   return matchup.context;
 }
@@ -32,37 +32,50 @@ describe("matchupOf", () => {
       systemone_model: "semif-qwen3.5-4b",
     });
     expect(
-      contextOf(setup({ systemOne: "none", llm: "langsmith:openai/gpt-5.6-sol" })),
+      contextOf(setup({ systemOne: "none", llm: "langsmith:baseten/zai-org/GLM-5.3" })),
     ).toMatchObject({
       policy: "llm",
-      model: "langsmith:openai/gpt-5.6-sol",
+      model: "langsmith:baseten/zai-org/GLM-5.3",
     });
     expect(contextOf(setup({ systemOne: "typesafe/jev-latest" }))).toMatchObject({
       policy: "hybrid",
       systemone_model: "typesafe/jev-latest",
-      model: "langsmith:anthropic/claude-opus-5-5",
+      model: "langsmith:baseten/zai-org/GLM-5.3-Flash",
     });
   });
 
   it("refuses both None and an empty custom model", () => {
-    expect(matchupOf(setup({ systemOne: "none", llm: "none" }))).toEqual({
+    expect(matchupOf(setup({ systemOne: "none", llm: "none" }), "yes")).toEqual({
       ok: false,
       reason: "Pick a System 1, an LLM, or both.",
     });
-    expect(matchupOf(setup({ llm: "custom", customModel: "  " }))).toEqual({
+    expect(matchupOf(setup({ llm: "custom", customModel: "  " }), "yes")).toEqual({
       ok: false,
       reason: "Enter a model spec for the custom LLM.",
     });
   });
 
+  it("summarizes only with a model that can, and waits for the answer", () => {
+    const summarizing = setup({ knobs: { ...DEFAULT_SETUP.knobs, memory: "summarize" } });
+    expect(matchupOf(summarizing, "yes")).toMatchObject({ context: { memory: "summarize" } });
+    expect(matchupOf(summarizing, "no")).toMatchObject({ context: { memory: "none" } });
+    expect(matchupOf(summarizing, "checking")).toEqual({
+      ok: false,
+      reason: "Checking whether GLM-5.3 Flash can summarize…",
+    });
+    expect(matchupOf(setup(), "checking")).toMatchObject({ ok: true });
+    const alone = { ...summarizing, llm: "none" as const };
+    expect(matchupOf(alone, "checking")).toMatchObject({ ok: true });
+  });
+
   it("sends a custom model trimmed, and carries the knobs", () => {
     const knobs = { ...DEFAULT_SETUP.knobs, threshold: 0.4, k: 3 };
     const context = contextOf(
-      setup({ llm: "custom", customModel: " langsmith:anthropic/claude-opus-5-5 ", knobs }),
+      setup({ llm: "custom", customModel: " langsmith:baseten/zai-org/GLM-5.3-Flash ", knobs }),
     );
     expect(context).toEqual({
       ...DEFAULT_CONTEXT,
-      model: "langsmith:anthropic/claude-opus-5-5",
+      model: "langsmith:baseten/zai-org/GLM-5.3-Flash",
       threshold: 0.4,
       k: 3,
     });
@@ -72,7 +85,7 @@ describe("matchupOf", () => {
 describe("matchup wording", () => {
   it("describes the matchup in plain words", () => {
     expect(matchupLine(DEFAULT_CONTEXT)).toBe(
-      "SemIf plays confident moves; Claude Opus 5.5 decides the rest.",
+      "SemIf plays confident moves; GLM-5.3 Flash decides the rest.",
     );
     expect(matchupLine({ ...DEFAULT_CONTEXT, policy: "systemone" })).toBe(
       "SemIf plays every move.",
@@ -83,7 +96,7 @@ describe("matchup wording", () => {
   });
 
   it("labels the opponent with the effort only when an LLM plays", () => {
-    expect(opponentLabel(DEFAULT_CONTEXT)).toBe("SemIf + Claude Opus 5.5 · medium");
+    expect(opponentLabel(DEFAULT_CONTEXT)).toBe("SemIf + GLM-5.3 Flash");
     expect(
       opponentLabel({
         ...DEFAULT_CONTEXT,
@@ -95,11 +108,11 @@ describe("matchup wording", () => {
       opponentLabel({
         ...DEFAULT_CONTEXT,
         policy: "llm",
-        model: "langsmith:anthropic/claude-opus-5",
+        model: "langsmith:openai/gpt-6-luna",
         reasoning_effort: "high",
       }),
-    ).toBe("Claude Opus 5 · high");
-    expect(modelName("langsmith:openai/gpt-5.6-sol")).toBe("GPT-5.6 Sol");
+    ).toBe("GPT-6 Luna · high");
+    expect(modelName("langsmith:baseten/zai-org/GLM-5.3")).toBe("GLM-5.3");
     expect(modelName("openai:gpt-5.6-sol")).toBe("openai:gpt-5.6-sol");
   });
 
@@ -185,11 +198,11 @@ describe("sanitizeSetup", () => {
 describe("setupFromContext", () => {
   it("maps the old policy and models onto the pickers", () => {
     expect(
-      setupFromContext({ policy: "hybrid", model: "langsmith:anthropic/claude-opus-5" }),
+      setupFromContext({ policy: "hybrid", model: "langsmith:openai/gpt-6-luna" }),
     ).toMatchObject({
       side: "white",
       systemOne: "semif-qwen3.5-4b",
-      llm: "langsmith:anthropic/claude-opus-5",
+      llm: "langsmith:openai/gpt-6-luna",
       customModel: "",
     });
     expect(

@@ -50,7 +50,8 @@ The record lives in `start_fen`, `moves`, `plies`, `turns`, `outcome` and `error
 are the model's working context and may be summarized. Clients should read only those keys:
 the thread-state API also returns private channels.
 
-Options worth knowing: `memory` (`none`, `full`, `summarize`), `show_legal_moves`,
+Options worth knowing: `memory` (`none`, or `summarize` at 70% of the model's
+`max_input_tokens`; pass `summarization` for another trigger), `show_legal_moves`,
 `max_retries` (illegal replies before the side to move resigns, default 3), `draw_claims`
 (`auto` ends the game on an actual threefold repetition or the fifty-move rule; `never` leaves
 claimable draws to the caller), `forced_move`, `seed`, `system_prompt`, `context_schema`.
@@ -122,8 +123,10 @@ Once both servers answer, the task prints the web UI, API and Studio URLs below 
 logs.
 
 The web UI starts with a New game dialog: pick a side (White, Random or Black), a System 1
-(SemIf by default, Jev, or none) and an LLM (Claude Opus 5.5 by default, another preset, a custom
-model spec, or none); Advanced holds the other `chess` context knobs. Each game keeps the setup it
+(SemIf by default, Jev, or none) and an LLM (GLM-5.3 Flash by default; the presets are
+inexpensive models only, and anything else is a custom model spec), or none; Advanced holds the
+other `chess` context knobs. Reasoning effort defaults to the model's own, which models without
+reasoning (such as Claude Haiku 4.5) require. Each game keeps the setup it
 started with, one thread per game (the thread id stays in the URL), and shows System 1's
 top moves, the reasoning and the cost per move. The dialog can't be dismissed until a game is
 on the board. After a game, Rematch swaps colours. The gear holds app settings only: the
@@ -138,8 +141,8 @@ mise run dev:uci -- --policy systemone   # uv run --all-packages --env-file .env
 mise run test:uci   # two SemIf-only games under fastchess
 ```
 
-- Options: `Model`, `ReasoningEffort`, `SystemOneModel`, `Policy`, `Threshold`, `K`, `Memory`,
-  `Seed`. `Ponder` is not advertised.
+- Options: `Model`, `ReasoningEffort` (`default` sends none), `SystemOneModel`, `Policy`,
+  `Threshold`, `K`, `Memory`, `Seed`. `Ponder` is not advertised.
 - Analysis streams as `info string` lines. LLM moves take seconds, so short time controls mean
   fallback moves: this turn's System 1 top move when it ranked, else a seeded random legal
   move. The GUI's next position includes the fallback, and the agent's pending turn is
@@ -204,8 +207,8 @@ uvx --env-file /absolute/path/to/.env \
 uv tool install "git+https://github.com/darieldatoon/langchain-chess#subdirectory=libs/cli"
 ```
 
-The default model, `langsmith:anthropic/claude-opus-5-5`, goes through the LLM Gateway. To use a
-bare name such as `--model claude-opus-5-5` with your own `ANTHROPIC_API_KEY`, install the
+The default model, `langsmith:baseten/zai-org/GLM-5.3-Flash`, goes through the LLM Gateway. To
+use a bare name such as `--model claude-opus-5-5` with your own `ANTHROPIC_API_KEY`, install the
 provider's extra:
 
 ```sh
@@ -217,7 +220,9 @@ uv tool install "langchain-chess-cli[anthropic] @ git+https://github.com/darield
 Traces go to a LangSmith workspace. Models are `init_chat_model` specs: the default
 `langsmith:<provider>/<model>` goes through a LangSmith LLM Gateway (which may be in a different
 org). A bare name or `provider:model` uses that provider's package and key, or the gateway's
-passthrough when `LANGSMITH_GATEWAY=true`. System 1 needs `TYPESAFE_API_KEY` and
+passthrough when `LANGSMITH_GATEWAY=true`. Gateway models get their input limit from
+genai-prices' context windows; `memory="summarize"` needs one, so the web app offers it only for
+models genai-prices knows. System 1 needs `TYPESAFE_API_KEY` and
 `TYPESAFE_BASE_URL`.
 Copy `.env.example` to `.env` and fill it in; `LC_GATEWAY_KEY` in your shell supplies the
 gateway key. Commands that make model calls load it explicitly (`uv run --env-file .env ...`);

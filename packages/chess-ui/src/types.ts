@@ -4,7 +4,7 @@
 export type Side = "white" | "black";
 export type PolicyKind = "llm" | "systemone" | "hybrid";
 export type ReasoningEffort = "low" | "medium" | "high";
-export type Memory = "none" | "full" | "summarize";
+export type Memory = "none" | "summarize";
 export type GateSignal = "margin" | "confidence";
 export type DescriptionStyle = "rich" | "terse";
 export type DrawClaims = "auto" | "never";
@@ -13,7 +13,8 @@ export type SystemOneModel = "semif-qwen3.5-4b" | "typesafe/jev-latest";
 export interface ChessContext {
   policy: PolicyKind;
   model: string;
-  reasoning_effort: ReasoningEffort;
+  /** Null sends no effort: the model's own default, and the only choice for non-reasoners. */
+  reasoning_effort: ReasoningEffort | null;
   show_legal_moves: boolean;
   memory: Memory;
   systemone_model: SystemOneModel;
@@ -27,13 +28,12 @@ export interface ChessContext {
   top_p: number | null;
   draw_claims: DrawClaims;
   seed: number;
-  summary_trigger_tokens: number | null;
 }
 
 export const DEFAULT_CONTEXT: ChessContext = {
   policy: "hybrid",
-  model: "langsmith:anthropic/claude-opus-5-5",
-  reasoning_effort: "medium",
+  model: "langsmith:baseten/zai-org/GLM-5.3-Flash",
+  reasoning_effort: null,
   show_legal_moves: true,
   memory: "none",
   systemone_model: "semif-qwen3.5-4b",
@@ -47,7 +47,6 @@ export const DEFAULT_CONTEXT: ChessContext = {
   top_p: null,
   draw_claims: "auto",
   seed: 0,
-  summary_trigger_tokens: null,
 };
 
 export type DrawReason =

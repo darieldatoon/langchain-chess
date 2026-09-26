@@ -2,11 +2,13 @@ import chess
 import pytest
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
+from pydantic import ValidationError
 
+from langchain_chess import ChessContractError
 from langchain_chess.testing import position
 from langchain_chess_server import graph as graph_module
-from langchain_chess_server.context import ChessContext
-from langchain_chess_server.graph import build_agent, chat_model, make_graph
+from langchain_chess_server.context import ChessContext, resolve_context
+from langchain_chess_server.graph import build_agent, chat_model, make_graph, model_limit
 from langchain_chess_server.settings import ServerSettings
 from langchain_chess_systemone.testing import FakeTypeSafeClient
 
@@ -41,15 +43,23 @@ def test_each_policy_builds_its_stack(fake_systemone, policy, has_systemone, has
 def test_the_gateway_chat_model(env):
     model = chat_model(ChessContext(reasoning_effort="low"))
     assert isinstance(model, ChatOpenAI)
-    assert model.model_name == "anthropic/claude-opus-5-5"
+    assert model.model_name == "baseten/zai-org/GLM-5.3-Flash"
     assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
     assert model.max_tokens == 32000
     assert model.reasoning_effort == "low"
-    assert model.profile == {"max_input_tokens": 1_000_000}
-    assert model.get_name() == "claude-opus-5-5"
-    other = chat_model(ChessContext(model="langsmith:openai/gpt-5.6-sol"))
-    assert other.profile is None
-    assert other.get_name() == "gpt-5.6-sol"
+    assert model.profile == {"max_input_tokens": 1_048_000 - 32000}
+    assert model.get_name() == "zai-org/GLM-5.3-Flash"
+    opus = chat_model(ChessContext(model="langsmith:anthropic/claude-opus-5-5"))
+    assert opus.profile == {"max_input_tokens": 1_000_000 - 32000}
+    assert opus.get_name() == "claude-opus-5-5"
+    unknown = chat_model(ChessContext(model="langsmith:fireworks/accounts/fireworks/models/nope"))
+    assert unknown.profile is None
+
+
+def test_no_reasoning_effort_sends_none(env):
+    haiku = chat_model(ChessContext(model="langsmith:anthropic/claude-haiku-4-5-20251001"))
+    assert haiku.reasoning_effort is None
+    assert "reasoning" not in haiku._get_request_payload("hi")
 
 
 @pytest.mark.parametrize("spec", ["openai:gpt-5.6-sol", "gpt-5.6-sol"])
@@ -85,20 +95,38 @@ def test_the_classifier_is_cached_per_model(env):
     assert a.base_url == "https://gateway.smith.langchain.com"
 
 
-def test_summarize_through_the_real_model_factory(fake_systemone):
-    from langchain_chess import ChessContractError
-
-    settings = ServerSettings()
-    agent = build_agent(ChessContext(memory="summarize"), settings)
+@pytest.mark.parametrize(
+    "model",
+    [
+        "langsmith:baseten/zai-org/GLM-5.3-Flash",
+        "langsmith:anthropic/claude-opus-5-5",
+        "langsmith:anthropic/claude-haiku-4-5-20251001",
+        "langsmith:openai/gpt-6-luna",
+        "gpt-5.6-sol",
+    ],
+)
+def test_summarize_with_a_known_input_limit(fake_systemone, model):
+    agent = build_agent(ChessContext(memory="summarize", model=model), ServerSettings())
     assert "SummarizationMiddleware.before_model" in nodes(agent)
-    with pytest.raises(ChessContractError, match="summary_trigger_tokens"):
-        build_agent(
-            ChessContext(memory="summarize", model="langsmith:openai/gpt-5.6-sol"), settings
-        )
-    trigger = ChessContext(
-        memory="summarize", model="langsmith:openai/gpt-5.6-sol", summary_trigger_tokens=50_000
-    )
-    assert "SummarizationMiddleware.before_model" in nodes(build_agent(trigger, settings))
-    alone = build_agent(ChessContext(policy="systemone", memory="summarize"), settings)
-    assert "SummarizationMiddleware.before_model" not in nodes(alone)
-    assert build_agent(ChessContext(memory="full"), settings) is not None
+
+
+def test_summarize_needs_a_known_input_limit(fake_systemone):
+    unknown = "langsmith:fireworks/accounts/fireworks/models/nope"
+    with pytest.raises(ChessContractError, match="use memory='none'"):
+        build_agent(ChessContext(memory="summarize", model=unknown), ServerSettings())
+    assert build_agent(ChessContext(memory="none", model=unknown), ServerSettings()) is not None
+    alone = ChessContext(policy="systemone", memory="summarize", model=unknown)
+    assert "SummarizationMiddleware.before_model" not in nodes(build_agent(alone, ServerSettings()))
+
+
+def test_full_memory_is_gone():
+    with pytest.raises(ValidationError):
+        resolve_context(ChessContext, {"configurable": {"memory": "full"}})
+
+
+def test_the_model_limit_agrees_with_the_agent(env):
+    model_limit.cache_clear()
+    assert model_limit("langsmith:baseten/zai-org/GLM-5.3-Flash") == 1_048_000 - 32000
+    assert model_limit("gpt-5.6-sol") == 1_050_000
+    assert model_limit("langsmith:fireworks/accounts/fireworks/models/nope") is None
+    assert model_limit("fireworks/accounts/fireworks/models/glm-5p3") is None

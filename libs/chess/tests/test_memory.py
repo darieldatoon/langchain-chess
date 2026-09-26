@@ -6,7 +6,7 @@ from langchain.agents.middleware import SummarizationMiddleware
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from langchain_chess import ChessContractError, create_chess_agent
-from langchain_chess.middleware.summarization import CHESS_SUMMARY_PROMPT
+from langchain_chess.middleware.summarization import CHESS_SUMMARY_PROMPT, input_limit
 from langchain_chess.testing import ScriptedModel, human, position, usage
 
 PROFILE = {"max_input_tokens": 100_000}
@@ -130,8 +130,13 @@ def test_the_keep_floor_and_prompt_checks():
     )
 
 
+def test_the_input_limit_comes_from_the_profile():
+    assert input_limit(ScriptedModel(script=[], profile=PROFILE)) == 100_000
+    assert input_limit(ScriptedModel(script=[])) is None
+
+
 def test_a_profileless_model_needs_an_absolute_trigger():
-    with pytest.raises(ChessContractError, match="summary_trigger_tokens"):
+    with pytest.raises(ChessContractError, match="memory='none'"):
         create_chess_agent(ScriptedModel(script=[]), memory="summarize")
     agent = create_chess_agent(ScriptedModel(script=[], profile=PROFILE), memory="summarize")
     assert "SummarizationMiddleware.before_model" in agent.get_graph().nodes
@@ -180,16 +185,17 @@ async def test_concurrent_stateless_runs_record_their_own_summary():
         assert out["moves"] == ["e2e4", "g8f6"]
 
 
-async def test_full_memory_over_several_turns(make_agent, run, cfg):
+async def test_summarize_memory_over_several_turns_before_a_summary(make_agent, run, cfg):
     responder = Responder(["MOVE: Qh5", "MOVE: e5", "MOVE: Nc6", "MOVE: a6"])
     model = model_for(responder)
-    agent = make_agent(model, memory="full")
+    agent = make_agent(model, memory="summarize")
     for move in ("e4", "Nf3", "Bb5"):
         await run(agent, human(move), cfg)
     seen = [str(m.content) for m in responder.move_requests[-1]]
     assert "MOVE: Qh5" not in seen
     assert not any(text.startswith("Try again") for text in seen)
     assert seen[1:-1] == ["e4", "MOVE: e5", "Nf3", "MOVE: Nc6", "Bb5"]
+    assert responder.summaries == 0
 
 
 async def test_one_hour_cache_writes_are_priced_total_plus_subset(make_agent, run, cfg):

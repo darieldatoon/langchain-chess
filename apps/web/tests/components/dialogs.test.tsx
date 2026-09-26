@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { DEFAULT_SETUP, type Setup } from "../../src/setup";
 import { DEFAULT_CONTEXT } from "@langchain-chess/chess-ui";
 import { AppSettingsDialog } from "../../src/components/AppSettingsDialog";
-import { NewGameDialog } from "../../src/components/NewGameDialog";
+import { LIMIT_DELAY_MS, NewGameDialog } from "../../src/components/NewGameDialog";
 import { ResultCard } from "../../src/components/ResultCard";
 
 vi.mock("@langchain/macaw-components/Select", async () =>
@@ -14,11 +14,21 @@ vi.mock("@langchain/macaw-components/Slider", async () =>
   (await import("../support/macawShims")).sliderShim(),
 );
 
-function open(initial: Setup = DEFAULT_SETUP, canCancel = false, check: KeyCheck = { kind: "ok" }) {
+const KNOWN = 968000;
+
+function open(
+  initial: Setup = DEFAULT_SETUP,
+  canCancel = false,
+  check: KeyCheck = { kind: "ok" },
+  limits: Record<string, number | null> = {},
+) {
   const onPlay = vi.fn();
   const onClose = vi.fn();
   const onOpenSettings = vi.fn();
   const checkKey = vi.fn(() => Promise.resolve(check));
+  const modelLimit = vi.fn((model: string) =>
+    Promise.resolve(model in limits ? limits[model] : KNOWN),
+  );
   render(
     <NewGameDialog
       open
@@ -28,9 +38,10 @@ function open(initial: Setup = DEFAULT_SETUP, canCancel = false, check: KeyCheck
       onClose={onClose}
       onOpenSettings={onOpenSettings}
       checkKey={checkKey}
+      modelLimit={modelLimit}
     />,
   );
-  return { onPlay, onClose, onOpenSettings, checkKey };
+  return { onPlay, onClose, onOpenSettings, checkKey, modelLimit };
 }
 
 const change = (label: string, value: string) =>
@@ -42,6 +53,11 @@ const clickPlay = () =>
   });
 const matchup = () => screen.getByLabelText("matchup");
 const advanced = () => fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
+/** Lets the debounced model-limit request answer. */
+const settled = () =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, LIMIT_DELAY_MS + 10));
+  });
 
 describe("NewGameDialog", () => {
   it("plays the default matchup as White, with no way to cancel without a game", async () => {
@@ -49,7 +65,7 @@ describe("NewGameDialog", () => {
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "White" })).toBeChecked();
     expect(matchup()).toHaveTextContent(
-      "SemIf plays confident moves; Claude Opus 5.5 decides the rest.",
+      "SemIf plays confident moves; GLM-5.3 Flash decides the rest.",
     );
     expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
@@ -107,6 +123,7 @@ describe("NewGameDialog", () => {
         onClose={() => {}}
         onOpenSettings={() => {}}
         checkKey={() => new Promise((resolve) => (answer = resolve))}
+        modelLimit={() => Promise.resolve(KNOWN)}
       />,
     );
     fireEvent.click(play());
@@ -123,12 +140,12 @@ describe("NewGameDialog", () => {
     change("System 1", "none");
     expect(matchup()).toHaveTextContent("Pick a System 1, an LLM, or both.");
     expect(play()).toBeDisabled();
-    change("LLM", "langsmith:openai/gpt-5.6-sol");
-    expect(matchup()).toHaveTextContent("GPT-5.6 Sol plays every move.");
+    change("LLM", "langsmith:baseten/zai-org/GLM-5.3");
+    expect(matchup()).toHaveTextContent("GLM-5.3 plays every move.");
     await clickPlay();
     expect(onPlay.mock.calls[0][1]).toMatchObject({
       policy: "llm",
-      model: "langsmith:openai/gpt-5.6-sol",
+      model: "langsmith:baseten/zai-org/GLM-5.3",
     });
     change("System 1", "typesafe/jev-latest");
     await clickPlay();
@@ -142,7 +159,7 @@ describe("NewGameDialog", () => {
     const { onPlay } = open();
     change("LLM", "");
     await clickPlay();
-    expect(onPlay.mock.calls[0][1].model).toBe("langsmith:anthropic/claude-opus-5-5");
+    expect(onPlay.mock.calls[0][1].model).toBe("langsmith:baseten/zai-org/GLM-5.3-Flash");
   });
 
   it("takes any model spec as a custom LLM, and needs one to play", async () => {
@@ -181,7 +198,7 @@ describe("NewGameDialog", () => {
     expect(screen.getByText(/gate and shortlist apply when an LLM plays too/)).toBeInTheDocument();
     expect(screen.getByLabelText("Move Descriptions")).toBeInTheDocument();
 
-    change("LLM", "langsmith:anthropic/claude-opus-5");
+    change("LLM", "langsmith:openai/gpt-6-luna");
     change("System 1", "none");
     expect(screen.queryByLabelText("Move Descriptions")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Reasoning Effort")).toBeInTheDocument();
@@ -194,9 +211,8 @@ describe("NewGameDialog", () => {
   it("edits every knob and plays with them", async () => {
     const { onPlay } = open();
     advanced();
-    expect(screen.queryByLabelText("Summary Trigger Tokens")).not.toBeInTheDocument();
+    await settled();
     change("Memory", "summarize");
-    change("Summary Trigger Tokens", "50000");
     change("Reasoning Effort", "low");
     change("Threshold", "0.5");
     expect(screen.getByTestId("threshold-value")).toHaveTextContent("0.50");
@@ -214,7 +230,6 @@ describe("NewGameDialog", () => {
     expect(onPlay.mock.calls[0][1]).toEqual({
       ...DEFAULT_CONTEXT,
       memory: "summarize",
-      summary_trigger_tokens: 50000,
       reasoning_effort: "low",
       threshold: 0.5,
       tournament_threshold: 0.7,
@@ -228,6 +243,81 @@ describe("NewGameDialog", () => {
       with_eval: true,
       with_nouls: true,
     });
+  });
+
+  it("sends no effort with Model default, as models without reasoning need", async () => {
+    const { onPlay } = open({
+      ...DEFAULT_SETUP,
+      knobs: { ...DEFAULT_SETUP.knobs, reasoning_effort: "medium" },
+    });
+    change("LLM", "langsmith:anthropic/claude-haiku-4-5-20251001");
+    advanced();
+    expect(screen.getByLabelText("Reasoning Effort")).toHaveValue("medium");
+    change("Reasoning Effort", "default");
+    await clickPlay();
+    expect(onPlay.mock.calls[0][1]).toMatchObject({
+      model: "langsmith:anthropic/claude-haiku-4-5-20251001",
+      reasoning_effort: null,
+    });
+  });
+
+  it("turns summarize off for a model with no known input limit", async () => {
+    const glm = "langsmith:fireworks/accounts/fireworks/models/glm-5p3";
+    const summarizing = {
+      ...DEFAULT_SETUP,
+      knobs: { ...DEFAULT_SETUP.knobs, memory: "summarize" },
+    };
+    const { onPlay, modelLimit } = open(
+      summarizing as Setup,
+      false,
+      { kind: "ok" },
+      { [glm]: null },
+    );
+    expect(matchup()).toHaveTextContent("Checking whether GLM-5.3 Flash can summarize…");
+    expect(play()).toBeDisabled();
+    await settled();
+    expect(play()).toBeEnabled();
+    change("LLM", "custom");
+    change("Model Spec", "langsmith:fireworks");
+    change("Model Spec", glm);
+    await settled();
+    expect(modelLimit.mock.calls.map(([model]) => model)).toEqual([
+      "langsmith:baseten/zai-org/GLM-5.3-Flash",
+      glm,
+    ]);
+    advanced();
+    expect(screen.getByLabelText("Memory")).toHaveValue("none");
+    expect(screen.getByRole("option", { name: "Summarize" })).toBeDisabled();
+    expect(screen.getByText(/no known input limit, so it can't summarize/)).toBeInTheDocument();
+    await clickPlay();
+    expect(onPlay.mock.calls[0][1]).toMatchObject({ model: glm, memory: "none" });
+  });
+
+  it("ignores a late limit for a model no longer picked", async () => {
+    const answers: ((tokens: number | null) => void)[] = [];
+    const summarizing = {
+      ...DEFAULT_SETUP,
+      knobs: { ...DEFAULT_SETUP.knobs, memory: "summarize" },
+    };
+    render(
+      <NewGameDialog
+        open
+        initial={summarizing as Setup}
+        canCancel={false}
+        onPlay={() => {}}
+        onClose={() => {}}
+        onOpenSettings={() => {}}
+        checkKey={() => Promise.resolve({ kind: "ok" })}
+        modelLimit={() => new Promise((resolve) => answers.push(resolve))}
+      />,
+    );
+    await settled();
+    change("LLM", "langsmith:baseten/zai-org/GLM-5.3");
+    await act(async () => answers[0](null));
+    expect(matchup()).toHaveTextContent("Checking whether GLM-5.3 can summarize…");
+    await settled();
+    await act(async () => answers[1](KNOWN));
+    expect(play()).toBeEnabled();
   });
 
   it("clears nullable knobs, keeps valid values over invalid text, and flags it", async () => {

@@ -3,7 +3,6 @@
 from functools import lru_cache
 from typing import Any
 
-from langchain.agents.middleware import SummarizationMiddleware
 from langchain.chat_models import init_chat_model
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.runnables import RunnableConfig
@@ -12,9 +11,10 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Checkpointer
 from langgraph_sdk.runtime import ServerRuntime
 
-from langchain_chess import create_chess_agent
-from langchain_chess.middleware.summarization import CHESS_SUMMARY_PROMPT, DEFAULT_KEEP
+from langchain_chess import ChessContractError, create_chess_agent
+from langchain_chess.middleware.summarization import input_limit
 from langchain_chess.models import GATEWAY_PREFIX, model_identity
+from langchain_chess.pricing import context_window
 from langchain_chess_server.context import ChessContext, resolve_context
 from langchain_chess_server.settings import ServerSettings
 from langchain_chess_systemone import GatewayRanker, SystemOneMiddleware
@@ -22,45 +22,37 @@ from langchain_chess_systemone import GatewayRanker, SystemOneMiddleware
 MAX_TOKENS = 32000
 """The output cap covers reasoning too; 8000 ran out mid-game at medium effort."""
 
-# The gateway's ChatOpenAI has no profile, and a fractional summarization trigger needs one.
-# Native providers ship full profiles; never replace them with these.
-PROFILES: dict[str, dict[str, Any]] = {
-    "claude-opus-5": {"max_input_tokens": 1_000_000},
-    "claude-opus-5-5": {"max_input_tokens": 1_000_000},
-}
-
 
 def chat_model(context: ChessContext) -> BaseChatModel:
     model = context.model
     name = model_identity(model)[1]
     kwargs: dict[str, Any] = {
-        "reasoning_effort": context.reasoning_effort,
         "max_tokens": MAX_TOKENS,
         # The trace span's name; through the gateway every vendor would read as `ChatOpenAI`.
         "name": name,
     }
-    if model.startswith(GATEWAY_PREFIX) and (profile := PROFILES.get(name)):
-        kwargs["profile"] = profile
+    # Models without reasoning reject the parameter outright, even as a default.
+    if context.reasoning_effort is not None:
+        kwargs["reasoning_effort"] = context.reasoning_effort
+    # The gateway's ChatOpenAI has no profile, and summarize's fractional trigger needs one.
+    # Native providers ship full profiles; never replace them.
+    if model.startswith(GATEWAY_PREFIX) and (window := context_window(model)):
+        kwargs["profile"] = {"max_input_tokens": window - MAX_TOKENS}
     return init_chat_model(model, **kwargs)
+
+
+@lru_cache(maxsize=64)
+def model_limit(model: str) -> int | None:
+    """What the new-game dialog asks before offering `summarize`; None if it can't be built."""
+    try:
+        return input_limit(chat_model(ChessContext(model=model)))
+    except (ValueError, ImportError):
+        return None
 
 
 @lru_cache(maxsize=8)
 def _classifier(model: str, api_key: str, base_url: str) -> TypeSafeClassifier:
     return TypeSafeClassifier(model=model, api_key=api_key, base_url=base_url, timeout=15.0)
-
-
-def summarization(
-    model: BaseChatModel | None, trigger_tokens: int | None
-) -> SummarizationMiddleware | None:
-    """An absolute trigger for models without a profile; None keeps the fractional default."""
-    if model is None or trigger_tokens is None:
-        return None
-    return SummarizationMiddleware(
-        model,
-        trigger=("tokens", trigger_tokens),
-        keep=DEFAULT_KEEP,
-        summary_prompt=CHESS_SUMMARY_PROMPT,
-    )
 
 
 def systemone(context: ChessContext, settings: ServerSettings) -> SystemOneMiddleware:
@@ -95,12 +87,17 @@ def build_agent(
     model = None if context.policy == "systemone" else chat_model(context)
     middleware = [] if context.policy == "llm" else [systemone(context, settings)]
     memory = "none" if model is None else context.memory
+    if model is not None and memory == "summarize" and input_limit(model) is None:
+        msg = (
+            f"{context.model} has no known input limit, so it can't use memory='summarize'; "
+            "use memory='none'"
+        )
+        raise ChessContractError(msg)
     return create_chess_agent(
         model,
         middleware=middleware,
         show_legal_moves=context.show_legal_moves,
         memory=memory,
-        summarization=summarization(model, context.summary_trigger_tokens),
         draw_claims=context.draw_claims,
         seed=context.seed,
         context_schema=ChessContext,

@@ -140,13 +140,13 @@ def test_assistant_settings_reach_the_factory_through_runtime(client: SyncLangGr
 
 def test_the_recorder_prices_llm_calls_on_the_server(client: SyncLangGraphClient):
     # threshold=1 always hands System 1's shortlist to the LLM.
-    config: Config = {"configurable": {"reasoning_effort": "low", "threshold": 1.0}}
+    config: Config = {"configurable": {"threshold": 1.0}}
     thread = client.threads.create()["thread_id"]
     out = client.runs.wait(thread, "chess", input=human("go"), config=config)
     ply = out["plies"][0]
     assert ply["source"] == "llm"
     llm = [c for c in out["turns"][0]["calls"] if c["kind"] == "llm"]
     assert llm
-    assert llm[-1]["model"] == "anthropic:claude-opus-5-5"
+    assert llm[-1]["model"] == "baseten:zai-org/GLM-5.3-Flash"
     assert llm[-1]["cost_usd"] is not None
     assert llm[-1]["cost_usd"] > 0

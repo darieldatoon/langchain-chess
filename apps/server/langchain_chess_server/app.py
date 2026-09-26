@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import TypeAdapter
 
 from langchain_chess_server.context import ChessContext
+from langchain_chess_server.graph import model_limit
 
 STATIC_DIR = Path(__file__).parent / "static"
 GRAPH_ID = "chess"
@@ -36,6 +37,11 @@ def create_app(static_dir: Path | None = STATIC_DIR) -> FastAPI:
     @app.get("/ui/config")
     def config() -> dict[str, Any]:
         return ui_config()
+
+    @app.get("/ui/model-limit")
+    def limit(model: str) -> dict[str, int | None]:
+        """The new-game dialog offers `summarize` only for a model with a known input limit."""
+        return {"max_input_tokens": model_limit(model)}
 
     @app.get("/ui", include_in_schema=False)
     def root() -> RedirectResponse:

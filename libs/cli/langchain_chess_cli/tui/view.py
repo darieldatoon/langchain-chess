@@ -118,6 +118,8 @@ def status_text(
 def describe_options(options: AgentOptions) -> str:
     if options.policy == "systemone":
         return f"System 1 alone ({options.systemone_model})"
+    effort = options.reasoning_effort
+    llm = options.model if effort is None else f"{options.model} ({effort})"
     if options.policy == "llm":
-        return f"{options.model} ({options.reasoning_effort})"
-    return f"{options.systemone_model} + {options.model} ({options.reasoning_effort})"
+        return llm
+    return f"{options.systemone_model} + {llm}"

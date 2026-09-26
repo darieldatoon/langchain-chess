@@ -1,4 +1,4 @@
-"""Pricing calls with genai-prices' bundled snapshot. Pure.
+"""Pricing calls and context windows from genai-prices' bundled snapshot. Pure.
 
 No gateway route returns a cost (the gateway prices calls asynchronously for its own spend
 caps), so cost is computed here from `usage_metadata`. Never call `update_prices`: prices change
@@ -96,6 +96,15 @@ def price(provider: str, model: str, tokens: Tokens, at: datetime) -> tuple[floa
     except LookupError:
         return None, False
     return float(result.total_price), not tokens.approximated
+
+
+def context_window(model: str) -> int | None:
+    """Input and output tokens together, from the same snapshot as prices; None if unknown."""
+    vendor, name = model_identity(model)
+    try:
+        return calc_price(Usage(), name, provider_id=vendor).model.context_window
+    except LookupError:
+        return None
 
 
 def make_call(

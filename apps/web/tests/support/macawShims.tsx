@@ -3,6 +3,7 @@
 interface Option {
   value: string;
   label?: string;
+  disabled?: boolean;
 }
 
 export function selectShim() {
@@ -28,7 +29,7 @@ export function selectShim() {
       >
         <option value="">(none)</option>
         {options.map((o) => (
-          <option key={o.value} value={o.value}>
+          <option key={o.value} value={o.value} disabled={o.disabled}>
             {o.label ?? o.value}
           </option>
         ))}

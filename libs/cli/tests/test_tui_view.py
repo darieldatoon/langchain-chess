@@ -106,10 +106,10 @@ def test_status_text():
 def test_board_of_and_options():
     assert board_of({"moves": ["e2e4"]}).fen().split()[1] == "b"
     assert describe_options(AgentOptions()) == (
-        "semif-qwen3.5-4b + langsmith:anthropic/claude-opus-5-5 (medium)"
+        "semif-qwen3.5-4b + langsmith:baseten/zai-org/GLM-5.3-Flash"
     )
     assert (
-        describe_options(AgentOptions(policy="llm"))
-        == "langsmith:anthropic/claude-opus-5-5 (medium)"
+        describe_options(AgentOptions(policy="llm", reasoning_effort="medium"))
+        == "langsmith:baseten/zai-org/GLM-5.3-Flash (medium)"
     )
     assert describe_options(AgentOptions(policy="systemone")).startswith("System 1 alone")

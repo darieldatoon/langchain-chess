@@ -4,6 +4,7 @@ import { isRecord, oneOf, sanitizeContext } from "./settings";
 import {
   DEFAULT_CONTEXT,
   type ChessContext,
+  type Memory,
   type Side,
   type SystemOneModel,
 } from "@langchain-chess/chess-ui";
@@ -11,10 +12,14 @@ import {
 export type SideChoice = Side | "random";
 export type SystemOneChoice = SystemOneModel | "none";
 
+/** Inexpensive models only; anything else is a custom spec. */
 export const LLM_PRESETS = [
-  "langsmith:anthropic/claude-opus-5-5",
-  "langsmith:anthropic/claude-opus-5",
-  "langsmith:openai/gpt-5.6-sol",
+  "langsmith:baseten/zai-org/GLM-5.3-Flash",
+  "langsmith:baseten/zai-org/GLM-5.3",
+  "langsmith:baseten/deepseek-ai/DeepSeek-V4-Flash-0731",
+  "langsmith:fireworks/accounts/fireworks/models/minimax-m3",
+  "langsmith:openai/gpt-6-luna",
+  "langsmith:anthropic/claude-haiku-4-5-20251001",
 ] as const;
 export type LlmPreset = (typeof LLM_PRESETS)[number];
 export type LlmChoice = LlmPreset | "custom" | "none";
@@ -42,7 +47,7 @@ export function knobsOf(context: ChessContext): Knobs {
 export const DEFAULT_SETUP: Setup = {
   side: "white",
   systemOne: DEFAULT_CONTEXT.systemone_model,
-  llm: "langsmith:anthropic/claude-opus-5-5",
+  llm: "langsmith:baseten/zai-org/GLM-5.3-Flash",
   customModel: "",
   knobs: knobsOf(DEFAULT_CONTEXT),
 };
@@ -53,9 +58,12 @@ export const SYSTEM_ONE_NAMES: Record<SystemOneModel, string> = {
 };
 
 export const LLM_NAMES: Record<LlmPreset, string> = {
-  "langsmith:anthropic/claude-opus-5-5": "Claude Opus 5.5",
-  "langsmith:anthropic/claude-opus-5": "Claude Opus 5",
-  "langsmith:openai/gpt-5.6-sol": "GPT-5.6 Sol",
+  "langsmith:baseten/zai-org/GLM-5.3-Flash": "GLM-5.3 Flash",
+  "langsmith:baseten/zai-org/GLM-5.3": "GLM-5.3",
+  "langsmith:baseten/deepseek-ai/DeepSeek-V4-Flash-0731": "DeepSeek V4 Flash",
+  "langsmith:fireworks/accounts/fireworks/models/minimax-m3": "MiniMax M3",
+  "langsmith:openai/gpt-6-luna": "GPT-6 Luna",
+  "langsmith:anthropic/claude-haiku-4-5-20251001": "Claude Haiku 4.5",
 };
 
 const isPreset = oneOf(...LLM_PRESETS);
@@ -67,23 +75,35 @@ export function modelName(model: string): string {
 /** A playable setup pins a context; an unplayable one says what to fix. */
 export type Matchup = { ok: true; context: ChessContext } | { ok: false; reason: string };
 
-function modelOf(setup: Setup): string | null {
+/** Only a model with a known input limit can summarize; the server is asked which ones do. */
+export type Summarize = "checking" | "yes" | "no";
+
+export function modelOf(setup: Pick<Setup, "llm" | "customModel">): string | null {
   if (setup.llm === "none") return null;
   return setup.llm === "custom" ? setup.customModel.trim() : setup.llm;
 }
 
-export function matchupOf(setup: Setup): Matchup {
+/** The memory a game gets: `summarize` falls back to `none` for a model that can't summarize. */
+export function memoryOf(knobs: Pick<Knobs, "memory">, summarize: Summarize): Memory {
+  return summarize === "no" ? "none" : knobs.memory;
+}
+
+export function matchupOf(setup: Setup, summarize: Summarize): Matchup {
   const model = modelOf(setup);
   const systemOne = setup.systemOne === "none" ? null : setup.systemOne;
   if (model === null && systemOne === null) {
     return { ok: false, reason: "Pick a System 1, an LLM, or both." };
   }
   if (model === "") return { ok: false, reason: "Enter a model spec for the custom LLM." };
+  if (model !== null && setup.knobs.memory === "summarize" && summarize === "checking") {
+    return { ok: false, reason: `Checking whether ${modelName(model)} can summarize…` };
+  }
   const policy = systemOne === null ? "llm" : model === null ? "systemone" : "hybrid";
   return {
     ok: true,
     context: {
       ...setup.knobs,
+      memory: memoryOf(setup.knobs, summarize),
       policy,
       // The server ignores the model a policy doesn't use, but the field is required.
       model: model ?? DEFAULT_CONTEXT.model,
@@ -106,10 +126,12 @@ export function matchupLine(context: ChessContext): string {
   }
 }
 
-/** The opponent on the game screen, e.g. "SemIf + Claude Opus 5.5 · medium". */
+/** The opponent on the game screen, e.g. "SemIf + GLM-5.3 · medium". */
 export function opponentLabel(context: ChessContext): string {
   const systemOne = SYSTEM_ONE_NAMES[context.systemone_model];
-  const llm = `${modelName(context.model)} · ${context.reasoning_effort}`;
+  const effort = context.reasoning_effort;
+  const llm =
+    effort === null ? modelName(context.model) : `${modelName(context.model)} · ${effort}`;
   switch (context.policy) {
     case "hybrid":
       return `${systemOne} + ${llm}`;
@@ -142,7 +164,7 @@ function sectionsOfPolicy(policy: ChessContext["policy"]): Sections {
 }
 
 const KNOB_SECTIONS: Record<keyof Sections | "rules", readonly (keyof Knobs)[]> = {
-  llm: ["show_legal_moves", "memory", "summary_trigger_tokens"],
+  llm: ["show_legal_moves", "memory"],
   systemOne: ["style", "with_eval", "with_nouls"],
   gate: ["gate", "threshold", "tournament_threshold", "k", "top_p"],
   rules: ["draw_claims", "seed"],

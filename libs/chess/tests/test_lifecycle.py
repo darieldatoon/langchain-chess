@@ -349,9 +349,11 @@ async def test_chat_game_with_memory_none_sees_only_the_current_turn(make_agent,
     assert isinstance(second[-1], HumanMessage)
 
 
-async def test_full_memory_drops_earlier_rejected_attempts(make_agent, run, cfg):
-    model = ScriptedModel(script=["MOVE: Qh5", "MOVE: e5", "MOVE: Nc6"])
-    agent = make_agent(model, memory="full")
+async def test_summarize_memory_drops_earlier_rejected_attempts(make_agent, run, cfg):
+    model = ScriptedModel(
+        script=["MOVE: Qh5", "MOVE: e5", "MOVE: Nc6"], profile={"max_input_tokens": 100_000}
+    )
+    agent = make_agent(model, memory="summarize")
     await run(agent, human("e4"), cfg)
     await run(agent, human("Nf3"), cfg)
     seen = [m.content for m in model.requests[2][1:-1]]
