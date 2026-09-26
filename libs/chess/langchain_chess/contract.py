@@ -9,7 +9,7 @@ import copy
 import inspect
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, get_type_hints
+from typing import Any, TypeIs, get_type_hints
 
 import chess
 from langchain.agents.middleware.types import (
@@ -61,14 +61,17 @@ class ChessMiddleware(AgentMiddleware[ChessState, Any, Any]):
     - `before_model` must be idempotent. A retry re-enters at the first `before_model`, so freeze
       each decision per `turn_id` (never per FEN) and replay it as `current allowed ∩ frozen`.
     - Telemetry lives in your own state keys until the turn finalizes: `ply_meta` fills
-      `Ply.meta[name]` at commit, and `turn_calls` reports your calls whenever a turn is
-      committed, terminal or abandoned.
+      `Ply.meta[name]` at commit, and `turn_calls` and `turn_latency_ms` report your calls and
+      time whenever a turn is committed, terminal or abandoned. Report each frozen decision's
+      time once per turn, however many retries replay it.
+    - `after_model` also runs after a model call that failed once some provider calls had
+      completed; there is no new reply then, and ChessCore re-raises the failure after it.
     """
 
     state_schema = ChessState
 
     agent_seed: int = 0
-    """Set by `create_chess_agent(seed=...)`."""
+    """Set by `create_chess_agent(seed=...)`. An instance may be shared only by same-seed agents."""
 
     def position(self, state: Mapping[str, Any]) -> PositionView:
         turn = state["turns"][-1]
@@ -111,8 +114,33 @@ class ChessMiddleware(AgentMiddleware[ChessState, Any, Any]):
         """This middleware's own model calls, called whenever the turn finalizes."""
         return []
 
+    def turn_latency_ms(self, state: Mapping[str, Any]) -> float:
+        """This middleware's own time on the turn, added to its latency when the turn finalizes."""
+        return 0.0
+
 
 _CHESS_FIELDS = CHESS_KEYS
+_PROPOSAL_KEYS = Proposal.__required_keys__ | Proposal.__optional_keys__
+
+
+def _is_json(value: object) -> TypeIs[JSONValue]:
+    if isinstance(value, list):
+        return all(_is_json(item) for item in value)
+    if isinstance(value, dict):
+        return all(isinstance(k, str) and _is_json(v) for k, v in value.items())
+    return isinstance(value, str | int | float | bool | None)
+
+
+def _is_proposal(value: object) -> TypeIs[Proposal]:
+    return (
+        isinstance(value, dict)
+        and set(value) <= _PROPOSAL_KEYS
+        and isinstance(value.get("uci"), str)
+        and isinstance(value.get("source"), str)
+        and isinstance(value.get("analysis"), str | None)
+        and isinstance(value.get("meta", {}), dict)
+        and _is_json(value.get("meta", {}))
+    )
 
 
 def own_keys(middleware: AgentMiddleware) -> frozenset[str]:
@@ -163,8 +191,10 @@ class _Checker:
         if (proposal := update.get("proposal")) is not None:
             if state.get("proposal") is not None:
                 self.fail("proposal", "a proposal already exists this turn")
-            if proposal.get("uci") not in allowed:
-                self.fail("proposal", f"{proposal.get('uci')} is not an allowed move")
+            if not _is_proposal(proposal):
+                self.fail("proposal", "must be a Proposal: `uci` and `source` strings, JSON `meta`")
+            if proposal["uci"] not in allowed:
+                self.fail("proposal", f"{proposal['uci']} is not an allowed move")
         if (fallback := update.get("fallback_move")) is not None and fallback not in allowed:
             self.fail("fallback_move", f"{fallback} is not an allowed move")
         if "candidates" in update:
@@ -236,6 +266,11 @@ def guard(inner: AgentMiddleware, *, seed: int = 0) -> AgentMiddleware:
         msg = f"{inner.name} registers tools; chess agents have none"
         raise ChessContractError(msg)
     if isinstance(inner, ChessMiddleware):
+        # An instance attribute means an earlier agent bound it; rebinding would change that agent.
+        bound = vars(inner).get("agent_seed")
+        if bound is not None and bound != seed:
+            msg = f"{inner.name} is already bound to seed {bound}; give each agent its own instance"
+            raise ChessContractError(msg)
         inner.agent_seed = seed
     cls = type(inner)
     own = own_keys(inner)
@@ -264,6 +299,7 @@ def guard(inner: AgentMiddleware, *, seed: int = 0) -> AgentMiddleware:
     if isinstance(inner, ChessMiddleware):
         namespace["ply_meta"] = lambda self, state: inner.ply_meta(detach(state))
         namespace["turn_calls"] = lambda self, state: inner.turn_calls(detach(state))
+        namespace["turn_latency_ms"] = lambda self, state: inner.turn_latency_ms(detach(state))
     proxy = type(f"Guarded{cls.__name__}", (AgentMiddleware,), namespace)
     return proxy()
 
@@ -278,3 +314,8 @@ def ply_meta_of(
 def turn_calls_of(middleware: AgentMiddleware, state: Mapping[str, Any]) -> list[Call]:
     fn = getattr(middleware, "turn_calls", None)
     return list(fn(state) or []) if fn is not None else []
+
+
+def turn_latency_of(middleware: AgentMiddleware, state: Mapping[str, Any]) -> float:
+    fn = getattr(middleware, "turn_latency_ms", None)
+    return float(fn(state) or 0.0) if fn is not None else 0.0

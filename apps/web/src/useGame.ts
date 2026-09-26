@@ -1,22 +1,21 @@
 import { useStream } from "@langchain/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  DEFAULT_CONTEXT,
   fenOrStart,
   isPending,
   lastPolicyPly,
   liveAnalysis,
   replay,
   turnOf,
-  type ChessContext,
   type ChessValues,
   type MoveEntry,
   type Outcome,
   type Reply,
-  type Side,
 } from "@langchain-chess/chess-ui";
 import { commandKey, createCommandIds } from "./commands";
 import { apiUrl, configurableOf } from "./settings";
-import { saveGame } from "./storage";
+import { gameOf, type GameRecord } from "./setup";
 
 export const CHESS_GRAPH = "chess";
 /** The trace name and tags. `run_name` is missing from the SDK's `Config` type; the server honours it. */
@@ -34,6 +33,12 @@ export function writeThreadToUrl(threadId: string | null, history: History = win
   history.replaceState(null, "", url);
 }
 
+/**
+ * A game from the URL is played only once it has loaded: a failed load, or a thread the server
+ * doesn't have, would otherwise look like a new game.
+ */
+export type Restore = "loading" | "missing" | "failed" | "ready";
+
 export interface PendingMove {
   uci: string;
   fen: string;
@@ -46,12 +51,14 @@ export interface Game {
   entries: MoveEntry[];
   outcome: Outcome | null;
   error: string | null;
-  humanSide: Side;
+  /** Null for a thread with no setup this app can read: it can only be shown. */
+  record: GameRecord | null;
   lastReply: Reply | null;
   liveAnalysis: string | null;
   pendingTurn: boolean;
   isThinking: boolean;
   isLoading: boolean;
+  restore: Restore;
   streamError: unknown;
   threadId: string | null;
   pendingMove: PendingMove | null;
@@ -62,10 +69,18 @@ export interface Game {
 
 const NO_MOVES: string[] = [];
 
-/** One `useStream` on the `chess` graph; one thread is one game, played with one context. */
-export function useGame(apiKey: string, context: ChessContext, humanSide: Side): Game {
-  const [threadId, setThreadId] = useState<string | null>(() => threadFromUrl());
+/**
+ * One `useStream` on the `chess` graph; one thread is one game, played with the setup its thread
+ * records. `chosen` is a new game's side and context, used until the first turn records them.
+ */
+export function useGame(apiKey: string, chosen: GameRecord | null): Game {
+  const [threadId, setThreadId] = useState(() => threadFromUrl());
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
+  const [load, setLoad] = useState<{
+    hydration: Promise<void>;
+    restore: "missing" | "failed";
+  } | null>(null);
+  // One game per hook instance: the table remounts for a new game, which starts fresh ids.
   const [commandId] = useState(() => createCommandIds());
   const mounted = useRef(true);
 
@@ -84,11 +99,36 @@ export function useGame(apiKey: string, context: ChessContext, humanSide: Side):
     onThreadId: (id) => {
       // A replaced game's stream can still report its thread late; it must not rebind the page.
       if (!mounted.current) return;
-      saveGame(id, { side: humanSide, context });
       setThreadId(id);
       writeThreadToUrl(id);
     },
   });
+
+  // A new client (a changed key) loads the thread again, with a new promise. Only a load for a
+  // thread can find it missing: a new game's load, made before it had one, settles empty.
+  const hydration = stream.hydrationPromise;
+  const [target, setTarget] = useState({ hydration, threadId });
+  if (target.hydration !== hydration) setTarget({ hydration, threadId });
+  useEffect(() => {
+    const { hydration, threadId } = target;
+    // A superseded load settling late must not overwrite the current one's outcome.
+    let cancelled = false;
+    const settle = (restore: "missing" | "failed") =>
+      cancelled ||
+      setLoad((l) =>
+        l?.hydration === hydration && l.restore === restore ? l : { hydration, restore },
+      );
+    hydration.then(
+      // The SDK settles a 404 as a clean load that binds no thread stream.
+      () => threadId !== null && !stream.getThread() && settle("missing"),
+      () => settle("failed"),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [target, stream]);
+  const restore: Restore =
+    load?.hydration === hydration ? load.restore : stream.isThreadLoading ? "loading" : "ready";
 
   const values = stream.values;
   const startFen = fenOrStart(values.start_fen);
@@ -117,7 +157,9 @@ export function useGame(apiKey: string, context: ChessContext, humanSide: Side):
     [moves, plies, position],
   );
 
-  const configurable = useMemo(() => configurableOf(context), [context]);
+  const record = useMemo(() => gameOf(values, chosen), [values, chosen]);
+  // Without a record the board stays locked, so the stand-in never reaches a run.
+  const configurable = useMemo(() => configurableOf(record?.context ?? DEFAULT_CONTEXT), [record]);
 
   const send = useCallback(
     (input: ChessValues) =>
@@ -132,11 +174,9 @@ export function useGame(apiKey: string, context: ChessContext, humanSide: Side):
   const command = useCallback(
     (content: string) =>
       send({
-        messages: [
-          { type: "human", id: commandId(commandKey(threadId, moves.length, content)), content },
-        ],
+        messages: [{ type: "human", id: commandId(commandKey(moves.length, content)), content }],
       }),
-    [send, commandId, threadId, moves.length],
+    [send, commandId, moves.length],
   );
 
   // Optimistic board: show the human's move until the run settles, success or error.
@@ -165,12 +205,13 @@ export function useGame(apiKey: string, context: ChessContext, humanSide: Side):
     entries,
     outcome: values.outcome ?? null,
     error: values.error ?? null,
-    humanSide,
+    record,
     lastReply,
     liveAnalysis: isThinking ? liveAnalysis(stream.messages, turns, plies) : null,
     pendingTurn: isPending(turns),
     isThinking,
     isLoading: isThinking || stream.isThreadLoading,
+    restore,
     streamError: stream.error,
     threadId,
     pendingMove,

@@ -6,13 +6,8 @@ copying the graph, and that the `/ui` app is mounted. Against the real LLM Gatew
 `uv run --all-packages --env-file .env pytest -m live --no-cov`.
 """
 
-import json
-import socket
-import subprocess
-import sys
-import time
-from collections.abc import Iterator
-from pathlib import Path
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager
 from typing import Any
 
 import httpx
@@ -23,74 +18,14 @@ from langgraph_sdk.schema import Config
 
 pytestmark = pytest.mark.live
 
-REPO = Path(__file__).resolve().parents[3]
-LANGGRAPH = Path(sys.executable).parent / "langgraph"
-STARTUP_S = 90
-
-
-def _absolute(spec: str) -> str:
-    return str(REPO / spec.removeprefix("./"))
-
-
-def _config_in(workdir: Path) -> Path:
-    """The repo's langgraph.json with absolute paths: the server resolves them against its
-    working directory, and it keeps its local state (`.langgraph_api/`) there too."""
-    config = json.loads((REPO / "langgraph.json").read_text())
-    config["graphs"] = {name: _absolute(spec) for name, spec in config["graphs"].items()}
-    config["http"]["app"] = _absolute(config["http"]["app"])
-    config["env"] = _absolute(config["env"])
-    config["source"]["root"] = str(REPO)
-    path = workdir / "langgraph.json"
-    path.write_text(json.dumps(config))
-    return path
-
-
-def _free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
-
 
 @pytest.fixture(scope="module")
-def server(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
-    """A `langgraph dev` on a free port, run from a temp directory so its local state never
-    mixes test threads into a developer's own dev server."""
-    port = _free_port()
-    workdir = tmp_path_factory.mktemp("langgraph-dev")
-    log = (workdir / "server.log").open("w")
-    command = [
-        str(LANGGRAPH),
-        "dev",
-        "--config",
-        str(_config_in(workdir)),
-        "--port",
-        str(port),
-        "--no-browser",
-        "--no-reload",
-    ]
-    process = subprocess.Popen(command, cwd=workdir, stdout=log, stderr=subprocess.STDOUT)
-    url = f"http://127.0.0.1:{port}"
-    try:
-        deadline = time.monotonic() + STARTUP_S
-        while time.monotonic() < deadline:
-            if process.poll() is not None:
-                pytest.fail(f"langgraph dev exited:\n{(workdir / 'server.log').read_text()}")
-            try:
-                if httpx.get(f"{url}/ok", timeout=1).status_code == 200:
-                    break
-            except httpx.HTTPError:
-                pass
-            time.sleep(0.5)
-        else:
-            pytest.fail(f"langgraph dev didn't start:\n{(workdir / 'server.log').read_text()}")
+def server(
+    tmp_path_factory: pytest.TempPathFactory,
+    langgraph_dev: Callable[..., AbstractContextManager[str]],
+) -> Iterator[str]:
+    with langgraph_dev(tmp_path_factory.mktemp("langgraph-dev")) as url:
         yield url
-    finally:
-        process.terminate()
-        try:
-            process.wait(timeout=15)
-        except subprocess.TimeoutExpired:
-            process.kill()
-        log.close()
 
 
 @pytest.fixture(scope="module")

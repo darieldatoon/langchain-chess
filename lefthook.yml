@@ -16,9 +16,18 @@ pre-commit:
       run: uv run --all-packages ty check
     secrets:
       # patterns require a key body so this file's own regex never matches itself
+      # Names the files only: echoing the matched line would print the secret into the log.
       run: |
-        if git diff --cached -U0 -- . ':!lefthook.yml' | grep -E '^\+.*(sk-ant-[A-Za-z0-9_-]{20,}|sk-proj-[A-Za-z0-9_-]{20,}|lsv2_[a-z]{2}_[A-Za-z0-9]{20,}|ts_live_[A-Za-z0-9]{16,}|ghp_[A-Za-z0-9]{36})' ; then
-          echo "possible secret in staged changes"; exit 1
+        pattern='^\+.*(sk-ant-[A-Za-z0-9_-]{20,}|sk-proj-[A-Za-z0-9_-]{20,}|lsv2_[a-z]{2}_[A-Za-z0-9]{20,}|ts_live_[A-Za-z0-9]{16,}|ghp_[A-Za-z0-9]{36})'
+        # NUL-separated and literal: git quotes unusual names in plain output, and a quoted or
+        # glob-like name would match no file, hiding its diff.
+        files=$(git diff --cached --name-only -z -- . ':!lefthook.yml' | xargs -0 -n1 sh -c '
+          [ -n "${2-}" ] || exit 0
+          if GIT_LITERAL_PATHSPECS=1 git diff --cached -U0 -- "$2" | grep -qE "$1"; then
+            printf "  %s\n" "$2"
+          fi' sh "$pattern")
+        if [ -n "$files" ]; then
+          printf 'possible secret in staged changes to:\n%s\n' "$files"; exit 1
         fi
 
 pre-push:

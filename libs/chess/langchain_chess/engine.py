@@ -78,7 +78,8 @@ def eval_from(score: chess.engine.PovScore) -> Eval:
     mate = white.mate()
     if mate is None:
         return Cp(white.score(mate_score=0) or 0)
-    return Mate(abs(mate), "white" if mate > 0 else "black")
+    # Not `mate > 0`: `MateGiven` and `Mate(0)` both report zero moves.
+    return Mate(abs(mate), "white" if white > chess.engine.Cp(0) else "black")
 
 
 def analysis_from(infos: Sequence[chess.engine.InfoDict]) -> Analysis:
@@ -93,16 +94,32 @@ def analysis_from(infos: Sequence[chess.engine.InfoDict]) -> Analysis:
     return Analysis(lines)
 
 
+async def _quit_engine(engine: chess.engine.UciProtocol, timeout: float) -> None:
+    with contextlib.suppress(
+        chess.engine.EngineError, chess.engine.EngineTerminatedError, TimeoutError
+    ):
+        async with asyncio.timeout(timeout):
+            await engine.quit()
+    if not engine.returncode.done():
+        assert engine.transport is not None
+        with contextlib.suppress(ProcessLookupError):
+            engine.transport.kill()
+        await engine.returncode
+
+
 class EnginePool:
     """`workers` engine processes; each `analyse` runs on whichever engine is free, FIFO."""
 
-    def __init__(self, config: EngineConfig, workers: int) -> None:
+    def __init__(self, config: EngineConfig, workers: int, *, quit_timeout: float = 5.0) -> None:
         if workers < 1:
             msg = "workers must be at least 1"
             raise ValueError(msg)
         self.config = config
         self.workers = workers
+        self.quit_timeout = quit_timeout
+        """Seconds each engine gets to quit before it is killed."""
         self._engines: list[chess.engine.UciProtocol] = []
+        self._closing: asyncio.Task[None] | None = None
         self._idle: asyncio.Queue[chess.engine.UciProtocol] = asyncio.Queue()
 
     @property
@@ -133,10 +150,26 @@ class EnginePool:
         await self._quit()
 
     async def _quit(self) -> None:
-        engines, self._engines = self._engines, []
-        for engine in engines:
-            with contextlib.suppress(chess.engine.EngineError, chess.engine.EngineTerminatedError):
-                await engine.quit()
+        if self._closing is None:
+            self._closing = asyncio.ensure_future(self._close())
+        closing = self._closing
+        try:
+            await asyncio.shield(closing)
+        except asyncio.CancelledError:
+            # Cleanup is bounded, so a cancelled exit waits for it rather than orphan an engine.
+            while not closing.done():
+                with contextlib.suppress(asyncio.CancelledError):
+                    await asyncio.shield(closing)
+            raise
+
+    async def _close(self) -> None:
+        try:
+            await asyncio.gather(
+                *(_quit_engine(engine, self.quit_timeout) for engine in self._engines)
+            )
+        finally:
+            self._engines = []
+            self._closing = None
 
     async def analyse(self, fen: str) -> Analysis:
         engine = await self._idle.get()

@@ -10,6 +10,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from langchain.agents.middleware import SummarizationMiddleware
+from langchain.agents.middleware.types import AgentMiddleware
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 
@@ -116,3 +117,19 @@ class ChessSummarization(SummarizationMiddleware):
         with self.recorder.sink("summary") as calls:
             update = await super().abefore_model(state, runtime)
         return self._account(state, update, calls)
+
+
+class NoSummarization(AgentMiddleware[ChessState, Any, Any]):
+    """Keeps the summarization node when memory is off, so every memory setting builds one graph."""
+
+    state_schema = ChessState
+
+    @property
+    def name(self) -> str:
+        return "SummarizationMiddleware"
+
+    def before_model(self, state: Any, runtime: Any) -> dict[str, Any] | None:
+        return None
+
+    async def abefore_model(self, state: Any, runtime: Any) -> dict[str, Any] | None:
+        return None

@@ -125,10 +125,12 @@ class MoveDistribution:
 class RankingFailed(Exception):  # noqa: N818 - the plan's name, raised as a failure not an error
     """Ranking failed after retries, or a response was malformed."""
 
-    def __init__(self, message: str, calls: Sequence[Call] = ()) -> None:
+    def __init__(self, message: str, calls: Sequence[Call] = (), elapsed_ms: float = 0.0) -> None:
         super().__init__(message)
         self.calls: tuple[Call, ...] = tuple(calls)
         """The requests that completed before the failure."""
+        self.elapsed_ms = elapsed_ms
+        """How long the ranking ran before it failed."""
 
 
 class Ranker(Protocol):

@@ -15,3 +15,4 @@ uv.lock
 mise.lock
 **/pnpm-lock.yaml
 libs/cli/tests/__snapshots__/
+docs/images/

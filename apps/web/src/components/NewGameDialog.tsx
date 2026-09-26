@@ -10,8 +10,9 @@ import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr/CaretRight";
 import { CrownIcon } from "@phosphor-icons/react/dist/ssr/Crown";
 import { ShuffleIcon } from "@phosphor-icons/react/dist/ssr/Shuffle";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { keyCheckMessage, type KeyCheck } from "../auth";
+import type { ModelLimit } from "../modelLimit";
 import { withKnob } from "../settings";
 import {
   LLM_NAMES,
@@ -21,13 +22,14 @@ import {
   modelOf,
   sectionsOf,
   type LlmChoice,
+  type Matchup,
   type Setup,
   type SideChoice,
   type Summarize,
   type SystemOneChoice,
 } from "../setup";
 import type { ChessContext } from "@langchain-chess/chess-ui";
-import { AdvancedSettings, Field, type SetKnob } from "./AdvancedSettings";
+import { AdvancedSettings, Field, type NumberKnob, type SetKnob } from "./AdvancedSettings";
 
 interface Props {
   open: boolean;
@@ -40,8 +42,8 @@ interface Props {
   onOpenSettings: (draft: Setup) => void;
   /** Runs on Play; the game starts only once the server accepts the key. */
   checkKey: () => Promise<KeyCheck>;
-  /** The model's input limit, or null: `summarize` is offered only when it is known. */
-  modelLimit: (model: string) => Promise<number | null>;
+  /** The model's input limit: `summarize` is offered only when it is known. */
+  modelLimit: (model: string) => Promise<ModelLimit>;
 }
 
 /** Waits out typing in the custom model field before asking the server. */
@@ -62,6 +64,14 @@ const SYSTEM_ONES: SelectOption<SystemOneChoice>[] = [
   { value: "typesafe/jev-latest", label: "Jev (experimental)", description: "typesafe/jev-latest" },
   { value: "none", label: "None", description: "The LLM plays alone" },
 ];
+
+const SUMMARIZE: Record<ModelLimit["kind"], Summarize> = {
+  known: "yes",
+  none: "no",
+  failed: "unknown",
+};
+
+const INVALID_KNOBS: Matchup = { ok: false, reason: "Fix the Advanced settings marked invalid." };
 
 const LLMS: SelectOption<LlmChoice>[] = [
   ...LLM_PRESETS.map((value) => ({ value, label: LLM_NAMES[value] })),
@@ -90,25 +100,44 @@ export function NewGameDialog({
   const setKnob: SetKnob = (key, value) =>
     setSetup((s) => ({ ...s, knobs: withKnob(s.knobs, key, value) }));
   const model = modelOf(setup);
-  const [limit, setLimit] = useState<{ model: string; tokens: number | null } | null>(null);
-  const summarize: Summarize =
-    limit?.model !== model ? "checking" : limit.tokens === null ? "no" : "yes";
+  const [limit, setLimit] = useState<{ model: string; result: ModelLimit } | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const summarize: Summarize = limit?.model !== model ? "checking" : SUMMARIZE[limit.result.kind];
+  // Number fields whose text isn't a valid value: Play would send a value they no longer show.
+  const [invalid, setInvalid] = useState<Partial<Record<NumberKnob, boolean>>>({});
+  const setValidity = useCallback(
+    (knob: NumberKnob, valid: boolean) =>
+      setInvalid((s) => ((s[knob] ?? false) === !valid ? s : { ...s, [knob]: !valid })),
+    [],
+  );
   const matchup = matchupOf(setup, summarize);
+  const ready = matchup.ok && Object.values(invalid).some(Boolean) ? INVALID_KNOBS : matchup;
   const mounted = useRef(true);
+  // What is on screen now, for a key check that answers after the picks changed.
+  const onScreen = useRef({ setup, ready });
+  useEffect(() => {
+    onScreen.current = { setup, ready };
+  });
 
   useEffect(() => {
     if (!model) return;
     let current = true;
     const timer = setTimeout(() => {
-      void modelLimit(model).then((tokens) => {
-        if (current) setLimit({ model, tokens });
+      void modelLimit(model).then((result) => {
+        if (current) setLimit({ model, result });
       });
     }, LIMIT_DELAY_MS);
     return () => {
       current = false;
       clearTimeout(timer);
     };
-  }, [model, modelLimit]);
+    // `attempt` is read by nothing inside: a retry changes it to ask again.
+  }, [model, modelLimit, attempt]);
+
+  const recheck = () => {
+    setLimit(null);
+    setAttempt((a) => a + 1);
+  };
 
   useEffect(() => {
     mounted.current = true;
@@ -124,8 +153,9 @@ export function NewGameDialog({
     // Cancelled or sent to settings mid-check: a late answer must not start a game.
     if (!mounted.current) return;
     setChecking(false);
-    if (check.kind === "ok") onPlay(setup, context);
-    else setKeyProblem(check);
+    if (check.kind !== "ok") setKeyProblem(check);
+    // Edited mid-check: that Play was for picks no longer on screen, so Play asks again.
+    else if (onScreen.current.setup === setup && onScreen.current.ready.ok) onPlay(setup, context);
   };
   const problem = keyProblem && keyCheckMessage(keyProblem);
 
@@ -204,12 +234,17 @@ export function NewGameDialog({
 
           <div
             aria-label="matchup"
-            className="rounded-md bg-surface-level-2 px-space-4 py-space-3"
+            className="flex items-center justify-between gap-space-3 rounded-md bg-surface-level-2 px-space-4 py-space-3"
             role="status"
           >
-            <Text variant="sm" color={matchup.ok ? "primary" : "error"}>
-              {matchup.ok ? matchupLine(matchup.context) : matchup.reason}
+            <Text variant="sm" color={ready.ok ? "primary" : "error"}>
+              {ready.ok ? matchupLine(ready.context) : ready.reason}
             </Text>
+            {!matchup.ok && summarize === "unknown" && (
+              <Button variant="plain" size="sm" color="primary" onClick={recheck}>
+                Retry
+              </Button>
+            )}
           </div>
 
           <div className="flex flex-col gap-space-4">
@@ -232,6 +267,7 @@ export function NewGameDialog({
                   sections={sectionsOf(setup)}
                   summarize={summarize}
                   onKnob={setKnob}
+                  onValidity={setValidity}
                 />
               </div>
             )}
@@ -271,13 +307,13 @@ export function NewGameDialog({
                 Cancel
               </Button>
             )}
-            {matchup.ok ? (
+            {ready.ok ? (
               <Button
                 color="primary"
                 size="md"
                 loading={checking}
                 disabled={checking}
-                onClick={() => void play(matchup.context)}
+                onClick={() => void play(ready.context)}
               >
                 Play
               </Button>

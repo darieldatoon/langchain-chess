@@ -30,6 +30,11 @@ class SearchResult:
     seed: str
 
 
+def info_lines(text: str) -> list[str]:
+    """One `info string` per non-blank line: an embedded newline could forge a command."""
+    return [f"info string {line}" for line in text.splitlines() if line.strip()]
+
+
 def root_moves(
     start_fen: str, moves: Sequence[str], searchmoves: Sequence[str] | None
 ) -> list[str]:
@@ -65,12 +70,12 @@ def complete(values: Mapping[str, Any], result: SearchResult) -> list[str]:
         if outcome["kind"] == "resignation":
             attempts = turn["illegal_attempts"]
             return [
-                f"info string resigns: no legal move after {attempts} attempts",
+                *info_lines(f"resigns: no legal move after {attempts} attempts"),
                 f"bestmove {NULL_MOVE}",
             ]
-        return [f"info string game over: {result_text(outcome)}", f"bestmove {NULL_MOVE}"]
+        return [*info_lines(f"game over: {result_text(outcome)}"), f"bestmove {NULL_MOVE}"]
     invocation = values.get("invocation") or {}
     if result.status == "finished" and invocation.get("action") == "reject":
-        return [f"info string {values.get('error')}", f"bestmove {NULL_MOVE}"]
-    lines = [f"info string error: {result.error}"] if result.status == "failed" else []
+        return [*info_lines(str(values.get("error"))), f"bestmove {NULL_MOVE}"]
+    lines = info_lines(f"error: {result.error}") if result.status == "failed" else []
     return [*lines, f"bestmove {_fallback(values, result, ours)}"]

@@ -10,9 +10,9 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Checkpointer
 
 from langchain_chess import ChessContractError, create_chess_agent
+from langchain_chess.chat_models import chat_model
 from langchain_chess.middleware.summarization import input_limit
 from langchain_chess.rules import DrawClaims
-from langchain_chess_cli.models import chat_model
 from langchain_chess_systemone import SystemOneMiddleware
 
 type Policy = Literal["llm", "systemone", "hybrid"]

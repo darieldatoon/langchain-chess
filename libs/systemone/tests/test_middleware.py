@@ -3,8 +3,8 @@ import pytest
 from langgraph.checkpoint.memory import InMemorySaver
 
 from langchain_chess import ChessMiddleware, create_chess_agent
-from langchain_chess.testing import ScriptedModel, position
-from langchain_chess_systemone import GatewayRanker, SystemOneMiddleware
+from langchain_chess.testing import ScriptedModel, position, topology
+from langchain_chess_systemone import GatewayRanker, NoSystemOne, SystemOneMiddleware
 from langchain_chess_systemone.middleware import turn_seed
 from langchain_chess_systemone.testing import (
     FakeRanker,
@@ -69,6 +69,15 @@ class Pruner(ChessMiddleware):
 
 
 SPLIT = distribution({"e2e4": 0.60, "d2d4": 0.25, "g1f3": 0.15})
+
+
+async def test_no_systemone_keeps_the_graph_and_leaves_the_move_to_the_model(run, cfg):
+    model = ScriptedModel(script=["MOVE: e4"])
+    off = agent(model, NoSystemOne())
+    on = agent(model, SystemOneMiddleware("fake", ranker=FakeRanker([])))
+    assert topology(off) == topology(on)
+    out = await run(off, position(), cfg)
+    assert (out["plies"][0]["source"], out["plies"][0]["meta"]) == ("llm", {})
 
 
 async def test_the_frozen_shortlist_is_replayed_and_never_regated(run, cfg):
@@ -214,6 +223,23 @@ async def test_a_confident_ranking_plays_and_skips_the_model(run, cfg):
     out = await run(agent(model, systemone), position(), cfg)
     assert out["plies"][0]["source"] == "systemone"
     assert model.calls == 0
+
+
+async def test_a_rounded_away_shortfall_cannot_clear_the_margin_gate(run, cfg):
+    # Jev rounds 0.85 plus 32 x (0.15 / 32) to 0.85 plus zeros; the true margin is below 0.9.
+    client = FakeTypeSafeClient(
+        answer=lambda name, options: {"c4f7": 0.85}, semif=False, model="typesafe/jev-1"
+    )
+    model = ScriptedModel(script=["MOVE: O-O"])
+    systemone = SystemOneMiddleware(
+        "typesafe/jev-1", threshold=0.9, ranker=gateway(client, model="typesafe/jev-1")
+    )
+    out = await run(agent(model, systemone), position(start_fen=ITALIAN), cfg)
+    meta = out["plies"][0]["meta"][META]
+    assert meta["status"] == "shortlist"
+    assert meta["margin"] == pytest.approx(0.85)
+    assert out["plies"][0]["source"] == "llm"
+    assert model.calls == 1
 
 
 async def test_threshold_one_never_plays(run, cfg):
@@ -470,3 +496,39 @@ def test_fakes_enforce_semif_limits():
         client.invoke({"state": {}, "questions": one})
     with pytest.raises(ValueError, match="at least one candidate"):
         MoveDistribution(candidates=(), confidence=1.0, model="m", latency_ms=0.0, calls=())
+
+
+SLOW = distribution({"e2e4": 0.60, "d2d4": 0.25, "g1f3": 0.15}, latency_ms=1234.0)
+
+
+async def test_a_system_one_move_carries_its_ranking_time(run, cfg):
+    systemone = SystemOneMiddleware(
+        "fake", threshold=0.0, has_model=False, ranker=FakeRanker([SLOW])
+    )
+    out = await run(agent(None, systemone), position(), cfg)
+    assert out["plies"][0]["source"] == "systemone"
+    assert out["plies"][0]["latency_ms"] == 1234.0
+    assert out["turns"][0]["latency_ms"] == 1234.0
+
+
+async def test_a_hybrid_turn_counts_the_ranking_once_across_retries(run, cfg):
+    model = ScriptedModel(script=[RuntimeError("down"), "MOVE: Qh5", "MOVE: e4"])
+    systemone = SystemOneMiddleware("fake", ranker=FakeRanker([SLOW]))
+    chess_agent = agent(model, systemone)
+    with pytest.raises(RuntimeError, match="down"):
+        await run(chess_agent, position(), cfg)
+    out = await run(chess_agent, {}, cfg)
+    assert out["plies"][0]["source"] == "llm"
+    latency = out["plies"][0]["latency_ms"]
+    assert 1234.0 < latency < 2 * 1234.0
+    assert out["turns"][0]["latency_ms"] == latency
+
+
+async def test_a_skipped_ranking_carries_the_time_it_took(run, cfg):
+    model = ScriptedModel(script=["MOVE: e4"])
+    systemone = SystemOneMiddleware("fake", ranker=FakeRanker([failed(elapsed_ms=400.0)]))
+    out = await run(agent(model, systemone), position(), cfg)
+    ply = out["plies"][0]
+    assert ply["meta"][META]["status"] == "skipped"
+    assert ply["meta"][META]["latency_ms"] == 400.0
+    assert 400.0 < ply["latency_ms"] < 800.0

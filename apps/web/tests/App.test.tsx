@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import App from "../src/App";
 import { checkApiKey, type KeyCheck } from "../src/auth";
 import { DEFAULT_SETUP } from "../src/setup";
-import { APP_KEY, loadGame, loadSetup, saveAppSettings, saveGame, saveSetup } from "../src/storage";
+import { APP_KEY, loadSetup, saveAppSettings, saveSetup } from "../src/storage";
 import { fake, lastOptions, optionsLog, resetFake } from "./support/fakeStream";
 import { AFTER_E4, E4_E5, ply, turn } from "@langchain-chess/chess-ui/testing";
 import { WEB_TRACE } from "../src/useGame";
@@ -13,7 +13,7 @@ import {
   DEFAULT_CONTEXT,
   START_FEN,
   type ChessContext,
-  type Side,
+  type ChessValues,
 } from "@langchain-chess/chess-ui";
 
 interface BoardOptions {
@@ -62,7 +62,9 @@ vi.mock("../src/auth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../src/auth")>()),
   checkApiKey: vi.fn(() => Promise.resolve(keyCheck.result)),
 }));
-vi.mock("../src/modelLimit", () => ({ fetchModelLimit: vi.fn(() => Promise.resolve(968000)) }));
+vi.mock("../src/modelLimit", () => ({
+  fetchModelLimit: vi.fn(() => Promise.resolve({ kind: "known", tokens: 968000 })),
+}));
 vi.mock("@langchain/react", async () => (await import("./support/fakeStream")).useStreamMock());
 vi.mock("@langchain/macaw-components/Select", async () =>
   (await import("./support/macawShims")).selectShim(),
@@ -92,11 +94,26 @@ async function click(name: string) {
   });
 }
 
-/** Opens a game already in the URL, as a reload does. */
-function onThread(threadId: string, side: Side = "white", context = DEFAULT_CONTEXT) {
-  saveGame(threadId, { side, context });
+/** Opens a game from its link, its thread holding `values` and the `setup` it recorded. */
+function onThread(threadId: string, values: ChessValues = {}, setup = DEFAULT_CONTEXT) {
+  fake.threads[threadId] = { values: { ...values, setup } };
   window.history.replaceState(null, "", `?thread=${threadId}`);
 }
+
+/** Opens a game from its link whose thread predates `setup`. */
+function onOldThread(threadId: string, values: ChessValues) {
+  fake.threads[threadId] = { values };
+  window.history.replaceState(null, "", `?thread=${threadId}`);
+}
+
+/** The opponent opened 1. e4; the human, Black, is to move. */
+const E4_AS_BLACK: ChessValues = {
+  moves: ["e2e4"],
+  plies: [ply({ source: "llm", turn_id: "turn-1" })],
+  turns: [turn({ ply: 0 })],
+};
+/** The human, White, played 1. e4 and nothing is pending. */
+const E4_AS_WHITE: ChessValues = { moves: ["e2e4"], plies: [ply()], turns: [] };
 
 /** Opens the app with no game and plays whatever the modal holds. */
 async function playFromModal(random?: () => number) {
@@ -140,7 +157,7 @@ describe("new game", () => {
 
   it("asks the server for the model's input limit with the saved key", async () => {
     saveAppSettings({ apiKey: "lsv2_k" });
-    const modelLimit = vi.fn(() => Promise.resolve(968000));
+    const modelLimit = vi.fn(() => Promise.resolve({ kind: "known" as const, tokens: 968000 }));
     render(<App modelLimit={modelLimit} />);
     await waitFor(() => expect(modelLimit).toHaveBeenCalledWith("lsv2_k", DEFAULT_CONTEXT.model));
   });
@@ -227,14 +244,15 @@ describe("new game", () => {
 });
 
 describe("a game's own setup", () => {
-  it("pins the context: a later setup never reaches this game, and a reload restores it", async () => {
+  it("plays its picks: a later setup never reaches it, and a reload continues from its thread", async () => {
     saveSetup({ ...DEFAULT_SETUP, systemOne: "none", llm: "langsmith:openai/gpt-6-luna" });
     const view = await playFromModal();
     reportThread("t-1");
-    expect(loadGame("t-1")).toEqual({
-      side: "white",
-      context: { ...DEFAULT_CONTEXT, policy: "llm", model: "langsmith:openai/gpt-6-luna" },
-    });
+    const luna: ChessContext = {
+      ...DEFAULT_CONTEXT,
+      policy: "llm",
+      model: "langsmith:openai/gpt-6-luna",
+    };
 
     // Changing the last setup, in the modal or in storage, leaves the game on screen alone.
     await click("New game");
@@ -242,10 +260,8 @@ describe("a game's own setup", () => {
     await click("Cancel");
     saveSetup({ ...DEFAULT_SETUP, llm: "none" });
     await click("drop e2e4");
-    expect(lastConfigurable()).toMatchObject({
-      policy: "llm",
-      model: "langsmith:openai/gpt-6-luna",
-    });
+    expect(lastConfigurable()).toEqual(luna);
+    expect(Object.keys(window.localStorage)).toEqual(["langchain-chess:setup"]);
 
     // A new game takes the new setup; the old one keeps its own.
     await click("New game");
@@ -257,41 +273,160 @@ describe("a game's own setup", () => {
     expect(lastConfigurable()).toMatchObject({ policy: "systemone" });
 
     view.unmount();
-    window.history.replaceState(null, "", "?thread=t-1");
+    onThread("t-1", E4_AS_WHITE, luna);
     render(<App />);
-    await click("drop e2e4");
-    expect(lastConfigurable()).toMatchObject({
-      policy: "llm",
-      model: "langsmith:openai/gpt-6-luna",
-    });
+    expect(board()).toHaveAttribute("data-orientation", "white");
+    await click("Ask opponent to move");
+    expect(lastConfigurable()).toEqual(luna);
   });
 
-  it("restores the side and context for a thread on reload", async () => {
-    onThread("abc", "black", LLM_HIGH);
+  it("continues a Black game from its thread in a browser that has never seen it", async () => {
+    onThread("abc", E4_AS_BLACK, LLM_HIGH);
     render(<App />);
+    expect(window.localStorage.length).toBe(0);
     expect(board()).toHaveAttribute("data-orientation", "black");
+    expect(board()).toHaveAttribute("data-draggable", "true");
     expect(screen.getByText("abc")).toBeInTheDocument();
     expect(screen.getByText("GPT-6 Luna · high")).toBeInTheDocument();
+    expect(screen.getByText("Your move.")).toBeInTheDocument();
     expect(optionsLog.at(-1)).toMatchObject({ threadId: "abc" });
-    expect(fake.submit).not.toHaveBeenCalled();
-    await click("Start");
+    await click("drop e7e5");
+    expect(submitted()).toEqual(["e7e5"]);
     expect(lastConfigurable()).toEqual(LLM_HIGH);
   });
 
+  it("continues a White game from its thread", () => {
+    onThread("abc", E4_E5);
+    render(<App />);
+    expect(board()).toHaveAttribute("data-orientation", "white");
+    expect(board()).toHaveAttribute("data-draggable", "true");
+    expect(screen.getByText("Your move.")).toBeInTheDocument();
+  });
+
   it("notes advanced knobs that differ from the defaults", () => {
-    onThread("abc", "white", { ...DEFAULT_CONTEXT, threshold: 0.5, k: 3 });
+    onThread("abc", E4_E5, { ...DEFAULT_CONTEXT, threshold: 0.5, k: 3 });
     render(<App />);
     expect(
       within(screen.getByLabelText("opponent")).getByText("threshold 0.5 · k 3"),
     ).toBeVisible();
   });
 
-  it("falls back to the default context for a thread from before games pinned one", () => {
-    window.localStorage.setItem("langchain-chess:side:old", "black");
-    window.history.replaceState(null, "", "?thread=old");
+  it("shows a thread without a setup read-only, rather than play it with defaults", () => {
+    onOldThread("old", { moves: ["e2e4"], plies: [ply()], turns: [] });
+    fake.isThreadLoading = true;
+    const view = render(<App />);
+    expect(screen.queryByText("View only")).not.toBeInTheDocument();
+    view.unmount();
+
+    fake.isThreadLoading = false;
+    // This browser's pin from before games recorded their setup is not read.
+    window.localStorage.setItem(
+      "langchain-chess:game:old",
+      JSON.stringify({ side: "white", context: DEFAULT_CONTEXT }),
+    );
     render(<App />);
-    expect(board()).toHaveAttribute("data-orientation", "black");
-    expect(screen.getByText("SemIf + GLM-5.3 Flash")).toBeInTheDocument();
+    expect(screen.getByText("View only")).toBeInTheDocument();
+    expect(board()).toHaveAttribute("data-draggable", "false");
+    expect(screen.getByText("View only.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Ask opponent to move" })).not.toBeInTheDocument();
+    expect(within(screen.getByLabelText("opponent")).getByText("Unknown")).toBeVisible();
+    expect(fake.submit).not.toHaveBeenCalled();
+  });
+
+  it("shows a thread whose setup this app can't read read-only", () => {
+    onThread("odd", E4_E5, { ...DEFAULT_CONTEXT, k: 0 });
+    render(<App />);
+    expect(screen.getByText("View only")).toBeInTheDocument();
+    expect(board()).toHaveAttribute("data-draggable", "false");
+  });
+
+  it("shows the result of an unrecorded game without claiming a side or offering a rematch", () => {
+    onOldThread("old", { ...E4_E5, outcome: { kind: "checkmate", winner: "white" } });
+    render(<App />);
+    expect(screen.getByText("Checkmate, White wins. 1-0")).toBeInTheDocument();
+    expect(screen.queryByLabelText("result")).not.toBeInTheDocument();
+  });
+
+  it("locks a game whose thread failed to load, and reloads it", async () => {
+    onThread("abc", E4_E5);
+    const failure = new Error("Thread state request failed: 503 Service Unavailable");
+    fake.hydrationPromise = Promise.reject(failure);
+    fake.error = failure;
+    render(<App />);
+    await act(async () => {});
+    expect(screen.getByText("Couldn't load this game")).toBeInTheDocument();
+    expect(board()).toHaveAttribute("data-draggable", "false");
+    expect(screen.getByRole("status")).toHaveTextContent("503");
+
+    fake.hydrationPromise = Promise.resolve();
+    fake.error = undefined;
+    await click("Reload");
+    expect(screen.queryByText("Couldn't load this game")).not.toBeInTheDocument();
+    expect(optionsLog.at(-1)).toMatchObject({ threadId: "abc" });
+    expect(board()).toHaveAttribute("data-draggable", "true");
+  });
+
+  it("locks a game the server doesn't have, rather than start it over empty", async () => {
+    onOldThread("gone", {});
+    fake.getThread = () => undefined;
+    render(<App />);
+    await act(async () => {});
+    expect(screen.getByText("This game isn't on the server")).toBeInTheDocument();
+    expect(screen.queryByText("View only")).not.toBeInTheDocument();
+    expect(board()).toHaveAttribute("data-draggable", "false");
+    expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
+    expect(fake.submit).not.toHaveBeenCalled();
+  });
+});
+
+describe("browser storage", () => {
+  it("warns when storage refuses a write, and still plays", async () => {
+    const full = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("Quota exceeded", "QuotaExceededError");
+    });
+    try {
+      render(<App />);
+      expect(screen.queryByText("This browser isn't saving")).not.toBeInTheDocument();
+      await click("Play");
+      expect(screen.getByText("This browser isn't saving")).toBeInTheDocument();
+      reportThread("t-1");
+      expect(window.location.search).toBe("?thread=t-1");
+      await click("drop e2e4");
+      expect(submitted()).toEqual(["e2e4"]);
+    } finally {
+      full.mockRestore();
+    }
+  });
+
+  it("warns where the browser hands over storage that refuses every read", () => {
+    const read = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new DOMException("The operation is insecure.", "SecurityError");
+    });
+    try {
+      render(<App />);
+      expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
+      expect(screen.getByText("This browser isn't saving")).toBeInTheDocument();
+    } finally {
+      read.mockRestore();
+    }
+  });
+
+  it("opens with the defaults where the browser blocks storage outright", () => {
+    const blocked = vi.spyOn(window, "localStorage", "get").mockImplementation(() => {
+      throw new DOMException("The operation is insecure.", "SecurityError");
+    });
+    try {
+      render(<App />);
+      expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
+      expect(screen.getByText("This browser isn't saving")).toBeInTheDocument();
+    } finally {
+      blocked.mockRestore();
+    }
+  });
+
+  it("says nothing while storage works", () => {
+    render(<App />);
+    expect(screen.queryByText("This browser isn't saving")).not.toBeInTheDocument();
   });
 });
 
@@ -336,11 +471,11 @@ describe("playing Black", () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
-  it("offers Retry, not Start, when the first turn as Black failed", async () => {
-    onThread("t-b", "black");
-    resetFake({ moves: [], plies: [], turns: [turn({ status: "pending", ply: null })] });
+  it("offers Retry, not Start, when the first turn as Black failed, from the thread alone", async () => {
+    onThread("t-b", { moves: [], plies: [], turns: [turn({ status: "pending", ply: null })] });
     fake.error = new Error("provider 529");
     render(<App />);
+    expect(board()).toHaveAttribute("data-orientation", "black");
     expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
     expect(screen.getByText("Opponent to move.")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("provider 529");
@@ -361,8 +496,7 @@ describe("after the game", () => {
   const MATE = { ...E4_E5, outcome: { kind: "checkmate", winner: "white" } } as const;
 
   it("shows the result, locks the board, and rematches with colours swapped", async () => {
-    onThread("t-1", "white", LLM_HIGH);
-    fake.threads["t-1"] = { values: MATE };
+    onThread("t-1", MATE, LLM_HIGH);
     render(<App />);
     const result = screen.getByLabelText("result");
     expect(within(result).getByText("You won")).toBeInTheDocument();
@@ -376,13 +510,15 @@ describe("after the game", () => {
     expect(board()).toHaveAttribute("data-position", START_FEN);
     expect(submitted()).toEqual(["go"]);
     expect(lastConfigurable()).toEqual(LLM_HIGH);
-    reportThread("t-2");
-    expect(loadGame("t-2")).toEqual({ side: "black", context: LLM_HIGH });
   });
 
   it("rematches as White without starting", async () => {
-    onThread("t-1", "black");
-    fake.threads["t-1"] = { values: MATE };
+    onThread("t-1", {
+      ...E4_AS_BLACK,
+      moves: ["e2e4", "e7e5"],
+      plies: [...(E4_AS_BLACK.plies ?? []), ply({ ply: 1, side: "black", uci: "e7e5", san: "e5" })],
+      outcome: { kind: "checkmate", winner: "white" },
+    });
     render(<App />);
     expect(screen.getByText("You lost")).toBeInTheDocument();
     await click("Rematch");
@@ -392,10 +528,7 @@ describe("after the game", () => {
 
   it("opens the modal pre-filled with the last setup from the result card", async () => {
     saveSetup({ ...DEFAULT_SETUP, llm: "langsmith:baseten/zai-org/GLM-5.3" });
-    onThread("t-1");
-    fake.threads["t-1"] = {
-      values: { ...E4_E5, outcome: { kind: "draw", reason: "threefold" } },
-    };
+    onThread("t-1", { ...E4_E5, outcome: { kind: "draw", reason: "threefold" } });
     render(<App />);
     expect(screen.getByText("Draw")).toBeInTheDocument();
     await act(async () => {
@@ -433,9 +566,8 @@ describe("app settings and auth", () => {
   });
 
   it("shows the banner when a submit is refused as forbidden", async () => {
-    onThread("abc");
     fake.submit = vi.fn(() => Promise.reject(new Error("HTTP 403: Forbidden")));
-    render(<App />);
+    await playFromModal();
     await click("drop e2e4");
     expect(screen.getByText("LangSmith API key needed")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("HTTP 403: Forbidden");
@@ -491,8 +623,7 @@ describe("key check on Play", () => {
 
 describe("the game screen", () => {
   it("renders the record: board, move list, last reply, and the opponent", () => {
-    onThread("abc");
-    resetFake(E4_E5);
+    onThread("abc", E4_E5);
     render(<App />);
     expect(board()).toHaveAttribute(
       "data-position",
@@ -507,8 +638,7 @@ describe("the game screen", () => {
   it("steps back through the game, locked, and returns to play", async () => {
     const START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     const LIVE = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2";
-    onThread("abc");
-    resetFake(E4_E5);
+    onThread("abc", E4_E5);
     render(<App />);
     expect(board()).toHaveAttribute("data-draggable", "true");
     expect(button("Next move")).toBeDisabled();
@@ -530,8 +660,7 @@ describe("the game screen", () => {
   });
 
   it("flips the board without changing sides", async () => {
-    onThread("abc");
-    resetFake(E4_E5);
+    onThread("abc", E4_E5);
     render(<App />);
     await click("Flip board");
     expect(board()).toHaveAttribute("data-orientation", "black");
@@ -541,8 +670,7 @@ describe("the game screen", () => {
   });
 
   it("reuses a command id for a resent move", async () => {
-    onThread("abc");
-    render(<App />);
+    await playFromModal();
     expect(board()).toHaveAttribute("data-draggable", "true");
     await click("drop e2e4");
     await click("drop e2e4");
@@ -551,12 +679,11 @@ describe("the game screen", () => {
   });
 
   it("drops a submit refused as busy and shows any other submit failure", async () => {
-    onThread("abc");
     const busy = new Error(
       "submit() rejected: a run is already in flight and multitaskStrategy is 'reject'.",
     );
     fake.submit = vi.fn(() => Promise.reject(busy));
-    render(<App />);
+    await playFromModal();
     await click("drop e2e4");
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     fake.submit = vi.fn(() => Promise.reject(new Error("Failed to fetch")));
@@ -569,10 +696,9 @@ describe("the game screen", () => {
   });
 
   it("shows the optimistic move until the run settles", async () => {
-    onThread("abc");
     let finish: () => void = () => {};
     fake.submit = vi.fn(() => new Promise<void>((resolve) => (finish = resolve)));
-    render(<App />);
+    await playFromModal();
     await click("drop e2e4");
     expect(board()).toHaveAttribute("data-position", AFTER_E4);
     expect(board()).toHaveAttribute("data-draggable", "false");
@@ -582,8 +708,7 @@ describe("the game screen", () => {
   });
 
   it("offers Retry mid-game and locks the board while the turn is pending", () => {
-    onThread("abc");
-    resetFake({
+    onThread("abc", {
       moves: ["e2e4"],
       plies: [ply()],
       turns: [turn({ status: "pending", ply: null })],
@@ -597,19 +722,18 @@ describe("the game screen", () => {
   });
 
   it("asks the opponent to move when it is its turn with nothing pending", async () => {
-    onThread("abc");
-    resetFake({ moves: ["e2e4"], plies: [ply()], turns: [] });
+    onThread("abc", E4_AS_WHITE);
     render(<App />);
     await click("Ask opponent to move");
     expect(submitted()).toEqual(["go"]);
   });
 
   it("streams the live analysis while the opponent thinks", async () => {
-    onThread("abc");
-    resetFake({ moves: ["e2e4"], plies: [ply()], turns: [turn({ status: "pending" })] }, [
+    resetFake({}, [
       new HumanMessage({ id: "msg-1", content: "e2e4" }),
       new AIMessage({ id: "a1", content: [{ type: "text", text: "**e5** mirrors the centre." }] }),
     ]);
+    onThread("abc", { moves: ["e2e4"], plies: [ply()], turns: [turn({ status: "pending" })] });
     fake.isLoading = true;
     render(<App />);
     expect(screen.getByText("Opponent is thinking")).toBeInTheDocument();
@@ -622,9 +746,8 @@ describe("the game screen", () => {
   });
 
   it("shows the rejection reason as a dismissible notice that re-arms on the next command", async () => {
-    onThread("abc");
-    resetFake({ error: "`e2e5` is neither `go` nor a legal move" });
-    render(<App />);
+    fake.values = { error: "`e2e5` is neither `go` nor a legal move" };
+    await playFromModal();
     expect(screen.getByText(/neither `go` nor a legal move/)).toBeInTheDocument();
     fireEvent.click(button("Close"));
     expect(screen.queryByText(/neither `go` nor a legal move/)).not.toBeInTheDocument();
@@ -633,15 +756,19 @@ describe("the game screen", () => {
   });
 
   it("ignores late events from the previous game after starting a new one", async () => {
-    onThread("t-old");
+    onThread("t-old", E4_AS_WHITE);
     saveSetup({ ...DEFAULT_SETUP, side: "black" });
-    fake.threads["t-old"] = { values: {} };
     let finish: () => void = () => {};
     fake.submit = vi.fn(() => new Promise<void>((resolve) => (finish = resolve)));
     render(<App />);
-    await click("drop e2e4");
+    await click("Ask opponent to move");
     fake.threads["t-old"] = {
-      values: { moves: ["e2e4"], plies: [ply()], turns: [turn({ status: "pending" })] },
+      values: {
+        moves: ["e2e4"],
+        plies: [ply()],
+        turns: [turn({ status: "pending" })],
+        setup: DEFAULT_CONTEXT,
+      },
       isLoading: true,
       messages: [
         new HumanMessage({ id: "msg-1", content: "e2e4" }),
@@ -667,7 +794,6 @@ describe("the game screen", () => {
     fireEvent.click(button("Cancel"));
 
     expect(window.location.search).toBe("");
-    expect(window.localStorage.getItem("langchain-chess:game:t-old-2")).toBeNull();
     expect(board()).toHaveAttribute("data-position", START_FEN);
     expect(board()).toHaveAttribute("data-orientation", "black");
     expect(screen.queryByText("Opponent is thinking")).not.toBeInTheDocument();

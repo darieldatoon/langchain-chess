@@ -259,3 +259,12 @@ async def test_a_new_position_clears_the_selection_and_blank_rows_render():
         app.query_one(Input).focus()
         await pilot.pause()
         assert board.marks().cursor is None
+
+
+async def test_the_board_renders_in_monochrome(monkeypatch):
+    monkeypatch.setenv("NO_COLOR", "1")
+    app = Host()
+    async with app.run_test(size=(120, 60)) as pilot:  # wider and taller than the board
+        await click(pilot, chess.E2)
+        assert app.no_color
+        assert app.query_one(ChessBoard).state.selected == chess.E2

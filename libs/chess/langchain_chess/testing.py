@@ -103,6 +103,12 @@ def position(
     return {"position": command}
 
 
+def topology(agent: Any) -> tuple[set[str], set[tuple[str, str]], set[str]]:
+    """What the Agent Server needs equal across builds: nodes, edges and state channels."""
+    drawn = agent.get_graph()
+    return set(drawn.nodes), {(e.source, e.target) for e in drawn.edges}, set(agent.channels)
+
+
 FAKE_ENGINE_NAME = "FakeFish 1"
 
 _FAKE_UCI = '''
@@ -157,18 +163,19 @@ for line in sys.stdin:
         for i, move in enumerate(ranked[:multipv], 1):
             say(f"info depth 1 multipv {i} score {score(move)[1]} pv {move.uci()}")
         say(f"bestmove {ranked[0].uci()}")
-    elif words[0] == "quit":
+    elif words[0] == "quit" and QUITS:
         break
 '''
 
 
-def fake_engine(directory: Path) -> str:
+def fake_engine(directory: Path, *, quits: bool = True) -> str:
     """Writes a tiny UCI engine to `directory` and returns its path.
 
     It ranks moves by mate in one, then material, then UCI order, and names itself
-    `FAKE_ENGINE_NAME`. Deterministic, instant, and needs only python-chess.
+    `FAKE_ENGINE_NAME`. Deterministic, instant, and needs only python-chess. With
+    `quits=False` it ignores `quit`, like a hung engine.
     """
     path = directory / "fakefish"
-    path.write_text(f"#!{sys.executable}\n{_FAKE_UCI}")
+    path.write_text(f"#!{sys.executable}\nQUITS = {quits}\n{_FAKE_UCI}")
     path.chmod(0o755)
     return str(path)

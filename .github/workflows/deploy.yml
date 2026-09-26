@@ -3,88 +3,80 @@ name: deploy
 on:
   push:
     branches: [main]
+    # A path missing here is a silent stale deploy: when the agent gains a dependency, add it.
+    # Over-include rather than under.
+    paths:
+      - libs/chess/**
+      - libs/systemone/**
+      - libs/cli/pyproject.toml
+      - apps/server/**
+      - apps/web/**
+      - packages/chess-ui/**
+      - uv.lock
+      - pyproject.toml
+      - .python-version
+      - langgraph.json
+      - .dockerignore
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - package.json
+      - vite.config.ts
+      - tsconfig.json
+      - mise.toml
+      - mise.lock
+      - .github/actions/setup/**
+      - .github/workflows/ci.yml
+      - .github/workflows/deploy.yml
+      - scripts/superseded.sh
   # Ignores the path filters: the way to retry a failed deploy that no later push will redo.
+  # Runs only from main; the jobs skip on any other ref.
   workflow_dispatch:
-    inputs:
-      target:
-        description: What to deploy
-        type: choice
-        options: [both, agent, review]
-        default: both
 
 permissions:
   contents: read
 
+# The whole run, CI included, holds the lock, so deploys go out in push order. A newer run
+# replaces a pending older one, which is safe only because every run here deploys the agent:
+# keep the review app in its own workflow and group.
+concurrency:
+  # Per ref: a branch dispatch, which skips, must not replace a pending main run.
+  group: deploy-agent-${{ github.ref }}
+  # Every run waits its turn: a newer arrival must never cancel a pending deploy.
+  queue: max
+
 jobs:
-  changes:
+  # Inside the lock, so a retried or replaced older run still ships main as it is now. CI and
+  # the deploy both use this SHA, so what deploys is exactly what passed.
+  tip:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      agent: ${{ steps.filter.outputs.agent }}
-      review: ${{ steps.filter.outputs.review }}
+      sha: ${{ steps.main.outputs.sha }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-
-      # A path missing here is a silent stale deploy: when a deployable gains a dependency, add
-      # it. Over-include rather than under.
-      - id: filter
+      - id: main
         env:
-          EVENT: ${{ github.event_name }}
-          TARGET: ${{ inputs.target }}
-          BEFORE: ${{ github.event.before }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          agent=false review=false
-          if [[ "$EVENT" == workflow_dispatch ]]; then
-            case "$TARGET" in
-              both) agent=true review=true ;;
-              agent) agent=true ;;
-              review) review=true ;;
-            esac
-          elif ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
-            # A new branch or a force push: there is no previous tip to diff against.
-            agent=true review=true
-          else
-            while read -r path; do
-              case "$path" in
-                libs/chess/* | libs/systemone/* | libs/cli/pyproject.toml | apps/server/* | \
-                  apps/web/* | uv.lock | pyproject.toml | .python-version | langgraph.json | \
-                  .dockerignore)
-                  agent=true ;;
-                apps/review/*)
-                  review=true ;;
-                packages/chess-ui/* | pnpm-lock.yaml | pnpm-workspace.yaml | package.json | \
-                  vite.config.ts | tsconfig.json | mise.toml | mise.lock | \
-                  .github/actions/setup/* | .github/workflows/deploy.yml)
-                  agent=true review=true ;;
-              esac
-            done < <(git diff --name-only "$BEFORE" "$GITHUB_SHA")
-          fi
-          echo "agent=$agent review=$review"
-          echo "agent=$agent" >> "$GITHUB_OUTPUT"
-          echo "review=$review" >> "$GITHUB_OUTPUT"
+          sha=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          echo "main is at $sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
   ci:
-    needs: changes
-    if: needs.changes.outputs.agent == 'true' || needs.changes.outputs.review == 'true'
+    needs: tip
     uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.tip.outputs.sha }}
 
   agent:
-    needs: [changes, ci]
-    if: needs.changes.outputs.agent == 'true'
+    needs: [tip, ci]
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Per job, not per workflow: a queued run replaces the pending one in its group, and a later
-    # run that skips this job must not replace a pending deploy of it.
-    concurrency:
-      group: deploy-agent
-      cancel-in-progress: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ needs.tip.outputs.sha }}
 
       - uses: ./.github/actions/setup
 
@@ -99,37 +91,24 @@ jobs:
           TYPESAFE_API_KEY=${{ secrets.LC_GATEWAY_KEY }}
           EOF
 
+      # Re-running only this job reuses the earlier tip and CI. Main may have moved since; that
+      # is fine unless it changed the agent, whose newer run then deploys instead.
+      - name: Check no newer commit changes the agent
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TESTED: ${{ needs.tip.outputs.sha }}
+        run: |
+          main=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          git -c "http.extraheader=AUTHORIZATION: basic $auth" fetch --quiet --depth 1 origin "$main"
+          changed=$(bash scripts/superseded.sh .github/workflows/deploy.yml "$TESTED" "$main")
+          if [[ -n "$changed" ]]; then
+            echo "::error::main moved from $TESTED to $main and changed the agent (${changed//$'\n'/, }); re-run all jobs, not just this one."
+            exit 1
+          fi
+
       # Builds the web UI into the server package, then the image, then deploys.
       - name: Build and deploy to LangSmith
         env:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
         run: mise run deploy -- --no-input
-
-  # The app id is a repository variable, not committed: the CLI reads it only from
-  # .langsmith/app.json, so it is written here. Skipped until CUSTOM_APP_ID is set.
-  review:
-    needs: [changes, ci]
-    if: needs.changes.outputs.review == 'true' && vars.CUSTOM_APP_ID != ''
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    concurrency:
-      group: deploy-review
-      cancel-in-progress: false
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: ./.github/actions/setup
-        with:
-          python: false
-
-      - name: Publish the review app
-        working-directory: apps/review
-        env:
-          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
-          CUSTOM_APP_ID: ${{ vars.CUSTOM_APP_ID }}
-        run: |
-          mkdir -p .langsmith
-          printf '{"app_id":"%s","name":"langchain-chess-review"}\n' "$CUSTOM_APP_ID" > .langsmith/app.json
-          langsmith apps push

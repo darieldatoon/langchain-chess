@@ -2,8 +2,8 @@ from dataclasses import replace
 
 from langgraph.checkpoint.memory import InMemorySaver
 
+from langchain_chess.chat_models import chat_model
 from langchain_chess.testing import ScriptedModel
-from langchain_chess_cli.models import chat_model
 from langchain_chess_cli.options import AgentOptions, build_agent, default_model, run_config
 
 
@@ -30,11 +30,11 @@ def test_the_cli_chat_model_uses_the_environment(monkeypatch):
     assert model.model_name == "baseten/zai-org/GLM-5.3-Flash"
     assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
     assert model.reasoning_effort == "low"
-    assert model.profile == {"max_input_tokens": 1_048_000 - 32000}
+    assert model.profile == {"max_input_tokens": 1_048_000 - 64000}
     assert model.get_name() == "zai-org/GLM-5.3-Flash"
     assert default_model(AgentOptions()).reasoning_effort is None
     gpt = chat_model("langsmith:openai/gpt-5.6-sol", "low")
-    assert gpt.profile == {"max_input_tokens": 1_050_000 - 32000}
+    assert gpt.profile == {"max_input_tokens": 1_050_000 - 64000}
     bare = chat_model("gpt-5.6-sol", "low")
     assert bare.openai_api_base == "https://gateway.smith.langchain.com/openai/v1"
     assert bare.get_name() == "gpt-5.6-sol"

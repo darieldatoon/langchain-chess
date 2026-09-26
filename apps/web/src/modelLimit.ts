@@ -1,26 +1,30 @@
 import { isRecord } from "./settings";
 
-/**
- * Asks the server for a model's input limit: `summarize` triggers at a fraction of it.
- * Null when the model has none, can't be built, or the server can't be reached.
- */
+/** `none`: the model has no known limit or can't be built. `failed` says nothing about the model. */
+export type ModelLimit = { kind: "known"; tokens: number } | { kind: "none" } | { kind: "failed" };
+
+const NONE: ModelLimit = { kind: "none" };
+const FAILED: ModelLimit = { kind: "failed" };
+
+/** Asks the server for a model's input limit: `summarize` triggers at a fraction of it. */
 export async function fetchModelLimit(
   apiUrl: string,
   apiKey: string,
   model: string,
   fetcher: typeof fetch = fetch,
-): Promise<number | null> {
+): Promise<ModelLimit> {
   try {
     const response = await fetcher(
       `${apiUrl}/ui/model-limit?${new URLSearchParams({ model }).toString()}`,
       { headers: apiKey ? { "x-api-key": apiKey } : {} },
     );
-    if (!response.ok) return null;
+    if (!response.ok) return FAILED;
     const body: unknown = await response.json();
-    return isRecord(body) && typeof body.max_input_tokens === "number"
-      ? body.max_input_tokens
-      : null;
+    if (!isRecord(body)) return FAILED;
+    const tokens = body.max_input_tokens;
+    if (tokens === null) return NONE;
+    return typeof tokens === "number" ? { kind: "known", tokens } : FAILED;
   } catch {
-    return null;
+    return FAILED;
   }
 }

@@ -101,40 +101,78 @@ def _captured_type(board: chess.Board, move: chess.Move) -> chess.PieceType | No
     return captured.piece_type if captured else None
 
 
-def _mover_value_after(board: chess.Board, move: chess.Move) -> int:
-    """Value of the piece that ends up on the destination square."""
+def _material_gain(board: chess.Board, move: chess.Move) -> int:
+    """What `move` wins at once: the captured piece plus any promotion upgrade."""
+    captured = _captured_type(board, move)
+    gain = piece_value(captured) if captured is not None else 0
     if move.promotion:
-        return piece_value(move.promotion)
-    mover = board.piece_at(move.from_square)
-    assert mover is not None, "move must originate from an occupied square"
-    return piece_value(mover.piece_type)
+        gain += piece_value(move.promotion) - piece_value(chess.PAWN)
+    return gain
 
 
-def _best_recapture_gain(board: chess.Board, square: chess.Square, value_on_square: int) -> int:
-    """Material the side to move can win by capturing on `square`, or 0 by declining."""
-    captures = [m for m in board.legal_moves if m.to_square == square and board.is_capture(m)]
-    if not captures:
-        return 0
-    attacker = min(captures, key=lambda m: _mover_value_after(board, m))
-    attacker_value = _mover_value_after(board, attacker)
-    board.push(attacker)
-    reply = _best_recapture_gain(board, square, attacker_value)
-    board.pop()
-    return max(0, value_on_square - reply)
+def _captures_of(board: chess.Board, square: chess.Square) -> list[chess.Move]:
+    """Legal captures of the piece on `square`; an en passant capture lands behind it."""
+    direct = board.generate_legal_captures(to_mask=chess.BB_SQUARES[square])
+    behind = square + (-8 if board.turn == chess.BLACK else 8)
+    en_passant = (m for m in board.generate_legal_ep() if m.to_square == behind)
+    return [*direct, *en_passant]
+
+
+type _ExchangeKey = tuple[int, ...]
+
+
+def _exchange_key(board: chess.Board, square: chess.Square) -> _ExchangeKey:
+    return (
+        *board.occupied_co,
+        board.pawns,
+        board.knights,
+        board.bishops,
+        board.rooks,
+        board.queens,
+        board.kings,
+        board.castling_rights,
+        board.turn,
+        board.ep_square if board.ep_square is not None else -1,
+        square,
+    )
+
+
+def _best_recapture_gain(
+    board: chess.Board, square: chess.Square, memo: dict[_ExchangeKey, int]
+) -> int:
+    """Material the side to move wins by capturing the piece on `square` and what follows.
+
+    Every legal capture is tried, not only the least valuable one: which piece captures decides
+    what is pinned afterwards. Declining scores 0, but only if some other legal move exists.
+    """
+    key = _exchange_key(board, square)
+    if key in memo:
+        return memo[key]
+    captures = _captures_of(board, square)
+    outcomes = []
+    for capture in captures:
+        gain = _material_gain(board, capture)
+        board.push(capture)
+        outcomes.append(gain - _best_recapture_gain(board, capture.to_square, memo))
+        board.pop()
+    best = max(outcomes, default=0)
+    if best < 0 and any(m not in captures for m in board.legal_moves):
+        best = 0
+    memo[key] = best
+    return best
 
 
 def static_exchange(board: chess.Board, move: chess.Move) -> int:
     """Net material for the mover after all profitable recaptures on the destination.
 
-    Negative means the moved piece is lost for less than it is worth. Non-captures onto a safe
-    square score 0; onto an undefended attacked square, minus the piece.
+    Promotion counts as material won, and en passant captures a double-pushed pawn. Negative means
+    the moved piece is lost for less than it is worth. Non-captures onto a safe square score 0;
+    onto an undefended attacked square, minus the piece.
     """
     scratch = board.copy(stack=False)
-    captured = _captured_type(scratch, move)
-    gain = piece_value(captured) if captured is not None else 0
-    mover_value = _mover_value_after(scratch, move)
+    gain = _material_gain(scratch, move)
     scratch.push(move)
-    return gain - _best_recapture_gain(scratch, move.to_square, mover_value)
+    return gain - _best_recapture_gain(scratch, move.to_square, {})
 
 
 def _castle_side(board: chess.Board, move: chess.Move) -> CastleSide | None:
@@ -171,7 +209,8 @@ def move_facts(board: chess.Board, move: chess.Move) -> MoveFacts:
         castle=_castle_side(board, move),
         promotion=piece_name(move.promotion) if move.promotion else None,
         is_en_passant=board.is_en_passant(move),
-        attackers_after=len(scratch.attackers(scratch.turn, move.to_square)),
+        attackers_after=len(scratch.attackers(scratch.turn, move.to_square))
+        + sum(1 for _ in scratch.generate_pseudo_legal_ep()),
         defenders_after=len(scratch.attackers(us, move.to_square)),
         see_gain=static_exchange(board, move),
     )

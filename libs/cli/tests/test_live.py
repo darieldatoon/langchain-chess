@@ -1,7 +1,6 @@
 """Against the real LLM Gateway: `uv run --all-packages --env-file .env pytest -m live --no-cov`."""
 
 import pytest
-from langgraph.checkpoint.memory import InMemorySaver
 from textual.widgets import Input
 
 from langchain_chess_cli.options import AgentOptions, build_agent
@@ -14,7 +13,7 @@ pytestmark = [pytest.mark.live, pytest.mark.asyncio(loop_scope="session")]
 async def test_a_short_tui_game_against_the_hybrid():
     options = AgentOptions(reasoning_effort="low")
     app = ChessApp(
-        lambda: build_agent(options, draw_claims="auto", checkpointer=InMemorySaver()),
+        lambda saver: build_agent(options, draw_claims="auto", checkpointer=saver),
         options,
         side="white",
     )

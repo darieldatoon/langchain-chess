@@ -73,15 +73,58 @@ def test_en_passant_is_a_pawn_capture():
     assert f.capture_value == 1
 
 
-def test_promotion_uses_promoted_piece_value():
+def test_promotion_counts_as_material_won():
     f = facts_for("8/P6k/8/8/8/8/8/K7 w - - 0 1", "a7a8q")
     assert f.promotion == "queen"
-    assert f.see_gain == 0
+    assert f.see_gain == 8
 
 
-def test_promotion_onto_attacked_square_hangs_the_queen():
+def test_promotion_onto_attacked_square_loses_only_the_pawn():
     board = chess.Board("1r6/P6k/8/8/8/8/8/K7 w - - 0 1")
-    assert static_exchange(board, chess.Move.from_uci("a7a8q")) == -9
+    assert static_exchange(board, chess.Move.from_uci("a7a8q")) == -1
+
+
+def test_capturing_promotion_that_is_recaptured_still_wins():
+    board = chess.Board("1rr5/P6k/8/8/8/8/8/K7 w - - 0 1")
+    assert static_exchange(board, chess.Move.from_uci("a7b8q")) == 4
+
+
+def test_recapture_by_promotion_counts_the_promotion():
+    board = chess.Board("7k/8/8/8/8/7K/p7/2R5 w - - 0 1")
+    assert static_exchange(board, chess.Move.from_uci("c1b1")) == -13
+
+
+def test_forced_recapture_cannot_be_declined():
+    # Rg8+ leaves Qxg8 as Black's only legal move, and Bxg8 then wins the queen for the rook.
+    forced = chess.Board("7k/p3NB1q/5K2/8/8/8/8/6R1 w - - 0 1")
+    assert static_exchange(forced, chess.Move.from_uci("g1g8")) == 4
+    optional = chess.Board("8/p3NB1q/5K2/8/8/k7/8/6R1 w - - 0 1")
+    assert static_exchange(optional, chess.Move.from_uci("g1g8")) == 0
+
+
+def test_en_passant_recapture_of_a_double_push():
+    assert desc("7k/8/8/8/3p4/8/4P3/7K w - - 0 1", "e2e4") == (
+        "e4: pawn e2 to e4, loses material in the exchange (-1), square attacked 1x, undefended"
+    )
+    # The exchange continues on e3, where the en passant capture landed.
+    defended = chess.Board("7k/8/8/8/3p4/8/4P3/4R2K w - - 0 1")
+    assert static_exchange(defended, chess.Move.from_uci("e2e4")) == 0
+
+
+class CountingBoard(chess.Board):
+    pushes = 0
+
+    def push(self, move: chess.Move) -> None:
+        CountingBoard.pushes += 1
+        super().push(move)
+
+
+def test_crowded_exchange_does_not_revisit_positions():
+    # Without memoization this exchange takes about 440k pushes.
+    board = CountingBoard("3r3k/3r4/1b6/1np1pn2/2Qp3q/1NP1PN2/1B1R4/K2R4 w - - 0 1")
+    CountingBoard.pushes = 0
+    assert static_exchange(board, chess.Move.from_uci("c4d4")) == -8
+    assert CountingBoard.pushes < 40_000
 
 
 def test_winning_exchange():
@@ -91,13 +134,16 @@ def test_winning_exchange():
 
 
 def test_pinned_defender_does_not_count_in_exchange():
-    # Black knight on d7 is pinned to the king by the rook on d1, so it cannot recapture on e5.
-    board = chess.Board("3k4/3n4/8/4p3/8/8/4N3/3RK3 w - - 0 1")
-    facts = move_facts(board, chess.Move.from_uci("e2c3"))
-    assert facts.see_gain == 0
-    # Compare: a knight capture on e5 would be recaptured only by non-pinned pieces.
-    board2 = chess.Board("3k4/3n4/8/4p3/8/8/8/3RK1N1 w - - 0 1")
-    assert static_exchange(board2, chess.Move.from_uci("g1f3")) == 0
+    pinned = chess.Board("3k4/3n4/8/4p3/8/5N2/8/3RK3 w - - 0 1")
+    assert static_exchange(pinned, chess.Move.from_uci("f3e5")) == 1
+    unpinned = chess.Board("3k4/3n4/8/4p3/8/5N2/8/4K2R w - - 0 1")
+    assert static_exchange(unpinned, chess.Move.from_uci("f3e5")) == -2
+
+
+def test_recapture_choice_that_pins_the_defender_is_found():
+    # The least valuable recapture, Nxd5, loses; Bxd5 pins the e4 pawn and wins the knight.
+    board = chess.Board("4r2k/8/4bn2/8/4P3/2N5/8/4K3 w - - 0 1")
+    assert static_exchange(board, chess.Move.from_uci("c3d5")) == -3
 
 
 def test_illegal_move_is_rejected():
@@ -142,7 +188,9 @@ def test_rich_en_passant_and_promotion():
     ep = desc("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3", "e5f6")
     assert "captures pawn (1) en passant" in ep
     promo = desc("8/P6k/8/8/8/8/8/K7 w - - 0 1", "a7a8q")
-    assert promo == "a8=Q: pawn a7 to a8, promotes to queen, square safe"
+    assert promo == (
+        "a8=Q: pawn a7 to a8, promotes to queen, wins material in the exchange (+8), square safe"
+    )
 
 
 def test_rich_winning_exchange():

@@ -7,7 +7,7 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from langchain_chess import ChessContractError, create_chess_agent
 from langchain_chess.middleware.summarization import CHESS_SUMMARY_PROMPT, input_limit
-from langchain_chess.testing import ScriptedModel, human, position, usage
+from langchain_chess.testing import ScriptedModel, human, position, topology, usage
 
 PROFILE = {"max_input_tokens": 100_000}
 
@@ -89,7 +89,6 @@ async def test_the_retried_turn_keeps_the_newest_attempt_after_a_rewrite(make_ag
             *REPLIES,
             "MOVE: Qh5",
             "MOVE: Qh5",
-            "MOVE: Qh5",
             RuntimeError("down"),
             "MOVE: Kd8",
             "MOVE: b5",
@@ -97,16 +96,17 @@ async def test_the_retried_turn_keeps_the_newest_attempt_after_a_rewrite(make_ag
     )
     model = model_for(responder)
     # The trigger only fires once the failed turn's messages pile up on the retry.
-    agent = make_agent(model, memory="summarize", summarization=summarizer(model, trigger=19))
+    agent = make_agent(model, memory="summarize", summarization=summarizer(model, trigger=17))
     await play_ruy_lopez(agent, run, cfg)
     with pytest.raises(RuntimeError):
         await run(agent, human("Re1"), cfg)
+    assert responder.summaries == 0
     out = await run(agent, {}, cfg)
     assert responder.summaries >= 1
-    messages = out["messages"]
     turn = out["turns"][-1]
-    assert turn["opened_message_id"] not in {m.id for m in messages}
+    assert turn["opened_message_id"] in {m.id for m in out["messages"]}
     last = [str(m.content) for m in responder.move_requests[-1]]
+    assert any("SUMMARY" in text for text in last)
     assert "MOVE: Kd8" in last
     assert any("Try again" in text and "Kd8" in text for text in last)
     assert last[-1].startswith("Moves so far:")
@@ -140,6 +140,19 @@ def test_a_profileless_model_needs_an_absolute_trigger():
         create_chess_agent(ScriptedModel(script=[]), memory="summarize")
     agent = create_chess_agent(ScriptedModel(script=[], profile=PROFILE), memory="summarize")
     assert "SummarizationMiddleware.before_model" in agent.get_graph().nodes
+
+
+async def test_a_fixed_topology_keeps_a_summarization_node_that_never_summarizes(
+    make_agent, run, cfg
+):
+    model = model_for(Responder(REPLIES))
+    off = make_agent(model, memory="none", fixed_topology=True)
+    on = make_agent(model, memory="summarize", summarization=summarizer(model, trigger=10))
+    assert topology(off) == topology(on)
+    assert topology(off) != topology(make_agent(model, memory="none"))
+    out = await play_ruy_lopez(off, run, cfg)
+    assert not any(is_summary(m) for m in out["messages"])
+    assert all(c["kind"] == "llm" for turn in out["turns"] for c in turn["calls"])
 
 
 async def test_a_summary_then_a_model_call(make_agent, run, cfg):

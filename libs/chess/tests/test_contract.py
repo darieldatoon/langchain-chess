@@ -16,7 +16,14 @@ from langchain_core.tools import tool
 from langgraph.types import Command
 from langsmith import tracing_context
 
-from langchain_chess import ChessContractError, ChessMiddleware, ChessState, create_chess_agent
+from langchain_chess import (
+    ChessContractError,
+    ChessMiddleware,
+    ChessState,
+    ContextBudgetError,
+    create_chess_agent,
+    turn_cost,
+)
 from langchain_chess.contract import guard
 from langchain_chess.recorder import _SINK
 from langchain_chess.testing import ScriptedModel, human, position
@@ -220,6 +227,15 @@ def test_tools_are_refused():
         create_chess_agent(ScriptedModel(script=[]), middleware=[middleware])
 
 
+def test_a_middleware_is_shared_only_by_agents_with_one_seed():
+    shared = Proposer()
+    create_chess_agent(None, middleware=[shared], seed=1)
+    create_chess_agent(None, middleware=[shared], seed=1)
+    with pytest.raises(ChessContractError, match="already bound to seed 1"):
+        create_chess_agent(None, middleware=[shared], seed=2)
+    assert shared.agent_seed == 1
+
+
 def test_sync_function_as_async_hook_is_refused():
     class Bad(AgentMiddleware):
         def abefore_model(self, state, runtime):  # not a coroutine function
@@ -252,6 +268,13 @@ async def test_the_same_writer_may_rewrite_candidates_on_replay(make_agent, run,
         ({"candidates": ["e2e5"]}, "duplicate-free"),
         ({"fallback_move": "e2e5"}, "not an allowed move"),
         ({"proposal": {"uci": "e2e5", "source": "x"}}, "not an allowed move"),
+        ({"proposal": {"uci": "e2e4"}}, "must be a Proposal"),
+        ({"proposal": "e2e4"}, "must be a Proposal"),
+        ({"proposal": {"uci": "e2e4", "source": "x", "analysis": 1}}, "must be a Proposal"),
+        ({"proposal": {"uci": "e2e4", "source": "x", "meta": []}}, "must be a Proposal"),
+        ({"proposal": {"uci": "e2e4", "source": "x", "meta": {"v": object()}}}, "a Proposal"),
+        ({"proposal": {"uci": "e2e4", "source": "x", "meta": {"v": [{1: "k"}]}}}, "a Proposal"),
+        ({"proposal": {"uci": "e2e4", "source": "x", "by": "y"}}, "must be a Proposal"),
         ({"allowed_moves": ["e2e4", "e2e5"]}, "may only narrow"),
         ({"note": 1}, "not declared in its state_schema"),
         ("text", "updates must be dicts"),
@@ -355,6 +378,31 @@ async def test_the_reply_survives_a_failing_after_model(make_agent, run, cfg):
     assert len(values["turns"][-1]["calls"]) == 1
 
 
+async def test_resuming_after_a_failing_after_model_plays_the_saved_reply(make_agent, run, cfg):
+    model = ScriptedModel(script=["MOVE: e4", "MOVE: d4"])
+    agent = make_agent(model, middleware=[RaiseOnce("after_model")])
+    with pytest.raises(RuntimeError, match="after_model failed"):
+        await run(agent, position(), cfg)
+    out = await run(agent, None, cfg)
+    assert out["moves"] == ["e2e4"]
+    assert model.calls == 1
+    assert out["turns"][-1]["status"] == "committed"
+    assert len(out["turns"][-1]["calls"]) == 1
+
+
+async def test_an_empty_retry_after_a_failing_after_model_asks_the_model_again(
+    make_agent, run, cfg
+):
+    model = ScriptedModel(script=["MOVE: e4", "MOVE: d4"])
+    agent = make_agent(model, middleware=[RaiseOnce("after_model")])
+    with pytest.raises(RuntimeError, match="after_model failed"):
+        await run(agent, position(), cfg)
+    out = await run(agent, {}, cfg)
+    assert out["moves"] == ["d2d4"]
+    assert model.calls == 2
+    assert len(out["turns"][-1]["calls"]) == 2
+
+
 @pytest.mark.parametrize("traced", [False, True])
 async def test_inner_double_calls_are_recorded_once_each(make_agent, run, cfg, traced):
     model = ScriptedModel(script=["MOVE: d4", "MOVE: e4"])
@@ -364,6 +412,41 @@ async def test_inner_double_calls_are_recorded_once_each(make_agent, run, cfg, t
     assert out["moves"] == ["e2e4"]
     assert len(out["turns"][0]["calls"]) == 2
     assert [m.content for m in out["messages"] if isinstance(m, AIMessage)] == ["MOVE: e4"]
+
+
+async def test_calls_before_a_wrapper_failure_are_kept_and_retried_once(make_agent, run, cfg):
+    model = ScriptedModel(script=["MOVE: d4", RuntimeError("down"), "MOVE: c4", "MOVE: e4"])
+    agent = make_agent(model, middleware=[CallTwice()])
+    with pytest.raises(RuntimeError, match="down"):
+        await run(agent, position(), cfg)
+    values = agent.get_state(cfg).values
+    assert len(values["turns"][-1]["calls"]) == 1
+    assert values["failed_call"]["error"] == "RuntimeError: down"
+    out = await run(agent, {}, cfg)
+    assert out["moves"] == ["e2e4"]
+    calls = out["turns"][-1]["calls"]
+    assert len(calls) == 3
+    assert turn_cost(calls) == {"usd": pytest.approx(3 * calls[0]["cost_usd"]), "complete": True}
+    assert agent.get_state(cfg).values["failed_call"] is None
+
+
+async def test_resuming_after_a_wrapper_failure_calls_the_model_again(make_agent, run, cfg):
+    model = ScriptedModel(script=["MOVE: d4", RuntimeError("down"), "MOVE: c4", "MOVE: e4"])
+    agent = make_agent(model, middleware=[CallTwice()])
+    with pytest.raises(RuntimeError, match="down"):
+        await run(agent, position(), cfg)
+    out = await run(agent, None, cfg)
+    assert out["moves"] == ["e2e4"]
+    assert len(out["turns"][-1]["calls"]) == 3
+    assert out["turns"][-1]["illegal_attempts"] == 0
+
+
+async def test_an_overflow_after_a_completed_call_is_still_a_budget_error(make_agent, run, cfg):
+    model = ScriptedModel(script=["MOVE: d4", RuntimeError("prompt is too long")])
+    agent = make_agent(model, middleware=[CallTwice()])
+    with pytest.raises(ContextBudgetError):
+        await run(agent, position(), cfg)
+    assert len(agent.get_state(cfg).values["turns"][-1]["calls"]) == 1
 
 
 async def test_retry_middleware_calls_are_recorded(make_agent, run, cfg):

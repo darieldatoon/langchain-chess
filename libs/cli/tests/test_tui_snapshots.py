@@ -5,7 +5,6 @@ Open the SVGs under `__snapshots__/` and look at them before accepting an update
 
 import chess
 import pytest
-from langgraph.checkpoint.memory import InMemorySaver
 from textual.app import App, ComposeResult
 
 from langchain_chess import create_chess_agent
@@ -32,7 +31,7 @@ class BoardApp(App[None]):
         board.show(
             chess.Board(self.fen),
             white_bottom=self.white_bottom,
-            last_move="e7e5",
+            last_move=self.last_move,
             interactive=True,
         )
         board.focus()
@@ -56,11 +55,15 @@ def test_a_selected_piece_shows_its_moves(snap_compare):
 
 
 def test_blacks_side_with_the_cursor(snap_compare):
+    async def shows_e4(pilot):
+        assert pilot.app.query_one(ChessBoard).state.last_move == (chess.E2, chess.E4)
+
     black = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
     assert snap_compare(
         BoardApp(black, white_bottom=False, last_move="e2e4"),
         terminal_size=(100, 34),
         press=["up", "left"],
+        run_before=shows_e4,
     )
 
 
@@ -68,6 +71,7 @@ def test_the_promotion_dialog(snap_compare):
     async def promote(pilot):
         await pilot.pause()
         board = pilot.app.query_one(ChessBoard)
+        assert board.state.last_move == (chess.H8, chess.H7)
         for square in (chess.A7, chess.A8):
             x, y = board.geometry.origin(square)
             await pilot.click("#board", offset=(x + 1, y))
@@ -79,7 +83,7 @@ def test_the_promotion_dialog(snap_compare):
 def test_the_game_screen(snap_compare):
     model = ScriptedModel(script=["The Italian keeps options open.\nMOVE: e5"])
     app = ChessApp(
-        lambda: create_chess_agent(model, checkpointer=InMemorySaver()),
+        lambda saver: create_chess_agent(model, checkpointer=saver),
         AgentOptions(policy="llm"),
     )
 

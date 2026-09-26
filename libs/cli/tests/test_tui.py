@@ -1,8 +1,8 @@
 import asyncio
 
 import chess
-from langgraph.checkpoint.memory import InMemorySaver
 from textual.widgets import Input, Static
+from textual.worker import WorkerState
 
 from langchain_chess import create_chess_agent
 from langchain_chess.testing import ScriptedModel
@@ -12,7 +12,7 @@ from langchain_chess_cli.tui.app import ChessApp
 
 def app_with(script, *, side="white", delay=0.0, options=None):
     model = ScriptedModel(script=list(script), delay=delay)
-    factory = lambda: create_chess_agent(model, checkpointer=InMemorySaver())  # noqa: E731
+    factory = lambda saver: create_chess_agent(model, checkpointer=saver)  # noqa: E731
     return ChessApp(factory, options or AgentOptions(), side=side), model
 
 
@@ -177,3 +177,46 @@ async def test_typing_on_the_board_fills_the_input():
         await settle(app, pilot)
         assert app.values["moves"] == ["e2e4", "e7e5"]
         assert app.focused is app.query_one("#board")
+
+
+async def test_model_and_error_text_is_shown_literally():
+    app, _model = app_with([RuntimeError("bad [/] reply"), "Look [/] at [bold]this.\nMOVE: e5"])
+    async with app.run_test() as pilot:
+        await play(pilot, "e4")
+        await settle(app, pilot)
+        assert "failed (bad [/] reply)" in text(app, "status")
+        await pilot.press("ctrl+r")
+        await settle(app, pilot)
+        assert "Look [/] at [bold]this." in text(app, "analysis")
+        await play(pilot, "[/]")
+        await settle(app, pilot)
+        assert "legal move" in text(app, "status")
+
+
+def saved_threads(app):
+    return {c.config["configurable"]["thread_id"] for c in app.checkpointer.list(None)}
+
+
+async def test_a_new_game_cancels_the_previous_run_and_drops_its_checkpoints():
+    app, _model = app_with(["MOVE: e5"], delay=60)
+    async with app.run_test() as pilot:
+        await play(pilot, "e4")
+        await pilot.pause(0.05)
+        [run] = list(app.workers)
+        assert saved_threads(app) == {app.thread}
+        await pilot.press("ctrl+n")
+        await settle(app, pilot)
+        assert run.state == WorkerState.CANCELLED
+        assert app.running is False
+        assert saved_threads(app) == set()
+
+
+async def test_a_finished_game_drops_its_checkpoints_on_a_new_game():
+    app, _model = app_with(["MOVE: e5"])
+    async with app.run_test() as pilot:
+        await play(pilot, "e4")
+        await settle(app, pilot)
+        assert saved_threads(app) == {app.thread}
+        await pilot.press("ctrl+n")
+        await settle(app, pilot)
+        assert saved_threads(app) == set()

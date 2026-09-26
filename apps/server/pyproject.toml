@@ -8,6 +8,7 @@ authors = [{ name = "Dariel Dato-on" }]
 classifiers = ["Private :: Do Not Upload"]
 dependencies = [
     "fastapi>=0.141.1",
+    "httpx2>=2.13.0",
     "langchain-chess",
     "langchain-chess-systemone",
     "langchain-openai>=1.6.2",

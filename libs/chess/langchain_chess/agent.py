@@ -15,7 +15,7 @@ from langchain_chess.contract import guard
 from langchain_chess.errors import ChessContractError
 from langchain_chess.middleware.core import ChessCore
 from langchain_chess.middleware.forced_move import ForcedMoveMiddleware
-from langchain_chess.middleware.summarization import ChessSummarization
+from langchain_chess.middleware.summarization import ChessSummarization, NoSummarization
 from langchain_chess.prompt import SYSTEM_PROMPT, Memory
 from langchain_chess.recorder import CallRecorder
 from langchain_chess.rules import DrawClaims
@@ -68,6 +68,7 @@ def create_chess_agent(
     draw_claims: DrawClaims = "never",
     forced_move: bool = True,
     seed: int = 0,
+    fixed_topology: bool = False,
     context_schema: type | None = None,
     checkpointer: Checkpointer | None = None,
     name: str | None = None,
@@ -76,6 +77,9 @@ def create_chess_agent(
 
     `model=None` only works if middleware always proposes (a System-1-only agent). Without a
     checkpointer the agent is stateless and every run must carry a `position`.
+    `fixed_topology=True` keeps the summarization node under `memory='none'`, so the graph's
+    nodes don't depend on `memory`: the Agent Server reads state with a graph built without
+    the run's settings.
     """
     guarded = [guard(m, seed=seed) for m in middleware]
     declared: dict[str, str] = {}
@@ -103,6 +107,8 @@ def create_chess_agent(
     if memory == "summarize":
         # Last, so it runs only right before an actual LLM call.
         stack.append(_summarizer(model, summarization, recorder=recorder, max_retries=max_retries))
+    elif fixed_topology:
+        stack.append(NoSummarization())
 
     graph = create_agent(
         model or NoModel(),

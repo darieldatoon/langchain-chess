@@ -2,7 +2,7 @@
 
 If the gate clears, SystemOne plays its top move and the LLM never runs. Otherwise it suggests a
 shortlist of candidates, and the LLM may still play any allowed move. With `threshold=0` it
-always plays (System 1 alone); with `threshold=1` it never does (a pure pruner).
+always plays (System 1 alone); with `threshold=1` it never does and only suggests.
 
 The decision is frozen per turn and replayed on every retry, so a retry can never re-rank and
 flip the gate: re-ranking .60/.25/.15 over a k=2 shortlist would turn a .35 margin into .41 and
@@ -176,7 +176,7 @@ class SystemOneMiddleware(ChessMiddleware):
             threshold_used=None,
             tournament=None,
             error=str(error),
-            latency_ms=0.0,
+            latency_ms=error.elapsed_ms,
             calls=list(error.calls),
             eval_score=None,
             needs_calculation=None,
@@ -294,3 +294,25 @@ class SystemOneMiddleware(ChessMiddleware):
     def turn_calls(self, state: Mapping[str, Any]) -> list[Call]:
         frozen = self._current(state)
         return list(frozen["calls"]) if frozen is not None else []
+
+    def turn_latency_ms(self, state: Mapping[str, Any]) -> float:
+        frozen = self._current(state)
+        return frozen["latency_ms"] if frozen is not None else 0.0
+
+
+class NoSystemOne(ChessMiddleware):
+    """Keeps SystemOne's node and state keys when it is off, so the graph keeps its shape."""
+
+    state_schema = SystemOneState
+
+    @property
+    def name(self) -> str:
+        return SystemOneMiddleware.__name__
+
+    @hook_config(can_jump_to=["end"])
+    def before_model(self, state: Any, runtime: Any) -> dict[str, Any] | None:
+        return None
+
+    @hook_config(can_jump_to=["end"])
+    async def abefore_model(self, state: Any, runtime: Any) -> dict[str, Any] | None:
+        return None

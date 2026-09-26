@@ -14,7 +14,7 @@ import {
   MoveList,
   outcomeLine,
   PlyDetails,
-  replay,
+  positions,
   turnOf,
   type ChessValues,
   type MoveEntry,
@@ -40,15 +40,18 @@ export function GameView({ game, values, onOpenRun }: Props) {
   const startFen = fenOrStart(values.start_fen);
   const moves = values.moves ?? NO_MOVES;
   const plies = values.plies ?? [];
-  const review = game.review;
+  const grading = game.grading;
+  const review = grading.status === "graded" ? grading.review : null;
   const last = moves.length;
   const [index, setIndex] = useState(last);
   const [orientation, setOrientation] = useState<Side>("white");
   const resolve = useChartColorResolver();
 
-  const fens = useMemo(
-    () => [startFen, ...moves.map((_, i) => replay(startFen, moves.slice(0, i + 1)).fen)],
-    [startFen, moves],
+  const fens = useMemo(() => positions(startFen, moves), [startFen, moves]);
+  // From the lines graded, not `settings.multipv`: a setting the feedback claims can be any size.
+  const lineCount = useMemo(
+    () => review?.plies.reduce((most, p) => Math.max(most, p.lines.length), 0) ?? 0,
+    [review],
   );
   const entries: MoveEntry[] = moves.map((uci, i) => ({
     ply: i,
@@ -79,7 +82,6 @@ export function GameView({ game, values, onOpenRun }: Props) {
       color: resolve(CHART_STATUS_COLORS.positive),
     });
   }
-  const lineCount = review?.settings.multipv ?? 0;
 
   return (
     <div
@@ -142,6 +144,11 @@ export function GameView({ game, values, onOpenRun }: Props) {
               <EvalGraph evals={review.evals} index={index} onSelect={go} />
             </Card>
           </>
+        ) : grading.status === "invalid" ? (
+          <Banner intent="warning" title="Review unreadable">
+            The engine review can't be drawn: {grading.problem}. Regrade it with{" "}
+            <code>lcchess grade --thread {game.threadId} --force</code>.
+          </Banner>
         ) : (
           <Banner intent="info" title="Not graded yet">
             Grade it with <code>lcchess grade --thread {game.threadId}</code> to see engine

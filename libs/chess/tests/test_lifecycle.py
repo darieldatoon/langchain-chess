@@ -65,6 +65,25 @@ async def test_empty_submit_after_a_commit_is_a_noop(make_agent, run, cfg, empty
     assert agent.get_state(cfg).values["invocation"]["action"] == expected
 
 
+async def test_the_invocation_names_only_a_turn_this_run_opened(make_agent, run, cfg):
+    model = ScriptedModel(script=[RuntimeError("provider down"), "MOVE: e5"])
+    agent = make_agent(model)
+
+    def opened():
+        return agent.get_state(cfg).values["invocation"]["opened_turn"]
+
+    with pytest.raises(RuntimeError, match="provider down"):
+        await run(agent, position(["e2e4"]), cfg)
+    first = agent.get_state(cfg).values["turns"][0]["id"]
+    assert opened() == first
+    await run(agent, {}, cfg)
+    assert opened() is None
+    await run(agent, position(["e2e4", "e7e5", "d1h5", "b8c6", "f1c4", "g8f6", "h5f7"]), cfg)
+    assert opened() == agent.get_state(cfg).values["turns"][-1]["id"] != first
+    await run(agent, {}, cfg)
+    assert opened() is None
+
+
 async def test_same_root_with_a_new_restriction_is_rejected_as_diverged(make_agent, run, cfg):
     agent = make_agent(ScriptedModel(script=["MOVE: e4"]))
     await run(agent, position(), cfg)
@@ -84,6 +103,16 @@ async def test_resent_position_retries_a_failed_turn(make_agent, run, cfg):
     assert out["moves"] == ["d2d4"]
     assert len(out["turns"]) == 1
     assert out["turns"][0]["status"] == "committed"
+
+
+async def test_a_provider_error_retry_keeps_the_illegal_move_budget(make_agent, run, cfg):
+    model = ScriptedModel(script=["MOVE: Qh5", RuntimeError("provider down"), "MOVE: Qh5"])
+    agent = make_agent(model, max_retries=1)
+    with pytest.raises(RuntimeError, match="provider down"):
+        await run(agent, position(), cfg)
+    out = await run(agent, position(), cfg)
+    assert out["outcome"] == {"kind": "resignation", "winner": "black", "reason": "illegal_moves"}
+    assert out["turns"][0]["illegal_attempts"] == 2
 
 
 async def test_fresh_go_while_a_turn_is_pending_is_rejected(make_agent, run, cfg):

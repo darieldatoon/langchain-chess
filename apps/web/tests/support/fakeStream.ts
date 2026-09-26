@@ -23,6 +23,9 @@ export interface FakeStreamState {
   messages: Message[];
   isLoading: boolean;
   isThreadLoading: boolean;
+  hydrationPromise: Promise<void>;
+  /** Undefined once a load settles for a thread the server doesn't have. */
+  getThread: () => unknown;
   error: unknown;
 }
 
@@ -39,6 +42,8 @@ export const fake: FakeStream = {
   messages: [],
   isLoading: false,
   isThreadLoading: false,
+  hydrationPromise: Promise.resolve(),
+  getThread: () => ({}),
   error: undefined,
   submit: vi.fn(() => Promise.resolve()),
   threads: {},
@@ -52,6 +57,8 @@ export function resetFake(values: ChessValues = {}, messages: Message[] = []): v
   fake.messages = messages;
   fake.isLoading = false;
   fake.isThreadLoading = false;
+  fake.hydrationPromise = Promise.resolve();
+  fake.getThread = () => ({});
   fake.error = undefined;
   fake.submit = vi.fn(() => Promise.resolve());
   fake.threads = {};

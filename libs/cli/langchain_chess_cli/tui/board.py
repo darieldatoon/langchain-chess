@@ -138,7 +138,7 @@ def draw(board: chess.Board, geo: Geometry, marks: Marks, palette: Palette) -> l
     lines: list[Line] = []
     ranks = range(7, -1, -1) if geo.white_bottom else range(8)
     files = list(range(8)) if geo.white_bottom else list(range(7, -1, -1))
-    pad = Segment(" " * geo.left)
+    pad = Segment(" " * geo.left, Style.null())
     label_style = palette["label"]
     for rank in ranks:
         squares = [_square_rows(chess.square(f, rank), board, geo, marks, palette) for f in files]
@@ -314,10 +314,11 @@ class ChessBoard(Widget, can_focus=True):
         self._redraw()
 
     def render_line(self, y: int) -> Strip:
-        width = self.size.width
+        # Never an unstyled cell: Textual's NO_COLOR filter dereferences every segment's style.
+        width, blank = self.size.width, Style.null()
         if y >= len(self._lines):
-            return Strip.blank(width)
-        return Strip(self._lines[y]).crop_extend(0, width, None)
+            return Strip.blank(width, blank)
+        return Strip(self._lines[y]).crop_extend(0, width, blank)
 
     # ---- input --------------------------------------------------------------------------------
 

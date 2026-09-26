@@ -3,7 +3,7 @@ import { Select, type SelectOption } from "@langchain/macaw-components/Select";
 import { Slider } from "@langchain/macaw-components/Slider";
 import { Switch } from "@langchain/macaw-components/Switch";
 import { Text } from "@langchain/macaw-components/Text";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { parseKnob, parseNullableKnob, sliderValue } from "../format";
 import { CONTEXT_CHECKS } from "../settings";
 import { memoryOf, type Knobs, type Sections, type Summarize } from "../setup";
@@ -16,12 +16,15 @@ import type {
 } from "@langchain-chess/chess-ui";
 
 export type SetKnob = <K extends keyof Knobs>(key: K, value: Knobs[K] | undefined) => void;
+export type NumberKnob = "k" | "seed" | "tournament_threshold" | "top_p";
 
 interface Props {
   knobs: Knobs;
   sections: Sections;
   summarize: Summarize;
   onKnob: SetKnob;
+  /** Must be stable: each number field reports whether its text is a valid value. */
+  onValidity: (knob: NumberKnob, valid: boolean) => void;
 }
 
 /** Select values are strings; `default` stands for null, which sends no effort. */
@@ -58,13 +61,17 @@ const GATES: SelectOption<GateSignal>[] = [
 ];
 
 /** The knobs behind the pickers; only the sections the chosen opponent uses are shown. */
-export function AdvancedSettings({ knobs, sections, summarize, onKnob: set }: Props) {
+export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onValidity }: Props) {
   const number = (key: "k" | "seed") => ({
+    knob: key,
+    onValidity,
     value: knobs[key],
     isValid: (v: string) => parseKnob(v, CONTEXT_CHECKS[key]) !== undefined,
     onChange: (v: string) => set(key, parseKnob(v, CONTEXT_CHECKS[key])),
   });
   const nullable = (key: "tournament_threshold" | "top_p") => ({
+    knob: key,
+    onValidity,
     value: knobs[key],
     isValid: (v: string) => parseNullableKnob(v, CONTEXT_CHECKS[key]) !== undefined,
     onChange: (v: string) => set(key, parseNullableKnob(v, CONTEXT_CHECKS[key])),
@@ -95,7 +102,9 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set }: Pr
             hint={
               summarize === "no"
                 ? "This model has no known input limit, so it can't summarize."
-                : "What the model sees of earlier turns."
+                : summarize === "unknown"
+                  ? "Couldn't reach the server to check this model's input limit."
+                  : "What the model sees of earlier turns."
             }
           >
             <Select
@@ -260,14 +269,18 @@ export function Field({
 
 /**
  * Keeps its own text so a half-typed number ("0.", "") stays editable; the knob only takes
- * valid values, and the field flags the rest.
+ * valid values, and the field flags the rest to the form, which holds Play until it's fixed.
  */
 function NumberField({
+  knob,
+  onValidity,
   value,
   isValid,
   onChange,
   ...rest
 }: {
+  knob: NumberKnob;
+  onValidity: (knob: NumberKnob, valid: boolean) => void;
   id: string;
   label: string;
   value: number | null;
@@ -280,13 +293,19 @@ function NumberField({
   step?: number;
 }) {
   const [draft, setDraft] = useState(value === null ? "" : String(value));
+  const valid = isValid(draft);
+  // An unmounted field's text is discarded, so it no longer holds the form back.
+  useEffect(() => {
+    onValidity(knob, valid);
+    return () => onValidity(knob, true);
+  }, [knob, valid, onValidity]);
   return (
     <Input
       {...rest}
       size="md"
       type="number"
       value={draft}
-      isError={!isValid(draft)}
+      isError={!valid}
       onChange={(v) => {
         setDraft(v);
         onChange(v);

@@ -29,6 +29,9 @@ def test_text_of_joins_text_blocks():
     [
         ("I think Nf3.\nMOVE: e4", "e2e4"),
         ("MOVE: **Nf3**", "g1f3"),
+        ("MOVE: `Nf3`", "g1f3"),
+        ("MOVE: e4, actually MOVE: d4", "d2d4"),
+        ("**MOVE:** Nf3.", "g1f3"),
         ("MOVE: e2e4", "e2e4"),
         ("maybe d4 or e4", "e2e4"),
         ("MOVE: Qh5\nMOVE: d4", "d2d4"),
@@ -45,6 +48,25 @@ def test_parse_move_reasons():
         "no move found; end your reply with a line `MOVE: <move>`"
     )
     assert parse_move(chess.Board(), "MOVE: Qh5")[1] == "`Qh5` is not a legal move in this position"
+    assert parse_move(chess.Board(), "MOVE: e4\nMOVE: Qh5") == (
+        None,
+        "`Qh5` is not a legal move in this position",
+    )
+    assert parse_move(chess.Board(), "MOVE: e4\nMOVE: `Qh5`")[1] == (
+        "`Qh5` is not a legal move in this position"
+    )
+    assert parse_move(chess.Board(), "MOVE: e4, actually MOVE: Qh5")[1] == (
+        "`Qh5` is not a legal move in this position"
+    )
+    assert parse_move(chess.Board(), "MOVE: e4\nMOVE: **")[1] == (
+        "the last `MOVE:` line names no move; end with `MOVE: <move>`"
+    )
+    assert parse_move(chess.Board(), "MOVE: e4\nMOVE:")[1] == (
+        "the last `MOVE:` line names no move; end with `MOVE: <move>`"
+    )
+    assert parse_move(chess.Board(), "e4 or maybe Qh5")[1] == (
+        "`Qh5` is not a legal move in this position"
+    )
     castle = chess.Board("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1")
     assert parse_move(castle, "MOVE: 0-0-0")[0] == chess.Move.from_uci("e1c1")
     assert parse_move(castle, "MOVE: o-o.")[0] == chess.Move.from_uci("e1g1")
