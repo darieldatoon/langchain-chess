@@ -16,10 +16,11 @@ from langchain_chess_evals.systemone.target import make_target
 from langchain_chess_systemone import GatewayRanker, Ranker
 from langchain_chess_systemone.describe import DescriptionStyle
 
-# The old harness hit gateway 429s at 8, and SemIf still sees some at 4: retry them patiently,
-# since a rate limit is not a ranking failure and must not score as a miss.
+# The gateway caps SemIf at about 70 rankings a minute, then refuses everything for 40 s or more,
+# with no Retry-After. Retry for up to ~2 minutes (backoff caps at 4 s): a rate limit is not a
+# ranking failure and must not score as a miss.
 MAX_CONCURRENCY = 4
-MAX_ATTEMPTS = 8
+MAX_ATTEMPTS = 30
 STYLES: tuple[DescriptionStyle, ...] = ("rich", "terse")
 
 

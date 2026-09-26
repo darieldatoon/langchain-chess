@@ -39,7 +39,7 @@ def test_default_ranker_takes_the_spec():
     ranker = default_ranker(ExperimentSpec("x", "typesafe/jev-latest", "terse", 16))
     assert (ranker.model, ranker.style, ranker.max_options) == ("typesafe/jev-latest", "terse", 16)
     assert default_ranker(ExperimentSpec("y", "typesafe/jev-latest")).max_options == 255
-    assert ranker.max_attempts == 8
+    assert ranker.max_attempts == 30
 
 
 def row(index: int, split: str) -> Row:
