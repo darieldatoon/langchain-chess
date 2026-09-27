@@ -6,6 +6,7 @@ import {
   SETTINGS_VERSION,
   fenOrStart,
   isSetting,
+  loadSettings,
   modelKwargsProblems,
   opposite,
   sentEffort,
@@ -271,18 +272,35 @@ export function storedSetup(setup: Setup): Record<string, unknown> {
   return { version: SETTINGS_VERSION, ...setup };
 }
 
-/** Maps a pre-modal stored context (policy, model, systemone_model) onto the pickers. */
-export function setupFromContext(stored: unknown): Setup {
-  const context = sanitizeContext(stored);
+/** The pickers and knobs that play `context`. */
+export function setupOf(context: ChessContext, side: SideChoice = DEFAULT_SETUP.side): Setup {
   const preset = isPreset(context.model) ? context.model : null;
   return {
-    side: DEFAULT_SETUP.side,
+    side,
     systemOne: context.systemone_model,
     systemOneOff: context.policy === "llm",
     llm: context.policy === "systemone" ? "none" : (preset ?? "custom"),
     customModel: preset === null ? context.model : "",
     knobs: knobsOf(context),
   };
+}
+
+/** Maps a pre-modal stored context (policy, model, systemone_model) onto the pickers. */
+export function setupFromContext(stored: unknown): Setup {
+  return setupOf(sanitizeContext(stored));
+}
+
+/** A settings file's setup, keeping the side picked; else why it can't be played. */
+export function importedSetup(
+  data: unknown,
+  side: SideChoice,
+): { ok: true; setup: Setup } | { ok: false; why: string } {
+  try {
+    return { ok: true, setup: setupOf(loadSettings(data), side) };
+  } catch (error) {
+    // loadSettings throws only SettingsError.
+    return { ok: false, why: (error as Error).message };
+  }
 }
 
 /** A game's human side and the context every run of it sends. */

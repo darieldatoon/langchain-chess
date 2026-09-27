@@ -2,6 +2,58 @@
   "$comment": "Read by the Python and TypeScript settings tests alike, so both accept and reject the same settings. `output` lists what differs from the current defaults.",
   "files": [
     {
+      "name": "a file the web app exported: every key",
+      "input": {
+        "version": 2,
+        "policy": "llm",
+        "model": "openai:gpt-6-luna",
+        "model_kwargs": {
+          "temperature": 0.2
+        },
+        "reasoning_effort": "low",
+        "system_prompt": "Be bold.",
+        "show_fen": false,
+        "show_board": true,
+        "move_list": "legal",
+        "memory": true,
+        "draw_claims": "never",
+        "systemone_model": "someone/ranker",
+        "style": "terse",
+        "with_eval": true,
+        "with_nouls": false,
+        "gate": "confidence",
+        "threshold": 0.5,
+        "tournament_threshold": null,
+        "k": 3,
+        "top_p": 0.8,
+        "seed": 7
+      },
+      "output": {
+        "policy": "llm",
+        "model": "openai:gpt-6-luna",
+        "model_kwargs": {
+          "temperature": 0.2
+        },
+        "reasoning_effort": "low",
+        "system_prompt": "Be bold.",
+        "show_fen": false,
+        "show_board": true,
+        "move_list": "legal",
+        "memory": true,
+        "draw_claims": "never",
+        "systemone_model": "someone/ranker",
+        "style": "terse",
+        "with_eval": true,
+        "with_nouls": false,
+        "gate": "confidence",
+        "threshold": 0.5,
+        "tournament_threshold": null,
+        "k": 3,
+        "top_p": 0.8,
+        "seed": 7
+      }
+    },
+    {
       "name": "a partial file takes the defaults",
       "input": {
         "version": 1,

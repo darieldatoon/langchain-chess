@@ -35,3 +35,11 @@ def test_run_metadata_records_the_values_sent():
     metadata = run_config("uci", "t", settings)["metadata"]
     assert metadata["reasoning_effort"] == "high"
     assert metadata["model_kwargs"] == {"reasoning_effort": "high"}
+
+
+def test_resets_put_a_setting_back_to_its_default_before_the_flags():
+    base = ChessContext(top_p=0.5, k=3, reasoning_effort="high")
+    settings = overlay(base, {"k": 4}, ["top_p", "reasoning_effort", "k"])
+    assert (settings.top_p, settings.reasoning_effort, settings.k) == (None, None, 4)
+    with pytest.raises(ValueError, match="no such setting to reset: nope, version"):
+        overlay(base, {}, ["nope", "version"])

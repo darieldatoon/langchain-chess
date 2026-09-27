@@ -23,7 +23,7 @@ BASELINE = Path(__file__).parents[2] / "experiments" / "systemone-baseline.toml"
 
 
 def test_the_baseline_grid():
-    specs = grid(tomllib.loads(BASELINE.read_text()))
+    specs = grid(tomllib.loads(BASELINE.read_text()), BASELINE.parent)
     assert [(s.model, s.style, s.max_options) for s in specs] == [
         ("semif-qwen3.5-4b", "rich", None),
         ("semif-qwen3.5-4b", "terse", None),
@@ -33,6 +33,20 @@ def test_the_baseline_grid():
     ]
     with pytest.raises(ValueError, match="style must be"):
         grid({"experiment": [{"name": "x", "model": "m", "style": "loud"}]})
+
+
+def test_an_entry_may_name_an_opponent_file(tmp_path):
+    (tmp_path / "jev.json").write_text('{"version": 2, "systemone_model": "typesafe/jev-latest"}')
+    entry = {"name": "jev", "opponent": "jev.json", "max_options": 8}
+    (spec,) = grid({"experiment": [entry]}, tmp_path)
+    assert (spec.model, spec.style, spec.max_options) == ("typesafe/jev-latest", "rich", 8)
+    assert (spec.with_eval, spec.with_nouls) == (False, False)
+    ranker = default_ranker(ExperimentSpec("x", "typesafe/jev-latest", with_eval=True))
+    assert ranker.with_eval
+    with pytest.raises(ValueError, match="not both"):
+        grid({"experiment": [{**entry, "style": "terse"}]}, tmp_path)
+    with pytest.raises(ValueError, match="can't read settings"):
+        grid({"experiment": [{**entry, "opponent": "missing.json"}]}, tmp_path)
 
 
 def test_default_ranker_takes_the_spec():

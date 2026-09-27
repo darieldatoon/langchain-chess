@@ -15,7 +15,7 @@ from langgraph.types import Checkpointer
 
 from langchain_chess_cli.options import overlay
 from langchain_chess_systemone.agent import build_agent
-from langchain_chess_systemone.settings import ChessContext
+from langchain_chess_systemone.settings import ChessContext, load_file
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Coroutine
@@ -67,17 +67,40 @@ ModelKwargsOption = Annotated[
 ]
 
 
-def _settings(*, model_kwargs: str | None = None, **flags: Any) -> ChessContext:
+ConfigOption = Annotated[
+    Path | None,
+    typer.Option(
+        exists=True,
+        dir_okay=False,
+        help="An opponent settings file (JSON); the flags given override it.",
+    ),
+]
+ResetOption = Annotated[
+    list[str] | None,
+    typer.Option(help="Reset a setting from --config to its default, e.g. top_p; repeatable."),
+]
+
+
+def _settings(
+    *,
+    config: Path | None = None,
+    reset: list[str] | None = None,
+    model_kwargs: str | None = None,
+    **flags: Any,
+) -> ChessContext:
     try:
         if model_kwargs is not None:
             flags["model_kwargs"] = json.loads(model_kwargs)
-        return overlay(ChessContext(), flags)
+        base = load_file(config) if config is not None else ChessContext()
+        return overlay(base, flags, reset or ())
     except ValueError as e:
         raise typer.BadParameter(str(e)) from e
 
 
 @app.command()
 def uci(
+    config: ConfigOption = None,
+    reset: ResetOption = None,
     policy: PolicyOption = None,
     model: ModelOption = None,
     reasoning_effort: EffortOption = None,
@@ -106,6 +129,8 @@ def uci(
 
     logging.basicConfig(stream=sys.stderr, level=logging.WARNING)
     settings = _settings(
+        config=config,
+        reset=reset,
         policy=policy,
         model=model,
         reasoning_effort=reasoning_effort,
@@ -134,7 +159,11 @@ def uci(
         sys.stdout.write(line + "\n")
         sys.stdout.flush()
 
-    asyncio.run(run(Engine(factory, settings, out=out)))
+    try:
+        engine = Engine(factory, settings, out=out)
+    except ValueError as e:
+        raise typer.BadParameter(str(e)) from e
+    asyncio.run(run(engine))
 
 
 SideOption = Annotated[Literal["white", "black"], typer.Option(help="The side you play.")]
@@ -143,6 +172,8 @@ SideOption = Annotated[Literal["white", "black"], typer.Option(help="The side yo
 @app.command()
 def play(
     side: SideOption = "white",
+    config: ConfigOption = None,
+    reset: ResetOption = None,
     policy: PolicyOption = None,
     model: ModelOption = None,
     reasoning_effort: EffortOption = None,
@@ -168,6 +199,8 @@ def play(
     from langchain_chess_cli.tui.app import ChessApp
 
     settings = _settings(
+        config=config,
+        reset=reset,
         policy=policy,
         model=model,
         reasoning_effort=reasoning_effort,

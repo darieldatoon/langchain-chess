@@ -14,6 +14,7 @@ import sys
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, TextIO, cast
 
 import chess
@@ -47,12 +48,13 @@ from langchain_chess_cli.uci.protocol import (
     Unknown,
     parse,
 )
-from langchain_chess_systemone.settings import ChessContext, dump
+from langchain_chess_systemone.settings import ChessContext, dump, load_file
 
 type AgentFactory = Callable[[ChessContext, Checkpointer], CompiledStateGraph]
 type Output = Callable[[str], None]
 
 NAME = "langchain-chess"
+SEED_MAX = 2**31 - 1
 AUTHOR = "Dariel Dato-on"
 DRAW_CLAIMS: DrawClaims = "never"
 """The GUI adjudicates draws: a claimed one would end the game as `bestmove 0000`."""
@@ -117,10 +119,28 @@ def _spin(low: int, high: int) -> Callable[[str], int]:
     return convert
 
 
+CONFIG = "config"
+"""The option that loads a settings file: it replaces every setting, then later options patch."""
+
+
+def _config(startup: ChessContext) -> Callable[[str], dict[str, Any]]:
+    """`<empty>` (a GUI's empty string, often sent at startup) is the settings the engine
+    started with, not the library's defaults. A relative path is from the engine's working
+    directory, which the GUI chooses."""
+
+    def convert(value: str) -> dict[str, Any]:
+        path = value.strip()
+        settings = startup if path in ("", "<empty>") else load_file(Path(path))
+        return dump(_for_uci(settings))
+
+    return convert
+
+
 def uci_options(defaults: ChessContext) -> dict[str, Option]:
     """Keyed by lowercase name; UCI option names are case-insensitive."""
     d = defaults
     options = [
+        Option(CONFIG, "option name Config type string default <empty>", _config(d)),
         Option("model", f"option name Model type string default {d.model}", _name),
         Option(
             "reasoning_effort",
@@ -146,9 +166,15 @@ def uci_options(defaults: ChessContext) -> dict[str, Option]:
             _check,
         ),
         Option(
+            "move_list",
+            f"option name MoveList type combo default {d.move_list}"
+            " var both var legal var candidates var none",
+            _choice("both", "legal", "candidates", "none"),
+        ),
+        Option(
             "seed",
-            f"option name Seed type spin default {d.seed} min 0 max 2147483647",
-            _spin(0, 2**31 - 1),
+            f"option name Seed type spin default {d.seed} min 0 max {SEED_MAX}",
+            _spin(0, SEED_MAX),
         ),
     ]
     return {o.declaration.split()[2].lower(): o for o in options}
@@ -188,7 +214,7 @@ class Engine:
         self._checkpointer = checkpointer or InMemorySaver()
         self._agent = factory(self._settings, self._checkpointer)
         self._out = out
-        self._queued: dict[str, Any] = {}
+        self._queued: list[tuple[str, Any]] = []
         self._position = Position()
         self._thread = self._new_thread()
         self._search: Search | None = None
@@ -216,14 +242,19 @@ class Engine:
     def _apply_queued(self) -> None:
         if not self._queued:
             return
-        queued, self._queued = self._queued, {}
-        try:
-            settings = ChessContext.model_validate({**dump(self._settings), **queued})
-            agent = self._factory(settings, self._checkpointer)
-        except Exception as e:  # the settings and the agent change together, or not at all
-            self._info(f"options not applied: {e}")
-            return
-        self._settings, self._agent = settings, agent
+        queued, self._queued = self._queued, []
+        # One at a time, in order: an option that fails costs only itself, as when idle.
+        for field_name, value in queued:
+            values = (
+                dict(value) if field_name == CONFIG else {**dump(self._settings), field_name: value}
+            )
+            try:
+                settings = _for_uci(ChessContext.model_validate(values))
+                agent = self._factory(settings, self._checkpointer)
+            except Exception as e:  # the settings and the agent change together, or not at all
+                self._info(f"options not applied: {e}")
+                continue
+            self._settings, self._agent = settings, agent
 
     async def _replace_thread(self) -> None:
         """Only with no search outstanding: nothing can reopen the old game, so drop it."""
@@ -280,7 +311,7 @@ class Engine:
         except ValueError as e:
             self._info(f"invalid value for {name}: {e}")
             return
-        self._queued[option.field] = converted
+        self._queued.append((option.field, converted))
         if self._search is None:
             self._apply_queued()
 
@@ -404,6 +435,10 @@ class Engine:
 
 
 def _for_uci(settings: ChessContext) -> ChessContext:
+    """The engine's own ranges hold whatever set the value: the Seed spin is 32-bit."""
+    if not 0 <= settings.seed <= SEED_MAX:
+        msg = f"the seed must be within 0..{SEED_MAX} for UCI, got {settings.seed}"
+        raise ValueError(msg)
     return settings.model_copy(update={"draw_claims": DRAW_CLAIMS})
 
 

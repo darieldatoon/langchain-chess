@@ -12,12 +12,14 @@ import { CrownIcon } from "@phosphor-icons/react/dist/ssr/Crown";
 import { ShuffleIcon } from "@phosphor-icons/react/dist/ssr/Shuffle";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { keyCheckMessage, type KeyCheck } from "../auth";
+import { downloadJson, readJson } from "../files";
 import type { ModelLimit } from "../modelLimit";
-import { withKnob } from "../settings";
+import { configurableOf, withKnob } from "../settings";
 import {
   LLM_NAMES,
   LLM_PRESETS,
   SYSTEM_ONE_PRESETS,
+  importedSetup,
   matchupLine,
   matchupOf,
   modelOf,
@@ -122,9 +124,26 @@ export function NewGameDialog({
     (value: Setup[K] | undefined) =>
       setSetup((s) => withKnob(s, key, value));
   // Kept while a preset is picked, so it can be picked again. No model is named "".
-  const [otherSystemOne] = useState(() =>
+  const [otherSystemOne, setOtherSystemOne] = useState(() =>
     isSystemOnePreset(initial.systemOne) ? "" : initial.systemOne,
   );
+  const [importProblem, setImportProblem] = useState<string | null>(null);
+  // Remounts Advanced after an import: its text fields keep their own drafts.
+  const [imported, setImported] = useState(0);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const importFile = async (file: File) => {
+    const read = await readJson(file);
+    const result = read.ok ? importedSetup(read.value, setup.side) : read;
+    if (!mounted.current) return;
+    if (!result.ok) {
+      setImportProblem(result.why);
+      return;
+    }
+    setImportProblem(null);
+    setSetup(result.setup);
+    if (!isSystemOnePreset(result.setup.systemOne)) setOtherSystemOne(result.setup.systemOne);
+    setImported((n) => n + 1);
+  };
   const pickSystemOne = (key: string | undefined) =>
     setSetup((s) => {
       if (key === undefined) return s;
@@ -298,6 +317,7 @@ export function NewGameDialog({
             {advanced && (
               <div id="advanced-settings">
                 <AdvancedSettings
+                  key={imported}
                   knobs={setup.knobs}
                   sections={sectionsOf(setup)}
                   summarize={summarize}
@@ -307,6 +327,12 @@ export function NewGameDialog({
               </div>
             )}
           </div>
+
+          {importProblem && (
+            <Banner intent="warning" title="Couldn't import that setup">
+              {importProblem}
+            </Banner>
+          )}
 
           {problem && (
             <Banner
@@ -332,11 +358,45 @@ export function NewGameDialog({
               variant="plain"
               color="secondary"
               size="md"
-              className="mr-auto"
               onClick={() => onOpenSettings(setup)}
             >
               Settings
             </Button>
+            <Button
+              variant="plain"
+              color="secondary"
+              size="md"
+              onClick={() => fileInput.current!.click()}
+            >
+              Import
+            </Button>
+            <input
+              ref={fileInput}
+              type="file"
+              accept="application/json,.json"
+              aria-label="Setup file"
+              hidden
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) void importFile(file);
+              }}
+            />
+            {ready.ok ? (
+              <Button
+                variant="plain"
+                color="secondary"
+                size="md"
+                className="mr-auto"
+                onClick={() => downloadJson("opponent.json", configurableOf(ready.context))}
+              >
+                Export
+              </Button>
+            ) : (
+              <Button variant="plain" color="secondary" size="md" className="mr-auto" disabled>
+                Export
+              </Button>
+            )}
             {canCancel && (
               <Button variant="outlined" color="secondary" size="md" onClick={onClose}>
                 Cancel

@@ -287,3 +287,8 @@ def test_runs_record_the_values_sent_and_the_setup_keeps_model_kwargs_as_given(e
     assert handler.seen[0]["reasoning_effort"] == "high"
     assert handler.seen[0]["max_tokens"] == 900
     assert out["setup"]["model_kwargs"] == kwargs
+
+
+def test_model_kwargs_go_unread_when_the_llm_does_not_play(fake_systemone):
+    settings = ChessContext(policy="systemone", model_kwargs={"stop": ["x"]})
+    assert build_agent(settings) is not None

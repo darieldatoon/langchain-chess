@@ -138,6 +138,30 @@ def test_run(experiments, dirs):
     assert "[systemone-jev-latest-terse-cap16-1](https://smith/x) | 25.0% |" in result.output
 
 
+def test_run_an_opponent_file(experiments, tmp_path):
+    opponent = tmp_path / "jev.json"
+    jev = {"version": 2, "systemone_model": "typesafe/jev-latest", "style": "terse"}
+    opponent.write_text(json.dumps(jev))
+    result = runner.invoke(cli.app, ["systemone", "run", "--opponent", str(opponent)])
+    assert result.exit_code == 0, result.output
+    spec, _ = experiments[0]
+    assert (spec.name, spec.model, spec.style) == (
+        "jev-latest-terse",
+        "typesafe/jev-latest",
+        "terse",
+    )
+    both = ["systemone", "run", "--opponent", str(opponent), "--model", "m"]
+    assert runner.invoke(cli.app, both).exit_code == 2
+    styled = ["systemone", "run", "--opponent", str(opponent), "--style", "rich"]
+    assert "leave out --style" in runner.invoke(cli.app, styled).output
+    opponent.write_text(json.dumps({**jev, "with_nouls": True}))
+    assert runner.invoke(cli.app, ["systemone", "run", "--opponent", str(opponent)]).exit_code == 0
+    assert experiments[-1][0].with_nouls is True
+    assert runner.invoke(cli.app, ["systemone", "run"]).exit_code == 2
+    opponent.write_text('{"k": 3}')
+    assert runner.invoke(cli.app, ["systemone", "run", "--opponent", str(opponent)]).exit_code == 2
+
+
 def test_run_rejects_an_unknown_style(experiments):
     result = runner.invoke(cli.app, ["systemone", "run", "--model", "m", "--style", "loud"])
     assert result.exit_code == 2
@@ -175,3 +199,11 @@ def test_upload_error_exits_cleanly(dirs, monkeypatch):
     result = runner.invoke(cli.app, ["positions", "upload"])
     assert result.exit_code == 1
     assert "error: dataset d has other" in result.output
+
+
+def test_baseline_reports_a_bad_grid(experiments, tmp_path):
+    grid_file = tmp_path / "grid.toml"
+    grid_file.write_text('[[experiment]]\nname = "x"\nopponent = "missing.json"\n')
+    result = runner.invoke(cli.app, ["systemone", "baseline", "--config", str(grid_file)])
+    assert result.exit_code == 2
+    assert "can't read settings" in result.output

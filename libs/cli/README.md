@@ -41,6 +41,13 @@ out keeps the setting's default. `--model-kwargs '{"temperature": 0.2}'` passes 
 arguments; unlike the server, the CLI accepts provider tools too, and prices those calls as
 incomplete.
 
+`--config opponent.json` plays an opponent settings file, the same file the web UI exports.
+Flags you give override it, and `--reset top_p` puts one of its settings back to the default:
+
+```sh
+lcchess play --config opponent.json --k 3 --reset reasoning_effort
+```
+
 ## Play in the terminal
 
 ```sh
@@ -67,6 +74,7 @@ Type UCI commands to check it answers. With `--policy systemone` a move takes a 
 ```text
 > uci
 id name langchain-chess
+option name Config type string default <empty>
 option name Model type string default langsmith:baseten/zai-org/GLM-5.3-Flash
 option name ReasoningEffort type combo default default var default var low var medium var high
 option name SystemOneModel type string default semif-qwen3.5-4b
@@ -74,6 +82,7 @@ option name Policy type combo default systemone var llm var systemone var hybrid
 option name Threshold type string default 0.9
 option name K type spin default 5 min 1 max 255
 option name Memory type check default false
+option name MoveList type combo default both var both var legal var candidates var none
 option name Seed type spin default 0 min 0 max 2147483647
 uciok
 > isready
@@ -92,6 +101,9 @@ repo root:
 | Arguments | `run --all-packages --env-file .env lcchess uci --policy hybrid` |
 | Working directory | Your clone |
 
+- **Config** names an opponent settings file. It replaces every setting; the options after it
+  patch it, so a tournament varies one option over a shared file. The engine never claims draws,
+  whatever the file says. A file that fails to load changes nothing.
 - **Time controls.** LLM moves take seconds, so short time controls mean fallback moves: this
   turn's System 1 top move when it ranked, else a seeded random legal move. GLM-5.3 Flash
   can take 30–60 seconds a move. Analysis streams as `info string` lines.

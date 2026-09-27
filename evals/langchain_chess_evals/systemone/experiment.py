@@ -15,6 +15,7 @@ from langchain_chess_evals.systemone.summary import Scored, Summary, summarize
 from langchain_chess_evals.systemone.target import make_target
 from langchain_chess_systemone import GatewayRanker, Ranker
 from langchain_chess_systemone.describe import DescriptionStyle
+from langchain_chess_systemone.settings import ChessContext, load_file
 
 # The gateway caps SemIf at about 70 rankings a minute, then refuses everything for 40 s or more,
 # with no Retry-After. Retry for up to ~2 minutes (backoff caps at 4 s): a rate limit is not a
@@ -31,12 +32,25 @@ class ExperimentSpec:
     style: DescriptionStyle = "rich"
     max_options: int | None = None
     """None is the model's own cap."""
+    with_eval: bool = False
+    with_nouls: bool = False
 
 
-def grid(config: Mapping[str, Any]) -> tuple[ExperimentSpec, ...]:
-    """`[[experiment]]` tables from a TOML file."""
+def grid(config: Mapping[str, Any], base: Path = Path()) -> tuple[ExperimentSpec, ...]:
+    """`[[experiment]]` tables from a TOML file.
+
+    An entry names System 1 with `model` and `style`, or with `opponent`, an opponent settings
+    file relative to `base` (the TOML's directory); the eval-only controls stay in the entry.
+    """
     specs = []
-    for entry in config["experiment"]:
+    for table in config["experiment"]:
+        entry: dict[str, Any] = dict(table)
+        if "opponent" in entry:
+            if {"model", "style"} & set(entry):
+                msg = f"experiment {entry['name']!r}: give `opponent` or `model`/`style`, not both"
+                raise ValueError(msg)
+            opponent = load_file(base / entry["opponent"])
+            entry = {**entry, **ranker_settings(opponent)}
         style = entry.get("style", "rich")
         if style not in STYLES:
             msg = f"experiment {entry['name']!r}: style must be one of {STYLES}"
@@ -47,14 +61,32 @@ def grid(config: Mapping[str, Any]) -> tuple[ExperimentSpec, ...]:
                 model=entry["model"],
                 style=style,
                 max_options=entry.get("max_options"),
+                with_eval=entry.get("with_eval", False),
+                with_nouls=entry.get("with_nouls", False),
             )
         )
     return tuple(specs)
 
 
+def ranker_settings(opponent: ChessContext) -> dict[str, Any]:
+    """What an opponent file sets of System 1's ranker; its gate, the LLM and the rules don't
+    apply to ranking alone."""
+    return {
+        "model": opponent.systemone_model,
+        "style": opponent.style,
+        "with_eval": opponent.with_eval,
+        "with_nouls": opponent.with_nouls,
+    }
+
+
 def default_ranker(spec: ExperimentSpec) -> GatewayRanker:
     return GatewayRanker(
-        spec.model, style=spec.style, max_options=spec.max_options, max_attempts=MAX_ATTEMPTS
+        spec.model,
+        style=spec.style,
+        max_options=spec.max_options,
+        max_attempts=MAX_ATTEMPTS,
+        with_eval=spec.with_eval,
+        with_nouls=spec.with_nouls,
     )
 
 
@@ -111,8 +143,8 @@ def metadata(
         "model": spec.model,
         "style": spec.style,
         "max_options": ranker.max_options,
-        "with_eval": False,
-        "with_nouls": False,
+        "with_eval": spec.with_eval,
+        "with_nouls": spec.with_nouls,
         "dataset": dataset,
         "dataset_version": tag,
         "split": split,
