@@ -246,24 +246,21 @@ const isSideChoice = oneOf("white", "black", "random");
 const isLlmChoice = oneOf(...LLM_PRESETS, "custom", "none");
 
 /**
- * Stored setups are untrusted: every field falls back to its default on its own. A setup stored
- * before versions named System 1 "none" when it was off, and its knobs have the older forms.
+ * Stored setups are untrusted: every field falls back to its default on its own, and a setup
+ * without a version to the defaults.
  */
 export function sanitizeSetup(stored: unknown): Setup {
-  const record = isRecord(stored) ? stored : {};
-  const versioned = "version" in record;
-  const systemOneOff = versioned ? record.systemOneOff === true : record.systemOne === "none";
-  const systemOne = isSetting("systemone_model", record.systemOne)
-    ? record.systemOne
-    : DEFAULT_SETUP.systemOne;
+  const record = isRecord(stored) && "version" in stored ? stored : {};
   const knobs = isRecord(record.knobs) ? record.knobs : {};
   return {
     side: isSideChoice(record.side) ? record.side : DEFAULT_SETUP.side,
-    systemOne: !versioned && systemOne === "none" ? DEFAULT_SETUP.systemOne : systemOne,
-    systemOneOff,
+    systemOne: isSetting("systemone_model", record.systemOne)
+      ? record.systemOne
+      : DEFAULT_SETUP.systemOne,
+    systemOneOff: record.systemOneOff === true,
     llm: isLlmChoice(record.llm) ? record.llm : DEFAULT_SETUP.llm,
     customModel: typeof record.customModel === "string" ? record.customModel : "",
-    knobs: knobsOf(sanitizeContext(versioned ? { ...knobs, version: record.version } : knobs)),
+    knobs: knobsOf(sanitizeContext({ ...knobs, version: record.version })),
   };
 }
 
@@ -283,11 +280,6 @@ export function setupOf(context: ChessContext, side: SideChoice = DEFAULT_SETUP.
     customModel: preset === null ? context.model : "",
     knobs: knobsOf(context),
   };
-}
-
-/** Maps a pre-modal stored context (policy, model, systemone_model) onto the pickers. */
-export function setupFromContext(stored: unknown): Setup {
-  return setupOf(sanitizeContext(stored));
 }
 
 /** A settings file's setup, keeping the side picked; else why it can't be played. */

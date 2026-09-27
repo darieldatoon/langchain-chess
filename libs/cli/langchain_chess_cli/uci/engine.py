@@ -331,9 +331,9 @@ class Engine:
         if not await self._thread_extends(position):
             # A takeback or a new game without `ucinewgame`: start a new thread.
             await self._replace_thread()
+        legal = root_moves(position.start_fen, position.moves)
         restrict = None
         if go.searchmoves is not None:
-            legal = set(root_moves(position.start_fen, position.moves, None))
             dropped = [u for u in go.searchmoves if u not in legal]
             if dropped:
                 self._info(f"ignoring illegal searchmoves: {' '.join(dropped)}")
@@ -347,7 +347,7 @@ class Engine:
             position=position,
             go=go,
             request=fingerprint(position.start_fen, position.moves, restrict),
-            pool=tuple(root_moves(position.start_fen, position.moves, restrict)),
+            pool=tuple(legal if restrict is None else [u for u in legal if u in restrict]),
             held=go.infinite or go.ponder,
         )
         self._search = search

@@ -95,29 +95,6 @@ export const SETTING_SPECS: Record<SettingKey, SettingSpec> = {
   seed: {"type": "number", "integer": true, "minimum": -9007199254740991, "maximum": 9007199254740991, "exclusiveMinimum": null, "nullable": false},
 };
 
-export const SETTING_DESCRIPTIONS: Record<SettingKey, string> = {
-  policy: "Who chooses moves. `llm`: the LLM alone. `systemone`: System 1 alone. `hybrid`: System 1 plays the moves it is confident about and suggests candidates otherwise.",
-  model: "init_chat_model spec: `langsmith:<provider>/<model>` for the LLM Gateway, or `provider:model` and bare names with that provider's package installed.",
-  model_kwargs: "Extra arguments for the model's constructor, as `init_chat_model` takes them: `temperature`, `max_tokens`, `extra_body` and so on. They win over every other setting. Credentials, connections, the model name and what the agent sends are held back. An output limit set only inside `extra_body` isn't seen, so memory may summarize too late.",
-  reasoning_effort: "Reasoning effort passed to the model. Null sends none and uses the model's own default; models without reasoning (such as Claude Haiku 4.5) need it null.",
-  system_prompt: "Replaces the bundled system prompt. Null keeps it. Each turn's message still ends by asking for `MOVE: <move>`; a reply without one is retried.",
-  show_fen: "Show the position's FEN in each turn's message. The moves so far are always shown, and so is the starting FEN of a game from another position.",
-  show_board: "Show the board as text in each turn's message.",
-  move_list: "The moves listed in each turn's message. `both`: System 1's candidates, when there are any, and every legal move. `legal`: every legal move. `candidates`: only the candidates. `none`: no list. A restricted turn always lists the permitted moves.",
-  memory: "Keep earlier turns, summarized at 70% of the model's input limit. Needs a model with a known input limit. Ignored when the LLM doesn't play.",
-  draw_claims: "`auto` ends the game on a threefold repetition or the fifty-move rule; `never` plays on until a draw is forced.",
-  systemone_model: "System 1 model: `semif-qwen3.5-4b` (SemIf) or `typesafe/jev-latest` (Jev). Another TypeSafe classifier works too, with a conservative cap on the moves per request.",
-  style: "How each legal move is described to System 1. `rich` adds captures, checks and exchange results; `terse` names the move only.",
-  with_eval: "Also ask System 1 to score the position. Recorded only; it doesn't change the move.",
-  with_nouls: "Also ask System 1 whether the position needs calculation and has tactics. Recorded only; it doesn't change the move.",
-  gate: "The signal compared with the threshold. `margin`: the top move's probability minus the second's. `confidence`: System 1's own confidence in its ranking.",
-  threshold: "System 1 plays its top move when the signal is at least this; otherwise the LLM gets its candidates. 0 always plays; 1 never does.",
-  tournament_threshold: "The threshold when there were more moves than one System 1 request holds, so they were ranked in a tournament. Null uses `threshold`.",
-  k: "The most candidates suggested to the LLM.",
-  top_p: "Cut the top `k` candidates further, to the fewest whose probabilities add up to at least this. Null keeps all `k`.",
-  seed: "Seeds System 1's tournament shuffle.",
-};
-
 /** Each setting's name in the web app. */
 export const SETTING_LABELS: Record<SettingKey, string> = {
   policy: "Opponent",
@@ -235,9 +212,6 @@ export const VERSION_DEFAULTS: Readonly<Record<number, Readonly<Record<string, u
     seed: 0,
   },
 };
-
-/** The keys of settings recorded before versions (version 0). */
-export const LEGACY_KEYS: readonly string[] = ["draw_claims", "gate", "k", "memory", "model", "policy", "reasoning_effort", "seed", "show_legal_moves", "style", "systemone_model", "threshold", "top_p", "tournament_threshold", "with_eval", "with_nouls"];
 
 /** What `model_kwargs` may not set: libs/chess/langchain_chess/model_arguments.py. */
 export const MODEL_KWARGS_RULES = {

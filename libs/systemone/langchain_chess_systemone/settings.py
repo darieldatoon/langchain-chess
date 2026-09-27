@@ -251,50 +251,6 @@ DEFAULTS: Mapping[int, Mapping[str, JSONValue]] = MappingProxyType(
 )
 """Each version's keys and defaults, frozen: never edit a released version's entry."""
 
-LEGACY_KEYS = frozenset(
-    {
-        "policy",
-        "model",
-        "reasoning_effort",
-        "show_legal_moves",
-        "memory",
-        "systemone_model",
-        "style",
-        "with_eval",
-        "with_nouls",
-        "gate",
-        "threshold",
-        "tournament_threshold",
-        "k",
-        "top_p",
-        "draw_claims",
-        "seed",
-    }
-)
-"""The keys of settings recorded before versions (version 0)."""
-
-_LEGACY_MEMORY = {"none": False, "summarize": True}
-_LEGACY_LEGAL_MOVES = {True: "both", False: "candidates"}
-
-
-def from_legacy(values: dict[str, Any]) -> dict[str, Any]:
-    """Both conversions keep exactly what the model saw."""
-    if isinstance(memory := values.get("memory"), str) and memory in _LEGACY_MEMORY:
-        values = {**values, "memory": _LEGACY_MEMORY[memory]}
-    if "show_legal_moves" not in values:
-        return values
-    values = dict(values)
-    shown = values.pop("show_legal_moves")
-    if "move_list" in values:
-        msg = "set move_list or the older show_legal_moves, not both"
-        raise SettingsError(msg)
-    if shown is None:
-        return values
-    if not isinstance(shown, bool):
-        msg = f"show_legal_moves must be true or false, got {shown!r}"
-        raise SettingsError(msg)
-    return {**values, "move_list": _LEGACY_LEGAL_MOVES[shown]}
-
 
 def _adds_prompt_and_model_options(values: dict[str, Any], complete: bool) -> dict[str, Any]:
     """Version 2 only adds keys. Their defaults play as version 1 did, except that a game from
@@ -306,7 +262,7 @@ def _adds_prompt_and_model_options(values: dict[str, Any], complete: bool) -> di
 
 
 MIGRATIONS: Mapping[int, Callable[[dict[str, Any], bool], dict[str, Any]]] = MappingProxyType(
-    {0: lambda values, complete: from_legacy(values), 1: _adds_prompt_and_model_options}
+    {1: _adds_prompt_and_model_options}
 )
 """Version n's keys to version n + 1's. For partial settings (`complete` false) a step writes
 only what it must: an added key's default would override a source merged under this one, while
@@ -315,14 +271,11 @@ a step that changes a default must write the old default into a partial that omi
 
 def keys(version: int) -> frozenset[str]:
     """The keys of a version, `version` itself excluded."""
-    return LEGACY_KEYS if version == 0 else frozenset(DEFAULTS[version]) - {"version"}
+    return frozenset(DEFAULTS[version]) - {"version"}
 
 
-def version_of(data: Mapping[str, Any], *, legacy: bool) -> int:
-    """0 for settings without a version, when `legacy` allows them."""
+def version_of(data: Mapping[str, Any]) -> int:
     if "version" not in data:
-        if legacy:
-            return 0
         msg = "settings need a `version`"
         raise SettingsError(msg)
     version = _integral(data["version"])
@@ -338,16 +291,15 @@ def version_of(data: Mapping[str, Any], *, legacy: bool) -> int:
 def migrate(
     data: Mapping[str, Any],
     *,
-    legacy: bool = False,
     unknown: Literal["error", "drop"] = "error",
     complete: bool = False,
 ) -> dict[str, Any]:
     """The keys partial settings set, carried to the current version, `version` excluded.
 
-    `legacy` reads settings without a version as version 0. `unknown="drop"` ignores keys the
-    settings' version doesn't have, as a source that mixes in other keys needs.
+    `unknown="drop"` ignores keys the settings' version doesn't have, as a source that mixes in
+    other keys needs.
     """
-    version = version_of(data, legacy=legacy)
+    version = version_of(data)
     known = keys(version)
     values = {k: v for k, v in data.items() if k != "version"}
     if extra := set(values) - known:
@@ -387,20 +339,15 @@ def load_file(path: Path) -> ChessContext:
 
 
 def load_recorded(data: object) -> ChessContext:
-    """Settings a game recorded: every key of its version, or it's damaged. A game recorded
-    before versions has none and every legacy key."""
+    """Settings a game recorded: every key of its version, or it's damaged."""
     values = _mapping(data)
-    version = version_of(values, legacy=True)
+    version = version_of(values)
     given = set(values) - {"version"}
     if given != keys(version):
         missing, extra = keys(version) - given, given - keys(version)
         msg = f"recorded settings are damaged: missing {sorted(missing)}, unknown {sorted(extra)}"
         raise SettingsError(msg)
-    migrated = migrate(values, legacy=True, complete=True)
-    if set(migrated) != keys(VERSION):
-        msg = f"recorded settings are damaged: {sorted(keys(VERSION) - set(migrated))} missing"
-        raise SettingsError(msg)
-    return ChessContext.model_validate(migrated)
+    return ChessContext.model_validate(migrate(values, complete=True))
 
 
 def dump(settings: ChessContext) -> dict[str, JSONValue]:

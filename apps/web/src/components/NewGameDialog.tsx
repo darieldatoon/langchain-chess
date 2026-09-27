@@ -34,7 +34,6 @@ import type { ChessContext } from "@langchain-chess/chess-ui";
 import { AdvancedSettings, Field, type DraftKnob, type SetKnob } from "./AdvancedSettings";
 
 interface Props {
-  open: boolean;
   initial: Setup;
   /** Only a game on screen can be gone back to; otherwise there is nothing to cancel to. */
   canCancel: boolean;
@@ -106,7 +105,6 @@ const LLMS: SelectOption<LlmChoice>[] = [
 ];
 
 export function NewGameDialog({
-  open,
   initial,
   canCancel,
   onPlay,
@@ -214,7 +212,7 @@ export function NewGameDialog({
   const problem = keyProblem && keyCheckMessage(keyProblem);
 
   return (
-    <Dialog open={open} onOpenChange={() => canCancel && onClose()}>
+    <Dialog open onOpenChange={() => canCancel && onClose()}>
       <DialogContent
         title="New game"
         description="Choose your colour and the opponent."

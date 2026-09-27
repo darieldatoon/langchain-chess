@@ -6,11 +6,8 @@ import { followSystemTheme } from "./theme";
 
 followSystemTheme(window, document.documentElement);
 document.title = title;
-const root = document.getElementById("root");
-if (root) {
-  createRoot(root).render(
-    <StrictMode>
-      <Report />
-    </StrictMode>,
-  );
-}
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <Report />
+  </StrictMode>,
+);

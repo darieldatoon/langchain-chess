@@ -5,7 +5,7 @@ import { Text } from "@langchain/macaw-components/Text";
 import { DEFAULT_PLY_VIEW, type PlyView } from "@langchain-chess/chess-ui";
 import { useEffect, useState } from "react";
 import { analysisOf, type LaunchState } from "./analysis";
-import { defaultProject, type Api, type GamesPage, type Project } from "./api";
+import { appended, defaultProject, firstPages, type Api, type Pages, type Project } from "./api";
 import type { Game } from "./games";
 import { GameList } from "./components/GameList";
 import { GameView } from "./components/GameView";
@@ -29,7 +29,7 @@ const sinceFor = (now: Date, days: string) =>
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 /** A loaded page and the query it answers, so a stale answer is never shown for a new query. */
-interface Loaded extends GamesPage {
+interface Loaded extends Pages {
   key: string;
 }
 
@@ -45,8 +45,9 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
   const [error, setError] = useState<string | null>(null);
   // The sandbox has no localStorage and LangSmith no preferences API: this lasts the session.
   const [view, setView] = useState<PlyView>(DEFAULT_PLY_VIEW);
-  // A refresh reloads the first page in place, so the list and the open game stay up meanwhile.
-  const [refreshes, setRefreshes] = useState(0);
+  // A refresh reloads the pages on screen in place, so the list and the open game stay up
+  // meanwhile.
+  const [reload, setReload] = useState({ count: 0, pages: 1, keep: null as string | null });
   const [refreshing, setRefreshing] = useState(false);
   const [launches, setLaunches] = useState<Record<string, LaunchState>>({});
   const key = `${projectId}|${since}`;
@@ -64,7 +65,7 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
   useEffect(() => {
     if (!projectId) return;
     let current = true;
-    api.games(projectId, since).then(
+    firstPages(api, projectId, since, reload.pages, reload.keep).then(
       (page) => {
         if (!current) return;
         setLoaded({ ...page, key: `${projectId}|${since}` });
@@ -83,7 +84,7 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
     return () => {
       current = false;
     };
-  }, [api, projectId, since, refreshes]);
+  }, [api, projectId, since, reload]);
 
   // Owned by the query like the first page, so a new query cancels it rather than racing it.
   useEffect(() => {
@@ -92,7 +93,7 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
     api.games(projectId, since, moreFrom.cursor).then(
       (next) => {
         if (!current) return;
-        setLoaded({ ...moreFrom, games: [...moreFrom.games, ...next.games], cursor: next.cursor });
+        setLoaded({ ...appended(moreFrom, next), key: moreFrom.key, pages: moreFrom.pages + 1 });
         setMoreFrom(null);
       },
       (e: unknown) => {
@@ -113,13 +114,15 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
     setSelected(null);
     setError(null);
     setMoreFrom(null);
+    setReload((r) => ({ ...r, pages: 1, keep: null }));
   };
 
   const refresh = () => {
     setMoreFrom(null);
     setError(null);
     setRefreshing(true);
-    setRefreshes((n) => n + 1);
+    const pages = loaded?.key === key ? loaded.pages : 1;
+    setReload((r) => ({ count: r.count + 1, pages, keep: selected }));
   };
 
   const analyze = (game: Game, project: Project) => {

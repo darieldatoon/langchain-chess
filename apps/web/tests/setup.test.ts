@@ -15,13 +15,12 @@ import {
   resolveSide,
   sanitizeSetup,
   sectionsOf,
-  setupFromContext,
   storedSetup,
   systemOneName,
   type Setup,
 } from "../src/setup";
 import { DEFAULT_CONTEXT, type ChessContext } from "@langchain-chess/chess-ui";
-import { E4_E5, legacyOf, ply, turn } from "@langchain-chess/chess-ui/testing";
+import { E4_E5, ply, turn } from "@langchain-chess/chess-ui/testing";
 
 const setup = (overrides: Partial<Setup> = {}): Setup => ({ ...DEFAULT_SETUP, ...overrides });
 
@@ -286,30 +285,9 @@ describe("sanitizeSetup", () => {
     expect(Object.keys(sanitizeSetup({}).knobs)).not.toContain("policy");
   });
 
-  it("reads a setup stored before versions", () => {
-    const old = {
-      side: "black",
-      systemOne: "none",
-      llm: "langsmith:openai/gpt-6-luna",
-      customModel: "",
-      knobs: {
-        ...DEFAULT_SETUP.knobs,
-        memory: "full",
-        show_legal_moves: false,
-        move_list: undefined,
-      },
-    };
-    expect(sanitizeSetup(JSON.parse(JSON.stringify(old)))).toEqual({
-      ...DEFAULT_SETUP,
-      side: "black",
-      systemOneOff: true,
-      llm: "langsmith:openai/gpt-6-luna",
-      knobs: { ...DEFAULT_SETUP.knobs, memory: true, move_list: "candidates" },
-    });
-    expect(sanitizeSetup({ systemOne: "typesafe/jev-latest", knobs: { memory: "none" } })).toEqual({
-      ...DEFAULT_SETUP,
-      systemOne: "typesafe/jev-latest",
-    });
+  it("resets a setup without a version to the defaults", () => {
+    const unversioned = { side: "black", systemOne: "typesafe/jev-latest", knobs: { k: 3 } };
+    expect(sanitizeSetup(unversioned)).toEqual(DEFAULT_SETUP);
   });
 });
 
@@ -327,6 +305,10 @@ describe("importedSetup", () => {
         knobs: { ...DEFAULT_SETUP.knobs, k: 3 },
       },
     });
+    expect(importedSetup({ version: 2, policy: "systemone" }, "white")).toEqual({
+      ok: true,
+      setup: { ...DEFAULT_SETUP, llm: "none" },
+    });
     expect(importedSetup({ k: 3 }, "white")).toEqual({
       ok: false,
       why: "settings need a `version`",
@@ -335,33 +317,6 @@ describe("importedSetup", () => {
       ok: false,
       why: "invalid settings: k",
     });
-  });
-});
-
-describe("setupFromContext", () => {
-  it("maps the old policy and models onto the pickers", () => {
-    expect(
-      setupFromContext({ policy: "hybrid", model: "langsmith:openai/gpt-6-luna" }),
-    ).toMatchObject({
-      side: "white",
-      systemOne: "semif-qwen3.5-4b",
-      systemOneOff: false,
-      llm: "langsmith:openai/gpt-6-luna",
-      customModel: "",
-    });
-    expect(
-      setupFromContext({ policy: "llm", model: "openai:gpt-5.6-sol", threshold: 0.3 }),
-    ).toEqual({
-      ...DEFAULT_SETUP,
-      systemOneOff: true,
-      llm: "custom",
-      customModel: "openai:gpt-5.6-sol",
-      knobs: { ...DEFAULT_SETUP.knobs, threshold: 0.3 },
-    });
-    expect(
-      setupFromContext({ policy: "systemone", systemone_model: "typesafe/jev-latest" }),
-    ).toMatchObject({ systemOne: "typesafe/jev-latest", llm: "none" });
-    expect(setupFromContext(undefined)).toEqual(DEFAULT_SETUP);
   });
 });
 
@@ -409,22 +364,8 @@ describe("games", () => {
   it("knows no game for a thread without a readable setup", () => {
     expect(gameOf(E4_E5, null)).toBeNull();
     expect(gameOf({ ...E4_E5, setup: { ...recorded, k: -1 } }, null)).toBeNull();
-  });
-
-  it("reads a setup recorded before versions, custom System 1 names included", () => {
-    const rest = legacyOf(recorded);
-    const legacy = {
-      ...rest,
-      memory: "summarize",
-      show_legal_moves: false,
-      systemone_model: "someone/ranker",
-    };
-    expect(gameOf({ ...E4_E5, setup: legacy }, null)?.context).toEqual({
-      ...recorded,
-      memory: true,
-      move_list: "candidates",
-      systemone_model: "someone/ranker",
-    });
+    const { version: _, ...unversioned } = recorded;
+    expect(gameOf({ ...E4_E5, setup: unversioned }, null)).toBeNull();
   });
 
   it("splits a context into its knobs", () => {

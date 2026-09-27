@@ -6,13 +6,11 @@ from pydantic import TypeAdapter
 
 from langchain_chess_systemone.settings import (
     DEFAULTS,
-    LEGACY_KEYS,
     VERSION,
     ChessContext,
     ChessContextInput,
     SettingsError,
     dump,
-    from_legacy,
     keys,
     load,
     load_recorded,
@@ -74,31 +72,17 @@ def test_the_current_version_is_frozen_as_the_models_defaults():
 
 
 def test_keys_of_each_version():
-    assert keys(0) == LEGACY_KEYS
     assert "version" not in keys(VERSION)
     assert "move_list" in keys(1)
 
 
 def test_migrate_keeps_only_the_keys_a_source_set():
-    assert migrate({"memory": "summarize"}, legacy=True) == {"memory": True}
-    assert migrate({"show_legal_moves": True, "k": 3}, legacy=True) == {
-        "move_list": "both",
-        "k": 3,
-    }
+    assert migrate({"version": 1, "k": 3}) == {"k": 3}
     assert migrate({"version": 1, "k": 3, "thread_id": "t"}, unknown="drop") == {"k": 3}
     with pytest.raises(SettingsError, match="unknown settings for version 1: thread_id"):
         migrate({"version": 1, "thread_id": "t"})
     with pytest.raises(SettingsError, match="need a `version`"):
         migrate({"k": 3})
-
-
-def test_the_legacy_conversion():
-    assert from_legacy({"memory": "none", "show_legal_moves": None}) == {"memory": False}
-    assert from_legacy({"memory": True}) == {"memory": True}
-    with pytest.raises(SettingsError, match="not both"):
-        from_legacy({"show_legal_moves": True, "move_list": "none"})
-    with pytest.raises(SettingsError, match="true or false"):
-        from_legacy({"show_legal_moves": "yes"})
 
 
 def test_resolve_lets_later_sources_win_and_null_reset():

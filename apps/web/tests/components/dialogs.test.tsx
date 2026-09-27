@@ -55,7 +55,6 @@ function open(
   );
   render(
     <NewGameDialog
-      open
       initial={initial}
       canCancel={canCancel}
       onPlay={onPlay}
@@ -140,7 +139,6 @@ describe("NewGameDialog", () => {
     const onPlay = vi.fn();
     const view = render(
       <NewGameDialog
-        open
         initial={DEFAULT_SETUP}
         canCancel
         onPlay={onPlay}
@@ -165,7 +163,6 @@ describe("NewGameDialog", () => {
     const onPlay = vi.fn();
     render(
       <NewGameDialog
-        open
         initial={DEFAULT_SETUP}
         canCancel={false}
         onPlay={onPlay}
@@ -186,7 +183,6 @@ describe("NewGameDialog", () => {
     let answer: (check: KeyCheck) => void = () => {};
     render(
       <NewGameDialog
-        open
         initial={DEFAULT_SETUP}
         canCancel={false}
         onPlay={() => {}}
@@ -411,7 +407,6 @@ describe("NewGameDialog", () => {
   it("ignores an import that finishes after the dialog closed", async () => {
     const view = render(
       <NewGameDialog
-        open
         initial={DEFAULT_SETUP}
         canCancel={false}
         onPlay={() => {}}
@@ -500,7 +495,6 @@ describe("NewGameDialog", () => {
     };
     render(
       <NewGameDialog
-        open
         initial={summarizing as Setup}
         canCancel={false}
         onPlay={() => {}}
@@ -608,7 +602,7 @@ describe("AppSettingsDialog", () => {
   it("saves the key trimmed and closes from Cancel or Escape", () => {
     const onSave = vi.fn();
     const onClose = vi.fn();
-    render(<AppSettingsDialog open settings={{ apiKey: "" }} onSave={onSave} onClose={onClose} />);
+    render(<AppSettingsDialog settings={{ apiKey: "" }} onSave={onSave} onClose={onClose} />);
     change("LangSmith API Key", " lsv2_x ");
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(onSave).toHaveBeenCalledWith({ apiKey: "lsv2_x" });

@@ -1,9 +1,8 @@
 """The run's settings, from assistant `context` (Studio, SDK) and `config["configurable"]`.
 
-A source without a `version` is read as version 1: Studio saves an assistant without one. The
-Agent Server merges an assistant's context with the run's before the graph sees it, so an
-assistant saved before versions can arrive under a run's `version`. Its older forms can't be
-mistaken for a later version's, so they are converted whatever the version says.
+A source without a `version` is read as the current one: Studio saves an assistant without one.
+That holds only while each version just adds keys; a version that renames or removes one must
+decide how to read these.
 """
 
 from collections.abc import Mapping
@@ -12,7 +11,7 @@ from typing import Any
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel
 
-from langchain_chess_systemone.settings import ChessContext, from_legacy, migrate, resolve
+from langchain_chess_systemone.settings import VERSION, ChessContext, migrate, resolve
 
 
 def _context_values(runtime: Any) -> dict[str, Any]:
@@ -25,23 +24,11 @@ def _context_values(runtime: Any) -> dict[str, Any]:
     return dict(context)
 
 
-def _older_forms(values: Mapping[str, Any]) -> dict[str, Any]:
-    """An older assistant's keys, merged in under a run's version, in the current form."""
-    older = {k: values[k] for k in ("memory", "show_legal_moves") if k in values}
-    if older.get("memory") not in ("none", "summarize"):
-        older.pop("memory", None)
-    if "move_list" in values:
-        older.pop("show_legal_moves", None)
-    rest = {k: v for k, v in values.items() if k != "show_legal_moves"}
-    return {**rest, **from_legacy(older)}
-
-
 def _source(values: Mapping[str, Any]) -> dict[str, Any]:
     """One source's settings in the current version; the server's own keys are dropped."""
-    current = _older_forms(values)
-    if current.get("version") is None:
-        current = {**current, "version": 1}
-    return migrate(current, unknown="drop")
+    if values.get("version") is None:
+        values = {**values, "version": VERSION}
+    return migrate(values, unknown="drop")
 
 
 def resolve_context(config: RunnableConfig | None = None, runtime: Any = None) -> ChessContext:

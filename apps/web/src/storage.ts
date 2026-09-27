@@ -3,12 +3,10 @@
 // whether it landed. The pure parsing lives in setup.ts and settings.ts.
 import { DEFAULT_PLY_VIEW, type PlyView } from "@langchain-chess/chess-ui";
 import { isRecord } from "./settings";
-import { DEFAULT_SETUP, sanitizeSetup, setupFromContext, storedSetup, type Setup } from "./setup";
+import { DEFAULT_SETUP, sanitizeSetup, storedSetup, type Setup } from "./setup";
 
 export const SETUP_KEY = "langchain-chess:setup";
 export const APP_KEY = "langchain-chess:app";
-/** Read only while the keys above are absent: one global settings blob held key and knobs. */
-export const LEGACY_SETTINGS_KEY = "langchain-chess:settings";
 export const VIEW_KEY = "langchain-chess:view";
 
 export interface AppSettings {
@@ -59,17 +57,10 @@ function parse(raw: string | null): unknown {
   }
 }
 
-function legacySettings(storage: Storage | null): Record<string, unknown> | null {
-  const stored = parse(read(storage, LEGACY_SETTINGS_KEY));
-  return isRecord(stored) ? stored : null;
-}
-
-/** The last setup, else one migrated from the old global settings, else the defaults. */
+/** The last setup, else the defaults. */
 export function loadSetup(storage = browserStorage()): Setup {
   const raw = read(storage, SETUP_KEY);
-  if (raw !== null) return sanitizeSetup(parse(raw));
-  const legacy = legacySettings(storage);
-  return legacy ? setupFromContext(legacy.context) : DEFAULT_SETUP;
+  return raw === null ? DEFAULT_SETUP : sanitizeSetup(parse(raw));
 }
 
 export function saveSetup(setup: Setup, storage = browserStorage()): boolean {
@@ -81,15 +72,8 @@ function appSettingsOf(stored: unknown): AppSettings {
   return { apiKey: typeof apiKey === "string" ? apiKey : "" };
 }
 
-/** The saved key, else one migrated from the old settings, which it writes under its own entry. */
 export function loadAppSettings(storage = browserStorage()): AppSettings {
-  const raw = read(storage, APP_KEY);
-  if (raw !== null) return appSettingsOf(parse(raw));
-  const legacy = legacySettings(storage);
-  if (!legacy) return DEFAULT_APP_SETTINGS;
-  const migrated = appSettingsOf(legacy);
-  write(storage, APP_KEY, migrated);
-  return migrated;
+  return appSettingsOf(parse(read(storage, APP_KEY)));
 }
 
 export function saveAppSettings(settings: AppSettings, storage = browserStorage()): boolean {

@@ -229,7 +229,10 @@ async def run_experiment(
         max_concurrency=max_concurrency,
         client=client,
     )
-    summary = summaries[-1] if summaries else {}
+    if not summaries:
+        msg = f"{results.experiment_name}: the summary evaluator didn't run"
+        raise RuntimeError(msg)
+    summary = summaries[-1]
     url = await results.get_comparison_url()
     runs_dir.mkdir(parents=True, exist_ok=True)
     record = {

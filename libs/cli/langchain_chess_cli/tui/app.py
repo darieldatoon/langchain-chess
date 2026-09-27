@@ -210,11 +210,12 @@ class ChessApp(App[None]):
             ):
                 if mode == "values":
                     self.values = dict(cast("dict[str, Any]", chunk))
-                else:
-                    message, metadata = cast("tuple[Any, dict[str, Any]]", chunk)
-                    if metadata.get("langgraph_node") == "model":
-                        self.analysis += text_of(message)
-                self._refresh()
+                    self._refresh()
+                    continue
+                message, metadata = cast("tuple[Any, dict[str, Any]]", chunk)
+                if metadata.get("langgraph_node") == "model":
+                    self.analysis += text_of(message)
+                    self.query_one("#analysis", Static).update(self.analysis)
         except Exception as e:  # the turn stays pending; retry resumes it
             self.failed = str(e) or type(e).__name__
         self.values = dict((await self.agent.aget_state(config)).values)

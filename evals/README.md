@@ -10,7 +10,7 @@ published: nothing imports it, and changing it never redeploys the agent.
 | `datasets/positions/vN.jsonl` | The committed dataset, one LangSmith example per line, and `vN.manifest.json` beside it. |
 | `experiments/systemone-baseline.toml` | The baseline grid. An entry names System 1 with `model` and `style`, or with `opponent`: an opponent settings file, next to the eval-only controls such as `max_options`. |
 | `experiments/opponents/` | Opponent settings files the grid references. |
-| `reports/` | Dated, static HTML reports of experiments and tournaments, written in TSX. See [its README](reports/README.md). |
+| `reports/` | Dated, static HTML reports of experiments, written in TSX. See [its README](reports/README.md). |
 | `.cache/` (gitignored) | Lichess downloads, the resumable label cache, local copies of run summaries. |
 
 ## The positions dataset

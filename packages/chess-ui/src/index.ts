@@ -10,4 +10,4 @@ export { MoveBar } from "./components/MoveBar";
 export { MoveList } from "./components/MoveList";
 export { PlyDetails } from "./components/PlyDetails";
 export { BoardControls } from "./components/BoardControls";
-export { usePlyKeys } from "./usePlyKeys";
+export { usePlyCursor, type PlyCursor } from "./usePlyCursor";
