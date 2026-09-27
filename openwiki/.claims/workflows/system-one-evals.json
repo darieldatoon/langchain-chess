@@ -1,0 +1,356 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:388ad68633d4c02e0c1214cb0cff8c983f5fa9fe3f91ed03864fab65d8bf9b2c",
+  "claims": [
+    {
+      "id": "claim_59eebdc33d204504a19644a639b344f9",
+      "statement": "The evals package is an unpublished uv workspace member exposing the `lcchess-evals` Typer CLI with `positions` (build, upload) and `systemone` (run, baseline) command groups, wrapped by mise tasks eval:positions:build, eval:positions:upload, eval:systemone and eval:systemone:baseline.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/cli.py#L40-L44",
+          "version": "repo-lines-v1:sha256:180d0e8a2ecf80a8a0835ef273f9c9739486bb70ee75d9c00c211bdaceedb309:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFmZjBlNDU5NzExYzljYTMxNzFlZGIyNWRiMzI3NzEwM2E2OThmNGE1MTlkOWQ4MWU5YmM4YzI2MGYyNTVhZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzdmOGQ1MDE0N2E3ZDg5YjZhZTYzOTljMDAyOGNlYjY5ODhhNGU0N2I1NTY2MjgwZmNhMjhiNmZiMDJmNTcwMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzhkMDEzYjE4YjlkYWRlNDE2MTQ3ZWIwNWU1MzE0YTRhMWQ1ZWY3MTc5YjBlNDhhYmFjZDE5MDZjMjljMjc0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDdiYWUzYjk0MDY4ZjBkODI0MGVkOTM1Zjk3ZThiZjFiYmYxNjQxZDEzYTRlMDcyNzAzOTFlNTJkZjc5NWY4YiJ9"
+        },
+        {
+          "resource": "repo://evals/pyproject.toml",
+          "version": "repo-file-v1:sha256:2ce1b5dc911f23393022c5447af17a23d3e44c51a6985d1444f6b984117b7d80"
+        },
+        {
+          "resource": "repo://mise.toml#L154-L168",
+          "version": "repo-lines-v1:sha256:08f36f2ac759bd13ace5c5376f42790999f235508b3745b5f5b1d485e55fa257:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTU2NjA3NDQwMmI4MzNhNzU2YTE4Mzc2YzU5Y2FiOWU0Y2RjMmU0ZTgzYzBkMDRhMTI4YmRhNzgzMjkyM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwYzk2YjVjNWI1Y2NlOTc5ZjRjYzc2NmE2YjlmNTg4YmIxMDQxMTQ5Mzk1MTNlZDY0NmViOTE5ZTdiMTVmYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3NjgxOWM1MDA2MmZhMGEyMWYyZDU5MjVjYjMyYzUxMTQxYWQyZWNlNGE2OTY5OGNhNzc1YzNiMGIzYjNmZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhNmRmNWNkNTkyZWIzMjI2ZTllNjc4ZTY4NzNlY2JiYmZhMmM4YjJhNzNkOWExMjliOTE3MTRiMDgwYmUxYTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f6d6c8989cc7412c8b6f392263f48a7e",
+      "statement": "A positions build refuses to run if the target vN.jsonl or vN.manifest.json already exists, because a new build must be a new version rather than an edit.",
+      "evidence": [
+        {
+          "resource": "repo://evals/README.md#L42-L44",
+          "version": "repo-lines-v1:sha256:cdf3b11cdb34c3e1c0197a24f2c90c6c31a8f9dd5af09541302779f128046327:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Q4NzNiYzgxOGQ1YzYyYzA4NzdkNzlmMTk2NzgzMjE5Y2FmY2E1NjY0MWE3N2Y1OWY0MWQxNzc1NGMxMGFiNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdjOGVjNGJjYWI2N2ZlZGU2NWVmOGJlMjY5ZTJlM2IwNzViMmQzYjc5MWQ1NGM1Yzk2YzA0ZDdhMjYwNmUzMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzQ3ZTA4OTg5ZTJiNzY0M2NmOTFiMzYyYWUyYjZlNDQwMDU5ZmQyNDY5NjRkMWJmNTkzNDk4YmM0YjQ0ZTRkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmNkZGY3YzkxMThiOWQ4ZWIxODZlNjRmYjMwNGMwYzY4M2ViZjBhM2E4YzA4NDYyNjNlZDhhOGZmNjBmYTJhOSJ9"
+        },
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/build.py#L134-L137",
+          "version": "repo-lines-v1:sha256:de54caca47c6d5f27470ca8eda1d9d806bae96ad0d7eec6bd0579a952ae8262f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzVmNTEzMjYyZTM3YWIwNzQ5ZDA1MzEyODllMDE1ZTZjY2Y0NDBmMGMxNDJjNmJlOGUxZmQ3OTQyNTBlNjAzMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2U3MDk3ZDcyOTcxZWQ4ODQzNzVmNjEyZjEzMDE5Mzk4Y2RjYmI0OWNhYTU5Njc3ZGFmZGQ4N2FjMjZlZDIxNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDBhNzhkN2ZhOGQyNTZmNGZjYjU2MjdjYzVmM2IyNTAyOTVhZmZiZTRhZDdkYjk2MmJlNTdhYWRiZGM3NjBiYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmVjM2RlOTE5MDNmZDQ1MDAxYTBkOTFkMTlkOTk2MjAxMDM3ODQ3YTYwZmY2ZjBkOTUxNjU4ZjUwZWU2MjViYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8d09c9a1bbd54d5ea2bc24c5b512b072",
+      "statement": "Lichess month files are downloaded into the cache and verified against Lichess's published sha256 sums; later months are fetched only when earlier ones run out, up to --max-months, and the build fails if any band/phase bucket stays short.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/build.py#L138-L149",
+          "version": "repo-lines-v1:sha256:49ac5d9f4f43294dfedd9951ddece0d24aeed72242e53ee3352728c6c7e027a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlM2QwZjg3NjUxNGFiOGRiN2ZkM2Q0NTAzYWEzYzE1Njg4NzI2ZTZlZTMzNDdjZmE2NDFmOGRlZWFhOWVkZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNTQ3YTYyOTlhZWY2OTE4ZWJhNmRiYzUxMmQ4ZmUzNmJkOTE2NGJhYTExZWJlNzg5N2Y5Y2IxM2IzMzlkMDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5ZmJmMGMxZjU5NjdjMDkxYTcxNTFkYjEwMDI4ODY0MGFmNDc0NjEyNDNiMjM4OTIyMjgyZDJhNTdjMGJjNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjMjNkYmJmY2RmZjBhZWRmMjQwOGQ2MDNhMWJhOTY4YjdkMzViMDlhMGFkYWM5OThmMzc1Yjg4OTJkMzllNTYifQ"
+        },
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/lichess.py#L66-L123",
+          "version": "repo-lines-v1:sha256:4af010c9ce587cc110f9c8bc040b4e94952b8f6906d2cdd37a9412eef45aa5d0:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmZDllMGU0OTIzZjE3MTg2OGYxNDIzMTA0M2UwNTZkNGRlM2IyMGZhYzg3YmNlMDBhYjZjMzU3ZDA5MmM1NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNzdlNzQ1ZDNjMDQ5ZDY3OGQyZWE2ZjEyNjE4YTA5YTRiNWJmOTdjOTJiOGMzZDBmOWFlMDhkOGE3NzVlZGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxMDY3MzZiMmJlMGIxYjVjZGE4NWZjZmIwYmViOGQ4MzRmZmJmYzkyYWY1MjU5OTgyMThjMTEzMWJhZTAxN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c049edcf32194b8ca518d090fe34e144",
+      "statement": "Sampling keeps rated standard rapid/classical games with both ratings and at least 20 plies, takes up to 2 positions per game from ply 10, dedupes by FEN without move counters, buckets by the mover's rating band and phase with equal quotas, and uses a seeded RNG that fills dev before full so a month and seed always give the same rows.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/sampling.py#L254-L337",
+          "version": "repo-lines-v1:sha256:131369f5651332afec12168c74d2f4f98739ffb088c845f352183e4121e39001:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4MGQ3ZTVmMTdiMWMwODU3Y2NkNTRmZmNlNWY0M2M5NWNkY2Q1MmUwZjgyNTQ1ZjQ2MmNhOGYyNWNlMjgzNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWVlYjllMzkzYWU0OTM3OGQ1ZWNiODUzYThlZDExNWRjNTdhMjczZTk4ZTdkNzY4YTRmNDZiNmU3YTM2NzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3N2MyMDUxZThkNzZjYmNmODllY2RhYjdlNjk1ZjIyMTE3ZTQ3NzYzN2YwM2M3NmE1MzU2MmViMGVjNzA4ZmQifQ"
+        },
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/sampling.py#L97-L137",
+          "version": "repo-lines-v1:sha256:dd48aba0aa70decf6f582b9a525602432fba027483004f4a868af530df537467:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlM2ZiMWU1OGZiYzkwNDc5NGQ1MDczMTRmYTkxYzlmMmYxOThjODhkM2ZmMzk1ZTAwODI4OTAxYzM3ZGM5MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyZDY4ZDMwM2FlOGYwNWVhZTczYTA3YWExODg4ZmE1MTY3ZDY2YjJhNGQwOTRkMTlmYmIzNWM1MTE5ZmQ1OTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhOGI5Y2MwZmJmZGU2Y2ZlMGRiNjFlMTBjOGFmYTkzNzg4NDkxZTY5ZWViZGRhMjJkNWZjOWUzODkxODNlMzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0fb39b05acbc40f28d42e948c428ee51",
+      "statement": "Default splits are 40 positions per band for dev (200 total) and 400 per band for full (2,000 total).",
+      "evidence": [
+        {
+          "resource": "repo://evals/README.md#L27-L28",
+          "version": "repo-lines-v1:sha256:acbabb60a045452e8bc9e9803bb93630dfe1d775f3baae820074877f0e84141d:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmFkMDZmYzZkMmZkNzlhMDZkZGU3NGRhNDJlNDQ5NmM2ZTQyYzNmZjdmZjExZTA5MmU1MGI2OWI3OWQyNGFiMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTFmNGJhMjZiZjFiNzgwNTViNGMxZDNhYzcyMTZjMjgyNmFjYmExMjNiZTM1NWU1ZmUyMDUyODUyMDRmZTg0OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTRiZjllMDdlNGYwOWI0YjgwZTY2MGQwMTc1ZTJiYTRjYzIyOWUxMmVmYWM3MDkxN2Y1Yzg0NjJjMDNlODcyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODZkYzI4M2Y5YzhhZmYyNTdhZDFkZjViMmU2YjhkMDBiOTZhODdkMDg2YzBjM2ViZGVkZDE3MmFjMDI3Zjc5YSJ9"
+        },
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/sampling.py#L206-L219",
+          "version": "repo-lines-v1:sha256:d18cdd98321fba3f56f18958374de9fb90606112b1d5459de616e0aece69e83d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlM2ZiMWU1OGZiYzkwNDc5NGQ1MDczMTRmYTkxYzlmMmYxOThjODhkM2ZmMzk1ZTAwODI4OTAxYzM3ZGM5MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyZGY1MWZhYjBhNDEzMzMzYmFmNDk0MGMwZTI1MWUwMTYzMDg0MGE1NTIzN2M0N2MyYmIxZGNiMDIzMzBhMmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkM2NhMjczOTk0MTdiNzBmZDJjNzZhMDM5NDU0ZmQ0MjU1MTJhYzUzODFlNmNhNDBkOTViYWZkMjhlNzI4ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhOGI5Y2MwZmJmZGU2Y2ZlMGRiNjFlMTBjOGFmYTkzNzg4NDkxZTY5ZWViZGRhMjJkNWZjOWUzODkxODNlMzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_733f2c48790e4bb58c6bc2821306acfa",
+      "statement": "Labelling uses the engine pool with MultiPV 256 so every legal move gets a line, raises LabelError if lines don't cover every legal move, and appends finished labels to a JSONL cache named by the grader fingerprint so interrupted builds resume and engine-setting changes start afresh.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/build.py#L27-L35",
+          "version": "repo-lines-v1:sha256:98daaeb20b97dff317aecc2fc8e3850294f9023b9ba43bdac309312405758192:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTIwNGYwZTQyZDVjZTk1NTFjZGY5OTgzYjQ5Y2ZhOTg4OTBjMDkwZDY3OTlhMTAwMzJkZjk1NjM5MDIxMjgxMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjg1Mjk1Nzk4ODhhNmVmY2MxOTRkNWJlYTY1ODgxNzRhODRmNDA2ZTM0ODJjYzkxZGM1MTVjODQ4Zjk0NmJkMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODcyMzljMzA4MTRmYWQ0ZjMxMzAwZDU0ZWM2Mjk1OGVjMzFiYzg1N2U5NDA2NTUyMDQzYzhlMDRkNTExMTczNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWE4YjljYzBmYmZkZTZjZmUwZGI2MWUxMGM4YWZhOTM3ODg0OTFlNjllZWJkZGEyMmQ1ZmM5ZTM4OTE4M2UzNiJ9"
+        },
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/examples.py#L71-L81",
+          "version": "repo-lines-v1:sha256:587df4e901e6331ab91d645c41f4250492d3c5731d1cc60682427b77559048d1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhMGU3ZjcwMjhmMjM2NzU4MWNhOGU5ODY0ZDNmY2IwMjQ3MGI1M2FmNDJjYjU4YzQ0NzY4YWQwYmMyNDQzM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxNGU1MTEwYzE5ZjFjOWNlMjJiMDQxZjYzMzczNDg5NTk0OGMwMjdkMzE0MzdjOGE1MzMyMGFmZDY4OTU4NDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4MDVhZjg5NGRjYzA4ZGUzYzBjYWY4MjNlODQzNWY3OGM5ZmM4M2FjY2UxYTRiYTRlNTZkM2E2ZTk4ODE0YWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkNGI4YjFjNTlhMzRiMzZhYmExYzIyZDkzYTY0MjExYTIwY2VmMmM2MTk5M2ZhOWU5YTQxNjYyMTBjNmU3MmQifQ"
+        },
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/labels.py#L1-L65",
+          "version": "repo-lines-v1:sha256:ab71eae90e86c4a88edd451b2873e0c48a686fcdf1864f2b65e953476a2a907b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhYzY3ZWY1MzBjNTE0ZDM4NzJkNjU5OTMwNTI5M2M3NGY5NzEyNGUyYjVkYzFkOGNlODY3YTRjMGM5MjNjOTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwZWZlYTZkOTg3ZGQ0MGY1NWFiNjgxYTEzNTNlZWM4NWI4YWI2NDM3YWZmNDY2ZWY3ZjgzM2Q0ZmU5Nzk0N2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3029c6526f104897a089ad30b6c28650",
+      "statement": "The manifest records source months with URL and sha256, filters, quotas, seed, engine name/settings/fingerprint, git SHA and counts per split, band and phase.",
+      "evidence": [
+        {
+          "resource": "repo://evals/datasets/positions/v1.manifest.json",
+          "version": "repo-file-v1:sha256:d650e8f93afe46b4e0ce6054ba70a622e2b4d796e7e30b3329405ae3cdd9f054"
+        },
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/build.py#L73-L104",
+          "version": "repo-lines-v1:sha256:f9bbe1498c66678ce86f65fd1542022c98465a77d7049083f211d2dec3704f80:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNGU1ZjA1YTFkZmRkNjE0MDhiNDQ4NzgxYWNhNTgzNzE2OGNiNjU3OTFmY2U4NjM1OWZhOTVhMDI2ZWZhOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwZDc0YTVhMzgxMmQ0NzY2NjliNjIxMzIxOTc0MjMzMDRmZmY0N2RjMmM3ZDUyYzZmMjMxZGE0YjEyYzlhNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhNTViZmY1OTMzMGRiOTFmODc5YWRhZGU4YzVmNmExOWRmZGVhMDY5N2Q2MDFiNjllNzBjYzIzNmEyYzhkNDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe15ea72f05143f4b887d272ebbfd7c9",
+      "statement": "Dataset inputs are RankRequest's shape without the seed ({start_fen, moves, legal}); reference outputs are evals, ranked, best (ranked[0]) and top3 (ranked[:3]); metadata includes game URL, ratings, band, phase, legal_count, tactic and played_move.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/examples.py#L96-L184",
+          "version": "repo-lines-v1:sha256:3d55de8035a4ca4f9799744e196db3daf80e81fda5b95d91ebf0175ca07eba5a:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlM2ZiMWU1OGZiYzkwNDc5NGQ1MDczMTRmYTkxYzlmMmYxOThjODhkM2ZmMzk1ZTAwODI4OTAxYzM3ZGM5MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiNTg1MzJlOWY2NGE4ZTM0NmVlNjdjZGNiMzgwN2Q5ZjdmN2NiNTZkNDVjMmNiMjYyYzJhM2Y3MjI1Y2JhNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cf94a941d6c04f839c58f7091c823f8e",
+      "statement": "Engine order must be read from `ranked`, not from `evals` key order, because LangSmith returns object keys sorted; Reference.from_json rebuilds order from ranked and validates it lists every eval move once.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/examples.py#L34-L68",
+          "version": "repo-lines-v1:sha256:33bfc2566fe6b41aeb15b82fc110c5bbe00430594b2f781d79c6c1ad876c2d39:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlM2ZiMWU1OGZiYzkwNDc5NGQ1MDczMTRmYTkxYzlmMmYxOThjODhkM2ZmMzk1ZTAwODI4OTAxYzM3ZGM5MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxMDdhNDI0ZmY4YjZjOGU2NWEyZDI0Y2MxOWQ0NmNhODU0NTQ4ZTU4ZTdlY2JlYWM5YjU2MzA1NzE2ZTI2YWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzMjViYWVhMTg2ZGYwODhiYzIwYjExNTE0NGNkZWFjOWExZTJmMTVjMDY2Y2E5MDYyNTAxMzM4Y2I1NzU4N2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5NmZiOTA3MzMyYjQ3ZDgwY2Y2MGUzMDZjODMwMWMzODY5NDcwYjY0MmI3ZDg0OTlmYmUzZDgwMDliMzkxNzQifQ"
+        },
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/schema.py#L63-L77",
+          "version": "repo-lines-v1:sha256:5c5dba8bd7c1898601bb7d557873d73da075d31fb49ddbd84d219976e3108351:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzYzBjZDcwMDE1M2Q4NjZmYzg0NzVhN2YzNDc4ODI4MTQxODI3YjdlYWE3N2IzYjNmMmIwZmNlM2VjN2FjZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNjczYWJkNDU3YTk3ZWVhMTdhNjAwNjJlYjBmYWVhNmJkZjA5NDg2OGNjNmI4ZjhjMGViZGEyZjYxZWQ0MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmZTg2ZGQyNjgyZDFmNTNkMjNkMWExZTM4MTU4OWM0YWVkMDdmMzA4YzZkMTQ4MjJhYmY1YjZlY2UyMzMzNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiMWU3ZmIwYmU1M2M5NDM4OWNiMmE0ZjhhOTJjZDk5MzRiNGYxNGIyNGYyNjU3MGVhYThhZmExN2FmOGQxMzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a956dca42815419dbbd36ca6e89be3cb",
+      "statement": "The dataset is created with JSON Schemas for inputs and outputs so LangSmith rejects malformed examples (422); metadata has no schema.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/schema.py",
+          "version": "repo-file-v1:sha256:c1285d678a42eadf25cd13cf1c57f750f3bd8d4624fe665fc8b3e74256587543"
+        },
+        {
+          "resource": "repo://evals/tests/test_live.py#L32-L57",
+          "version": "repo-lines-v1:sha256:8984e5fec4ab1ca93a9f79f21a532f7fc2acdc1b10dcd249e330aff927ee19b8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2ODViNzIxMDM1OGU3ZjZhNzg0ZmQzNDEyNzI1ZjNiNzdiNmFhNjM0ZjVjOTAyNTZkNGU3MjdhYzcxOTZkMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2ZTZiZWRhZDM2OTIwNjkwMDgzMWY5YzQxMDI3ZjAwOTVlYzFmY2M3NGNlNTA1NzhmNTJkYTlmZjY5NzMyODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwNGJmOGI1M2QyNGY3NGY5OTljMDM1NzJiYTk0OWY3N2IyM2U1YWFiOTQ0NDY2YTI4Yjc1YWExMDMzZDg0ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_08fc523779054a02a488ef20d7c60d15",
+      "statement": "Upload stops with UploadError if an existing dataset has different inputs/outputs schemas rather than patching them, because LangSmith re-checks every stored example in one request and fails on a full dataset; a schema change requires deleting the dataset or using another --dataset.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/upload.py#L147-L156",
+          "version": "repo-lines-v1:sha256:649c2aaa311308243c3797d62a2e55258d6e50c7e0e48f1e2c9cb49e33065ffb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkMjc3ZTYyNjM2Yzg3MjQ0ZmVlMzhhOGEzMjdhMGM5YTQxNjdkODNhM2NlZTJhNzZiNDRmNjQxNzg3ZGM5MzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4YzUxNDQ5ZWM0MDVkMjI1NTdlZGViMDBkYjcxNTQyMDY2ZjM3YzZlZmQ4ZGI3YTc5ZGQzM2JhMGIwZGZmNDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ2OTMwYTUzN2JjYjgyZTQ3ZjUxMTBlMjFkM2FhM2IzMmNjYTU4ZjM1MDQzNDQwNTgzMzVjMWI5MmRmZjEwZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjM2Y2YmExYjQwNjVhMjhhNDA5ODVlYzBmMTE1OWQ5ZGY2NTcwMTQwY2M4NmViMTM2NzBiYTA3YjAyMGE4ZTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_763c1b6ce109450e8fa5fb65857325f7",
+      "statement": "Upload uses uuid5 example ids derived from row ids, creates missing, updates changed and deletes examples no longer in the file in batches of 500, merges (never replaces) dataset metadata via a REST PATCH, and tags the latest dataset version with the version name.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/examples.py#L113-L116",
+          "version": "repo-lines-v1:sha256:05125f84c53abb09ec3d0de370ac792e8182ecc49d5f5ef0ae0798b0acb29337:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjNkMDBjZjI3MDk2NGQ0NGExM2RmYWM4NzUyYjA5ZmNjNDM1YjBmMTliMzE2YWJjZjgxYTdhYTY0YmIxMjJkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWZjZjc2MTU2MThhZmZhMDNlODUzYzAwNDg4MzRhMjI5NDE4ZDYzMWM5NzNkYTQzOTVlNGI2ODE1ZWE5NzdhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjgyY2FiMTAxODg3MmQ0OTdjZjRiODM5NThmY2E0NzU4OGQzOGJiYTNkM2U1NTA5MzMxMzhjNmFkMjBjZjBkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmQ5YzlkZTM3ZTFiZTFkNmEzMmRlNDkzZjc1ZDQ0YzgzOTUzMzI4MjQwYTVkMmNmZWUxYTM2NjVhN2Q4M2M4OCJ9"
+        },
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/upload.py#L76-L181",
+          "version": "repo-lines-v1:sha256:dcfe067bec2b022bd40ba0637f358967176ffa354acdb893283f308b7bd821cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOTA1ZGRjYmM1NTVhYjg1ZGYwZjdlYzVkNzZjMDFhNTY0M2IzNWZmMjg3NDJlZTNmYjljZDk0OTI0NzE1ZGEwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhMjY2YmNiMjNlYzIzYjBjMjQzMTcyOTRjNmVkMWZlMmQ4MTU4YTcwYzdmZWVhMjg1NDZhNjk3NTVlNDRiZDdhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhZGUyOTNiOTVjOTY3MDI1MWUzOTc1MWNhNjFiMTk1NTFmMzA0ZjdhMzk3YWU5M2RlNTQ4ODQyOGNkOWM3ZDY1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_9e1ec0d3f965420d958f8d90a72494d5",
+      "statement": "--renderer-url sets the dataset's iframe_config only for absolute https URLs and leaves the setting unchanged when omitted.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/cli.py#L103-L132",
+          "version": "repo-lines-v1:sha256:4d91c268ebe7278349f80ed9e3c7b3393828456dbbfce55c17224929d0546095:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhN2JmMjg2NmU2NzEzMjljMjQ2NjNhZTZjYTkxMTk3Y2Y4MWUyMTZhYTM0MGFhNGEwODJiZmVhZjBjMzJjMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0N2Q5NDNlMzQyMjYzNTc3YzU4NjcyMjRiMDE3Mjk1NmQ0ZDE5NWYzOTE4YjBmZjE5MWM2MDRkYjI0Yzc5OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYjRlNDM5YmQ4NGJkYzIwMTdiMWY0ZGI4YzUyOWNhMTM4ZWViZWUzYjA2ODkyMTIxYzkwMDA0NDMxZmI1MmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhNmY3ZGNjMWEwZDM1NTk2ODA0ZDVlYzAwODE0MjUzZGUxYTZmZGMxYzE4ZTVkOGFhYThlMjc0ZTc2MTcwZWUifQ"
+        },
+        {
+          "resource": "repo://evals/langchain_chess_evals/positions/upload.py#L115-L145",
+          "version": "repo-lines-v1:sha256:9d2d29ec00f9c852b745b39efec4164d3d5a1db5499c30514df4e0a52a9e0034:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2MWI3ZjY2YjEwOGQ1M2ExYzM5YTEyODAxYWQyMWY4ZGMzMWZmNWU1OGE1MzFkNTk0MjA2ZDdmNDhkOWE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4NzZiZDdkMGNhZGU4M2FiYTkwZTI2NGE5OTE1NjJlZDY0YzBhMmMwZWI0YzJjZWU5OWU3YTI1Njg5Y2I3YTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhMjY5N2I0YjIwMTNiYzIyMTM4NWRlZGExODg2NzlmZmNjMDFhNDdiNTQ1MDExZjFmYmM4MjUwNGZjNjZkNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxYTVlY2IzZjhiOTc1YzI4OTg5OTJkMjkyMDRhOGY2OTFhMGFkZmM3NmIxNzgyZTk0Yjk1ZWNjMDA3NmUwYzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e3011f5b20be4bd2b72ed8ce9b7bfe13",
+      "statement": "systemone run requires exactly one of --model or --opponent, refuses --style with --opponent, and defaults to the dev split; systemone baseline runs every [[experiment]] in the TOML grid sequentially on full and prints a headline table.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/cli.py#L162-L234",
+          "version": "repo-lines-v1:sha256:4137b37e89f4cf9a032c8dc83b0e768d9ecef64eba0a373dbaeeac886e4e2961:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkNjFjZmUxY2ZmZDVmZjIyNDRlYzQzNzgxOTZiY2M4NGVkYmNjZTcxOWIxNzUzNDQ0YWY5MTU5YjBjNTNkZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OTE5NWI4ZGI5ZmUwMmIyMjU2ZWU0Y2EyZjBjYWE4MDVhNjcxMDQyYWZlY2E2YjY0NTcxZjIwOGRlNTA0MDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZmNlZTRmMzZlOTE3ZDRlODQ1MDNmYTRhZmQwNDhmY2E1OWJkZjI3MzdlNTkxMWVhNDgxZjNiMGU4OGU0ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_81030b01fcc644e4a34fb24ff6461749",
+      "statement": "A grid entry names System 1 with model/style or with an opponent settings file relative to the TOML, not both; ranker_settings takes only systemone_model, style, with_eval and with_nouls from the opponent file.",
+      "evidence": [
+        {
+          "resource": "repo://evals/experiments/opponents/semif-terse.json",
+          "version": "repo-file-v1:sha256:0a919c7df9d02c3b5d5c7bce3892a41d66407dad308c284b46bb90ea6e7e3feb"
+        },
+        {
+          "resource": "repo://evals/experiments/systemone-baseline.toml",
+          "version": "repo-file-v1:sha256:3dd4d3466a3b5ab6275c2420376fb7990fc1cdc298ca0bc62e68af15c4fa7108"
+        },
+        {
+          "resource": "repo://evals/langchain_chess_evals/systemone/experiment.py#L39-L79",
+          "version": "repo-lines-v1:sha256:c4dd8f491fbd96a540bfd4276abfeb032184433e06a39b41658b115876894e58:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlOGZkOTQ0MTIxM2M3Y2Q0MzZkYmEyNmNkZjM3OTQ1NWMxYjA4MTAwZjQ3Zjk2ZDQ0N2E5N2EyYTg3MjM2ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkYzc0ZWRiYzkyMjU2NTkzZjhmYTVkYmZmMjJmOGEwYjgxZDFiYjk2OTRiOTYyOTEyMWUwZmFkMGYyZjgwNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiYzc2YWU3YjMwNjVhYjQ5YzljM2I4ZTc0NjM5ZmYwNzEzNTdiNTY5MDg1YzJlMTdhZWI1NTEyOWM5MzcwZTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_66699921249841058c7a103dbf948eaa",
+      "statement": "The baseline grid includes a jev-rich-cap16 control with max_options 16 that forces SemIf's 16-option tournament onto Jev to isolate the tournament's cost.",
+      "evidence": [
+        {
+          "resource": "repo://evals/README.md#L109-L111",
+          "version": "repo-lines-v1:sha256:db352ddbff68efab13774887f8a406921cc4167e877891fffc9bdacb98421503:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGVhNDU1YmE0NGYzNjVmZjU5ZjU2MzBjNTIzOTQwMjMzZjNkNjZlNTVhMjAwMmE4YzQ1N2VmZWU1ZTE3ZDk2ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODFiMWNmZTZlZjdhMWZkZjdiZDllY2M3YTZiYjdlZjQ2OGM4NzI4NzJkODE0ZjhhODBlZGQ3OGIxYWFmMjQ4OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDBmMDY2YWFlNzExNDM0ZmYwMTYzMTM5NWU0YTcwNjUyN2NlOWEwNWJmYmUzMTljMzRmZDJkOGFiMjUyNTE0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTE2ZTMyOTE3ZmFhMjQ1ZDgzMDlmM2ZlNzVlZDNiOWI0MzYyNmIzNWI2Y2Y2ZmZiNmZjZWI0OGU0Yjg1MzllNiJ9"
+        },
+        {
+          "resource": "repo://evals/experiments/systemone-baseline.toml#L1-L29",
+          "version": "repo-lines-v1:sha256:3dd4d3466a3b5ab6275c2420376fb7990fc1cdc298ca0bc62e68af15c4fa7108:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjYzgzNzYzNzMwZmJhOGIyZDM1MzgxYmMwNWRmMWIwYzM4ZTc1ZTUxMjlhYWZmOTYwMTcwZDE2OWEwMmZiMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OTEyNDA4YjBhYzgwZjU0NmYxYTg3MzhjYTE4ZDlkNDdmMDI3YWQ2N2Q2ODNhMTYwYzYzODgwOTczMjAxMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4eba32ba24ce4bbda6fa97e4235fb864",
+      "statement": "Experiments run with max_concurrency 4 and GatewayRanker max_attempts 30 because the gateway rate-limits SemIf and a rate limit must not score as a ranking miss; the old harness hit 429s at 8.",
+      "evidence": [
+        {
+          "resource": "repo://evals/README.md#L56-L58",
+          "version": "repo-lines-v1:sha256:b040836501b8b1d8803ba89097bb492cb395bc204b6b318ff0f41454ae6534a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWM5YzM3ZDExZmFhNmE2ZWI3M2Q3OWRhZDAwNDE2MzM5YjlkZDM0MmIzYTJiOTcyMTc0MzM1NGMzODMyOGJjMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTBjNmJhM2QxZTBjMDk3OTQwZDgyNTAxNzg5NTJiOTg0NmY2NDQzODRmZWRjODBkOTM0NDU1MjA0OGYwMjE0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGI2MGI1Zjg2MzE2MmYxYzI0MDcwYjk0N2Y0YWRhZjdlMzJkMTU5MDczOWEzMmQ2YmZiNjYxMGJmMWY5NmQzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzg2ZTNjNmIyMTJhMWZlMTkyYmM2Y2IxYWQwMzhkY2JmMGU0NmFmNzZhMzdjYzFjMWRlY2Y4MzMxMDU5MTVhMyJ9"
+        },
+        {
+          "resource": "repo://evals/langchain_chess_evals/systemone/experiment.py#L20-L24",
+          "version": "repo-lines-v1:sha256:1eba05b8db06534ff7f91db982ed6386f18f70a48ffda29d5982b73a878570f3:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDAxZmY4ODg0YTJmNDE4OWM4MWU2NDlhZDhiYjhiNDE4NTk0YWMzNjIxODcxNTIyNWQ3Yzk3NGZmYzBhNzI0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTU3MWYzNGQ2YzQwZTE5MDgxNzFjNzVmZDc5YzFkMDI3YjgzZDhjOTQxNjZkMzVkM2U0MDVkMjAxZWRkNTNiMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2Y0ZTZhY2M5YjhhNDQ2MGRmZmM3NGFjM2M1Yzc5YTE4NGViYWJmMGY3M2FhZmNiZTY0YmIzM2EzNzllNmNhNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2JiZWM2YWM2ZTEyNjg1NDFmOGYwMDBiZTk0OWJjNmQ0MTE3Y2Y0MGJmNGI2YzhmYjA5OTYwZGU3NzY3MDJhYiJ9"
+        },
+        {
+          "resource": "repo://evals/langchain_chess_evals/systemone/experiment.py#L82-L90",
+          "version": "repo-lines-v1:sha256:8b9a25bee8eb16aa96342571e97e8aa62a0925699ce29a8fa65666e155b8ae9f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjg0Y2ZhNTAwODhlN2EzYjFiYzA5Nzk3NDY2MzM4ZWRhMTcyMDk0OTRkMmQ3YjM1YTFmMWJkMWZjZmE0ZDIwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBjMWYxODhmMTQyZWQ3YTgyNDY4MGIyMDcxNzJjNTUxOWJjNjE0YTQ4ZmRhN2NmMTY3ZWRiOGRkZjc5OTU2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZiZDAwOTMxNGJjMjcwODQxNjczNGEwMmFlNWZmMzlhMWU0OGEwNTBiZTkxZjQzYjJmYWE5MjAwMmM2MmJmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWU1NWMzODM1N2U1ZjgwMWIwYzY4ZTJkY2UyZGRmNjFmZGZjMzJkZjk4ODk1NzhlYTdhZTM3MGRkNTVlOGNmOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f70c65fd4624393b589bd956a1af6c1",
+      "statement": "The target calls ranker.arank with a RankRequest whose seed is derived from a sha256 of start_fen and moves, so every run of an example shuffles the tournament identically; a RankingFailed becomes empty ranked output with error set, scored as a miss.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/systemone/target.py#L14-L70",
+          "version": "repo-lines-v1:sha256:24ec7226b586757dee6f9eb9edd832279b03c6ab06002fff27d9599bc1202ec9:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzYzQ3OTVkMzliZjljMmM3OGQwY2VmMjdkOGFkNGZjNDc5OTVjYjRkNzg2M2ZjMTFjYWRkY2Y4NmRjYmY1YjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkMjFjY2NhOTFiYjNkYTY1MjAzM2M4M2IwMTJmMDlhYjc5ZWE2NjY2NDcwNTg0Y2RjN2M0OTAzNWQzZmQ0NWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzYTM0NWExMGM5ZGRjOTU0Yzc0ZTdhNmU4MzgwYTQ5ZWY3ZDI4MmUwZmFlM2ViMWI3ZjY1YWRhYzVmZmE3MzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1e3b2f24cb3148528f658afa4a1298c6",
+      "statement": "run_experiment lists examples by split as_of the dataset tag, runs aevaluate with a row evaluator and summary evaluator, records model/style/max_options/dataset/version/split/git SHA in metadata, writes a run record to .cache/runs, and raises if the summary evaluator didn't run.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/systemone/experiment.py#L138-L247",
+          "version": "repo-lines-v1:sha256:71e1921a7baf274b95430314d763fa329c1c53349d92effb9cd1e94e56569829:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxOWRlZmFiZDdmYzRjY2ZiYTg4Nzc0ZmFmNzlhMzI3OGRkZjBhZDY4ZWZkNTQ5NDQyZDk2OTY1NTc4MGExMDcwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxZjNmYzNhMzQ1ZDNmMzVhZTU3MzA2ZGE5MzljNjczN2VmNWFmMjU2YmQ3OWRiNDE0YmZkODdkNjk5YzUzMjMxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkYmNjNWE5YjViOTcyNzdkZGZmNGQ4YzhhYzFlODBmOWU0NzIzZjk0ZWEwNDVjNWJlYTkyYTE2NTgwZGU1YWJlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_593a7af2713849a7be6cad73db8fdf78",
+      "statement": "Row scores are recall@1/3/5/8, top3_in_top5, human_match@1, cp_loss capped at 1,000 and win_pct_loss from the mover's side, finalist_recall and finalist_top3 for tournament rows only, plus error, requests, latency_ms and input_tokens; inapplicable scores are None.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/systemone/scoring.py",
+          "version": "repo-file-v1:sha256:2467ba582801b2ae0f8d22ab64779395d0d64807cec54ba494cd8def4a3367b9"
+        },
+        {
+          "resource": "repo://evals/tests/systemone/test_scoring.py",
+          "version": "repo-file-v1:sha256:3e9a93f26a2515ae8b13012ab27aeee4c847d22e10f84d864a88d145fe52dac4"
+        }
+      ]
+    },
+    {
+      "id": "claim_4091bd7c45ae40d08ba29da65c47dfe9",
+      "statement": "After a tournament only finalists come back, so a move knocked out in the heats counts as a miss for recall@k; finalist_* scores measure what the heats lose.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/systemone/scoring.py#L1-L5",
+          "version": "repo-lines-v1:sha256:26fd7229120b37f713f3ae294dcb009ba0de909c88b38f746d96e458079ef08a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGEyZWFkOTg0MWIwNGI5NDhkYWEzZGNkYjNlZjU1ZDBhOGM4ODIzMGJhNTAwYTgzZjJmNjE3ZDMwZTBhMDBjMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGE3YmY0YTViN2FiN2Q3ZWU3YWE5ODY4M2RmM2Y5ODA1ODI3ODcyZjM1N2Y4ZDZhOGFmZDUxN2NmNDYxOTk5NCJ9"
+        },
+        {
+          "resource": "repo://evals/tests/systemone/test_scoring.py#L62-L71",
+          "version": "repo-lines-v1:sha256:2e1cfb41ae2261172c56090f089c1731cb14e2bd83a97eb0e84bcc67347390d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxM2MwOGFiMTk0NDNjMDQzMGRhN2UwMWQ0YThhY2U3NWNlODg3ZTc5MmQ0YTY3YzA4NTQ0MmMwOGY5MzQwZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhZTgyYjgxNDM0ZWE5Nzc2MzhhZmQyZGE2YTczOGRlOGUzN2Y0MjRhZGJhZGFlM2RlMGE1NzUzMTJiZGQ5M2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkNWRkMDc0YzI4OTIwNTljMmM5ZGIyYTYzMWU2MDYwYmRhNTU4OGQwMjc4NTM0YTQ3YmZiOGQwMzI5NmIwNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzNzFkZjY5NzE3MWQ4ZDMzNDY4OGFmMmZlYWUwNGJhZTdiZTk2M2RjNTVhNDk0MDM1MGE5NTZjNGRkNGNmMjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8713291edd674d21b668e3d79e7ea237",
+      "statement": "Summary metrics are keyed metric|group over all, each band, each phase and legal<=16 vs legal>16, as plain unweighted means over the stratified set; for all and the legal groups they add a gate table (kept share and top-1 accuracy at margin and confidence thresholds 0.5–0.95) and per-decile calibration.",
+      "evidence": [
+        {
+          "resource": "repo://evals/langchain_chess_evals/systemone/summary.py#L1-L98",
+          "version": "repo-lines-v1:sha256:83474cfe4a41813a52deb736dd955578360b65f59a3dc12c0a4509462cdab344:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwYTdhNmZhMWNiZWI1YTE2N2U0OTVmNWQyMzNlZGYzZWMxY2Y4ZTI5NmI0MGU1M2U3MzcyNzEyNTk5MTkxNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViOTI1MDAxZjQ5ODE1OGRhMWI4M2VmMmNmMmI4ZDA3NmQyMzVkZmQ2ZjYzZmE3NDViMDNmMjEzNDc3MjE5MDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkMWZiYzcxMmYxOTZiMzA1NWU2YjkxYzFkYzY1NWUxY2FhYjQ0N2E0ZDE2NTkxN2I5ZTk5NWZhMzkyNjU5ZGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_66149f362e9d484a9e785e221056fbcd",
+      "statement": "Reports are dated TSX snapshots whose figures are computed from pasted constants, built into self-contained HTML (only unbuilt reports unless a name substring is given), committed alongside their sources, and never regenerated.",
+      "evidence": [
+        {
+          "resource": "repo://evals/reports/README.md",
+          "version": "repo-file-v1:sha256:663e7803117054bdf32f4771a8fb69f66ad5287ae94d311d767575999f779a09"
+        },
+        {
+          "resource": "repo://evals/reports/scripts/build.mjs",
+          "version": "repo-file-v1:sha256:ff0805a94eca3512d009b2f59ca694dd59717558dbbefba06252a25093ae9992"
+        },
+        {
+          "resource": "repo://evals/reports/src/experiments/2026-09-26-systemone-baseline.tsx#L1-L3",
+          "version": "repo-lines-v1:sha256:96904d2ba2d520b2c2e9a188381ccd197c59d834a4427259fda5994a0072237d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNkOTFiNzI0NjU0MDBjMTkwNzhjZmJkMzY1OGViZTVmNGJhZmNmOTZmNWVjMGJjOGU1OGFmZDQ3MDMyYWZiNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWMzNDNhMmI3ZjljNWQzMTMwNTU4MGY1MzY5NzdlYWZmNTkzMDE2ZDgzNzNhMzcyNmE3ODZiM2YxY2M1NDhhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTMxYjMzYWUyYzdjZTZlNzZkY2IyMzllYzYwZTA2NWRlMjkxYWMwOWFiMmExMjUyOTFkNTE2NjhhODYyZjU5MiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_80e9396c1cb442eb82a10ceeba81d294",
+      "statement": "The web app's render.html is the dataset's LangSmith custom output renderer; it accepts messages only from its embedding window rather than a fixed origin.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/README.md#L54-L67",
+          "version": "repo-lines-v1:sha256:a8af5546397e694f40b7d0c1ebbc1773544e2eba267184ea245d837cb37d118f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjNzkwMmFmYTg5ZGY4MjJjNzhhNjA0MDY2MDA1YTBkODI0NDc5NWM2MTJiM2RiZWFmMTMyNTQ4ZjMyNjQxZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZTE1NzA3NTA0MjliNWQ2M2E4NmM4ZmI5ZmM5NDc5ODQ2NGQ2ZTMxMzhkMzQ1ZTk1ZGE0ZGZkOTZhNDdjMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjZmYxODU0OTQxMmM0NTUzM2JhY2FlYmE3NjkwMmM1MjA3MDNhZjc2ZmUwZGE3YmI3YmZjY2U1MTQ4ZTVkNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlMjMzMmFhMDZiNDIzZjY3ZWQzN2UwODQyYjYzOGViZDNmNjQzN2Q3ZTI5N2RhYjc5MWI1NjFiMTMwMjkzOTAifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/render/useParentMessage.ts",
+          "version": "repo-file-v1:sha256:d70969014c814d19a5a780bd4eb135ec2454277ddade67b2baa39b36e530fcf3"
+        }
+      ]
+    },
+    {
+      "id": "claim_8ac9640bcbf04525ac5741deed6309d7",
+      "statement": "Live eval tests (-m live, via mise run test:live) are opt-in, cost money, and run one real SemIf ranking through the target plus a schema-enforcement check on a throwaway dataset.",
+      "evidence": [
+        {
+          "resource": "repo://evals/tests/test_live.py",
+          "version": "repo-file-v1:sha256:2b0e1c641514b22412babbe0c4329d1fd1db7ef2cea134bdbe84efeda8405ae0"
+        },
+        {
+          "resource": "repo://mise.toml#L150-L152",
+          "version": "repo-lines-v1:sha256:517cbc47fa374049960d11db8d1bfe2de0ebe12b640be1b56bb2f45d2e890d2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTVlNzcwMjJhNDUzMmNhYjZiMjA1NWIxMTQxMWM4YzM5N2JiNzc1MWEwOTBlNWY1ZjRmODJiYjI4NDU4NWQ2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2M1NWU1NmE1MjVkOTBkNzZiYjFhNzI2M2IzMTU0MjMwYTM1NmY3ZmZjOTcwNjViNDZlMzg1ZGE0YjY1Y2Q3MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGVjYjhlN2IxMTEzZjE0MmJkNmRhODhiNjk4YzcwZGNlZWI2YTA3YTdjMTI5ZDJlNjEzMjk4ZmY1NWRhZjRkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2EzNDIzNTgzZDc2YmVjNGRjZjJiOGJiZWExM2E3ODhlODgwM2Q5YzVmMzBiNjU0ZDgzOTFkNzRjNDZiYmE2MyJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-27T19:08:28.877Z"
+  }
+}

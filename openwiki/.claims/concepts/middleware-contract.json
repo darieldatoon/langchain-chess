@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bebf8e91bdc1d71898eddeec2e8717773f5f74d5d94c4fcd16e4c7ba3fee259f",
+  "pageVersion": "sha256:253c2676a32676cc8fdc0ad3106f5703865659f4b7fa84e7c2ac2ac64e5cdc0e",
   "claims": [
     {
       "id": "claim_f9b5b00ea0924335ae28bddacf413aeb",
-      "statement": "create_chess_agent wraps every user middleware with guard(), orders the stack as ChessCore, then ForcedMoveMiddleware (when forced_move), then the guarded extensions, then ChessSummarization for memory='summarize' or a NoSummarization placeholder when fixed_topology=True, and builds the agent with create_agent(tools=[]), substituting a NoModel that raises when model is None.",
+      "statement": "create_chess_agent wraps every user middleware with guard(), orders the stack as ChessCore, then ForcedMoveMiddleware (when forced_move), then the guarded extensions, then ChessSummarization when memory=True or a NoSummarization placeholder when fixed_topology=True, then a core-owned StallRetry last, and builds the agent with create_agent(tools=[]), substituting a NoModel that raises when model is None.",
       "evidence": [
         {
-          "resource": "repo://libs/chess/langchain_chess/agent.py#L27-L39",
-          "version": "repo-lines-v1:sha256:46cc584991fd00f1595142206cf9b2c4a074854bd62e983dde68fd9d56cd0905:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlYjViZGZhZGNhMGZmNzY4MzNkODY0NTk5NmViMmM0ZTRhNDU2MjUxZDY3ZGM0ZGZhOWRjZjBjN2Y4ZTQ2MTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2NmM3MDg4MTQ5YWYwMzY3ZDkxYjc5MjEyOGU0ZjBlMDFiY2Y4NTVkZmI3YzljYjBjNzFlZGExYzdjNTBiNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiYzY1NjJmNGMyODkwOTZhZWI1MDBhNDgwZjA2OWU5YWFkNTI2OTA4YTY4MzhkZDk3Y2FlZmJkM2IyN2M1YTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjMzRmMjlkOWYyNmVmYWI3NzMxMGRlODQyNjE2ZjM0ODRhZDk4MDlmMjEwOWQ4MDc0MmU2ZmRiNTBiNGU5NDAifQ"
+          "resource": "repo://libs/chess/langchain_chess/agent.py#L105-L151",
+          "version": "repo-lines-v1:sha256:9c179929f2be54a3a0c52cada64b2e46fdf4c991b4880726dbfcf78d6a2cffdd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNWEwNDAxMDNmYmI3ZGNkMzVkNzlhODY2OTAwOTZhM2ZkNmJjYzM3Mjk3ODQyOTIxMWVkZjg4NTJlOTg5ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhZWM5YWIyMTZlMzM2YTBhYTVlMzYwZjVhNDY1ZTVjMTcwMGRhMDRiM2VlMzFhYmRjMDE1ODIwMTg3OWRkYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxNGI4NmY2ZWFhZDAzZjRlYWVmM2UyMDY2YjZkODU1ZTcyNWU0ZmI3MzBjNDU3Y2ZkNDhmYzVmZjg2OTk0NzMifQ"
         },
         {
-          "resource": "repo://libs/chess/langchain_chess/agent.py#L84-L122",
-          "version": "repo-lines-v1:sha256:ad9abfa17ffe9c1685949818b5b1d85f4df4767b114c632d57805f428f5d1918:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNWEwNDAxMDNmYmI3ZGNkMzVkNzlhODY2OTAwOTZhM2ZkNmJjYzM3Mjk3ODQyOTIxMWVkZjg4NTJlOTg5ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2NjFjNjg5MWRmOWQwNWNlMWVhNDBlYmQyMGFjMWZmYjUyMjExZmY1YTRjODUyMmMxZDIxZmRmZWJiYzc1MjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxNGI4NmY2ZWFhZDAzZjRlYWVmM2UyMDY2YjZkODU1ZTcyNWU0ZmI3MzBjNDU3Y2ZkNDhmYzVmZjg2OTk0NzMifQ"
+          "resource": "repo://libs/chess/langchain_chess/agent.py#L34-L46",
+          "version": "repo-lines-v1:sha256:46cc584991fd00f1595142206cf9b2c4a074854bd62e983dde68fd9d56cd0905:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlYjViZGZhZGNhMGZmNzY4MzNkODY0NTk5NmViMmM0ZTRhNDU2MjUxZDY3ZGM0ZGZhOWRjZjBjN2Y4ZTQ2MTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2NmM3MDg4MTQ5YWYwMzY3ZDkxYjc5MjEyOGU0ZjBlMDFiY2Y4NTVkZmI3YzljYjBjNzFlZGExYzdjNTBiNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiYzY1NjJmNGMyODkwOTZhZWI1MDBhNDgwZjA2OWU5YWFkNTI2OTA4YTY4MzhkZDk3Y2FlZmJkM2IyN2M1YTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjMzRmMjlkOWYyNmVmYWI3NzMxMGRlODQyNjE2ZjM0ODRhZDk4MDlmMjEwOWQ4MDc0MmU2ZmRiNTBiNGU5NDAifQ"
         }
       ]
     },
@@ -160,15 +160,19 @@
     },
     {
       "id": "claim_d3f49e61e9b64eb784833bac4c6e1d42",
-      "statement": "Candidates are soft: the prompt shows only candidates still in allowed_moves and tells the model it may play any allowed move, and ForcedMoveMiddleware reads initial_allowed rather than candidates or allowed_moves.",
+      "statement": "Candidates are soft: ChessCore.turn_message filters candidates to the moves still in allowed_moves before rendering, the bundled renderer shows them (when move_list is both or candidates) with the note that any allowed move may be played, and ForcedMoveMiddleware reads initial_allowed rather than candidates or allowed_moves.",
       "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/middleware/core.py#L381-L397",
+          "version": "repo-lines-v1:sha256:2cff9552aff85bba3df926ddaf165e038b823a79f90d0e8120fbedbff30cb880:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzZWQ1NjE5NDZiYzhhN2QyZjMyZTNiNDQzY2NkNjQ3NmNmMmYwNmUxNDI5NzhmZWQxZmE4MWFjYTQxMzBlYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyMDAxY2Y4MjA2MDE5NTJmN2NhZDhjNTZmYTk3N2Q3NGM2ZmYzMzQxNWMzNzIwNTYzN2QxOTBhN2Q3MTk4M2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxY2VhODJkOTM2NzE0NDU3NDMzMmFkMzY3YjBkODc0ZGFhMTYzYjVhODU5OTZmYmYwM2E3Mjk2MmI1YWQwNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzN2I1ZGU4Y2MyYWRlZDdhNjkwYTc0NDg1YWQxOWVhYjhlYWE4NmM5ZTNmMWJjMGMwMjk4ZDJhM2JkY2U3ZWMifQ"
+        },
         {
           "resource": "repo://libs/chess/langchain_chess/middleware/forced_move.py#L11-L24",
           "version": "repo-lines-v1:sha256:391604292d9e7a7120b771da2aee0bbdfee90161ce92852442fbdbf6929c7701:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ZGYzZDA3ZmMwNzY2MGRjNzA2ODY5MGU1YWY5YTAzNTI5NmM0ODNhNzJiMjRhOWU3ZWRmMTY1MzQzYjE2YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlN2M5NTdiY2I0NGZiNjczYzk4YjAwNTBhNzVkMzgwODJkYjgxZDkxOGRlMzEzYTNmMDdjMTIzNTMwNmQ3ZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmMjVhMzVhYTNiNDUwODIzZmZhMGMzMGU5N2RhZmY1NTZmZDgxODYxMzNkYjdjZmIyYmMyMjhkYWM2MWJmMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhNjcwZmRjMWNiMWE4MDExY2ZhN2YwYTAyMDJkNzU1NjM4YWY5MzZkNzEzMmIxODQwYzkwMjJhZjE2OWQ5OGQifQ"
         },
         {
-          "resource": "repo://libs/chess/langchain_chess/prompt.py#L48-L57",
-          "version": "repo-lines-v1:sha256:7c50333cc4cc7c6be19356473dafb16529607bbf2f4152a08a7f6d7d85b52d3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxYThkOGM1OWFjMmMzZDc2YTc4OGIyODRiZGY0ZGQ0NGFmMWZhY2E2Y2YwOTYwYjBmMTI3M2U0NWEwNzYxMTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhYWNmMzNmMmUxZDc4ZDAyNTA1MjkyMDRjMDNiZDhiMzY2MGY0NGZiYzdmZjllZjg1MzVhOWFlMzQ0MGQ5YzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyZWZmN2M1ZTMwM2U3ZWNlZDZkMjU2OGY2MjQyNjU5ZGEyMWQwYWZlYWRmYmZkZGU0MTRhZDc0OWE0ZWM1MmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyMTdmYTgwNjNmMDBmYzA1ZWJlYTc0NTFjYzU5MWIyMmM4M2VhNzJjZWJkNmFkMjQ4YzYyYjI1OWQzMzEzOGUifQ"
+          "resource": "repo://libs/chess/langchain_chess/prompt.py#L61-L67",
+          "version": "repo-lines-v1:sha256:fd551e5ae6f04c1983ebcf15b06de78d1404bb835913740c32282f5001ec2a7b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTYwZmJjYWZkYzExNmQ4NzY4OTRmZDQzNGQzMTBlMjQ0OWUwMjdjYmNlMzYxNDc4MWI5MTM1NzgyMGM5ZjliYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTUwMzJlOTY0ZDA5MzIzNTFlNWQxODUyNjkyODFiMTcxYTNhMDliMDhiMjg2ZTY2MWVhNDcwMzIzYzgyZWI0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzk0YTgxYzY5NWEzMGMwNzZlM2RmYWVmYWRiNjM3MzRkMzVkMDk0MmJjNzk3OGMyNjgwYmRkYjI4NTVjOTliNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTk5YmFhMjk0NTQ0ZWIwMzVmOWE0ZmIxNWZlN2YyYWE4NWMyODMzNTQ3MGU1YzM3NGQzOGYzYjU2YWEyNDcyYiJ9"
         }
       ]
     },
@@ -188,14 +192,14 @@
     },
     {
       "id": "claim_0712ed9c2d99482d9a19f898c8387214",
-      "statement": "ChessMiddleware.propose returns a proposal (source defaulting to the middleware name) with jump_to end, narrow keeps only currently allowed moves in current order, and position returns a PositionView with allowed, initial_allowed, candidates, turn_id and a board() replayed from the root.",
+      "statement": "ChessMiddleware.propose returns a proposal (source defaulting to the middleware name) with jump_to end, narrow keeps only currently allowed moves in current order, and position returns a PositionView with allowed, initial_allowed, candidates, turn_id, a board() replayed from the root, and a restricted property reporting whether allowed differs from the legal moves.",
       "evidence": [
         {
-          "resource": "repo://libs/chess/langchain_chess/contract.py#L30-L107",
-          "version": "repo-lines-v1:sha256:63c7368f897c10d4376507d373ffcfd486916ccf94447113e83f1bfa0d36dbf8:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlM2ZiMWU1OGZiYzkwNDc5NGQ1MDczMTRmYTkxYzlmMmYxOThjODhkM2ZmMzk1ZTAwODI4OTAxYzM3ZGM5MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkYmFhMDU5OTVjOTdmNDA4MWE1NDRjNDRkNjBjNjAyOGVhNWZhMTNiMjk5NTlkZWRiZjdlZjYzZGNjOWU1YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlZmI3NWYxZDk3OGUzNjk1NzE5YWE0OGNiN2MyYWE1MGFkYjk3OWRlM2U2MjMwOTQ4M2FiYTk5YWE2N2NlZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4MmMwZjcyODk3OTJmMjA5ZTQzNDc3MTY1OWNkNTg3OTRhZDdjZWJlMmM1NTc1YzJkYjU5OTZiNDQ5NGMzNTEifQ"
+          "resource": "repo://libs/chess/langchain_chess/contract.py#L30-L112",
+          "version": "repo-lines-v1:sha256:7e2f44e4c6be6088cb5f1d1b0eb2ebcb75f944908d84cfa965f7b67ebc41b023:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlM2ZiMWU1OGZiYzkwNDc5NGQ1MDczMTRmYTkxYzlmMmYxOThjODhkM2ZmMzk1ZTAwODI4OTAxYzM3ZGM5MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkYmFhMDU5OTVjOTdmNDA4MWE1NDRjNDRkNjBjNjAyOGVhNWZhMTNiMjk5NTlkZWRiZjdlZjYzZGNjOWU1YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlZmI3NWYxZDk3OGUzNjk1NzE5YWE0OGNiN2MyYWE1MGFkYjk3OWRlM2U2MjMwOTQ4M2FiYTk5YWE2N2NlZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4MmMwZjcyODk3OTJmMjA5ZTQzNDc3MTY1OWNkNTg3OTRhZDdjZWJlMmM1NTc1YzJkYjU5OTZiNDQ5NGMzNTEifQ"
         },
         {
-          "resource": "repo://libs/chess/tests/test_contract.py#L514-L533",
+          "resource": "repo://libs/chess/tests/test_contract.py#L559-L578",
           "version": "repo-lines-v1:sha256:18c9a61441455e4a2b71353d4336f05893fdccdfb7dac3e3f1f8c7d1786d181a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5ZjQxOGFmZGU3OGEwZWIwMDQ2ZjVhZDdlMjJiMmFhZWZlYjU2NTE2ZGYzZDIwMGU0ZTdiY2M4ZDAwODUzYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyNzRkMjhkNTQ4YWE4YjJjMGQ5MTlmOGM5OWViODIwZmM5NzI2ODAyYTY1YjJhYWU0MjZhMWQ1MjNkZjk2YjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3NzUzNGIwZGVmM2QwMjNkYzZkZmY0NjY1YzcxOTc4ZDViMGMzOGZjODVhNmJiMDNhODljMDJjYjUzNzAzM2YifQ"
         }
       ]
@@ -402,21 +406,67 @@
     },
     {
       "id": "claim_676a9d66759f417a803cccad07d7c433",
-      "statement": "The server passes a SystemOne middleware (or NoSystemOne) and GameSetupMiddleware to create_chess_agent with fixed_topology=True; GameSetupMiddleware declares an OmitFromInput but non-private setup key that it writes only on the run that opened the game's first turn, from both before_agent and after_agent.",
+      "statement": "The server builds its agent with fixed_topology=True and two extensions, a SystemOne middleware (or NoSystemOne) followed by GameSetupMiddleware, via systemone build_agent for runs and a direct create_chess_agent call in shape() for reads; GameSetupMiddleware declares an OmitFromInput but non-private setup key that it writes only on the run that opened the game's first turn, from both before_agent and after_agent.",
       "evidence": [
         {
           "resource": "repo://apps/server/langchain_chess_server/game_setup.py#L18-L50",
-          "version": "repo-lines-v1:sha256:568e724fb9ebf59665674eea7ccafd90a29f6ccf34c73fb73cb100703883bb80:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNGFmY2ZhODA5MmE4NzYyODUwZDg5MzY5NDE0MGZkZDMxYTcyZjA5NzQ1YTZkZjIzNTU4Yzc5MjYwNDFiOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4OWVmMWY1YjI1Zjg0Y2M3NzQwYWJkOTA0NjQxMGI5MDJlNjIzZWRlYTViNDJhZmZhMDhmOGQ3YjlkZjk3ZjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwZjJmYzc2MDNlYjA2M2RiNmIzZDE0ZmY4YmUwZDA0YmY2ZmMxNmI4MTA0ZDgzZmYyMzljZjMxNDg1ZTgxOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:f1c0865f565af69770e35effc86c2fdf298cb20f33cab959e2de3b0ae171586d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNGFmY2ZhODA5MmE4NzYyODUwZDg5MzY5NDE0MGZkZDMxYTcyZjA5NzQ1YTZkZjIzNTU4Yzc5MjYwNDFiOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4OWVmMWY1YjI1Zjg0Y2M3NzQwYWJkOTA0NjQxMGI5MDJlNjIzZWRlYTViNDJhZmZhMDhmOGQ3YjlkZjk3ZjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4MmM5ODczYTc4NGIxYTgzMWMwMGZjNGM5Yzc0NDY5MTM4Y2VkOTVkN2NkOTczMDFiYzQ2YmNkMzlmOTUzYzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://apps/server/langchain_chess_server/graph.py#L74-L103",
-          "version": "repo-lines-v1:sha256:dbb3560c81b099001500fa65264f5860506019472a691389753d739406b65316:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3YTY3M2I5NGYzZDBiYzRiZTcwMGRjOTVjZDQ4OGM5NDcyMjVhMDY1MGYzNWFlZDU3MWUzZDM2NDQzN2EwNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxZTdjYjgxZTdkNWVmZWZmYTdjZDFhZjRkNTAzNDEzNWZmOTM5NjE3MWIxMjk0MTQ4ZTZiOWExNDU4ODFhYTcifQ"
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L77-L106",
+          "version": "repo-lines-v1:sha256:933c77fff64edef4aeef061f257b3c9523397ca30bff09990e3f1b6b3707e224:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3NjE3NGYxNDBiNWU5NGRmZTk0ZGI4YzU3ODAyN2E1OTE2ZGJhY2Q4Yjc1NGQ2OTdiODllYjUzMjNhYTRhNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjNDg5MTBhOTMwN2E4YmFiMDA3YzU0NmY1YjIyODNmZmE2MTQyYjhiZDUyOTU0ZjhjMGQzMmYxOGMzMzI3OTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0MWMxYzFkNDk1M2EzOTM4NDUwNzM3YTdkMDc0MzQxYzAwMGFmOGViODZkYzUyYTc2MmM4YWJjOTdjNDkyYzUifQ"
+        },
+        {
+          "resource": "repo://libs/systemone/langchain_chess_systemone/agent.py#L91-L116",
+          "version": "repo-lines-v1:sha256:348d7eb2bccf689d5e93f4ca5cf6667a1d19b1845a6593cc83cc3a0a6237cd7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzODI0MDVmMWYwYTA2NjFhMzM0NDg2MWJmYzdhMThjM2MyZmM5ZDUwZjQxZjM0NjcyYTM1MmVkZGZjNzhkYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwZmE5Y2E2YjljMmI5ZmQ2ZmM0ZWMwNDg4N2FjMTQ3YjhhZDFkNmVlMzEzNWMyOTM5ZjQ0ODk4NTAzODYxOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e88d017c8394414c925fbbe16ff7320f",
+      "statement": "StallRetry is a core-owned ModelRetryMiddleware appended after all user middleware and the summarization slot, so it is the innermost model-call wrapper and a retry repeats only the provider call; it adds no graph node.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/agent.py#L123-L140",
+          "version": "repo-lines-v1:sha256:91bdc6245468b51795c8cc43dcd77feeb289c26bc0ef584e0f49cf181fcc142a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiNDNjNGYwM2Y5ZDYyOWUyOWJlYzAxY2VhNjc5YzNmNTg1NWQ2ZTM2ODQ5MTM5MmZmYmYzMzc4ZDc4MjEyY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiY2UwZjIwYjE0MzliMmIyN2Y2ZDIzMzc4YjBkY2ZkNjA2ZDNlNzNlOTI5MzI2MDAxMGNjYTIwMGY5MDlhM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1NjQ1NzliN2Q0ZGRlMjU2YzRkNjVlOTViZTQwMWRmZTQ3YzQ2MTgxODU4MmU2ZmUxOTk2MjJiNmFhNGE3YjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliOTI4ZGJlNDY2MWYxMGI1YzFkYTQxYzI0M2EwYTk2N2I4Yjk0N2NjYjg3YzQ0YzM3NDE2MjljNzJhYzU2MmIifQ"
+        },
+        {
+          "resource": "repo://libs/chess/langchain_chess/middleware/stall_retry.py#L20-L34",
+          "version": "repo-lines-v1:sha256:e3c4fc028011f6896c30448d8593bbcbb70f84970ac42191b6e337c7f1c5bec9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5M2I3OGEwNjE4NDA5ZGE3Yzc0N2YxMWEyZGEyZjQyNjY1N2U1MDUxMjVlOTIxN2YxMTdlOWYwNzAyOWYxMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5ODkxZTEyNWY0NzBkMmVkYjIzOWU5NDQwNWIzNDJiYzhlYTMwMWNkZGY3NDM3ZWNjZDYzZjM5MjkwNjUyYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://libs/chess/tests/test_contract.py#L500-L502",
+          "version": "repo-lines-v1:sha256:1044bf487db7ca3bc8d8d7284441193db7520c7ccd48d6e431d750941d5651e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGFkYTkwMDFhMzEwZThkMjliOTQ3N2NkMTU5OWM1NmIwZWQ2YzZlZjRhNmE1YzA2NGU2N2NjNmI1ZTRhNDc1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg1NGRhM2I4YjBkMWNlNzI4ZDE5YmM4YzIzYWUyNDk2YmVmOGQ4MTUxNGJlMjBhODA3OWUxNjM1NDA2ZjM0MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzc3YjY5OWI2OGQyNWQ2YzM1NDcwYmVjMzNjZjZiMjUyZGI4NzlmOWJhYmM5NDg2MmY2NTBhMmJkMTg3MGRkMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzkzNDc3NjRmZDgwZmJjY2ZjMTY3NGY0MjJjNWU4MTJkZTY4YjM1NDc3Nzc2ODAzZWMyZWIwMzk5ODE1Y2ZmMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_80b4cc23163444709ade25f4b96c4faa",
+      "statement": "StallRetry retries only stalled-stream errors (langchain_openai StreamChunkTimeoutError, or none if langchain_openai is absent), once with no delay and on_failure=error, so a second stall fails the turn and a later retry run resumes it while other timeouts are not retried.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/middleware/stall_retry.py#L9-L34",
+          "version": "repo-lines-v1:sha256:9e745ac3131cb369ba121be492855a08a3cc4dd406c41f6dee09d846db3e0454:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiOGJjZmFiYjJiZGI4MzM1ZmY1MDlkNTUzMzVkYzQ1YWRlMzNjYjk5YWZlN2QyNDRiN2U2YjhkNGE0NWM1YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiOTIyZDQyNTc2MzIyYWE5OWFmZWJlMTQzZWY3OTRiOTNkNjBkMjJiOGYyNDJiOWQyMDUwZmUyZDYxZGNiMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://libs/chess/tests/test_contract.py#L467-L497",
+          "version": "repo-lines-v1:sha256:6c8456ea72a6d550c0280d2b61a7af6a2bfad7b98d43423036c57b6446e9305e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0MWNmNDBlOTAzM2JhNmI3YjE4MzQ4MWI1NTdkNjIwNjIzZTRmZDIxNWMwNTkxNjYzOTljMGM0N2I1MzQyYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2OGMxYTE4OTM2OTExYzIwYWI1N2NmOWZmMzg1YmEzZDkwOWM1YWY5NDc1YTcyMWZjMDI3NzBhNDMzNDQ5MWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViYzY4ZWQ2ZDRiZWQyZGVmZTYwYjJmYjY4MWMxMDhhZDczMzhiNjIzNDJjZjBjYWNlMzQ3ODlkYzU2ZWVhMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzZDhmNTgxNzE4NWM5MmFkMjczM2FhNjQ5NzI3M2M0ODhhNDIyMzIwNGU5NjdmOWEwYTFlODkwZGFkOTAwYWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_792e47edd9bb449cbf61b6fa93cd6bbe",
+      "statement": "When allowed_moves is narrower than the legal moves, the rendered turn message omits the legal-move list and adds an 'Only these moves are permitted' line listing the allowed moves.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/prompt.py#L68-L97",
+          "version": "repo-lines-v1:sha256:8d6b223b45056fa130bc8ee1e7683bec31383542cd5115aca6fc4d4977349dae:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmMjQ1MjcyZjU3MWY4ZTJlY2JlZTdiMWEwYzk3ZWJlNTcyYTkzZTNlMzA3MGQ0OWUxMzhiOTE3NTczM2Y1MDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzMTM2MmE5NTA4ZWIzNzBhYmQ1MDhhMGU5ZDZjN2Y1MmViM2ViMjk5ODY0OGZjYjc2MDQ3NzUyYmJiYzY5ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhNzMxNjA4YzkyMGNlZWU1NmUzZGJkN2EyMTc0MjRmZjhlODkwOTk2YmU0MDVjNDViMjE0MDg1MTUyNzg3OTcifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-26T13:04:36.303Z"
+    "at": "2026-09-27T19:08:28.877Z"
   }
 }

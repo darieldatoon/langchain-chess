@@ -3,9 +3,6 @@ type: data contract
 title: The client-readable state record
 description: The ChessState keys clients may read (start_fen, moves, plies, turns, outcome, error, plus the Agent Server's setup), the Ply, TurnRecord and Call shapes, why messages and private channels are excluded, the two input keys (messages and position with restrict), and the one-run-one-turn, one-thread-one-game rules, including which commands are rejected.
 tags: [state, record, threads, input, ply, turn-record, call, setup, contract]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T13:04:36.303Z
 sources:
   - id: openwiki-source-88d085345a1ecd09c61f7ab0
     resource: repo://apps/server/langchain_chess_server/game_setup.py
@@ -13,6 +10,8 @@ sources:
     resource: repo://apps/server/langchain_chess_server/graph.py
   - id: openwiki-source-08efc3f1935724156208ec17
     resource: repo://apps/server/tests/test_graph.py
+  - id: openwiki-source-3cb426dd15d324cb1ef8679d
+    resource: repo://apps/web/src/settings.ts
   - id: openwiki-source-be4a82601d4a0ee9e1634703
     resource: repo://apps/web/src/setup.ts
   - id: openwiki-source-2823ab4258a02b653101a66b
@@ -29,11 +28,20 @@ sources:
     resource: repo://libs/chess/tests/test_lifecycle.py
   - id: openwiki-source-1dd02340acf0ca7c8c33f18b
     resource: repo://libs/cli/langchain_chess_cli/uci/engine.py
+  - id: openwiki-source-21de6a067affac443ab60933
+    resource: repo://libs/systemone/langchain_chess_systemone/settings.py
+  - id: openwiki-source-b6047122232d689643d18ad5
+    resource: repo://packages/chess-ui/src/generated/settings.ts
   - id: openwiki-source-15a1d3b1618239efaf01080e
     resource: repo://packages/chess-ui/src/selectors.ts
+  - id: openwiki-source-c81a61ad418f9c19c518d61d
+    resource: repo://packages/chess-ui/src/settings.ts
   - id: openwiki-source-fd0e9360c0eb5b2cec5ea440
     resource: repo://packages/chess-ui/src/types.ts
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-27T19:08:28.877Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-27T19:08:28.877Z
 ---
 
 # The client-readable state record
@@ -67,7 +75,8 @@ On the first run, even one that is rejected or does nothing, `ChessCore._first_r
 
 The core record is not closed to additions: the core README tells clients to read the record keys "plus any your own middleware documents (the Agent Server's `setup`, for one)". The Agent Server's graph adds `GameSetupMiddleware` (`apps/server/langchain_chess_server/game_setup.py`), whose `SetupState` extends `ChessState` with `setup`, annotated `OmitFromInput` but deliberately **not** private so clients can read it.
 
-- `setup` is `asdict(ChessContext)`: the run's resolved opponent settings (policy, model, System 1 knobs, `draw_claims`, `seed`, and so on).
+- `setup` is `dump(ChessContext)` from `langchain_chess_systemone.settings`: the run's resolved opponent settings as JSON, with **every key of the current settings version** plus `version` itself (currently `2`). That covers policy, model, `model_kwargs`, prompt and board-display options, System 1 knobs, `draw_claims`, `seed`, and so on (`test_the_first_turn_records_the_setup_and_later_runs_keep_it` checks `setup["version"] == 2`).
+- Because the settings are versioned, a recorded `setup` stays readable after the schema changes. Readers use `load_recorded` (Python) or `loadRecorded` (TypeScript, `packages/chess-ui/src/settings.ts`). Both require exactly the keys of the recorded version (otherwise the setup is "damaged") and then migrate it to the current version. The migration table is `MIGRATIONS`, and `DEFAULTS` freezes each version's keys.
 - It is written only by the run that opened the game's **first** turn: exactly one turn exists and its id equals `invocation.opened_turn`. It is never rewritten, so later runs with different settings leave it naming the first turn's settings.
 - The middleware checks in both `before_agent` (so a first turn whose model call fails still has it) and `after_agent` (because a first command that lands on a finished position jumps from `ChessCore.before_agent` straight to the end, skipping later `before_agent` hooks).
 - A rejected first input opens no turn and records no `setup`. A thread created before `setup` existed never gains one, even when its pending first turn is retried (`apps/server/tests/test_graph.py`).

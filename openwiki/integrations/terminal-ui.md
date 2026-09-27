@@ -1,16 +1,14 @@
 ---
 type: integration
-title: Terminal UI (lcchess play) and CLI options
-description: How `lcchess play` runs a Textual game against an in-process chess agent (board widget, move input, key bindings, start/retry/new game, checkpoint cleanup), how the shared AgentOptions, build_agent and run_config configure every CLI command, and how to install the CLI with uv.
-tags: [cli, tui, textual, lcchess, agent-options, tracing, installation]
+title: Terminal UI (lcchess play)
+description: How `lcchess play` runs a Textual game against an in-process chess agent (board widget, move input, key bindings, start/retry/new game, checkpoint cleanup), and how the CLI's shared flags, `--config`/`--reset` overlay, the shared `build_agent` and `run_config` configure `play` and `uci` from one `ChessContext`.
+tags: [cli, tui, textual, lcchess, settings, chess-context, tracing, installation]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-26T13:04:36.303Z
+    at: 2026-09-27T19:08:28.877Z
 sources:
   - id: openwiki-source-65bee4ff16ecbe51243c1e47
     resource: repo://libs/chess/langchain_chess/chat_models.py
-  - id: openwiki-source-4a4d83b98e02f02b6b258e76
-    resource: repo://libs/chess/langchain_chess/middleware/summarization.py
   - id: openwiki-source-abe54986bd51a87223916132
     resource: repo://libs/cli/langchain_chess_cli/main.py
   - id: openwiki-source-595fa5f62bc6bdbfd212eed8
@@ -33,18 +31,26 @@ sources:
     resource: repo://libs/cli/tests/test_options.py
   - id: openwiki-source-6eea8483a27fbf889dd46261
     resource: repo://libs/cli/tests/test_tui_snapshots.py
+  - id: openwiki-source-d60c17baa509db20901ff1ac
+    resource: repo://libs/cli/tests/test_tui_view.py
   - id: openwiki-source-c725c52434f876038c206f6e
     resource: repo://libs/cli/tests/test_tui.py
+  - id: openwiki-source-c228b1f5ddeb31cb2374ed59
+    resource: repo://libs/systemone/langchain_chess_systemone/agent.py
+  - id: openwiki-source-21de6a067affac443ab60933
+    resource: repo://libs/systemone/langchain_chess_systemone/settings.py
+  - id: openwiki-source-95af6ce374db999cf2c4a7e0
+    resource: repo://libs/systemone/tests/test_agent.py
   - id: openwiki-source-72b5d686f860ea86c8592080
     resource: repo://mise.toml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-27T19:08:28.877Z" }
 ---
 
-# Terminal UI (`lcchess play`) and CLI options
+# Terminal UI (`lcchess play`)
 
-The `langchain-chess-cli` package (`libs/cli`) ships one console script, `lcchess`, with three Typer subcommands: `uci`, `play` and `grade` ([main.py](../../libs/cli/langchain_chess_cli/main.py)). This page covers `play`, which runs a [Textual](https://textual.textualize.io/) terminal game against the chess agent in the same process. It also covers the option layer that `play` shares with `uci`: `AgentOptions`, `build_agent` and `run_config` in [options.py](../../libs/cli/langchain_chess_cli/options.py). The UCI adapter has its own page, [UCI engine](uci-engine.md). Model specs and cost display are explained in [Models, gateway and cost](../concepts/models-gateway-and-cost.md). Games played here can be graded afterwards with `lcchess grade --metadata surface=tui` (see [Grading and review](../workflows/grading-and-review.md)).
+The `langchain-chess-cli` package (`libs/cli`) ships one console script, `lcchess`, with three Typer subcommands: `uci`, `play` and `grade` ([main.py](../../libs/cli/langchain_chess_cli/main.py)). This page covers `play`, which runs a [Textual](https://textual.textualize.io/) terminal game against the chess agent in the same process. It also covers the option layer that `play` shares with `uci`. Both commands turn their flags into one `ChessContext` (the same settings model the server and web UI use) and build the agent with the shared `build_agent` from `langchain_chess_systemone.agent`. The settings model, settings files and model arguments are explained on [Settings and model arguments](../concepts/settings-and-model-arguments.md). The UCI adapter has its own page, [UCI engine](uci-engine.md). Games played here can be graded afterwards with `lcchess grade --metadata surface=tui` (see [Grading and review](../workflows/grading-and-review.md)).
 
 ## Installing and running
 
@@ -63,52 +69,76 @@ An installed `lcchess` doesn't read `.env`, so the variables from `.env.example`
 
 `pyproject.toml` maps `lcchess` to `langchain_chess_cli.main:app`. It requires Python ≥ 3.13 and depends on `langchain-chess[systemone]`, `langchain-openai`, `langsmith`, `textual>=6`, `typer` and `rich`. The only optional extra is `anthropic` ([pyproject.toml](../../libs/cli/pyproject.toml)). In a clone, `mise run dev:tui` runs `uv run --all-packages --env-file .env lcchess play`. Pass extra options after `--`, for example `mise run dev:tui -- --side black` ([mise.toml](../../mise.toml), [README](../../README.md)).
 
-## Shared agent options
+## Shared settings flags
 
-`play` and `uci` take the same set of agent flags. Typer can't read PEP 695 aliases, so `main.py` declares the choices again as `Annotated` option types, with ranges enforced (for example `--threshold` must be in 0–1 and `--k` in 1–255). Each command copies the flags into a frozen `AgentOptions` dataclass. The dataclass "mirrors the server's context knobs, with the same defaults":
+`play` and `uci` take one flag per `ChessContext` setting. The CLI keeps no settings type or defaults of its own. The helper `_setting(name)` builds each Typer option from the `ChessContext` field: the help text is the field's description, and the shown default is the field's default. Typer can't read PEP 695 aliases, so `main.py` repeats the choices as `Annotated` `Literal` types, with ranges enforced (for example `--threshold` must be in 0–1 and `--k` in 1–255). Every flag defaults to `None`, meaning "not given". A flag you leave out therefore keeps whatever the base settings say.
 
-| Option | Default | Meaning |
+| Flag | Default (from `ChessContext`) | Meaning |
 | --- | --- | --- |
 | `--policy` | `hybrid` | `llm` (model alone), `systemone` (System 1 alone), `hybrid` (both) |
 | `--model` | `langsmith:baseten/zai-org/GLM-5.3-Flash` | `init_chat_model` spec. A bare name needs its provider package |
-| `--reasoning-effort` | unset | `low` / `medium` / `high`; unset uses the model's default and suits non-reasoning models |
+| `--reasoning-effort` | unset | `low` / `medium` / `high`; unset uses the model's default |
+| `--model-kwargs JSON` | `{}` | Extra model arguments as a JSON object |
+| `--system-prompt` | none | Replaces the agent's system prompt |
+| `--show-fen`, `--show-board` | on | What the prompt shows of the position |
+| `--move-list` | `both` | `both` / `legal` / `candidates` / `none` |
+| `--memory` / `--no-memory` | off | Summarize older conversation |
 | `--systemone-model` | `semif-qwen3.5-4b` | System 1 model (SemIf or Jev) |
 | `--threshold`, `--tournament-threshold` | `0.9`, none | Gate value at or above which System 1 plays |
 | `--gate` | `margin` | `margin` or `confidence` |
 | `--k`, `--top-p` | `5`, none | Candidates suggested to the model |
 | `--style` | `rich` | How moves are described to System 1 (`rich`/`terse`) |
-| `--with-eval`, `--with-nouls` | off | Extra System 1 questions |
-| `--show-legal-moves` | on | List legal moves in the prompt |
-| `--memory` | `none` | `none` / `summarize` |
-| `--seed` | `0` | Seeds System 1's tournament and fallbacks |
+| `--with-eval`, `--with-nouls` | off | Extra System 1 questions (recorded only) |
+| `--seed` | `0` | Seeds System 1's tournament shuffle |
 
-`play` also takes `--side white|black` (default `white`).
+Defaults are those of settings version 2 in [settings.py](../../libs/systemone/langchain_chess_systemone/settings.py). `play` also takes `--side white|black` (default `white`) and `--draw-claims auto|never`. `uci` has no `--draw-claims` flag, because the engine always forces `draw_claims="never"` and leaves draws to the GUI.
+
+### `--config`, `--reset` and the overlay
+
+Both commands resolve their settings the same way, in `main._settings`:
+
+1. The base is `load_file(--config)` when a settings file is given, or `ChessContext()` otherwise. This is the same versioned JSON file the web UI exports. A file without a `version`, with unknown keys, or with invalid JSON is rejected.
+2. `--model-kwargs` is parsed from JSON.
+3. `options.overlay(base, flags, resets)` puts every `--reset` setting (repeatable) back to its `ChessContext` default, then applies the flags that were given (non-`None`). It validates the result again as a `ChessContext`. Resetting an unknown key or `version` raises a `SettingsError` ("no such setting to reset: ...").
+
+Any `ValueError` in these steps becomes `typer.BadParameter`, so the command exits with code 2. This covers a bad settings file, bad JSON in `--model-kwargs`, a validation failure such as an empty `--model` or a disallowed model argument like `base_url`, and an unknown reset.
+
+```mermaid
+flowchart LR
+  file["--config file or ChessContext()"] --> reset["--reset keys back to defaults"]
+  reset --> flags["given flags applied"]
+  flags --> ctx["validated ChessContext"]
+  ctx --> play["play: ChessApp factory"]
+  ctx --> uci["uci: Engine factory"]
+```
+*How a CLI command turns a settings file, resets and flags into one `ChessContext`.*
 
 ### `build_agent`
 
-`build_agent(options, *, draw_claims, checkpointer, model_factory=default_model)` turns options into a compiled `create_chess_agent` graph named `chess`:
+Both surfaces build their agent with `langchain_chess_systemone.agent.build_agent(settings, *, checkpointer=..., ...)` ([agent.py](../../libs/systemone/langchain_chess_systemone/agent.py)). That is the same builder the server uses, so the CLI adds no middleware or model logic of its own. In short:
 
-- For any policy except `llm`, it adds `SystemOneMiddleware` with the System 1 knobs.
-- For `systemone`, no chat model is built, because there is nothing behind System 1. The middleware gets `threshold=0.0`, `tournament_threshold=0.0` and `has_model=False` so that System 1 always plays, and `memory` is forced to `"none"`.
-- The CLI builds no summarization middleware of its own. It passes `memory` to `create_chess_agent`, and core's summarization uses a fractional trigger of the model's input limit. Before building, `build_agent` checks `input_limit(model)` (the profile's `max_input_tokens`). If `memory="summarize"` and the model has no known limit, it raises a `ChessContractError` saying the model "has no known input limit, so it can't use memory summarize; use memory none". With `policy=systemone`, summarize is silently dropped because there is no model ([test_options.py](../../libs/cli/tests/test_options.py)).
-- `default_model` delegates to the core package: it calls `langchain_chess.chat_models.chat_model(options.model, options.reasoning_effort)` ([chat_models.py](../../libs/chess/langchain_chess/chat_models.py)). The CLI no longer has a model module of its own. That function sets an output budget (`MAX_TOKENS = 64000`, capped by the model's own output limit and by half of a smaller context window), names the trace span after the bare model name (so gateway models don't all appear as `ChatOpenAI`), and passes `reasoning_effort` only when set, because models without reasoning reject the parameter. For `langsmith:` gateway specs with a known context window it adds a profile with `max_input_tokens = window - budget`. For native specs it keeps the provider's profile and only lowers `max_input_tokens` so the input limit leaves room for the output budget. The details are on [Models, gateway and cost](../concepts/models-gateway-and-cost.md).
+- For any policy except `llm`, it adds `SystemOneMiddleware`. For `systemone`, it never calls the model factory. The middleware gets `threshold=0.0`, `tournament_threshold=0.0` and `has_model=False`, so System 1 always plays.
+- Memory is on only when `settings.memory` is set and there is a model. With `policy=systemone`, `--memory` is silently dropped. If memory is on and the model's profile has no known input limit (`input_limit(model)` is `None`), it raises `ChessContractError`: "<model> has no known input limit, so it can't use memory; turn it off".
+- The default model is `chat_model(settings.model, arguments(settings))` from the core package, where `arguments` merges `model_kwargs` over `reasoning_effort`. `chat_model` sets an output budget of `MAX_TOKENS = 64000`, capped by the model's own output limit and by half of a smaller context window. It names the trace span after the bare model name, and sends a reasoning effort only when one is set. For `langsmith:` gateway specs with a known window, it adds a profile with `max_input_tokens = window - budget` ([chat_models.py](../../libs/chess/langchain_chess/chat_models.py)). The details are on [Models, gateway and cost](../concepts/models-gateway-and-cost.md).
+- The remaining settings (system prompt, FEN/board display, move list, draw claims, seed) are passed to `create_chess_agent`. The graph is named `chess`.
 
-Each surface chooses its own draw-claim policy and checkpointer. `play` uses `DRAW_CLAIMS = "auto"` from `tui/app.py`. Its factory takes a checkpointer, and `ChessApp` passes it an `InMemorySaver` that the app owns. `uci` uses `draw_claims="never"`, which leaves draws to the GUI. Games in the TUI therefore last only as long as the process, and even less than that: a new game deletes the previous game's checkpoints (see below).
+`play` builds a closure `factory(checkpointer)` that calls `build_agent(settings, checkpointer=checkpointer)`, and draw claims follow `settings.draw_claims` (default `auto`). `uci`'s factory takes `(settings, checkpointer)`, and the engine replaces `draw_claims` with `never` before building. Because `ChessApp` calls the factory in its constructor, a build error such as the memory check above is raised before the TUI opens.
 
 ### `run_config`
 
-`run_config(surface, thread_id, options, *, draw_claims)` builds the `RunnableConfig` for every agent invocation:
+`run_config(surface, thread_id, settings)` in [options.py](../../libs/cli/langchain_chess_cli/options.py) builds the `RunnableConfig` for every agent invocation:
 
 - `configurable.thread_id` is the game thread.
 - `run_name` is `chess-<surface>`, and `tags` is `[surface]`.
-- `metadata` holds `surface`, every `AgentOptions` field (through `asdict`), and `draw_claims`.
+- `metadata` holds `surface`, every settings key through `dump(settings)` (including `version`, `model_kwargs` and `draw_claims`), and then `sent(settings)`. `sent` overwrites `reasoning_effort` with the effort actually sent, after `model_kwargs` has been applied, and adds `max_tokens` when `model_kwargs` sets it. With `policy=systemone` the recorded effort is `None`.
 
-Both the TUI (`surface="tui"`) and the UCI engine (`surface="uci"`) call it, so CLI traces carry the same knob metadata as server traces. The `grade` command's `--metadata surface=...` filter relies on that metadata. The TUI doesn't show its thread id, so `lcchess grade --metadata surface=tui --limit 1` is how you find your latest terminal game.
+Both the TUI (`surface="tui"`) and the UCI engine (`surface="uci"`) call it, so CLI traces carry the same settings metadata as server traces. The `grade` command's `--metadata surface=...` filter relies on that metadata. The TUI doesn't show its thread id, so `lcchess grade --metadata surface=tui --limit 1` is how you find your latest terminal game.
 
 ## The Textual app
 
-`play` builds a factory closure `factory(checkpointer)` that calls `build_agent(options, draw_claims=DRAW_CLAIMS, checkpointer=checkpointer)`, then runs `ChessApp(factory, options, side=side).run()`. In `__init__`, `ChessApp` creates its own `InMemorySaver`, calls the factory once with it, and keeps the agent for the whole session. It holds all game state:
+`play` runs `ChessApp(factory, settings, side=side).run()`. In `__init__`, `ChessApp` creates its own `InMemorySaver`, calls the factory once with it, and keeps the agent for the whole session. Games in the TUI therefore last only as long as the process, and even less than that: a new game deletes the previous game's checkpoints (see below). The app holds all game state:
 
+- `settings`: the `ChessContext` the agent was built from.
 - `side`: the human's colour.
 - `thread`: `tui-<uuid4>`, set by the first new game on mount.
 - `checkpointer`: the saver shared by every game in the session.
@@ -119,7 +149,7 @@ Both the TUI (`surface="tui"`) and the UCI engine (`surface="uci"`) call it, so 
 
 The layout comes from `compose`:
 
-- A `Header`. Its subtitle comes from `describe_options`, for example `semif-qwen3.5-4b + <model>`, `System 1 alone (...)` or `<model> (<effort>)`. The effort suffix appears only when a reasoning effort is set.
+- A `Header`. Its subtitle comes from `describe_settings`, for example `semif-qwen3.5-4b + <model>`, `System 1 alone (...)` or `<model> (<effort>)`. The effort is taken from `sent(settings)`, so it reflects a `reasoning_effort` given in `--model-kwargs` too. The suffix appears only when an effort is set.
 - The `ChessBoard` widget, two-thirds of the width.
 - A side column with:
   - `#status`: whose move it is, the result, or the failure reason.
@@ -187,7 +217,7 @@ sequenceDiagram
 ```
 *How one agent run works in the TUI, and how a new game retires the previous one.*
 
-`_submit` sets `running=True` and clears `failed` and `analysis`. It then starts a Textual worker in the `agent-run` group (`RUN`) that streams `agent.astream(payload, config, stream_mode=["messages", "values"])` on the thread captured at submit time. `values` chunks replace `self.values`. Message chunks from the `model` node are appended to the Analysis pane as they arrive. After the stream, including after an ordinary exception, the worker reloads the state with `aget_state` and clears `running`. An exception sets `failed` to the error text (or the exception type name). The agent's turn stays `pending` in the thread, and retry resumes it.
+`_submit` sets `running=True` and clears `failed` and `analysis`. It then starts a Textual worker in the `agent-run` group (`RUN`) that streams `agent.astream(payload, config, stream_mode=["messages", "values"])` on the thread captured at submit time, with `config = run_config("tui", thread, settings)`. `values` chunks replace `self.values`. Message chunks from the `model` node are appended to the Analysis pane as they arrive. After the stream, including after an ordinary exception, the worker reloads the state with `aget_state` and clears `running`. An exception sets `failed` to the error text (or the exception type name). The agent's turn stays `pending` in the thread, and retry resumes it.
 
 Start and retry are separate actions, as in the web UI:
 
@@ -204,6 +234,7 @@ Tests for this topic live in `libs/cli/tests` (see [Testing conventions](../test
 
 - `test_tui.py` drives `ChessApp` with Textual's `run_test` pilot and a `ScriptedModel`, using a factory `lambda saver: create_chess_agent(model, checkpointer=saver)`. It covers:
   - a failed first turn as Black, where input is blocked and retry commits exactly once;
+  - analysis streaming before the run ends;
   - `ctrl+s` as a no-op for White;
   - the move list and details formatting;
   - input blocked while the agent is thinking;
@@ -214,11 +245,8 @@ Tests for this topic live in `libs/cli/tests` (see [Testing conventions](../test
   - model and error text shown literally, without markup parsing;
   - moving by clicking;
   - typing on the board filling the input.
-- `test_tui_snapshots.py` holds SVG snapshot regressions (`snap_compare`). They cover three board sizes, a selected piece with its targets, Black's orientation with the cursor, the promotion dialog, and the full game screen. After a deliberate visual change, run `uv run --all-packages pytest libs/cli/tests/test_tui_snapshots.py --snapshot-update --no-cov` and look at the SVGs under `__snapshots__/` before you accept them.
-- `test_tui_view.py` and `test_tui_board.py` unit-test the pure view and board functions.
-- `test_options.py` checks:
-  - the middleware stack for each policy;
-  - gateway model construction through `default_model` and core's `chat_model` (profile `max_input_tokens` = window − 64000, span name, reasoning effort only when set);
-  - the summarization rules;
-  - `run_config` naming and metadata.
-- `test_main.py` checks that `play --side black --policy systemone` builds an agent named `chess` and runs the app, that the `uci` factory uses `draw_claims="never"`, and that bad choices exit with code 2.
+- `test_tui_snapshots.py` holds SVG snapshot regressions (`snap_compare`). They cover three board sizes, a selected piece with its targets, Black's orientation with the cursor, the promotion dialog, and the full game screen. The game screen is a `ChessApp` built with `ChessContext(policy="llm")` after playing `e4`, with the latency clock patched to zero so a slow runner can't change the displayed "0.0 s". After a deliberate visual change, run `uv run --all-packages pytest libs/cli/tests/test_tui_snapshots.py --snapshot-update --no-cov` and look at the SVGs under `__snapshots__/` before you accept them.
+- `test_tui_view.py` and `test_tui_board.py` unit-test the pure view and board functions, including `describe_settings` picking up an effort from `model_kwargs`.
+- `test_options.py` checks that `overlay` applies only given flags and revalidates, that resets happen before flags and reject unknown keys and `version`, and that `run_config` names the trace by surface and records every setting plus the values sent.
+- `test_main.py` checks that `play --side black --policy systemone --memory` builds an agent named `chess` and runs the app. It also checks that `--help` documents flags with the settings' descriptions and defaults, and that a `--config` file combines with flags and `--reset`. Bad choices, an empty model, bad `--model-kwargs` JSON or a `base_url` model argument, a malformed config file, and a UCI seed outside the engine's range all exit with code 2.
+- `build_agent` itself is tested in `libs/systemone/tests/test_agent.py`: the policy stacks, System 1 alone never building a model, the memory input-limit check, and the default gateway model.

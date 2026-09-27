@@ -1,43 +1,55 @@
 ---
 type: Decision record
 title: Decisions and measurements
-description: Design choices in langchain-chess that look like gaps (no Anthropic prompt caching, the removed `full` memory mode) with the measured numbers behind them and the conditions under which to revisit them. Also notes which defaults, such as the System 1 threshold, have no recorded measurement.
+description: Design choices in langchain-chess that look like gaps (no Anthropic prompt caching, the removed `full` memory mode, memory now a plain on/off switch) with the measured numbers behind them and the conditions under which to revisit them. Also notes which defaults, such as the System 1 threshold, have no recorded measurement.
 tags: [decisions, measurements, prompt-caching, memory, anthropic, cost, system-one]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-26T14:00:37.632Z
+    at: 2026-09-27T19:08:28.877Z
 sources:
-  - id: openwiki-source-65aad166aa88a58cc7a8319a
-    resource: repo://apps/server/langchain_chess_server/context.py
-  - id: openwiki-source-c9b903d37e22daedc4499a4b
-    resource: repo://apps/server/langchain_chess_server/graph.py
+  - id: openwiki-source-0486059a508cedacd209f083
+    resource: repo://apps/server/tests/test_context.py
   - id: openwiki-source-08efc3f1935724156208ec17
     resource: repo://apps/server/tests/test_graph.py
   - id: openwiki-source-fc393bc7c06df7c3f85ece92
     resource: repo://libs/chess/langchain_chess/middleware/core.py
+  - id: openwiki-source-4a4d83b98e02f02b6b258e76
+    resource: repo://libs/chess/langchain_chess/middleware/summarization.py
   - id: openwiki-source-6c9b823f6aaa5fb3802d7fae
     resource: repo://libs/chess/langchain_chess/pricing.py
   - id: openwiki-source-e92c3d9adb77a4ffddf28116
     resource: repo://libs/chess/langchain_chess/prompt.py
+  - id: openwiki-source-cbaaf1981eee0f537632c225
+    resource: repo://libs/chess/langchain_chess/settings.py
   - id: openwiki-source-89cf26730d6633d36dd4f627
     resource: repo://libs/chess/langchain_chess/state.py
+  - id: openwiki-source-c228b1f5ddeb31cb2374ed59
+    resource: repo://libs/systemone/langchain_chess_systemone/agent.py
   - id: openwiki-source-3c3f476720af9ceef23b678d
     resource: repo://libs/systemone/langchain_chess_systemone/middleware.py
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T14:00:37.632Z" }
+  - id: openwiki-source-21de6a067affac443ab60933
+    resource: repo://libs/systemone/langchain_chess_systemone/settings.py
+generated: { by: "openwiki/0.6.0", at: "2026-09-27T19:08:28.877Z" }
 ---
 
 # Decisions and measurements
 
 This page records the choices that can look like missing features, the numbers behind them,
-and when to reopen them. It replaces the deleted `docs/decisions.md`. The source of record is
-the "Decisions and measurements" section of the repository's OpenWiki brief,
-`openwiki/INSTRUCTIONS.md`. When the numbers change, update them in the brief first and then here.
-Other wiki pages should link to this page and not repeat the numbers.
+and when to reopen them. It replaces `docs/decisions.md`, which no longer exists; the README now
+points to the OpenWiki for these decisions. The source of record is the "Decisions and
+measurements" section of the repository's OpenWiki brief, `openwiki/INSTRUCTIONS.md`. When the
+numbers change, update them in the brief first and then here. Other wiki pages should link to
+this page and not repeat the numbers.
+
+> **Naming note.** The brief still uses the older mode names `memory="none"` and
+> `memory="summarize"`. In current code `memory` is a boolean setting: `memory=False` (the
+> default) is the old `none`, and `memory=True` is the old `summarize`. The measurements below are
+> quoted with the brief's names so they match the source of record.
 
 | Decision | Status | Revisit when |
 | --- | --- | --- |
-| Anthropic prompt caching | Shipped without | Long `memory="summarize"` games become the norm |
-| `full` memory mode | Removed. `Memory` is now `"none"` or `"summarize"` | The imitation risk from System 1's bare turns gets measured |
+| Anthropic prompt caching | Shipped without | Long memory-on (`summarize`) games become the norm |
+| `full` memory mode | Removed. `memory` is now a bool: off (old `none`) or on (old `summarize`) | The imitation risk from System 1's bare turns gets measured |
 | System 1 `threshold` default (0.9) and `tournament_threshold` | No measurement recorded | Before tuning either |
 
 ## Prompt caching (Anthropic): shipped without
@@ -52,9 +64,11 @@ never hits.
 
 The prompt layout explains this. `render_position` in `libs/chess/langchain_chess/prompt.py`
 builds "the trailing human message appended to every move request", which is never stored. It
-contains the move list, the FEN, an ASCII board, any suggested candidates and the legal moves.
-Everything before it is the fixed system prompt plus whatever `model_view` keeps from earlier
-turns.
+always contains the moves so far, the starting FEN for a non-standard start, the side to move,
+check, any restricted-move list and the request for `MOVE: <move>`. The bundled renderer
+(`position_renderer`) adds, depending on the `show_fen`, `show_board` and `move_list` settings,
+the FEN, an ASCII board, any suggested candidates and the legal moves. Everything before it is
+the system prompt plus whatever `model_view` keeps from earlier turns.
 
 To make caching work you would need both of these:
 
@@ -64,19 +78,21 @@ To make caching work you would need both of these:
 
 ### Why it isn't worth doing yet
 
-| Measurement | Value |
+| Measurement (from the brief) | Value |
 | --- | --- |
-| Input tokens per move, `memory="none"` (the default) | about 520, mostly the per-turn position |
+| Input tokens per move, `memory="none"` (the default; now `memory=False`) | about 520, mostly the per-turn position |
 | Opus 5 minimum cacheable prefix | 512 tokens. The cacheable prefix under `none` is smaller than this |
 | Input tokens per move, removed `full` mode, 12-ply games | about 1,000 on average, at most 1,850 |
 | Input price used for the estimate | $5 per million input tokens |
 | Estimated saving from caching | under half a cent a move |
 
-Under `memory="none"` the model sees only the current turn. `model_view` starts its window at the
-current turn's `opened_message_id`, so the prefix doesn't grow as the game goes on. Under
-`memory="summarize"` the history grows until it is summarized at 70% of the model's input limit.
-Long `summarize` games are therefore the case where a cacheable prefix could become large enough
-to matter. **Revisit if long `summarize` games become the norm.**
+With memory off the model sees only the current turn. `model_view` starts its window at the
+current turn's `opened_message_id`, so the prefix doesn't grow as the game goes on. With memory
+on (`summarize`) it keeps the whole history, minus earlier turns' rejected attempts and their
+feedback, and that history grows until it is summarized at 70% of the model's input limit
+(`DEFAULT_TRIGGER = ("fraction", 0.7)` in `middleware/summarization.py`). Long memory-on games
+are therefore the case where a cacheable prefix could become large enough to matter.
+**Revisit if long `summarize` games become the norm.**
 
 OpenAI models cache automatically, so none of this applies to them.
 
@@ -111,18 +127,25 @@ earlier bare `MOVE:` turns did **not** make the LLM terser. Its analysis was lon
 **System 1 played no moves in the `full` games of that sample.** The bare turns the LLM saw came
 from its own earlier replies, not from System 1. The risk that the LLM imitates System 1's bare
 turns is therefore still unmeasured. Measure that risk before bringing back a verbatim-history
-mode, or before claiming that `summarize` is free of the risk.
+mode, or before claiming that memory-on (`summarize`) is free of the risk.
 
 ### Current state in code
 
-- `Memory` is `Literal["none", "summarize"]` in `libs/chess/langchain_chess/prompt.py`,
-  `apps/server/langchain_chess_server/context.py` and `libs/cli/langchain_chess_cli/options.py`.
-  The default everywhere is `"none"`.
-- The server rejects `memory="full"` with a validation error. The regression test is
-  `test_full_memory_is_gone` in `apps/server/tests/test_graph.py`.
-- `summarize` needs a model with a known input limit. When the model has no known limit, the server
-  and the CLI refuse `summarize` with an error that says to use `none`. Memory is ignored for the
-  `systemone` policy. See [Prompt and memory](prompt-and-memory.md).
+- `memory` is a `bool` setting on `CoreSettings` in `libs/chess/langchain_chess/settings.py`,
+  default `False`, described as "Keep earlier turns, summarized at 70% of the model's input
+  limit". The server's `ChessContext` (defined in
+  `libs/systemone/langchain_chess_systemone/settings.py` and resolved by
+  `apps/server/langchain_chess_server/context.py`), the CLI's `--memory/--no-memory` option and
+  the UCI `Memory` check option all use this boolean. Settings-file versions 1 and 2 both record
+  `"memory": false` as the default.
+- The old string values no longer validate: `memory="full"` fails with a validation error
+  (`test_full_memory_is_gone` in `apps/server/tests/test_graph.py`), and so does
+  `memory="summarize"` (`test_bad_values_fail_validation` in `apps/server/tests/test_context.py`).
+- Memory needs a model with a known input limit. `build_agent` in
+  `libs/systemone/langchain_chess_systemone/agent.py`, shared by the server and the CLI, raises
+  `ChessContractError` ("… has no known input limit, so it can't use memory; turn it off") when
+  it doesn't. Memory is ignored when no LLM plays: under the `systemone` policy no model is built,
+  so memory is forced off. See [Prompt and memory](prompt-and-memory.md).
 
 ## Defaults with no recorded measurement
 
@@ -131,7 +154,7 @@ else in the repo:
 
 - `threshold = 0.9`. System 1 plays when the gate signal (`margin` by default, or `confidence`)
   is at least this value. `0` always plays and `1` never does. The default is set in
-  `SystemOneMiddleware.__init__` and in the server's `ChessContext`.
+  `SystemOneMiddleware.__init__` and in `SystemOneSettings`, which `ChessContext` inherits.
 - `tournament_threshold = None`. When a SemIf tournament ranked more options than one System 1
   request holds, this value applies instead of `threshold`. If it is left empty, `threshold` is
   used.
@@ -144,5 +167,6 @@ the brief's "Decisions and measurements" section and on this page. See
 
 - [Model specs, LLM Gateway and cost](models-gateway-and-cost.md)
 - [Prompt and memory](prompt-and-memory.md)
+- [Runtime behavior](../operations/runtime-behavior.md)
 - [System 1](../architecture/system-one.md)
 - [Quickstart](../quickstart.md)
