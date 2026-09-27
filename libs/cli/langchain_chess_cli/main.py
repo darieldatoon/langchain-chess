@@ -6,13 +6,15 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal
 
 import typer
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Checkpointer
 
-from langchain_chess_cli.options import AgentOptions, build_agent
+from langchain_chess_cli.options import overlay
+from langchain_chess_systemone.agent import build_agent
+from langchain_chess_systemone.settings import ChessContext
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Coroutine
@@ -28,70 +30,75 @@ app = typer.Typer(
     add_completion=False,
 )
 
+
+def _setting(name: str, **extra: Any) -> Any:
+    """A flag documented by its setting; left out, it keeps the setting's default."""
+    default = ChessContext.model_fields[name].default
+    return typer.Option(
+        help=ChessContext.model_fields[name].description,
+        show_default=False
+        if default is None
+        else str(default).lower()
+        if isinstance(default, bool)
+        else str(default),
+        **extra,
+    )
+
+
 # Typer can't read PEP 695 aliases, so the choices are spelled out here.
-PolicyOption = Annotated[
-    Literal["llm", "systemone", "hybrid"],
-    typer.Option(help="llm: the model alone; systemone: System 1 alone; hybrid: both."),
+PolicyOption = Annotated[Literal["llm", "systemone", "hybrid"] | None, _setting("policy")]
+ModelOption = Annotated[str | None, _setting("model")]
+EffortOption = Annotated[Literal["low", "medium", "high"] | None, _setting("reasoning_effort")]
+SystemOneOption = Annotated[str | None, _setting("systemone_model")]
+ThresholdOption = Annotated[float | None, _setting("threshold", min=0.0, max=1.0)]
+TournamentOption = Annotated[float | None, _setting("tournament_threshold", min=0.0, max=1.0)]
+KOption = Annotated[int | None, _setting("k", min=1, max=255)]
+TopPOption = Annotated[float | None, _setting("top_p", min=0.0, max=1.0)]
+GateOption = Annotated[Literal["margin", "confidence"] | None, _setting("gate")]
+StyleOption = Annotated[Literal["rich", "terse"] | None, _setting("style")]
+SeedOption = Annotated[int | None, _setting("seed")]
+MoveListOption = Annotated[
+    Literal["both", "legal", "candidates", "none"] | None, _setting("move_list")
 ]
-ModelOption = Annotated[
-    str, typer.Option(help="init_chat_model spec; a bare name needs its provider's package.")
-]
-EffortOption = Annotated[
-    Literal["low", "medium", "high"] | None,
-    typer.Option(
-        help="Reasoning effort; unset uses the model's default (and suits non-reasoners)."
-    ),
-]
-SystemOneOption = Annotated[str, typer.Option(help="System 1 model (SemIf or Jev).")]
-ThresholdOption = Annotated[
-    float, typer.Option(min=0.0, max=1.0, help="System 1 plays at or above this gate signal.")
-]
-TournamentOption = Annotated[
-    float | None, typer.Option(min=0.0, max=1.0, help="Threshold after a tournament.")
-]
-KOption = Annotated[int, typer.Option(min=1, max=255, help="Candidates suggested to the model.")]
-TopPOption = Annotated[
-    float | None, typer.Option(min=0.0, max=1.0, help="Cut suggestions at this probability mass.")
-]
-GateOption = Annotated[
-    Literal["margin", "confidence"], typer.Option(help="The signal the threshold applies to.")
-]
-StyleOption = Annotated[
-    Literal["rich", "terse"], typer.Option(help="How moves are described to System 1.")
-]
-SeedOption = Annotated[int, typer.Option(help="Seeds System 1's tournament and fallbacks.")]
-LegalOption = Annotated[bool, typer.Option(help="List the legal moves in the prompt.")]
-EvalOption = Annotated[bool, typer.Option(help="Ask System 1 to score the position.")]
-NoulsOption = Annotated[bool, typer.Option(help="Ask System 1 about calculation and tactics.")]
-MemoryOption = Annotated[
-    Literal["none", "summarize"],
-    typer.Option(help="What the model sees of earlier turns."),
-]
+EvalOption = Annotated[bool | None, _setting("with_eval")]
+NoulsOption = Annotated[bool | None, _setting("with_nouls")]
+MemoryOption = Annotated[bool | None, _setting("memory")]
+DrawClaimsOption = Annotated[Literal["auto", "never"] | None, _setting("draw_claims")]
+
+
+def _settings(**flags: Any) -> ChessContext:
+    try:
+        return overlay(ChessContext(), flags)
+    except ValueError as e:
+        raise typer.BadParameter(str(e)) from e
 
 
 @app.command()
 def uci(
-    policy: PolicyOption = "hybrid",
-    model: ModelOption = "langsmith:baseten/zai-org/GLM-5.3-Flash",
+    policy: PolicyOption = None,
+    model: ModelOption = None,
     reasoning_effort: EffortOption = None,
-    systemone_model: SystemOneOption = "semif-qwen3.5-4b",
-    threshold: ThresholdOption = 0.9,
+    systemone_model: SystemOneOption = None,
+    threshold: ThresholdOption = None,
     tournament_threshold: TournamentOption = None,
-    k: KOption = 5,
+    k: KOption = None,
     top_p: TopPOption = None,
-    gate: GateOption = "margin",
-    style: StyleOption = "rich",
-    seed: SeedOption = 0,
-    show_legal_moves: LegalOption = True,
-    with_eval: EvalOption = False,
-    with_nouls: NoulsOption = False,
-    memory: MemoryOption = "none",
+    gate: GateOption = None,
+    style: StyleOption = None,
+    seed: SeedOption = None,
+    move_list: MoveListOption = None,
+    with_eval: EvalOption = None,
+    with_nouls: NoulsOption = None,
+    memory: MemoryOption = None,
 ) -> None:
-    """Run as a UCI engine on stdin/stdout. Only protocol output goes to stdout."""
-    from langchain_chess_cli.uci.engine import DRAW_CLAIMS, Engine, run
+    """Run as a UCI engine on stdin/stdout. Only protocol output goes to stdout.
+
+    Draws are never claimed: the GUI adjudicates them.
+    """
+    from langchain_chess_cli.uci.engine import Engine, run
 
     logging.basicConfig(stream=sys.stderr, level=logging.WARNING)
-    options = AgentOptions(
+    settings = _settings(
         policy=policy,
         model=model,
         reasoning_effort=reasoning_effort,
@@ -103,20 +110,20 @@ def uci(
         gate=gate,
         style=style,
         seed=seed,
-        show_legal_moves=show_legal_moves,
+        move_list=move_list,
         with_eval=with_eval,
         with_nouls=with_nouls,
         memory=memory,
     )
 
-    def factory(agent_options: AgentOptions, checkpointer: Checkpointer) -> CompiledStateGraph:
-        return build_agent(agent_options, draw_claims=DRAW_CLAIMS, checkpointer=checkpointer)
+    def factory(agent_settings: ChessContext, checkpointer: Checkpointer) -> CompiledStateGraph:
+        return build_agent(agent_settings, checkpointer=checkpointer)
 
     def out(line: str) -> None:
         sys.stdout.write(line + "\n")
         sys.stdout.flush()
 
-    asyncio.run(run(Engine(factory, options, out=out)))
+    asyncio.run(run(Engine(factory, settings, out=out)))
 
 
 SideOption = Annotated[Literal["white", "black"], typer.Option(help="The side you play.")]
@@ -125,26 +132,27 @@ SideOption = Annotated[Literal["white", "black"], typer.Option(help="The side yo
 @app.command()
 def play(
     side: SideOption = "white",
-    policy: PolicyOption = "hybrid",
-    model: ModelOption = "langsmith:baseten/zai-org/GLM-5.3-Flash",
+    policy: PolicyOption = None,
+    model: ModelOption = None,
     reasoning_effort: EffortOption = None,
-    systemone_model: SystemOneOption = "semif-qwen3.5-4b",
-    threshold: ThresholdOption = 0.9,
+    systemone_model: SystemOneOption = None,
+    threshold: ThresholdOption = None,
     tournament_threshold: TournamentOption = None,
-    k: KOption = 5,
+    k: KOption = None,
     top_p: TopPOption = None,
-    gate: GateOption = "margin",
-    style: StyleOption = "rich",
-    seed: SeedOption = 0,
-    show_legal_moves: LegalOption = True,
-    with_eval: EvalOption = False,
-    with_nouls: NoulsOption = False,
-    memory: MemoryOption = "none",
+    gate: GateOption = None,
+    style: StyleOption = None,
+    seed: SeedOption = None,
+    move_list: MoveListOption = None,
+    with_eval: EvalOption = None,
+    with_nouls: NoulsOption = None,
+    memory: MemoryOption = None,
+    draw_claims: DrawClaimsOption = None,
 ) -> None:
     """Play a game in the terminal (Textual)."""
-    from langchain_chess_cli.tui.app import DRAW_CLAIMS, ChessApp
+    from langchain_chess_cli.tui.app import ChessApp
 
-    options = AgentOptions(
+    settings = _settings(
         policy=policy,
         model=model,
         reasoning_effort=reasoning_effort,
@@ -156,16 +164,17 @@ def play(
         gate=gate,
         style=style,
         seed=seed,
-        show_legal_moves=show_legal_moves,
+        move_list=move_list,
         with_eval=with_eval,
         with_nouls=with_nouls,
         memory=memory,
+        draw_claims=draw_claims,
     )
 
     def factory(checkpointer: Checkpointer) -> CompiledStateGraph:
-        return build_agent(options, draw_claims=DRAW_CLAIMS, checkpointer=checkpointer)
+        return build_agent(settings, checkpointer=checkpointer)
 
-    ChessApp(factory, options, side=side).run()
+    ChessApp(factory, settings, side=side).run()
 
 
 PositiveOption = Annotated[int | None, typer.Option(min=1)]

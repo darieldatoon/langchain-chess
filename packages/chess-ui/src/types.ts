@@ -1,53 +1,10 @@
-// Mirrors libs/chess/langchain_chess/state.py, libs/systemone/langchain_chess_systemone/types.py,
-// and ChessContext and `setup` in apps/server/langchain_chess_server/. Keep them in step by hand.
+// Mirrors libs/chess/langchain_chess/state.py and libs/systemone/langchain_chess_systemone/types.py.
+// Keep them in step by hand. The settings are generated: see ./generated/settings.ts.
+import type { Gate, Policy } from "./generated/settings";
 
 export type Side = "white" | "black";
-export type PolicyKind = "llm" | "systemone" | "hybrid";
-export type ReasoningEffort = "low" | "medium" | "high";
-export type Memory = "none" | "summarize";
-export type GateSignal = "margin" | "confidence";
-export type DescriptionStyle = "rich" | "terse";
-export type DrawClaims = "auto" | "never";
-export type SystemOneModel = "semif-qwen3.5-4b" | "typesafe/jev-latest";
-
-export interface ChessContext {
-  policy: PolicyKind;
-  model: string;
-  /** Null sends no effort: the model's own default, and the only choice for non-reasoners. */
-  reasoning_effort: ReasoningEffort | null;
-  show_legal_moves: boolean;
-  memory: Memory;
-  systemone_model: SystemOneModel;
-  style: DescriptionStyle;
-  with_eval: boolean;
-  with_nouls: boolean;
-  gate: GateSignal;
-  threshold: number;
-  tournament_threshold: number | null;
-  k: number;
-  top_p: number | null;
-  draw_claims: DrawClaims;
-  seed: number;
-}
-
-export const DEFAULT_CONTEXT: ChessContext = {
-  policy: "hybrid",
-  model: "langsmith:baseten/zai-org/GLM-5.3-Flash",
-  reasoning_effort: null,
-  show_legal_moves: true,
-  memory: "none",
-  systemone_model: "semif-qwen3.5-4b",
-  style: "rich",
-  with_eval: false,
-  with_nouls: false,
-  gate: "margin",
-  threshold: 0.9,
-  tournament_threshold: null,
-  k: 5,
-  top_p: null,
-  draw_claims: "auto",
-  seed: 0,
-};
+export type PolicyKind = Policy;
+export type GateSignal = Gate;
 
 export type DrawReason =
   | "stalemate"
@@ -201,8 +158,11 @@ export interface ChessValues {
   turns?: TurnRecord[];
   outcome?: Outcome | null;
   error?: string | null;
-  /** The server's resolved settings on the game's first turn; absent on older games. */
-  setup?: ChessContext;
+  /**
+   * The server's resolved settings on the game's first turn, as that version recorded them:
+   * read them with `loadRecorded`. Absent on older games.
+   */
+  setup?: unknown;
 }
 
 export const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

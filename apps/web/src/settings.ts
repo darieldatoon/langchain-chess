@@ -1,4 +1,16 @@
-import { DEFAULT_CONTEXT, type ChessContext } from "@langchain-chess/chess-ui";
+import {
+  DEFAULT_CONTEXT,
+  SETTING_KEYS,
+  SETTINGS_VERSION,
+  isRecord,
+  isSetting,
+  loadRecorded,
+  migrateSettings,
+  type ChessContext,
+  type SettingKey,
+} from "@langchain-chess/chess-ui";
+
+export { isRecord };
 
 type Check<T> = (value: unknown) => value is T;
 
@@ -7,78 +19,51 @@ export const oneOf =
   (value): value is T =>
     typeof value === "string" && (values as readonly string[]).includes(value);
 
-const isBool: Check<boolean> = (value) => typeof value === "boolean";
+/** Every setting's type and range, from the generated schema. */
+export const CONTEXT_CHECKS = Object.fromEntries(
+  SETTING_KEYS.map((key) => [key, (value: unknown) => isSetting(key, value)]),
+) as { [K in SettingKey]: Check<ChessContext[K]> };
 
-const isName: Check<string> = (value): value is string =>
-  typeof value === "string" && value.trim() !== "";
-
-const inRange =
-  (min: number, max: number, { integer = false, minExclusive = false } = {}): Check<number> =>
-  (value): value is number =>
-    typeof value === "number" &&
-    Number.isFinite(value) &&
-    (!integer || Number.isInteger(value)) &&
-    (minExclusive ? value > min : value >= min) &&
-    value <= max;
-
-const orNull =
-  <T>(check: Check<T>): Check<T | null> =>
-  (value): value is T | null =>
-    value === null || check(value);
-
-/** Every knob's type and range. Stored values that fail fall back to the default. */
-export const CONTEXT_CHECKS: { [K in keyof ChessContext]: Check<ChessContext[K]> } = {
-  policy: oneOf("llm", "systemone", "hybrid"),
-  model: isName,
-  reasoning_effort: orNull(oneOf("low", "medium", "high")),
-  show_legal_moves: isBool,
-  memory: oneOf("none", "summarize"),
-  systemone_model: oneOf("semif-qwen3.5-4b", "typesafe/jev-latest"),
-  style: oneOf("rich", "terse"),
-  with_eval: isBool,
-  with_nouls: isBool,
-  gate: oneOf("margin", "confidence"),
-  threshold: inRange(0, 1),
-  tournament_threshold: orNull(inRange(0, 1)),
-  k: inRange(1, 255, { integer: true }),
-  top_p: orNull(inRange(0, 1, { minExclusive: true })),
-  draw_claims: oneOf("auto", "never"),
-  seed: inRange(Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, { integer: true }),
-};
-
-const CONTEXT_KEYS = Object.keys(DEFAULT_CONTEXT) as (keyof ChessContext)[];
-
-function knob<K extends keyof ChessContext>(stored: Record<string, unknown>, key: K) {
-  const value = stored[key];
-  return CONTEXT_CHECKS[key](value) ? value : DEFAULT_CONTEXT[key];
-}
-
-// `full` was removed; the dialog turns `summarize` off for models that can't summarize.
-const migrated = (raw: Record<string, unknown>) =>
+// `full` was removed; the dialog turns memory off for models that can't keep it.
+const withoutFull = (raw: Record<string, unknown>) =>
   raw.memory === "full" ? { ...raw, memory: "summarize" } : raw;
 
-/** Keeps only known knobs with valid values, so obsolete or corrupt storage can't reach a run. */
+/**
+ * Stored settings, any subset, of this app's version or from before versions: only valid values
+ * are kept, each on its own, so obsolete or corrupt storage can't reach a run.
+ */
 export function sanitizeContext(stored: unknown): ChessContext {
-  const record = migrated(isRecord(stored) ? stored : {});
-  return CONTEXT_KEYS.reduce<ChessContext>(
-    (context, key) => ({ ...context, [key]: knob(record, key) }),
+  const raw = withoutFull(isRecord(stored) ? stored : {});
+  const migrate = (data: Record<string, unknown>) =>
+    migrateSettings(data, { legacy: true, unknown: "drop" });
+  let values: Record<string, unknown> = {};
+  try {
+    values = migrate(raw);
+  } catch {
+    // An unreadable older field costs only itself; a newer version can't be trusted at all.
+    const { show_legal_moves: _, ...rest } = raw;
+    try {
+      values = migrate(rest);
+    } catch {
+      values = {};
+    }
+  }
+  return SETTING_KEYS.reduce<ChessContext>(
+    (context, key) => (isSetting(key, values[key]) ? { ...context, [key]: values[key] } : context),
     DEFAULT_CONTEXT,
   );
 }
 
 /**
- * A context exactly as a game recorded it, else null: a knob filled in from the defaults would
- * play a different game. Every recorded setup holds every key.
+ * A context exactly as a game recorded it, carried to this version, else null: a setting filled
+ * in from the defaults would play a different game.
  */
 export function recordedContext(stored: unknown): ChessContext | null {
-  if (!isRecord(stored)) return null;
-  return CONTEXT_KEYS.every((key) => CONTEXT_CHECKS[key](stored[key]))
-    ? sanitizeContext(stored)
-    : null;
-}
-
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  try {
+    return loadRecorded(stored);
+  } catch {
+    return null;
+  }
 }
 
 export const DEV_API_URL = "http://localhost:2024";
@@ -94,9 +79,12 @@ export function apiUrl(
   return env.DEV ? DEV_API_URL : window.location.origin;
 }
 
-/** `configurable` for a run: exactly the server's `ChessContext` fields, nothing else. */
+/** `configurable` for a run: exactly the server's `ChessContext` keys, `version` included. */
 export function configurableOf(context: ChessContext): Record<string, unknown> {
-  return Object.fromEntries(CONTEXT_KEYS.map((key) => [key, context[key]]));
+  return {
+    version: SETTINGS_VERSION,
+    ...Object.fromEntries(SETTING_KEYS.map((key) => [key, context[key]])),
+  };
 }
 
 /** Select reports `undefined` on deselect; keep the previous value in that case. */

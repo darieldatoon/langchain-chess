@@ -25,23 +25,22 @@ from textual.widgets import Footer, Header, Input, Static
 from textual.worker import Worker, WorkerCancelled, WorkerFailed
 
 from langchain_chess.parse import text_of
-from langchain_chess.rules import DrawClaims
-from langchain_chess_cli.options import AgentOptions, run_config
+from langchain_chess_cli.options import run_config
 from langchain_chess_cli.tui.board import ChessBoard
 from langchain_chess_cli.tui.view import (
     board_of,
-    describe_options,
+    describe_settings,
     move_list,
     ply_details,
     status_text,
 )
+from langchain_chess_systemone.settings import ChessContext
 
 if TYPE_CHECKING:
     from langchain_core.runnables import RunnableConfig
 
 type Side = Literal["white", "black"]
 
-DRAW_CLAIMS: DrawClaims = "auto"
 RUN = "agent-run"
 
 
@@ -68,14 +67,14 @@ class ChessApp(App[None]):
     def __init__(
         self,
         factory: Callable[[Checkpointer], CompiledStateGraph],
-        options: AgentOptions,
+        settings: ChessContext,
         *,
         side: Side = "white",
     ) -> None:
         super().__init__()
         self.checkpointer = InMemorySaver()
         self.agent = factory(self.checkpointer)
-        self.options = options
+        self.settings = settings
         self.side: Side = side
         self.thread = ""
         self.values: dict[str, Any] = {}
@@ -106,7 +105,7 @@ class ChessApp(App[None]):
         yield Footer()
 
     def on_mount(self) -> None:
-        self.sub_title = describe_options(self.options)
+        self.sub_title = describe_settings(self.settings)
         self.action_new_game()
         self.query_one("#board", ChessBoard).focus()
 
@@ -204,7 +203,7 @@ class ChessApp(App[None]):
         self.run_worker(self._invoke(payload, self.thread), group=RUN)
 
     async def _invoke(self, payload: dict[str, Any], thread: str) -> None:
-        config: RunnableConfig = run_config("tui", thread, self.options, draw_claims=DRAW_CLAIMS)
+        config: RunnableConfig = run_config("tui", thread, self.settings)
         try:
             async for mode, chunk in self.agent.astream(
                 payload, config, stream_mode=["messages", "values"]

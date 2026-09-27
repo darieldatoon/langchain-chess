@@ -140,6 +140,13 @@ run = "uv run --all-packages pytest -q -n auto"
 description = "Web tests with the 100% coverage gates"
 run = "pnpm exec vp run -r test"
 
+[tasks."test:e2e"]
+description = "Build the web UI, then drive it in Chromium against langgraph dev with a fake model"
+run = [
+  "mise run build",
+  "uv run --all-packages pytest -m e2e --no-cov -q",
+]
+
 [tasks."test:live"]
 description = "The live tests against the real LLM Gateway (costs a few cents)"
 run = "uv run --all-packages --env-file .env pytest -m live --no-cov -q"
@@ -159,6 +166,10 @@ run = "uv run --all-packages --env-file .env lcchess-evals systemone run"
 [tasks."eval:systemone:baseline"]
 description = "The five System 1 baseline experiments in evals/experiments/systemone-baseline.toml"
 run = "uv run --all-packages --env-file .env lcchess-evals systemone baseline"
+
+[tasks."generate:settings"]
+description = "Regenerate the settings' JSON Schemas and TypeScript in packages/chess-ui from ChessContext"
+run = "uv run --all-packages python -m langchain_chess_server.codegen packages/chess-ui/src/generated"
 
 [tasks.build]
 description = "Build the web UI into the server package so the image can serve it under /ui"

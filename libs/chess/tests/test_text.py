@@ -84,25 +84,47 @@ def test_model_identity_prefers_the_gateway_prefix():
 def test_render_position_lists_legal_moves_or_only_the_permitted_ones():
     board = chess.Board()
     legal = [m.uci() for m in board.legal_moves]
-    text = render_position(chess.STARTING_FEN, [], board, legal, None, show_legal_moves=True)
+    text = render_position(chess.STARTING_FEN, [], board, legal, None, move_list="both")
     assert text.startswith("Moves so far: (none, this is the first move)\nFEN: ")
     assert "White to move." in text
     assert "Legal moves: Nh3, Nf3" in text
     assert text.endswith("Reply with your analysis, then the final line `MOVE: <move>`.")
-    hidden = render_position(chess.STARTING_FEN, [], board, legal, None, show_legal_moves=False)
+    hidden = render_position(chess.STARTING_FEN, [], board, legal, None, move_list="candidates")
     assert "Legal moves" not in hidden
     narrowed = render_position(
-        chess.STARTING_FEN, [], board, ["e2e4", "d2d4"], ["g1f3", "d2d4"], show_legal_moves=True
+        chess.STARTING_FEN, [], board, ["e2e4", "d2d4"], ["g1f3", "d2d4"], move_list="both"
     )
     assert "Suggested candidates: d4. These are suggested candidates" in narrowed
     assert "Only these moves are permitted: e4, d4." in narrowed
     assert "Legal moves" not in narrowed
 
 
+@pytest.mark.parametrize(
+    ("move_list", "candidates", "legal"),
+    [
+        ("both", True, True),
+        ("legal", False, True),
+        ("candidates", True, False),
+        ("none", False, False),
+    ],
+)
+def test_move_list_picks_the_lists_a_turn_shows(move_list, candidates, legal):
+    board = chess.Board()
+    allowed = [m.uci() for m in board.legal_moves]
+    text = render_position(chess.STARTING_FEN, [], board, allowed, ["e2e4"], move_list=move_list)
+    assert ("Suggested candidates: e4." in text) is candidates
+    assert ("Legal moves:" in text) is legal
+    restricted = render_position(
+        chess.STARTING_FEN, [], board, ["e2e4", "d2d4"], ["e2e4"], move_list=move_list
+    )
+    assert "Only these moves are permitted: e4, d4." in restricted
+    assert ("Suggested candidates: e4." in restricted) is candidates
+
+
 def test_render_position_in_check():
     board = chess.Board("4k3/8/8/8/8/8/4q3/4K3 w - - 0 1")
     legal = [m.uci() for m in board.legal_moves]
-    text = render_position(board.fen(), [], board, legal, [], show_legal_moves=True)
+    text = render_position(board.fen(), [], board, legal, [], move_list="both")
     assert "You are in check." in text
     assert "Suggested" not in text
 
@@ -148,10 +170,10 @@ def test_model_view_memory_modes():
         HumanMessage("fb3", id="f3"),
     ]
     turns = [_turn("t1", "h1", ["a1"], ["f1"]), _turn("t2", "h2", ["a3", "a4"], ["f2", "f3"])]
-    none = model_view(messages, turns, "none")
+    none = model_view(messages, turns, memory=False)
     assert [m.id for m in none] == ["h2", "f2", "a4", "f3"]
     assert none[2].content[0] == thinking  # the latest attempt keeps its blocks
-    summarize = model_view(messages, turns, "summarize")
+    summarize = model_view(messages, turns, memory=True)
     assert [m.id for m in summarize] == ["h1", "a2", "h2", "f2", "a4", "f3"]
     assert summarize[1].content == [{"type": "text", "text": "good1"}]
     assert summarize[0] is not messages[0]

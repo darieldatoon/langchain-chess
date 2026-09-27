@@ -85,6 +85,35 @@ flowchart TD
 - **Retries.** The decision is frozen per turn, so a retried turn replays it instead of
   re-ranking and flipping the gate.
 
+## The settings
+
+`ChessContext` in [`settings.py`](langchain_chess_systemone/settings.py) is every setting of a
+game's opponent, System 1's and the core's, with a description of each. The web app, the
+server, the CLI and the UCI engine all read it, and `build_agent` in
+[`agent.py`](langchain_chess_systemone/agent.py) builds the agent it describes, with the model,
+ranker and checkpointer injected:
+
+```python
+from langgraph.checkpoint.memory import InMemorySaver
+
+from langchain_chess_systemone.agent import build_agent
+from langchain_chess_systemone.settings import load
+
+settings = load({"version": 1, "policy": "hybrid", "k": 3, "move_list": "candidates"})
+agent = build_agent(settings, checkpointer=InMemorySaver())
+```
+
+A settings file is `ChessContext` as JSON. `version` is required and every other key is optional:
+missing keys take their version's defaults, a null resets a key to its default, and an unknown key
+is an error. Older versions are migrated. Games record every key of their version, and
+`load_recorded` reads them, including games recorded before versions. The JSON Schemas are in
+[`packages/chess-ui/src/generated`](../../packages/chess-ui/src/generated): `opponent.schema.json`
+for a file and `settings.schema.json` for the resolved settings.
+
+Change a setting in `settings.py`, bump `VERSION` and add its migration and frozen defaults when
+the change needs one, then run `mise run generate:settings`: the web app's types, checks and
+defaults are generated from it, and a test fails while they are stale.
+
 ## Options
 
 | Option | Default | What it does |
@@ -94,7 +123,7 @@ flowchart TD
 | `threshold` | `0.9` | The signal needed to play. |
 | `tournament_threshold` | `None` | The threshold for tournament turns. |
 | `k` | `5` | Shortlist size, 1 to 255. |
-| `top_p` | `None` | Shortlist by probability mass instead, capped at `k`. |
+| `top_p` | `None` | Cut the top `k` further, to the fewest moves whose probabilities reach this. |
 | `style` | `"rich"` | How each move is described to the ranker. |
 | `with_eval`, `with_nouls` | `False` | Ask the ranker for an evaluation score and position flags too. |
 | `has_model` | `True` | Set `False` when no LLM is behind it, so a ranking failure fails the run. |

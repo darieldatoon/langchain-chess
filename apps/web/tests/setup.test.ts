@@ -3,6 +3,7 @@ import {
   changedKnobs,
   DEFAULT_SETUP,
   gameOf,
+  knobText,
   knobsOf,
   matchupLine,
   matchupOf,
@@ -12,6 +13,8 @@ import {
   sanitizeSetup,
   sectionsOf,
   setupFromContext,
+  storedSetup,
+  systemOneName,
   type Setup,
 } from "../src/setup";
 import { DEFAULT_CONTEXT, type ChessContext } from "@langchain-chess/chess-ui";
@@ -33,7 +36,7 @@ describe("matchupOf", () => {
       systemone_model: "semif-qwen3.5-4b",
     });
     expect(
-      contextOf(setup({ systemOne: "none", llm: "langsmith:baseten/zai-org/GLM-5.3" })),
+      contextOf(setup({ systemOneOff: true, llm: "langsmith:baseten/zai-org/GLM-5.3" })),
     ).toMatchObject({
       policy: "llm",
       model: "langsmith:baseten/zai-org/GLM-5.3",
@@ -45,8 +48,19 @@ describe("matchupOf", () => {
     });
   });
 
+  it("keeps System 1's model while it's off, and any model name", () => {
+    expect(contextOf(setup({ systemOne: "someone/ranker", systemOneOff: true }))).toMatchObject({
+      policy: "llm",
+      systemone_model: "someone/ranker",
+    });
+    expect(contextOf(setup({ systemOne: "none" }))).toMatchObject({
+      policy: "hybrid",
+      systemone_model: "none",
+    });
+  });
+
   it("refuses both None and an empty custom model", () => {
-    expect(matchupOf(setup({ systemOne: "none", llm: "none" }), "yes")).toEqual({
+    expect(matchupOf(setup({ systemOneOff: true, llm: "none" }), "yes")).toEqual({
       ok: false,
       reason: "Pick a System 1, an LLM, or both.",
     });
@@ -57,9 +71,9 @@ describe("matchupOf", () => {
   });
 
   it("summarizes only with a model that can, and waits for the answer", () => {
-    const summarizing = setup({ knobs: { ...DEFAULT_SETUP.knobs, memory: "summarize" } });
-    expect(matchupOf(summarizing, "yes")).toMatchObject({ context: { memory: "summarize" } });
-    expect(matchupOf(summarizing, "no")).toMatchObject({ context: { memory: "none" } });
+    const summarizing = setup({ knobs: { ...DEFAULT_SETUP.knobs, memory: true } });
+    expect(matchupOf(summarizing, "yes")).toMatchObject({ context: { memory: true } });
+    expect(matchupOf(summarizing, "no")).toMatchObject({ context: { memory: false } });
     expect(matchupOf(summarizing, "checking")).toEqual({
       ok: false,
       reason: "Checking whether GLM-5.3 Flash can summarize…",
@@ -120,6 +134,19 @@ describe("matchup wording", () => {
     ).toBe("GPT-6 Luna · high");
     expect(modelName("langsmith:baseten/zai-org/GLM-5.3")).toBe("GLM-5.3");
     expect(modelName("openai:gpt-5.6-sol")).toBe("openai:gpt-5.6-sol");
+    expect(opponentLabel({ ...DEFAULT_CONTEXT, systemone_model: "someone/ranker" })).toBe(
+      "someone/ranker + GLM-5.3 Flash",
+    );
+    expect(systemOneName("typesafe/jev-latest")).toBe("Jev");
+  });
+
+  it("words a knob's value", () => {
+    expect([knobText(true), knobText(false), knobText(0.5), knobText(null)]).toEqual([
+      "on",
+      "off",
+      "0.5",
+      "null",
+    ]);
   });
 
   it("lists only the changed knobs the policy uses", () => {
@@ -127,13 +154,15 @@ describe("matchup wording", () => {
     const tuned: ChessContext = {
       ...DEFAULT_CONTEXT,
       threshold: 0.5,
-      show_legal_moves: false,
+      move_list: "none",
+      memory: true,
       with_eval: true,
       draw_claims: "never",
       reasoning_effort: "high",
     };
     expect(changedKnobs(tuned)).toEqual([
-      "show legal moves off",
+      "move list none",
+      "memory on",
       "with eval on",
       "threshold 0.5",
       "draw claims never",
@@ -143,7 +172,8 @@ describe("matchup wording", () => {
       "draw claims never",
     ]);
     expect(changedKnobs({ ...tuned, policy: "llm" })).toEqual([
-      "show legal moves off",
+      "move list none",
+      "memory on",
       "draw claims never",
     ]);
   });
@@ -157,7 +187,7 @@ describe("sectionsOf", () => {
       systemOne: true,
       gate: false,
     });
-    expect(sectionsOf(setup({ systemOne: "none" }))).toEqual({
+    expect(sectionsOf(setup({ systemOneOff: true }))).toEqual({
       llm: true,
       systemOne: false,
       gate: false,
@@ -181,23 +211,53 @@ describe("sanitizeSetup", () => {
   it("keeps valid fields and replaces each invalid one with its default", () => {
     const stored = setup({
       side: "random",
-      systemOne: "none",
+      systemOne: "someone/ranker",
+      systemOneOff: true,
       llm: "custom",
       customModel: "openai:gpt-5.6-sol",
-      knobs: { ...DEFAULT_SETUP.knobs, k: 7 },
+      knobs: { ...DEFAULT_SETUP.knobs, k: 7, move_list: "legal", memory: true },
     });
-    expect(sanitizeSetup(JSON.parse(JSON.stringify(stored)))).toEqual(stored);
+    expect(sanitizeSetup(JSON.parse(JSON.stringify(storedSetup(stored))))).toEqual(stored);
     expect(
       sanitizeSetup({
+        version: 1,
         side: "green",
-        systemOne: "stockfish",
+        systemOne: "",
+        systemOneOff: "yes",
         llm: 3,
         customModel: null,
-        knobs: { k: 0, policy: "llm", human_side: "black" },
+        knobs: { k: 0, policy: "llm", human_side: "black", memory: "summarize" },
       }),
     ).toEqual(DEFAULT_SETUP);
+    expect(sanitizeSetup({ version: 99, knobs: { k: 7 } })).toEqual(DEFAULT_SETUP);
     expect(sanitizeSetup("nope")).toEqual(DEFAULT_SETUP);
     expect(Object.keys(sanitizeSetup({}).knobs)).not.toContain("policy");
+  });
+
+  it("reads a setup stored before versions", () => {
+    const old = {
+      side: "black",
+      systemOne: "none",
+      llm: "langsmith:openai/gpt-6-luna",
+      customModel: "",
+      knobs: {
+        ...DEFAULT_SETUP.knobs,
+        memory: "full",
+        show_legal_moves: false,
+        move_list: undefined,
+      },
+    };
+    expect(sanitizeSetup(JSON.parse(JSON.stringify(old)))).toEqual({
+      ...DEFAULT_SETUP,
+      side: "black",
+      systemOneOff: true,
+      llm: "langsmith:openai/gpt-6-luna",
+      knobs: { ...DEFAULT_SETUP.knobs, memory: true, move_list: "candidates" },
+    });
+    expect(sanitizeSetup({ systemOne: "typesafe/jev-latest", knobs: { memory: "none" } })).toEqual({
+      ...DEFAULT_SETUP,
+      systemOne: "typesafe/jev-latest",
+    });
   });
 });
 
@@ -208,6 +268,7 @@ describe("setupFromContext", () => {
     ).toMatchObject({
       side: "white",
       systemOne: "semif-qwen3.5-4b",
+      systemOneOff: false,
       llm: "langsmith:openai/gpt-6-luna",
       customModel: "",
     });
@@ -215,7 +276,7 @@ describe("setupFromContext", () => {
       setupFromContext({ policy: "llm", model: "openai:gpt-5.6-sol", threshold: 0.3 }),
     ).toEqual({
       ...DEFAULT_SETUP,
-      systemOne: "none",
+      systemOneOff: true,
       llm: "custom",
       customModel: "openai:gpt-5.6-sol",
       knobs: { ...DEFAULT_SETUP.knobs, threshold: 0.3 },
@@ -271,6 +332,22 @@ describe("games", () => {
   it("knows no game for a thread without a readable setup", () => {
     expect(gameOf(E4_E5, null)).toBeNull();
     expect(gameOf({ ...E4_E5, setup: { ...recorded, k: -1 } }, null)).toBeNull();
+  });
+
+  it("reads a setup recorded before versions, custom System 1 names included", () => {
+    const { version: _, move_list: __, ...rest } = recorded;
+    const legacy = {
+      ...rest,
+      memory: "summarize",
+      show_legal_moves: false,
+      systemone_model: "someone/ranker",
+    };
+    expect(gameOf({ ...E4_E5, setup: legacy }, null)?.context).toEqual({
+      ...recorded,
+      memory: true,
+      move_list: "candidates",
+      systemone_model: "someone/ranker",
+    });
   });
 
   it("splits a context into its knobs", () => {

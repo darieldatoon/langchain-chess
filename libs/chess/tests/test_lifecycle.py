@@ -382,7 +382,7 @@ async def test_summarize_memory_drops_earlier_rejected_attempts(make_agent, run,
     model = ScriptedModel(
         script=["MOVE: Qh5", "MOVE: e5", "MOVE: Nc6"], profile={"max_input_tokens": 100_000}
     )
-    agent = make_agent(model, memory="summarize")
+    agent = make_agent(model, memory=True)
     await run(agent, human("e4"), cfg)
     await run(agent, human("Nf3"), cfg)
     seen = [m.content for m in model.requests[2][1:-1]]
@@ -391,6 +391,6 @@ async def test_summarize_memory_drops_earlier_rejected_attempts(make_agent, run,
 
 async def test_the_move_list_follows_the_position_block(make_agent, run, cfg):
     model = ScriptedModel(script=["MOVE: e4"])
-    await run(make_agent(model, show_legal_moves=False), position(), cfg)
+    await run(make_agent(model, move_list="candidates"), position(), cfg)
     assert "Legal moves" not in model.requests[0][-1].content
     assert str(model.requests[0][0].content).startswith("You are a strong chess player.")

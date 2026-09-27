@@ -1,80 +1,28 @@
-from dataclasses import replace
+import pytest
+from pydantic import ValidationError
 
-from langgraph.checkpoint.memory import InMemorySaver
-
-from langchain_chess.chat_models import chat_model
-from langchain_chess.testing import ScriptedModel
-from langchain_chess_cli.options import AgentOptions, build_agent, default_model, run_config
+from langchain_chess_cli.options import overlay, run_config
+from langchain_chess_systemone.settings import ChessContext
 
 
-def nodes(agent):
-    return set(agent.get_graph().nodes)
+def test_overlay_applies_only_the_flags_given():
+    base = ChessContext(k=3, memory=True)
+    settings = overlay(base, {"k": None, "memory": False, "move_list": "none"})
+    assert (settings.k, settings.memory, settings.move_list) == (3, False, "none")
+    with pytest.raises(ValidationError):
+        overlay(base, {"model": ""})
 
 
-def test_policies_build_their_stacks():
-    factory = lambda options: ScriptedModel(script=[])  # noqa: E731
-    for policy, systemone in (("llm", False), ("systemone", True), ("hybrid", True)):
-        agent = build_agent(
-            AgentOptions(policy=policy),
-            draw_claims="auto",
-            checkpointer=InMemorySaver(),
-            model_factory=factory,
-        )
-        assert ("SystemOneMiddleware.before_model" in nodes(agent)) is systemone
-
-
-def test_the_cli_chat_model_uses_the_environment(monkeypatch):
-    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
-    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "lsv2_test")
-    model = default_model(AgentOptions(reasoning_effort="low"))
-    assert model.model_name == "baseten/zai-org/GLM-5.3-Flash"
-    assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
-    assert model.reasoning_effort == "low"
-    assert model.profile == {"max_input_tokens": 1_048_000 - 64000}
-    assert model.get_name() == "zai-org/GLM-5.3-Flash"
-    assert default_model(AgentOptions()).reasoning_effort is None
-    gpt = chat_model("langsmith:openai/gpt-5.6-sol", "low")
-    assert gpt.profile == {"max_input_tokens": 1_050_000 - 64000}
-    bare = chat_model("gpt-5.6-sol", "low")
-    assert bare.openai_api_base == "https://gateway.smith.langchain.com/openai/v1"
-    assert bare.get_name() == "gpt-5.6-sol"
-
-
-def test_summarize_through_the_cli_model_factory(monkeypatch):
-    import pytest
-
-    from langchain_chess import ChessContractError
-
-    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
-    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "lsv2_test")
-    saver = InMemorySaver()
-    agent = build_agent(AgentOptions(memory="summarize"), draw_claims="auto", checkpointer=saver)
-    assert "SummarizationMiddleware.before_model" in nodes(agent)
-    unknown = AgentOptions(
-        memory="summarize", model="langsmith:fireworks/accounts/fireworks/models/nope"
-    )
-    message = "fireworks/models/nope has no known input limit, so it can't use memory summarize"
-    with pytest.raises(ChessContractError, match=message):
-        build_agent(unknown, draw_claims="auto", checkpointer=saver)
-    assert (
-        build_agent(replace(unknown, memory="none"), draw_claims="auto", checkpointer=saver)
-        is not None
-    )
-    alone = AgentOptions(policy="systemone", memory="summarize")
-    agent = build_agent(alone, draw_claims="auto", checkpointer=saver)
-    assert "SummarizationMiddleware.before_model" not in nodes(agent)
-
-
-def test_run_config_names_the_trace_by_surface_and_records_every_knob():
-    options = AgentOptions(policy="llm", k=7)
-    config = run_config("tui", "t-1", options, draw_claims="auto")
+def test_run_config_names_the_trace_by_surface_and_records_every_setting():
+    config = run_config("tui", "t-1", ChessContext(policy="llm", k=7))
     assert config["configurable"] == {"thread_id": "t-1"}
     assert config["run_name"] == "chess-tui"
     assert config["tags"] == ["tui"]
     metadata = config["metadata"]
     assert metadata["surface"] == "tui"
     assert metadata["draw_claims"] == "auto"
-    assert {k: metadata[k] for k in ("policy", "model", "k", "seed")} == {
+    assert {k: metadata[k] for k in ("version", "policy", "model", "k", "seed")} == {
+        "version": 1,
         "policy": "llm",
         "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
         "k": 7,

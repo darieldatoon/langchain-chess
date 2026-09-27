@@ -7,32 +7,28 @@ schema, so a setting may switch a node off but never remove it.
 
 from functools import lru_cache
 
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.runnables import RunnableConfig
 from langchain_typesafe import TypeSafeClassifier
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Checkpointer
 from langgraph_sdk.runtime import ServerRuntime
 
-from langchain_chess import ChessContractError, create_chess_agent
-from langchain_chess.chat_models import chat_model as base_chat_model
+from langchain_chess import create_chess_agent
 from langchain_chess.middleware.summarization import input_limit
 from langchain_chess_server.clients import POOL
-from langchain_chess_server.context import ChessContext, resolve_context
+from langchain_chess_server.context import resolve_context
 from langchain_chess_server.game_setup import GameSetupMiddleware
 from langchain_chess_server.settings import ServerSettings
-from langchain_chess_systemone import GatewayRanker, NoSystemOne, SystemOneMiddleware
-
-
-def chat_model(context: ChessContext) -> BaseChatModel:
-    return base_chat_model(context.model, context.reasoning_effort)
+from langchain_chess_systemone import GatewayRanker, NoSystemOne, Ranker
+from langchain_chess_systemone.agent import ModelFactory, RankerFactory, build_agent, default_model
+from langchain_chess_systemone.settings import ChessContext, ChessContextInput
 
 
 @lru_cache(maxsize=64)
 def model_limit(model: str) -> int | None:
-    """What the new-game dialog asks before offering `summarize`; None if it can't be built."""
+    """What the new-game dialog asks before offering memory; None if it can't be built."""
     try:
-        return input_limit(chat_model(ChessContext(model=model)))
+        return input_limit(default_model(ChessContext(model=model)))
     except (ValueError, ImportError):
         return None
 
@@ -48,58 +44,37 @@ def _classifier(model: str, api_key: str, base_url: str) -> TypeSafeClassifier:
     )
 
 
-def systemone(context: ChessContext, settings: ServerSettings) -> SystemOneMiddleware:
-    alone = context.policy == "systemone"
-    client = _classifier(context.systemone_model, *settings.typesafe())
-    ranker = GatewayRanker(
-        context.systemone_model,
-        style=context.style,
-        with_eval=context.with_eval,
-        with_nouls=context.with_nouls,
-        client=client,
-    )
-    return SystemOneMiddleware(
-        context.systemone_model,
-        gate=context.gate,
-        # System 1 alone must always play: there is no model behind it.
-        threshold=0.0 if alone else context.threshold,
-        tournament_threshold=0.0 if alone else context.tournament_threshold,
-        k=context.k,
-        top_p=context.top_p,
-        has_model=not alone,
-        ranker=ranker,
-    )
+def pooled_ranker(server: ServerSettings) -> RankerFactory:
+    """System 1 on the process's shared connections, with the server's credentials."""
+
+    def ranker(settings: ChessContext) -> Ranker:
+        client = _classifier(settings.systemone_model, *server.typesafe())
+        return GatewayRanker(
+            settings.systemone_model,
+            style=settings.style,
+            with_eval=settings.with_eval,
+            with_nouls=settings.with_nouls,
+            client=client,
+        )
+
+    return ranker
 
 
-def build_agent(
-    context: ChessContext,
-    settings: ServerSettings,
+def build_graph(
+    settings: ChessContext,
     *,
+    ranker_factory: RankerFactory,
+    model_factory: ModelFactory = default_model,
     checkpointer: Checkpointer | None = None,
 ) -> CompiledStateGraph:
-    model = None if context.policy == "systemone" else chat_model(context)
-    middleware = [
-        NoSystemOne() if context.policy == "llm" else systemone(context, settings),
-        GameSetupMiddleware(context),
-    ]
-    memory = "none" if model is None else context.memory
-    if model is not None and memory == "summarize" and input_limit(model) is None:
-        msg = (
-            f"{context.model} has no known input limit, so it can't use memory='summarize'; "
-            "use memory='none'"
-        )
-        raise ChessContractError(msg)
-    return create_chess_agent(
-        model,
-        middleware=middleware,
-        show_legal_moves=context.show_legal_moves,
-        memory=memory,
-        draw_claims=context.draw_claims,
-        seed=context.seed,
-        fixed_topology=True,
-        context_schema=ChessContext,
+    return build_agent(
+        settings,
+        model_factory=model_factory,
+        ranker_factory=ranker_factory,
         checkpointer=checkpointer,
-        name="chess",
+        middleware=[GameSetupMiddleware(settings)],
+        fixed_topology=True,
+        context_schema=ChessContextInput,
     )
 
 
@@ -107,19 +82,20 @@ def shape() -> CompiledStateGraph:
     """The graph with every node switched off: no model, no clients, no credentials."""
     return create_chess_agent(
         None,
-        # Its context is never written: this graph never runs.
+        # Its settings are never written: this graph never runs.
         middleware=[NoSystemOne(), GameSetupMiddleware(ChessContext())],
         fixed_topology=True,
-        context_schema=ChessContext,
+        context_schema=ChessContextInput,
         name="chess",
     )
 
 
-def make_graph(config: RunnableConfig, runtime: ServerRuntime[ChessContext]) -> CompiledStateGraph:
+def make_graph(config: RunnableConfig, runtime: ServerRuntime) -> CompiledStateGraph:
     """Assistant settings arrive through `runtime`; dropping it would silently lose them.
 
     Only a run carries them; reads, updates and introspection get the same graph's shape.
     """
     if runtime.execution_runtime is None:
         return shape()
-    return build_agent(resolve_context(ChessContext, config, runtime), ServerSettings())
+    settings = resolve_context(config, runtime)
+    return build_graph(settings, ranker_factory=pooled_ranker(ServerSettings()))

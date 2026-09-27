@@ -11,7 +11,7 @@ import type {
   DescriptionStyle,
   DrawClaims,
   GateSignal,
-  Memory,
+  ListedMoves,
   ReasoningEffort,
 } from "@langchain-chess/chess-ui";
 
@@ -38,14 +38,21 @@ const EFFORTS: SelectOption<ReasoningEffort | "default">[] = [
   { value: "medium", label: "Medium" },
   { value: "high", label: "High" },
 ];
-const memories = (summarize: Summarize): SelectOption<Memory>[] => [
-  { value: "none", label: "None", description: "Each turn sees only the current position" },
+/** Select values are strings; memory is a boolean. */
+const memories = (summarize: Summarize): SelectOption<"off" | "on">[] => [
+  { value: "off", label: "None", description: "Each turn sees only the current position" },
   {
-    value: "summarize",
+    value: "on",
     label: "Summarize",
     description: "The conversation, summarized at 70% of the model's input limit",
     disabled: summarize === "no",
   },
+];
+const MOVE_LISTS: SelectOption<ListedMoves>[] = [
+  { value: "both", label: "Candidates and legal moves" },
+  { value: "legal", label: "Legal moves" },
+  { value: "candidates", label: "Candidates", description: "System 1's, when it has any" },
+  { value: "none", label: "None" },
 ];
 const DRAW_CLAIMS: SelectOption<DrawClaims>[] = [
   { value: "auto", label: "Auto", description: "Threefold and fifty-move draws end the game" },
@@ -91,11 +98,16 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
               onChange={(v) => set("reasoning_effort", v === "default" ? null : v)}
             />
           </Field>
-          <Switch
-            label="List legal moves in the prompt"
-            checked={knobs.show_legal_moves}
-            onChange={(v) => set("show_legal_moves", v)}
-          />
+          <Field id="move-list" label="Moves Listed">
+            <Select
+              aria-label="Moves Listed"
+              size="md"
+              value={knobs.move_list}
+              options={MOVE_LISTS}
+              hideSearch
+              onChange={(v) => set("move_list", v)}
+            />
+          </Field>
           <Field
             id="memory"
             label="Memory"
@@ -110,10 +122,10 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
             <Select
               aria-label="Memory"
               size="md"
-              value={memoryOf(knobs, summarize)}
+              value={memoryOf(knobs, summarize) ? "on" : "off"}
               options={memories(summarize)}
               hideSearch
-              onChange={(v) => set("memory", v)}
+              onChange={(v) => v && set("memory", v === "on")}
             />
           </Field>
         </Section>

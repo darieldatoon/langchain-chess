@@ -17,6 +17,7 @@ import { withKnob } from "../settings";
 import {
   LLM_NAMES,
   LLM_PRESETS,
+  SYSTEM_ONE_PRESETS,
   matchupLine,
   matchupOf,
   modelOf,
@@ -26,7 +27,6 @@ import {
   type Setup,
   type SideChoice,
   type Summarize,
-  type SystemOneChoice,
 } from "../setup";
 import type { ChessContext } from "@langchain-chess/chess-ui";
 import { AdvancedSettings, Field, type NumberKnob, type SetKnob } from "./AdvancedSettings";
@@ -59,11 +59,35 @@ const SIDES: { value: SideChoice; label: string; icon: React.ReactNode }[] = [
   { value: "black", label: "Black", icon: <CrownIcon aria-hidden size={24} weight="fill" /> },
 ];
 
-const SYSTEM_ONES: SelectOption<SystemOneChoice>[] = [
-  { value: "semif-qwen3.5-4b", label: "SemIf", description: "semif-qwen3.5-4b" },
-  { value: "typesafe/jev-latest", label: "Jev (experimental)", description: "typesafe/jev-latest" },
-  { value: "none", label: "None", description: "The LLM plays alone" },
-];
+const SYSTEM_ONE_LABELS: Record<(typeof SYSTEM_ONE_PRESETS)[number], string> = {
+  "semif-qwen3.5-4b": "SemIf",
+  "typesafe/jev-latest": "Jev (experimental)",
+};
+
+/** Picker keys, not model names: a model from elsewhere may be named anything. */
+const OTHER_SYSTEM_ONE = "other";
+const NO_SYSTEM_ONE = "none";
+
+const isSystemOnePreset = (model: string) =>
+  (SYSTEM_ONE_PRESETS as readonly string[]).includes(model);
+
+/** The presets, then a model from elsewhere (a recorded game, storage) under its own name. */
+function systemOnes(other: string): SelectOption<string>[] {
+  return [
+    ...SYSTEM_ONE_PRESETS.map((value) => ({
+      value,
+      label: SYSTEM_ONE_LABELS[value],
+      description: value,
+    })),
+    ...(other === "" ? [] : [{ value: OTHER_SYSTEM_ONE, label: other }]),
+    { value: NO_SYSTEM_ONE, label: "None", description: "The LLM plays alone" },
+  ];
+}
+
+function systemOneKey(setup: Setup): string {
+  if (setup.systemOneOff) return NO_SYSTEM_ONE;
+  return isSystemOnePreset(setup.systemOne) ? setup.systemOne : OTHER_SYSTEM_ONE;
+}
 
 const SUMMARIZE: Record<ModelLimit["kind"], Summarize> = {
   known: "yes",
@@ -97,6 +121,17 @@ export function NewGameDialog({
     <K extends keyof Setup>(key: K) =>
     (value: Setup[K] | undefined) =>
       setSetup((s) => withKnob(s, key, value));
+  // Kept while a preset is picked, so it can be picked again. No model is named "".
+  const [otherSystemOne] = useState(() =>
+    isSystemOnePreset(initial.systemOne) ? "" : initial.systemOne,
+  );
+  const pickSystemOne = (key: string | undefined) =>
+    setSetup((s) => {
+      if (key === undefined) return s;
+      if (key === NO_SYSTEM_ONE) return { ...s, systemOneOff: true };
+      const model = key === OTHER_SYSTEM_ONE ? otherSystemOne : key;
+      return { ...s, systemOne: model, systemOneOff: false };
+    });
   const setKnob: SetKnob = (key, value) =>
     setSetup((s) => ({ ...s, knobs: withKnob(s.knobs, key, value) }));
   const model = modelOf(setup);
@@ -200,10 +235,10 @@ export function NewGameDialog({
             <Select
               aria-label="System 1"
               size="md"
-              value={setup.systemOne}
-              options={SYSTEM_ONES}
+              value={systemOneKey(setup)}
+              options={systemOnes(otherSystemOne)}
               hideSearch
-              onChange={pick("systemOne")}
+              onChange={pickSystemOne}
             />
           </Field>
 

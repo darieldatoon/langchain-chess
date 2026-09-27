@@ -80,7 +80,7 @@ flowchart TD
   forced -->|yes: forced move| finalize
   forced -->|no| ext["Your middleware before_model<br/>narrow allowed_moves, suggest candidates, or propose"]
   ext -->|proposal| finalize
-  ext --> summarize["Summarize old messages<br/>(memory='summarize')"]
+  ext --> summarize["Summarize old messages<br/>(memory=True)"]
   summarize --> llm["LLM call"]
   llm --> parse["ChessCore.after_model: parse MOVE:"]
   parse -->|allowed move| finalize
@@ -96,12 +96,12 @@ they must be idempotent (see below).
 
 | Option | Default | What it does |
 |---|---|---|
-| `memory` | `"none"` | `"summarize"` summarizes earlier turns at 70% of the model's `max_input_tokens`. Pass `summarization=` for another trigger. |
-| `show_legal_moves` | `True` | List the legal moves in the prompt. |
+| `memory` | `False` | `True` keeps earlier turns and summarizes them at 70% of the model's `max_input_tokens`. Pass `summarization=` for another trigger. |
+| `move_list` | `"both"` | The moves each turn lists: `"both"` (middleware's candidates and every legal move), `"legal"`, `"candidates"` or `"none"`. A restricted turn always lists the permitted moves. |
 | `max_retries` | `3` | Feedback rounds after an illegal reply. The side to move resigns on the next one (four illegal replies in all). |
-| `draw_claims` | `"never"` | `"auto"` ends the game on an actual threefold repetition or the fifty-move rule. `"never"` leaves claimable draws to the caller. |
+| `draw_claims` | `"auto"` | `"auto"` ends the game on an actual threefold repetition or the fifty-move rule. `"never"` leaves claimable draws to the caller. |
 | `forced_move` | `True` | When the turn starts with one allowed move (legal, and within `restrict`), play it without calling a model. |
-| `fixed_topology` | `False` | Keep the summarization node under `memory="none"`, so agents with either memory setting share one graph. An Agent Server graph factory needs this: the server reads state with a graph built without the run's settings. |
+| `fixed_topology` | `False` | Keep the summarization node with `memory=False`, so agents with either memory setting share one graph. An Agent Server graph factory needs this: the server reads state with a graph built without the run's settings. |
 | `seed` | `0` | Seeds middleware that samples (such as SystemOne's tournament). |
 | `system_prompt`, `context_schema`, `name` | | Passed through to `create_agent`. |
 

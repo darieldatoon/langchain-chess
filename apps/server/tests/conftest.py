@@ -37,11 +37,12 @@ def _absolute(spec: str) -> str:
     return str(REPO / spec.removeprefix("./"))
 
 
-def _config_in(workdir: Path, env_file: Path | None) -> Path:
+def _config_in(workdir: Path, env_file: Path | None, graphs: Mapping[str, str] | None) -> Path:
     """The repo's langgraph.json with absolute paths: the server resolves them against its
     working directory, and it keeps its local state (`.langgraph_api/`) there too."""
     config = json.loads((REPO / "langgraph.json").read_text())
-    config["graphs"] = {name: _absolute(spec) for name, spec in config["graphs"].items()}
+    specs = graphs if graphs is not None else config["graphs"]
+    config["graphs"] = {name: _absolute(spec) for name, spec in specs.items()}
     config["http"]["app"] = _absolute(config["http"]["app"])
     config["env"] = str(env_file) if env_file is not None else _absolute(config["env"])
     config["source"]["root"] = str(REPO)
@@ -58,7 +59,11 @@ def _free_port() -> int:
 
 @contextmanager
 def _langgraph_dev(
-    workdir: Path, *, env_file: Path | None = None, environ: Mapping[str, str] | None = None
+    workdir: Path,
+    *,
+    env_file: Path | None = None,
+    environ: Mapping[str, str] | None = None,
+    graphs: Mapping[str, str] | None = None,
 ) -> Iterator[str]:
     port = _free_port()
     log_path = workdir / "server.log"
@@ -66,7 +71,7 @@ def _langgraph_dev(
         str(LANGGRAPH),
         "dev",
         "--config",
-        str(_config_in(workdir, env_file)),
+        str(_config_in(workdir, env_file, graphs)),
         "--port",
         str(port),
         "--no-browser",
@@ -104,6 +109,7 @@ def langgraph_dev() -> Callable[..., AbstractContextManager[str]]:
     """Starts `langgraph dev` on the repo's langgraph.json from `workdir` and yields its URL.
 
     Run it from a temp directory, so its local state never mixes test threads into a
-    developer's own dev server. `env_file` replaces langgraph.json's `.env`.
+    developer's own dev server. `env_file` replaces langgraph.json's `.env`, and `graphs` its
+    graphs.
     """
     return _langgraph_dev

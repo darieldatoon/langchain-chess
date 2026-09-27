@@ -1,6 +1,8 @@
 export * from "./chess";
 export * from "./format";
+export * from "./generated/settings";
 export * from "./selectors";
+export * from "./settings";
 export * from "./types";
 export { Analysis } from "./components/Analysis";
 export { Board } from "./components/Board";

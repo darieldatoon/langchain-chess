@@ -62,7 +62,7 @@ async def play_ruy_lopez(agent, run, cfg):
 async def test_the_current_turn_survives_a_rewrite_in_one_run(make_agent, run, cfg):
     responder = Responder([*REPLIES, "MOVE: Qh5", "MOVE: b5"])
     model = model_for(responder)
-    agent = make_agent(model, memory="summarize", summarization=summarizer(model))
+    agent = make_agent(model, memory=True, summarization=summarizer(model))
     await play_ruy_lopez(agent, run, cfg)
     out = await run(agent, human("Re1"), cfg)
     assert out["moves"][-1] == "b7b5"
@@ -96,7 +96,7 @@ async def test_the_retried_turn_keeps_the_newest_attempt_after_a_rewrite(make_ag
     )
     model = model_for(responder)
     # The trigger only fires once the failed turn's messages pile up on the retry.
-    agent = make_agent(model, memory="summarize", summarization=summarizer(model, trigger=17))
+    agent = make_agent(model, memory=True, summarization=summarizer(model, trigger=17))
     await play_ruy_lopez(agent, run, cfg)
     with pytest.raises(RuntimeError):
         await run(agent, human("Re1"), cfg)
@@ -116,18 +116,16 @@ async def test_the_retried_turn_keeps_the_newest_attempt_after_a_rewrite(make_ag
 def test_the_keep_floor_and_prompt_checks():
     model = ScriptedModel(script=[], profile=PROFILE)
     with pytest.raises(ChessContractError, match="keep must be"):
-        create_chess_agent(model, memory="summarize", summarization=summarizer(model, keep=2))
+        create_chess_agent(model, memory=True, summarization=summarizer(model, keep=2))
     tokens = SummarizationMiddleware(model, trigger=("tokens", 10), keep=("tokens", 100))
     with pytest.raises(ChessContractError, match="keep must be"):
-        create_chess_agent(model, memory="summarize", summarization=tokens)
+        create_chess_agent(model, memory=True, summarization=tokens)
     bad = SummarizationMiddleware(model, trigger=("messages", 20), summary_prompt="no slot")
     with pytest.raises(ChessContractError, match=r"\{messages\}"):
-        create_chess_agent(model, memory="summarize", summarization=bad)
+        create_chess_agent(model, memory=True, summarization=bad)
     with pytest.raises(ChessContractError, match="needs a model"):
-        create_chess_agent(None, memory="summarize")
-    create_chess_agent(
-        model, memory="summarize", max_retries=1, summarization=summarizer(model, keep=4)
-    )
+        create_chess_agent(None, memory=True)
+    create_chess_agent(model, memory=True, max_retries=1, summarization=summarizer(model, keep=4))
 
 
 def test_the_input_limit_comes_from_the_profile():
@@ -136,9 +134,9 @@ def test_the_input_limit_comes_from_the_profile():
 
 
 def test_a_profileless_model_needs_an_absolute_trigger():
-    with pytest.raises(ChessContractError, match="memory='none'"):
-        create_chess_agent(ScriptedModel(script=[]), memory="summarize")
-    agent = create_chess_agent(ScriptedModel(script=[], profile=PROFILE), memory="summarize")
+    with pytest.raises(ChessContractError, match="turn memory off"):
+        create_chess_agent(ScriptedModel(script=[]), memory=True)
+    agent = create_chess_agent(ScriptedModel(script=[], profile=PROFILE), memory=True)
     assert "SummarizationMiddleware.before_model" in agent.get_graph().nodes
 
 
@@ -146,10 +144,10 @@ async def test_a_fixed_topology_keeps_a_summarization_node_that_never_summarizes
     make_agent, run, cfg
 ):
     model = model_for(Responder(REPLIES))
-    off = make_agent(model, memory="none", fixed_topology=True)
-    on = make_agent(model, memory="summarize", summarization=summarizer(model, trigger=10))
+    off = make_agent(model, memory=False, fixed_topology=True)
+    on = make_agent(model, memory=True, summarization=summarizer(model, trigger=10))
     assert topology(off) == topology(on)
-    assert topology(off) != topology(make_agent(model, memory="none"))
+    assert topology(off) != topology(make_agent(model, memory=False))
     out = await play_ruy_lopez(off, run, cfg)
     assert not any(is_summary(m) for m in out["messages"])
     assert all(c["kind"] == "llm" for turn in out["turns"] for c in turn["calls"])
@@ -158,7 +156,7 @@ async def test_a_fixed_topology_keeps_a_summarization_node_that_never_summarizes
 async def test_a_summary_then_a_model_call(make_agent, run, cfg):
     responder = Responder([*REPLIES, "MOVE: b5"])
     model = model_for(responder)
-    agent = make_agent(model, memory="summarize", summarization=summarizer(model, trigger=10))
+    agent = make_agent(model, memory=True, summarization=summarizer(model, trigger=10))
     await play_ruy_lopez(agent, run, cfg)
     out = await run(agent, human("Re1"), cfg)
     kinds = [c["kind"] for c in out["turns"][-1]["calls"]]
@@ -169,7 +167,7 @@ async def test_a_summary_then_a_model_call(make_agent, run, cfg):
 async def test_a_summary_then_a_failing_model_call(make_agent, run, cfg):
     responder = Responder([*REPLIES, RuntimeError("model down")])
     model = model_for(responder)
-    agent = make_agent(model, memory="summarize", summarization=summarizer(model, trigger=10))
+    agent = make_agent(model, memory=True, summarization=summarizer(model, trigger=10))
     await play_ruy_lopez(agent, run, cfg)
     with pytest.raises(RuntimeError, match="model down"):
         await run(agent, human("Re1"), cfg)
@@ -181,9 +179,7 @@ async def test_a_summary_then_a_failing_model_call(make_agent, run, cfg):
 async def test_concurrent_stateless_runs_record_their_own_summary():
     responder = Responder(["MOVE: Nf6", "MOVE: Nf6"])
     model = model_for(responder, delay=0.02)
-    agent = create_chess_agent(
-        model, memory="summarize", summarization=summarizer(model, trigger=10)
-    )
+    agent = create_chess_agent(model, memory=True, summarization=summarizer(model, trigger=10))
     history = []
     for index in range(5):
         history += [HumanMessage(f"note {index}", id=f"h{index}"), AIMessage("ok", id=f"a{index}")]
@@ -201,7 +197,7 @@ async def test_concurrent_stateless_runs_record_their_own_summary():
 async def test_summarize_memory_over_several_turns_before_a_summary(make_agent, run, cfg):
     responder = Responder(["MOVE: Qh5", "MOVE: e5", "MOVE: Nc6", "MOVE: a6"])
     model = model_for(responder)
-    agent = make_agent(model, memory="summarize")
+    agent = make_agent(model, memory=True)
     for move in ("e4", "Nf3", "Bb5"):
         await run(agent, human(move), cfg)
     seen = [str(m.content) for m in responder.move_requests[-1]]

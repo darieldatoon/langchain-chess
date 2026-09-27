@@ -11,18 +11,24 @@ import { DEFAULT_CONTEXT } from "@langchain-chess/chess-ui";
 
 describe("sanitizeContext", () => {
   it("reads the removed full memory as summarize and drops the removed trigger", () => {
-    const stored = { ...DEFAULT_CONTEXT, memory: "full", summary_trigger_tokens: 50000 };
-    expect(sanitizeContext(stored)).toEqual({ ...DEFAULT_CONTEXT, memory: "summarize" });
+    const { version: _, move_list: __, ...legacy } = DEFAULT_CONTEXT;
+    const stored = { ...legacy, memory: "full", summary_trigger_tokens: 50000 };
+    expect(sanitizeContext(stored)).toEqual({ ...DEFAULT_CONTEXT, memory: true });
+    expect(sanitizeContext({ show_legal_moves: false })).toEqual({
+      ...DEFAULT_CONTEXT,
+      move_list: "candidates",
+    });
   });
 
   it("validates every knob's type and range", () => {
     const bad = {
+      version: 1,
       policy: "random",
-      model: "  ",
+      model: "",
       reasoning_effort: "max",
-      show_legal_moves: "yes",
+      move_list: "all",
       memory: "forever",
-      systemone_model: "jev-latest",
+      systemone_model: "",
       style: 1,
       with_eval: 1,
       with_nouls: null,
@@ -39,18 +45,26 @@ describe("sanitizeContext", () => {
     expect(sanitizeContext("nope")).toEqual(DEFAULT_CONTEXT);
   });
 
-  it("keeps valid values, including nulls for nullable knobs", () => {
+  it("trusts nothing in a newer version or an unreadable conversion", () => {
+    expect(sanitizeContext({ version: 99, k: 3 })).toEqual(DEFAULT_CONTEXT);
+    expect(sanitizeContext({ show_legal_moves: "yes", k: 3 })).toEqual({
+      ...DEFAULT_CONTEXT,
+      k: 3,
+    });
+  });
+
+  it("keeps valid values, including nulls for nullable knobs and custom System 1 names", () => {
     const good = {
       ...DEFAULT_CONTEXT,
       policy: "systemone",
-      systemone_model: "typesafe/jev-latest",
-      show_legal_moves: false,
+      systemone_model: "someone/ranker",
+      move_list: "legal",
       tournament_threshold: 0.7,
       k: 255,
       top_p: 1,
       draw_claims: "never",
       seed: -3,
-      memory: "summarize",
+      memory: true,
     };
     expect(sanitizeContext(good)).toEqual(good);
     expect(sanitizeContext({ ...good, tournament_threshold: null, top_p: null })).toEqual({
@@ -62,15 +76,17 @@ describe("sanitizeContext", () => {
 });
 
 describe("recordedContext", () => {
-  it("takes a whole context, dropping keys it doesn't know", () => {
-    expect(recordedContext({ ...DEFAULT_CONTEXT, newer_knob: 1 })).toEqual(DEFAULT_CONTEXT);
+  it("takes a whole context of its version", () => {
+    expect(recordedContext(DEFAULT_CONTEXT)).toEqual(DEFAULT_CONTEXT);
+    const custom = { ...DEFAULT_CONTEXT, systemone_model: "other" };
+    expect(recordedContext(custom)).toEqual(custom);
   });
 
-  it("refuses a context with any knob missing or invalid, rather than fill in a default", () => {
+  it("refuses a context with any knob missing, unknown or invalid, rather than guess", () => {
     const { model: _, ...noModel } = DEFAULT_CONTEXT;
     expect(recordedContext(noModel)).toBeNull();
     expect(recordedContext({ ...DEFAULT_CONTEXT, k: 0 })).toBeNull();
-    expect(recordedContext({ ...DEFAULT_CONTEXT, systemone_model: "other" })).toBeNull();
+    expect(recordedContext({ ...DEFAULT_CONTEXT, newer_knob: 1 })).toBeNull();
     expect(recordedContext({})).toBeNull();
     expect(recordedContext(null)).toBeNull();
   });
@@ -86,8 +102,9 @@ describe("apiUrl", () => {
 });
 
 describe("configurableOf and withKnob", () => {
-  it("sends exactly the ChessContext keys", () => {
+  it("sends exactly the ChessContext keys, version included", () => {
     expect(configurableOf(DEFAULT_CONTEXT)).toEqual(DEFAULT_CONTEXT);
+    expect(configurableOf(DEFAULT_CONTEXT)).toHaveProperty("version", 1);
     expect(configurableOf(DEFAULT_CONTEXT)).not.toBe(DEFAULT_CONTEXT);
     const extra = { ...DEFAULT_CONTEXT, human_side: "black" } as typeof DEFAULT_CONTEXT;
     expect(configurableOf(extra)).not.toHaveProperty("human_side");

@@ -3,17 +3,18 @@
 import pytest
 from textual.widgets import Input
 
-from langchain_chess_cli.options import AgentOptions, build_agent
 from langchain_chess_cli.tui.app import ChessApp
+from langchain_chess_systemone.agent import build_agent
+from langchain_chess_systemone.settings import ChessContext
 
 # One loop for the run: langchain-openai caches its async client across tests.
 pytestmark = [pytest.mark.live, pytest.mark.asyncio(loop_scope="session")]
 
 
 async def test_a_short_tui_game_against_the_hybrid():
-    options = AgentOptions(reasoning_effort="low")
+    options = ChessContext(reasoning_effort="low")
     app = ChessApp(
-        lambda saver: build_agent(options, draw_claims="auto", checkpointer=saver),
+        lambda saver: build_agent(options, checkpointer=saver),
         options,
         side="white",
     )
