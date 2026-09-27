@@ -19,8 +19,8 @@ from langchain_chess_server.graph import make_graph
 from langchain_chess_systemone.settings import ChessContext, dump
 
 PAUSED = ["SummarizationMiddleware.before_model"]
-# An assistant saved before versions: the server still reads it.
-SETTINGS = {"policy": "llm", "memory": "summarize", "show_legal_moves": False}
+# Studio saves an assistant without a version.
+SETTINGS = {"policy": "llm", "memory": True, "move_list": "candidates"}
 RESOLVED = ChessContext(policy="llm", memory=True, move_list="candidates")
 
 
@@ -70,7 +70,7 @@ def test_a_paused_run_reads_back_as_the_graph_that_ran(client, env, via):
     assert {node["id"] for node in described["nodes"]} == topology(ran)[0]
 
 
-def test_an_older_assistant_with_a_current_partial_override(client):
+def test_an_unversioned_assistant_with_a_versioned_partial_override(client):
     assistant = client.assistants.create("chess", context=SETTINGS)["assistant_id"]
     override = {"version": 1, "k": 3, "top_p": 0.5}
     thread, _ = _paused_run(client, assistant, config={"configurable": override})

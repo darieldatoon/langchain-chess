@@ -1,6 +1,7 @@
-import { fireEvent, render, renderHook, screen } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { BoardControls } from "../../src/components/BoardControls";
+import { usePlyCursor } from "../../src/usePlyCursor";
 import { usePlyKeys } from "../../src/usePlyKeys";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import type { ReactNode } from "react";
@@ -61,13 +62,40 @@ describe("usePlyKeys", () => {
     expect(onGo).toHaveBeenCalledTimes(6);
   });
 
-  it("leaves typing alone", () => {
+  it("leaves typing and dialogs alone", () => {
     const onGo = vi.fn();
     renderHook(() => usePlyKeys(1, 2, onGo));
-    const { container } = render(<input aria-label="field" />);
+    const { container } = render(
+      <>
+        <input aria-label="field" />
+        <div role="dialog">
+          <button type="button">side</button>
+        </div>
+      </>,
+    );
     press("Home", container.querySelector("input")!);
+    press("ArrowLeft", screen.getByRole("button", { name: "side" }));
     expect(onGo).not.toHaveBeenCalled();
     press("Home", document.body);
     expect(onGo).toHaveBeenCalledWith(0);
+  });
+});
+
+describe("usePlyCursor", () => {
+  it("follows the game at its end and stays on an earlier position", () => {
+    const { result, rerender } = renderHook(({ last }) => usePlyCursor(last), {
+      initialProps: { last: 2 },
+    });
+    expect(result.current).toMatchObject({ index: 2, live: true });
+    rerender({ last: 3 });
+    expect(result.current).toMatchObject({ index: 3, live: true });
+
+    act(() => result.current.go(1));
+    rerender({ last: 4 });
+    expect(result.current).toMatchObject({ index: 1, live: false });
+
+    act(() => result.current.go(4));
+    rerender({ last: 5 });
+    expect(result.current).toMatchObject({ index: 5, live: true });
   });
 });

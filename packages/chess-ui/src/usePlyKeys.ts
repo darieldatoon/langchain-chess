@@ -9,8 +9,8 @@ const STEPS: Record<string, (index: number, last: number) => number> = {
 
 /**
  * Arrow keys step through the moves, Home and End jump to either end. Listens on the window, not
- * the board: the board's drag layer takes arrow keys from focused squares. Typing in a field is
- * left alone.
+ * the board: the board's drag layer takes arrow keys from focused squares. Typing in a field and
+ * keys inside a dialog, whose radios use the arrows, are left alone.
  */
 export function usePlyKeys(index: number, last: number, onGo: (index: number) => void): void {
   useEffect(() => {
@@ -19,7 +19,8 @@ export function usePlyKeys(index: number, last: number, onGo: (index: number) =>
       const target = event.target;
       if (
         !step ||
-        (target instanceof Element && target.closest("input, textarea, [role=combobox]"))
+        (target instanceof Element &&
+          target.closest("input, textarea, [role=combobox], [role=dialog]"))
       )
         return;
       event.preventDefault();

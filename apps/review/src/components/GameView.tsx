@@ -13,16 +13,16 @@ import {
   MoveList,
   outcomeLine,
   PlyDetails,
-  positions,
+  replay,
   turnOf,
   type ChessValues,
   type MoveEntry,
   type PlyView,
   type Side,
-  usePlyKeys,
+  usePlyCursor,
 } from "@langchain-chess/chess-ui";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react/dist/ssr/ArrowSquareOut";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { Analysis, LaunchState } from "../analysis";
 import type { Game } from "../games";
 import { AnalysisBanner } from "./AnalysisBanner";
@@ -59,11 +59,11 @@ export function GameView({
   const grading = game.grading;
   const review = grading.status === "graded" ? grading.review : null;
   const last = moves.length;
-  const [index, setIndex] = useState(last);
+  const { index, go } = usePlyCursor(last);
   const [orientation, setOrientation] = useState<Side>("white");
   const resolve = useChartColorResolver();
 
-  const fens = useMemo(() => positions(startFen, moves), [startFen, moves]);
+  const fens = useMemo(() => replay(startFen, moves).fens, [startFen, moves]);
   // From the lines graded, not `settings.multipv`: a setting the feedback claims can be any size.
   const lineCount = useMemo(
     () => review?.plies.reduce((most, p) => Math.max(most, p.lines.length), 0) ?? 0,
@@ -75,10 +75,6 @@ export function GameView({
     source: plies[i]?.source ?? "external",
     quality: review?.plies[i]?.quality,
   }));
-
-  const go = useCallback((next: number) => setIndex(Math.max(0, Math.min(last, next))), [last]);
-
-  usePlyKeys(index, last, go);
 
   const ply = index > 0 ? plies[index - 1] : undefined;
   const grade = index > 0 ? review?.plies[index - 1] : undefined;

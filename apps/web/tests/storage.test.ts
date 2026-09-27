@@ -4,7 +4,6 @@ import {
   APP_KEY,
   browserStorage,
   DEFAULT_APP_SETTINGS,
-  LEGACY_SETTINGS_KEY,
   loadAppSettings,
   loadPlyView,
   loadSetup,
@@ -32,31 +31,8 @@ describe("setup storage", () => {
     expect(loadSetup()).toEqual(setup);
   });
 
-  it("migrates the old global settings", () => {
-    store(LEGACY_SETTINGS_KEY, {
-      apiKey: "old",
-      context: {
-        policy: "jev",
-        human_side: "black",
-        model: "langsmith:baseten/zai-org/GLM-5.3",
-        k: 3,
-      },
-    });
-    expect(loadSetup()).toEqual({
-      ...DEFAULT_SETUP,
-      llm: "langsmith:baseten/zai-org/GLM-5.3",
-      knobs: { ...DEFAULT_SETUP.knobs, k: 3 },
-    });
-    store(LEGACY_SETTINGS_KEY, { context: { policy: "systemone", model: "my-model" } });
-    expect(loadSetup()).toMatchObject({ llm: "none", customModel: "my-model" });
-    store(SETUP_KEY, { side: "black" });
-    expect(loadSetup()).toEqual({ ...DEFAULT_SETUP, side: "black" });
-  });
-
   it("never crashes on corrupt entries", () => {
-    store(LEGACY_SETTINGS_KEY, "{not json");
-    expect(loadSetup()).toEqual(DEFAULT_SETUP);
-    store(LEGACY_SETTINGS_KEY, "[1]");
+    store(SETUP_KEY, "[1]");
     expect(loadSetup()).toEqual(DEFAULT_SETUP);
     store(SETUP_KEY, "{not json");
     expect(loadSetup()).toEqual(DEFAULT_SETUP);
@@ -64,11 +40,8 @@ describe("setup storage", () => {
 });
 
 describe("app settings storage", () => {
-  it("keeps the key under its own entry, migrating it from the old settings once", () => {
+  it("keeps the key under its own entry", () => {
     expect(loadAppSettings()).toEqual(DEFAULT_APP_SETTINGS);
-    store(LEGACY_SETTINGS_KEY, { apiKey: "lsv2_old", context: {} });
-    expect(loadAppSettings()).toEqual({ apiKey: "lsv2_old" });
-    expect(window.localStorage.getItem(APP_KEY)).toBe('{"apiKey":"lsv2_old"}');
     saveAppSettings({ apiKey: "" });
     expect(window.localStorage.getItem(APP_KEY)).toBe('{"apiKey":""}');
     expect(loadAppSettings()).toEqual({ apiKey: "" });

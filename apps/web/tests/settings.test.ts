@@ -8,19 +8,8 @@ import {
   withKnob,
 } from "../src/settings";
 import { DEFAULT_CONTEXT } from "@langchain-chess/chess-ui";
-import { legacyOf } from "@langchain-chess/chess-ui/testing";
 
 describe("sanitizeContext", () => {
-  it("reads the removed full memory as summarize and drops the removed trigger", () => {
-    const legacy = legacyOf(DEFAULT_CONTEXT);
-    const stored = { ...legacy, memory: "full", summary_trigger_tokens: 50000 };
-    expect(sanitizeContext(stored)).toEqual({ ...DEFAULT_CONTEXT, memory: true });
-    expect(sanitizeContext({ show_legal_moves: false })).toEqual({
-      ...DEFAULT_CONTEXT,
-      move_list: "candidates",
-    });
-  });
-
   it("validates every knob's type and range", () => {
     const bad = {
       version: 1,
@@ -42,16 +31,19 @@ describe("sanitizeContext", () => {
       seed: 1.5,
     };
     expect(sanitizeContext(bad)).toEqual(DEFAULT_CONTEXT);
-    expect(sanitizeContext({ k: 256, threshold: Number.NaN, top_p: 1.2 })).toEqual(DEFAULT_CONTEXT);
+    expect(sanitizeContext({ version: 1, k: 256, threshold: Number.NaN, top_p: 1.2 })).toEqual(
+      DEFAULT_CONTEXT,
+    );
     expect(sanitizeContext("nope")).toEqual(DEFAULT_CONTEXT);
   });
 
-  it("trusts nothing in a newer version or an unreadable conversion", () => {
-    expect(sanitizeContext({ version: 99, k: 3 })).toEqual(DEFAULT_CONTEXT);
-    expect(sanitizeContext({ show_legal_moves: "yes", k: 3 })).toEqual({
+  it("drops unknown keys, and trusts nothing without a version or in a newer one", () => {
+    expect(sanitizeContext({ version: 1, k: 3, thread_id: "t" })).toEqual({
       ...DEFAULT_CONTEXT,
       k: 3,
     });
+    expect(sanitizeContext({ k: 3 })).toEqual(DEFAULT_CONTEXT);
+    expect(sanitizeContext({ version: 99, k: 3 })).toEqual(DEFAULT_CONTEXT);
   });
 
   it("keeps valid values, including nulls for nullable knobs and custom System 1 names", () => {

@@ -213,6 +213,16 @@ describe("App", () => {
     expect(await screen.findByText("no url")).toBeInTheDocument();
   });
 
+  it("retries a failed first load with Refresh", async () => {
+    const api = fakeApi();
+    api.games.mockRejectedValueOnce(new Error("timed out"));
+    show(api);
+    expect(await screen.findByText("timed out")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+    expect((await screen.findAllByRole("button", { name: /1-0/ })).length).toBeGreaterThan(0);
+    expect(api.games).toHaveBeenLastCalledWith("p-app", expect.any(String));
+  });
+
   it("reports a failed load-more", async () => {
     const api = fakeApi();
     show(api);
@@ -300,6 +310,24 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
     expect(await screen.findByText("refresh failed")).toBeInTheDocument();
     expect(api.games).toHaveBeenCalledTimes(3);
+  });
+
+  it("reloads every loaded page on refresh, so a later game stays open and current", async () => {
+    const api = fakeApi();
+    show(api);
+    fireEvent.click(await screen.findByRole("button", { name: "Load more" }));
+    const rows = await screen.findAllByRole("button", { name: /1-0/ });
+    fireEvent.click(rows.at(-1)!);
+    expect(screen.queryByText("Not graded")).toBeNull();
+
+    const ungraded = { games: [game({ threadId: "t-more", grading: UNGRADED })], cursor: null };
+    api.games.mockImplementation(async (_p: string, _s: string, cursor?: string | null) =>
+      cursor === "c1" ? ungraded : { games: [game()], cursor: "c1" },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+    expect((await screen.findAllByText("Not graded")).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("game")).toBeInTheDocument();
+    expect(api.games).toHaveBeenLastCalledWith("p-app", expect.any(String), "c1");
   });
 
   it("waits for a project before loading anything", async () => {

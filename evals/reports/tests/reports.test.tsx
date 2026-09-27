@@ -4,7 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 // Report pages are excluded from coverage; this catches one that no longer renders.
 const reports = import.meta.glob<{ default: ComponentType; title: string }>(
-  "../src/{experiments,tournaments}/*.tsx",
+  "../src/experiments/*.tsx",
   { eager: true },
 );
 

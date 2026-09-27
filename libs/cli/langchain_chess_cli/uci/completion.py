@@ -35,18 +35,15 @@ def info_lines(text: str) -> list[str]:
     return [f"info string {line}" for line in text.splitlines() if line.strip()]
 
 
-def root_moves(
-    start_fen: str, moves: Sequence[str], searchmoves: Sequence[str] | None
-) -> list[str]:
-    """Legal root moves within `searchmoves`, or none if the position doesn't replay."""
+def root_moves(start_fen: str, moves: Sequence[str]) -> list[str]:
+    """Legal root moves, or none if the position doesn't replay."""
     try:
         board = chess.Board(start_fen)
         for uci in moves:
             board.push(board.parse_uci(uci))
     except ValueError:
         return []
-    legal = [move.uci() for move in board.legal_moves]
-    return legal if searchmoves is None else [uci for uci in legal if uci in searchmoves]
+    return [move.uci() for move in board.legal_moves]
 
 
 def _fallback(values: Mapping[str, Any], result: SearchResult, ours: bool) -> str:

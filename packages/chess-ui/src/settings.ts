@@ -3,7 +3,6 @@
 // cases in libs/systemone/tests/fixtures/settings-cases.json hold both to the same answers.
 import {
   DEFAULT_CONTEXT,
-  LEGACY_KEYS,
   MODEL_KWARGS_RULES,
   SETTING_SPECS,
   SETTINGS_VERSION,
@@ -163,16 +162,11 @@ export function sentEffort(context: Pick<ChessContext, "model_kwargs" | "reasoni
 
 /** The keys of a version, `version` itself excluded. */
 export function keysOf(version: number): readonly string[] {
-  if (version === 0) return LEGACY_KEYS;
   return Object.keys(VERSION_DEFAULTS[version]).filter((key) => key !== "version");
 }
 
-/** 0 for settings without a version, when `legacy` allows them. */
-export function versionOf(data: Values, legacy: boolean): number {
-  if (!("version" in data)) {
-    if (legacy) return 0;
-    throw new SettingsError("settings need a `version`");
-  }
+export function versionOf(data: Values): number {
+  if (!("version" in data)) throw new SettingsError("settings need a `version`");
   const version = data.version;
   if (typeof version !== "number" || !Number.isInteger(version) || version < 1) {
     throw new SettingsError(
@@ -187,24 +181,6 @@ export function versionOf(data: Values, legacy: boolean): number {
   return version;
 }
 
-const LEGACY_MEMORY: Record<string, boolean> = { none: false, summarize: true };
-
-/** Settings from before versions to version 1. Both conversions keep what the model saw. */
-export function fromLegacy(values: Values): Values {
-  const { show_legal_moves: shown, ...rest } = values;
-  const memory = rest.memory;
-  if (typeof memory === "string" && memory in LEGACY_MEMORY) rest.memory = LEGACY_MEMORY[memory];
-  if (!("show_legal_moves" in values)) return rest;
-  if ("move_list" in rest) {
-    throw new SettingsError("set move_list or the older show_legal_moves, not both");
-  }
-  if (shown === null) return rest;
-  if (typeof shown !== "boolean") {
-    throw new SettingsError(`show_legal_moves must be true or false, got ${JSON.stringify(shown)}`);
-  }
-  return { ...rest, move_list: shown ? "both" : "candidates" };
-}
-
 /** Version 2 only adds keys. Their defaults play as version 1 did (see settings.py). */
 function addsPromptAndModelOptions(values: Values, complete: boolean): Values {
   if (!complete) return values;
@@ -217,20 +193,15 @@ function addsPromptAndModelOptions(values: Values, complete: boolean): Values {
  * what it must: an added key's default would override a source merged under this one.
  */
 const MIGRATIONS: Record<number, (values: Values, complete: boolean) => Values> = {
-  0: (values) => fromLegacy(values),
   1: addsPromptAndModelOptions,
 };
 
 /** The keys partial settings set, carried to the current version, `version` excluded. */
 export function migrateSettings(
   data: Values,
-  {
-    legacy = false,
-    unknown = "error",
-    complete = false,
-  }: { legacy?: boolean; unknown?: "error" | "drop"; complete?: boolean } = {},
+  { unknown = "error", complete = false }: { unknown?: "error" | "drop"; complete?: boolean } = {},
 ): Values {
-  const version = versionOf(data, legacy);
+  const version = versionOf(data);
   const known = new Set(keysOf(version));
   const entries = Object.entries(data).filter(([key]) => key !== "version");
   const extra = entries.filter(([key]) => !known.has(key)).map(([key]) => key);
@@ -268,16 +239,13 @@ export function loadSettings(data: unknown): ChessContext {
   return resolveSettings(migrateSettings(data));
 }
 
-/**
- * Settings a game recorded: every key of its version, or it's damaged. A game recorded before
- * versions has none and every legacy key.
- */
+/** Settings a game recorded: every key of its version, or it's damaged. */
 export function loadRecorded(data: unknown): ChessContext {
   if (!isRecord(data)) throw new SettingsError("settings must be a JSON object");
-  const expected = keysOf(versionOf(data, true));
+  const expected = keysOf(versionOf(data));
   const given = Object.keys(data).filter((key) => key !== "version");
   if (given.length !== expected.length || !expected.every((key) => key in data)) {
     throw new SettingsError("recorded settings are damaged");
   }
-  return validated(migrateSettings(data, { legacy: true, complete: true }));
+  return validated(migrateSettings(data, { complete: true }));
 }

@@ -70,10 +70,10 @@ def test_deadlines():
 
 
 def test_root_moves():
-    assert len(root_moves(STARTPOS, (), None)) == 20
-    assert root_moves(STARTPOS, ("e2e4",), ["e7e5", "a1a2"]) == ["e7e5"]
-    assert root_moves("nope", (), None) == []
-    assert root_moves(STARTPOS, ("e2e5",), None) == []
+    assert len(root_moves(STARTPOS, ())) == 20
+    assert "e7e5" in root_moves(STARTPOS, ("e2e4",))
+    assert root_moves("nope", ()) == []
+    assert root_moves(STARTPOS, ("e2e5",)) == []
 
 
 def result(status="finished", pool=("e2e4", "d2d4"), error=None):

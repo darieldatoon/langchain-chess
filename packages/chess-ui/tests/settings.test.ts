@@ -3,9 +3,7 @@ import raw from "../../../libs/systemone/tests/fixtures/settings-cases.json?raw"
 import {
   checkSetting,
   DEFAULT_CONTEXT,
-  fromLegacy,
   keysOf,
-  LEGACY_KEYS,
   loadRecorded,
   loadSettings,
   migrateSettings,
@@ -17,7 +15,6 @@ import {
   SettingsError,
   VERSION_DEFAULTS,
 } from "../src";
-import { legacyOf } from "../src/testing";
 
 interface Case {
   name: string;
@@ -65,12 +62,11 @@ describe("the cases the Python tests share", () => {
 describe("versions", () => {
   it("freezes the current version as the defaults", () => {
     expect(VERSION_DEFAULTS[SETTINGS_VERSION]).toEqual(DEFAULT_CONTEXT);
-    expect(keysOf(0)).toBe(LEGACY_KEYS);
     expect(keysOf(SETTINGS_VERSION)).toEqual(SETTING_KEYS);
   });
 
   it("migrates only the keys a source set", () => {
-    expect(migrateSettings({ memory: "summarize" }, { legacy: true })).toEqual({ memory: true });
+    expect(migrateSettings({ version: 1, k: 3 })).toEqual({ k: 3 });
     expect(migrateSettings({ version: 1, k: 3, thread_id: "t" }, { unknown: "drop" })).toEqual({
       k: 3,
     });
@@ -79,17 +75,6 @@ describe("versions", () => {
     );
     expect(() => migrateSettings({ k: 3 })).toThrow("settings need a `version`");
     expect(() => migrateSettings({ version: 9 })).toThrow("newer than this app's");
-  });
-
-  it("converts settings from before versions", () => {
-    expect(fromLegacy({ memory: "none", show_legal_moves: null })).toEqual({ memory: false });
-    expect(fromLegacy({ memory: true, show_legal_moves: true })).toEqual({
-      memory: true,
-      move_list: "both",
-    });
-    expect(fromLegacy({ memory: "full" })).toEqual({ memory: "full" });
-    expect(() => fromLegacy({ show_legal_moves: true, move_list: "none" })).toThrow("not both");
-    expect(() => fromLegacy({ show_legal_moves: "yes" })).toThrow("true or false");
   });
 
   it("lets later sources win, and a null reset", () => {
@@ -139,12 +124,5 @@ describe("model_kwargs", () => {
     expect(sentEffort({ ...context, model_kwargs: replaced })).toBe("medium");
     expect(sentEffort({ ...context, model_kwargs: { extra_body: { reasoning: "x" } } })).toBeNull();
     expect(sentEffort({ ...context, model_kwargs: { reasoning_effort: 3 } })).toBe("low");
-  });
-});
-
-describe("legacyOf", () => {
-  it("rebuilds a game recorded before versions", () => {
-    const legacy = { ...legacyOf(DEFAULT_CONTEXT), memory: "none", show_legal_moves: true };
-    expect(loadRecorded(legacy)).toEqual(DEFAULT_CONTEXT);
   });
 });

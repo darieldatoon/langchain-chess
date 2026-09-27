@@ -152,22 +152,22 @@ async def test_run_experiment(tmp_path):
     assert notes[0] == "semif-rich: 2 examples from d@v1, split dev"
 
 
-async def test_run_experiment_without_a_summary(tmp_path):
+async def test_run_experiment_requires_a_summary(tmp_path):
     async def no_summary(target, /, **kwargs):
-        return SimpleNamespace(experiment_name="e", get_comparison_url=comparison_url(None))
+        return SimpleNamespace(experiment_name="e")
 
-    done = await run_experiment(
-        ExperimentSpec("x", "semif-qwen3.5-4b"),
-        client=client(),
-        dataset="d",
-        tag="v1",
-        split="full",
-        git_sha="abc",
-        runs_dir=tmp_path,
-        rankers=lambda spec: FakeRanker([]),
-        evaluate=no_summary,
-    )
-    assert done.summary == {}
+    with pytest.raises(RuntimeError, match="summary evaluator didn't run"):
+        await run_experiment(
+            ExperimentSpec("x", "semif-qwen3.5-4b"),
+            client=client(),
+            dataset="d",
+            tag="v1",
+            split="full",
+            git_sha="abc",
+            runs_dir=tmp_path,
+            rankers=lambda spec: FakeRanker([]),
+            evaluate=no_summary,
+        )
 
 
 def test_evaluators_skip_scores_that_do_not_apply():

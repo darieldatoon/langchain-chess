@@ -1,15 +1,14 @@
 # evals/reports
 
-Dated, static HTML reports of experiments and tournaments, built with Macaw and `chess-ui`. Open
-any `.html` file here straight from disk: JavaScript, CSS and fonts are inlined, and it follows
-the system's light or dark theme.
+Dated, static HTML reports of experiments, built with Macaw and `chess-ui`. Open any `.html`
+file here straight from disk: JavaScript, CSS and fonts are inlined, and it follows the system's
+light or dark theme.
 
 | Path                                | What it is                                                                                                      |
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `src/experiments/<date>-<name>.tsx` | An experiment report: its data as constants at the top, the page below                                          |
-| `src/tournaments/<date>-<name>.tsx` | A tournament report ([#13](https://github.com/darieldatoon/langchain-chess/issues/13))                          |
 | `src/components/`                   | Shared pieces: `ReportHeader`, `Section`, `Answer`, `MetricCard`, `RunBarChart`, `DataTable`, `PositionExample` |
-| `experiments/`, `tournaments/`      | The built pages, committed                                                                                      |
+| `experiments/`                      | The built pages, committed                                                                                      |
 
 ## Write a report
 
@@ -20,8 +19,8 @@ the system's light or dark theme.
 3. Build and commit both files:
 
    ```sh
-   pnpm --dir evals/reports build            # every report
-   pnpm --dir evals/reports build baseline   # only reports whose name contains "baseline"
+   pnpm --dir evals/reports build            # reports not built yet
+   pnpm --dir evals/reports build baseline   # reports whose name contains "baseline", rebuilt
    ```
 
 A report is a snapshot: nothing regenerates it, and later runs get a new report rather than an

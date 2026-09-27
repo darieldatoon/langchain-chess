@@ -1,6 +1,8 @@
 import asyncio
+from types import SimpleNamespace
 
 import chess
+from langchain_core.messages import AIMessageChunk
 from textual.widgets import Input, Static
 from textual.worker import WorkerState
 
@@ -52,6 +54,26 @@ async def test_a_failed_first_turn_as_black_retries_and_commits_once():
         await pilot.press("ctrl+r")  # nothing pending: a no-op
         await settle(app, pilot)
         assert model.calls == 2
+
+
+async def test_analysis_streams_before_the_run_ends():
+    release = asyncio.Event()
+
+    class Streaming:
+        async def astream(self, payload, config, stream_mode):
+            yield "messages", (AIMessageChunk(content="Thinking"), {"langgraph_node": "model"})
+            await release.wait()
+
+        async def aget_state(self, config):
+            return SimpleNamespace(values={})
+
+    app = ChessApp(lambda saver: Streaming(), ChessContext(), side="black")
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        assert app.running
+        assert text(app, "analysis") == "Thinking"
+        release.set()
+        await settle(app, pilot)
 
 
 async def test_playing_white_and_the_move_list():

@@ -27,6 +27,39 @@ export interface GamesPage {
   cursor: string | null;
 }
 
+/** The next page after the loaded ones; a game that moved up a page isn't listed twice. */
+export function appended(loaded: GamesPage, next: GamesPage): GamesPage {
+  const seen = new Set(loaded.games.map((g) => g.threadId));
+  return {
+    games: [...loaded.games, ...next.games.filter((g) => !seen.has(g.threadId))],
+    cursor: next.cursor,
+  };
+}
+
+export interface Pages extends GamesPage {
+  pages: number;
+}
+
+/**
+ * The first `pages` pages of a query, as one, and more until `keep` is among them: a refresh
+ * reloads every page on screen, and new games may have pushed the open one further down.
+ */
+export async function firstPages(
+  api: Pick<Api, "games">,
+  projectId: string,
+  since: string,
+  pages: number,
+  keep: string | null = null,
+): Promise<Pages> {
+  let loaded: Pages = { ...(await api.games(projectId, since)), pages: 1 };
+  const missing = () => keep !== null && !loaded.games.some((g) => g.threadId === keep);
+  while (loaded.cursor && (loaded.pages < pages || missing())) {
+    const next = await api.games(projectId, since, loaded.cursor);
+    loaded = { ...appended(loaded, next), pages: loaded.pages + 1 };
+  }
+  return loaded;
+}
+
 export interface Api {
   projects(): Promise<Project[]>;
   games(projectId: string, since: string, cursor?: string | null): Promise<GamesPage>;

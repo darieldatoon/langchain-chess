@@ -24,29 +24,16 @@ export const CONTEXT_CHECKS = Object.fromEntries(
   SETTING_KEYS.map((key) => [key, (value: unknown) => isSetting(key, value)]),
 ) as { [K in SettingKey]: Check<ChessContext[K]> };
 
-// `full` was removed; the dialog turns memory off for models that can't keep it.
-const withoutFull = (raw: Record<string, unknown>) =>
-  raw.memory === "full" ? { ...raw, memory: "summarize" } : raw;
-
 /**
- * Stored settings, any subset, of this app's version or from before versions: only valid values
- * are kept, each on its own, so obsolete or corrupt storage can't reach a run.
+ * Stored settings, any subset, of a version this app reads: only valid values are kept, each on
+ * its own, so obsolete or corrupt storage can't reach a run.
  */
 export function sanitizeContext(stored: unknown): ChessContext {
-  const raw = withoutFull(isRecord(stored) ? stored : {});
-  const migrate = (data: Record<string, unknown>) =>
-    migrateSettings(data, { legacy: true, unknown: "drop" });
   let values: Record<string, unknown> = {};
   try {
-    values = migrate(raw);
+    values = migrateSettings(isRecord(stored) ? stored : {}, { unknown: "drop" });
   } catch {
-    // An unreadable older field costs only itself; a newer version can't be trusted at all.
-    const { show_legal_moves: _, ...rest } = raw;
-    try {
-      values = migrate(rest);
-    } catch {
-      values = {};
-    }
+    // Without a readable version, no value can be trusted.
   }
   return SETTING_KEYS.reduce<ChessContext>(
     (context, key) => (isSetting(key, values[key]) ? { ...context, [key]: values[key] } : context),

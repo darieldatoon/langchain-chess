@@ -48,6 +48,8 @@ export interface PendingMove {
 export interface Game {
   startFen: string;
   fen: string;
+  /** The start and the position after each move. */
+  fens: string[];
   moves: string[];
   entries: MoveEntry[];
   outcome: Outcome | null;
@@ -144,9 +146,9 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
     return {
       ply,
       turn: turnOf(ply, turns),
-      fenBefore: replay(startFen, moves.slice(0, ply.ply)).fen,
+      fenBefore: position.fens[ply.ply],
     };
-  }, [plies, turns, startFen, moves]);
+  }, [plies, turns, position]);
 
   const entries = useMemo(
     () =>
@@ -211,6 +213,7 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
   return {
     startFen,
     fen: position.fen,
+    fens: position.fens,
     moves,
     entries,
     outcome: values.outcome ?? null,

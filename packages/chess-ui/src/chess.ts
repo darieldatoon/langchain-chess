@@ -65,39 +65,28 @@ export interface Replay {
   fen: string;
   /** SAN per replayed move; stops at the first move chess.js rejects. */
   sans: string[];
+  /** The start and the position after each move, one per move: from a rejected move on, the
+   * position stays put. */
+  fens: string[];
 }
 
 /** Replays UCI moves from a root; the server is the authority, so a bad move just stops it. */
 export function replay(startFen: string, moves: readonly string[]): Replay {
   const game = new Chess(startFen);
   const sans: string[] = [];
-  for (const uci of moves) {
-    try {
-      sans.push(play(game, uci).san);
-    } catch {
-      break;
-    }
-  }
-  return { fen: game.fen(), sans };
-}
-
-/** The start and the position after each move, in one pass; from a move chess.js rejects on, as
- * in `replay`, the position stays put. */
-export function positions(startFen: string, moves: readonly string[]): string[] {
-  const game = new Chess(startFen);
   const fens = [startFen];
   let playing = true;
   for (const uci of moves) {
     if (playing) {
       try {
-        play(game, uci);
+        sans.push(play(game, uci).san);
       } catch {
         playing = false;
       }
     }
     fens.push(game.fen());
   }
-  return fens;
+  return { fen: game.fen(), sans, fens };
 }
 
 /** SAN for a move at a position, or the UCI itself when it isn't legal there. */

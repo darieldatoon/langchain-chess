@@ -40,31 +40,17 @@ def test_an_explicit_null_resets_a_setting_and_omission_keeps_it():
     assert context.threshold == 0.9
 
 
-def test_an_assistant_saved_before_versions():
-    assistant = runtime(policy="llm", memory="summarize", show_legal_moves=False, k=3)
-    context = resolve_context({"configurable": {"thread_id": "t"}}, assistant)
-    assert (context.policy, context.memory, context.move_list, context.k) == (
-        "llm",
-        True,
-        "candidates",
-        3,
-    )
-
-
-def test_an_older_assistant_merged_under_a_run_version_keeps_its_settings():
-    # The Agent Server merges the assistant's context with the run's before the graph sees it.
-    merged = runtime(memory="none", show_legal_moves=False, version=1, k=3)
-    context = resolve_context(None, merged)
-    assert (context.memory, context.move_list, context.k) == (False, "candidates", 3)
-    newer = resolve_context(None, runtime(show_legal_moves=True, move_list="none", version=1))
-    assert newer.move_list == "none"
-
-
-def test_a_source_without_a_version_is_read_as_version_1():
-    # Studio saves an assistant without one.
+def test_a_source_without_a_version_is_read_as_the_current_one():
+    # Studio saves an assistant without one, with keys every version since has.
     context = resolve_context({"configurable": {"move_list": "legal"}}, runtime(move_list="none"))
     assert context.move_list == "legal"
-    assert resolve_context(None, runtime(move_list="none", version=None)).move_list == "none"
+    studio = runtime(version=None, move_list="none", system_prompt="Play fast.", show_fen=False)
+    context = resolve_context(None, studio)
+    assert (context.move_list, context.system_prompt, context.show_fen) == (
+        "none",
+        "Play fast.",
+        False,
+    )
 
 
 def test_model_and_dict_assistant_contexts_and_non_execution_runtimes():

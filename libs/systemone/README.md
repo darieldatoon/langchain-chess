@@ -106,7 +106,7 @@ agent = build_agent(settings, checkpointer=InMemorySaver())
 A settings file is `ChessContext` as JSON. `version` is required and every other key is optional:
 missing keys take their version's defaults, a null resets a key to its default, and an unknown key
 is an error. Older versions are migrated. Games record every key of their version, and
-`load_recorded` reads them, including games recorded before versions. The JSON Schemas are in
+`load_recorded` reads them. The JSON Schemas are in
 [`packages/chess-ui/src/generated`](../../packages/chess-ui/src/generated): `opponent.schema.json`
 for a file and `settings.schema.json` for the resolved settings.
 

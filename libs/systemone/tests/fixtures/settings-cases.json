@@ -221,14 +221,6 @@
       "error": true
     },
     {
-      "name": "a key from before versions",
-      "input": {
-        "version": 1,
-        "show_legal_moves": true
-      },
-      "error": true
-    },
-    {
       "name": "a bad value",
       "input": {
         "version": 1,
@@ -250,59 +242,6 @@
     }
   ],
   "recorded": [
-    {
-      "name": "a game recorded before versions",
-      "input": {
-        "policy": "hybrid",
-        "model": "langsmith:baseten/zai-org/GLM-5.3",
-        "reasoning_effort": "medium",
-        "show_legal_moves": false,
-        "memory": "summarize",
-        "systemone_model": "typesafe/jev-latest",
-        "style": "rich",
-        "with_eval": false,
-        "with_nouls": false,
-        "gate": "margin",
-        "threshold": 0.5,
-        "tournament_threshold": null,
-        "k": 3,
-        "top_p": null,
-        "draw_claims": "auto",
-        "seed": 7
-      },
-      "output": {
-        "model": "langsmith:baseten/zai-org/GLM-5.3",
-        "reasoning_effort": "medium",
-        "move_list": "candidates",
-        "memory": true,
-        "systemone_model": "typesafe/jev-latest",
-        "threshold": 0.5,
-        "k": 3,
-        "seed": 7
-      }
-    },
-    {
-      "name": "a game recorded before versions, with the defaults",
-      "input": {
-        "policy": "hybrid",
-        "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
-        "reasoning_effort": null,
-        "show_legal_moves": true,
-        "memory": "none",
-        "systemone_model": "semif-qwen3.5-4b",
-        "style": "rich",
-        "with_eval": false,
-        "with_nouls": false,
-        "gate": "margin",
-        "threshold": 0.9,
-        "tournament_threshold": null,
-        "k": 5,
-        "top_p": null,
-        "draw_claims": "auto",
-        "seed": 0
-      },
-      "output": {}
-    },
     {
       "name": "a version 1 game",
       "input": {
@@ -337,23 +276,24 @@
       }
     },
     {
-      "name": "a game before versions missing a key",
+      "name": "a game recorded without a version",
       "input": {
-        "policy": "hybrid",
+        "policy": "systemone",
         "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
         "reasoning_effort": null,
-        "show_legal_moves": true,
-        "memory": "none",
-        "systemone_model": "semif-qwen3.5-4b",
-        "style": "rich",
-        "with_eval": false,
+        "move_list": "legal",
+        "memory": false,
+        "draw_claims": "never",
+        "systemone_model": "someone/custom-ranker",
+        "style": "terse",
+        "with_eval": true,
         "with_nouls": false,
-        "gate": "margin",
+        "gate": "confidence",
         "threshold": 0.9,
-        "tournament_threshold": null,
+        "tournament_threshold": 0.4,
         "k": 5,
-        "top_p": null,
-        "draw_claims": "auto"
+        "top_p": 0.8,
+        "seed": 0
       },
       "error": true
     },
@@ -398,50 +338,6 @@
         "tournament_threshold": null,
         "k": null,
         "top_p": null,
-        "seed": 0
-      },
-      "error": true
-    },
-    {
-      "name": "a game before versions with an older memory",
-      "input": {
-        "policy": "hybrid",
-        "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
-        "reasoning_effort": null,
-        "show_legal_moves": true,
-        "memory": "full",
-        "systemone_model": "semif-qwen3.5-4b",
-        "style": "rich",
-        "with_eval": false,
-        "with_nouls": false,
-        "gate": "margin",
-        "threshold": 0.9,
-        "tournament_threshold": null,
-        "k": 5,
-        "top_p": null,
-        "draw_claims": "auto",
-        "seed": 0
-      },
-      "error": true
-    },
-    {
-      "name": "a game before versions with a null for a key migration removes",
-      "input": {
-        "policy": "hybrid",
-        "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
-        "reasoning_effort": null,
-        "show_legal_moves": null,
-        "memory": "none",
-        "systemone_model": "semif-qwen3.5-4b",
-        "style": "rich",
-        "with_eval": false,
-        "with_nouls": false,
-        "gate": "margin",
-        "threshold": 0.9,
-        "tournament_threshold": null,
-        "k": 5,
-        "top_p": null,
-        "draw_claims": "auto",
         "seed": 0
       },
       "error": true

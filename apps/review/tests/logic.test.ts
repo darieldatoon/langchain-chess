@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vite-plus/test";
-import { createApi, defaultProject } from "../src/api";
+import { appended, createApi, defaultProject, firstPages } from "../src/api";
 import { matchup, modelName, resultText, toGame, type ThreadItem } from "../src/games";
 import { evalText, parseReview, reviewsByRun, whiteCp, whiteWinPercent } from "../src/review";
 import { decodeValues } from "../src/values";
 import { call as llmCall, ply as plyOf, systemOne, turn } from "@langchain-chess/chess-ui/testing";
-import { graded, MOVES, review, reviewFeedback, values } from "./support/fixtures";
+import { game, graded, MOVES, review, reviewFeedback, values } from "./support/fixtures";
 
 const thread = (id: string, last = `${id}-last`): ThreadItem => ({
   thread_id: id,
@@ -231,6 +231,46 @@ describe("games", () => {
     expect(toGame(thread("t"), { ...run, outputs: other }, graded()).grading).toEqual(mismatch);
     const invalid = { status: "invalid", problem: "x" } as const;
     expect(toGame(thread("t"), run, invalid).grading).toBe(invalid);
+  });
+});
+
+describe("pages", () => {
+  const page = (ids: string[], cursor: string | null) => ({
+    games: ids.map((threadId) => game({ threadId })),
+    cursor,
+  });
+  const ids = (p: { games: { threadId: string }[] }) => p.games.map((g) => g.threadId);
+
+  it("loads the first pages one after another, stopping at the last", async () => {
+    const games = vi
+      .fn()
+      .mockResolvedValueOnce(page(["c", "b"], "after-b"))
+      .mockResolvedValueOnce(page(["a"], null));
+    const loaded = await firstPages({ games }, "p", "since", 3);
+    expect(ids(loaded)).toEqual(["c", "b", "a"]);
+    expect(loaded.cursor).toBeNull();
+    expect(games.mock.calls).toEqual([
+      ["p", "since"],
+      ["p", "since", "after-b"],
+    ]);
+  });
+
+  it("loads past the page count until the open game is back", async () => {
+    const games = vi
+      .fn()
+      .mockResolvedValueOnce(page(["new", "c"], "after-c"))
+      .mockResolvedValueOnce(page(["b", "a"], "after-a"))
+      .mockResolvedValueOnce(page(["open"], "after-open"));
+    const loaded = await firstPages({ games }, "p", "since", 2, "open");
+    expect(ids(loaded)).toEqual(["new", "c", "b", "a", "open"]);
+    expect(loaded.pages).toBe(3);
+    expect(games).toHaveBeenCalledTimes(3);
+  });
+
+  it("lists a game once when it moved up to the page before", () => {
+    const next = appended(page(["c", "b", "a"], "after-b"), page(["a", "z"], null));
+    expect(ids(next)).toEqual(["c", "b", "a", "z"]);
+    expect(next.cursor).toBeNull();
   });
 });
 

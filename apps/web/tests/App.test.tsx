@@ -3,6 +3,7 @@ import { act, fireEvent, screen, waitFor, within } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import App from "../src/App";
 import { checkApiKey, type KeyCheck } from "../src/auth";
+import { fetchModelLimit } from "../src/modelLimit";
 import { DEFAULT_SETUP } from "../src/setup";
 import {
   APP_KEY,
@@ -13,7 +14,7 @@ import {
   VIEW_KEY,
 } from "../src/storage";
 import { fake, lastOptions, optionsLog, resetFake } from "./support/fakeStream";
-import { AFTER_E4, E4_E5, legacyOf, ply, turn } from "@langchain-chess/chess-ui/testing";
+import { AFTER_E4, E4_E5, ply, turn } from "@langchain-chess/chess-ui/testing";
 import { WEB_TRACE } from "../src/useGame";
 import { renderWithProviders as render } from "./support/renderApp";
 import {
@@ -168,9 +169,14 @@ describe("new game", () => {
 
   it("asks the server for the model's input limit with the saved key", async () => {
     saveAppSettings({ apiKey: "lsv2_k" });
-    const modelLimit = vi.fn(() => Promise.resolve({ kind: "known" as const, tokens: 968000 }));
-    render(<App modelLimit={modelLimit} />);
-    await waitFor(() => expect(modelLimit).toHaveBeenCalledWith("lsv2_k", DEFAULT_CONTEXT.model));
+    render(<App />);
+    await waitFor(() =>
+      expect(fetchModelLimit).toHaveBeenCalledWith(
+        expect.any(String),
+        "lsv2_k",
+        DEFAULT_CONTEXT.model,
+      ),
+    );
   });
 
   it("does not open the modal for a game in the URL", () => {
@@ -208,33 +214,6 @@ describe("new game", () => {
     expect(screen.getByLabelText("Model Spec")).toHaveValue("openai:gpt-5.6-sol");
     await click("Cancel");
     expect(dialog()).not.toBeInTheDocument();
-  });
-
-  it("migrates the old settings into the setup and the API key into app settings", async () => {
-    window.localStorage.setItem(
-      "langchain-chess:settings",
-      JSON.stringify({
-        apiKey: "lsv2_old",
-        context: {
-          policy: "random",
-          human_side: "black",
-          k: 4,
-          model: "langsmith:baseten/zai-org/GLM-5.3",
-        },
-      }),
-    );
-    render(<App />);
-    expect(screen.getByLabelText("LLM")).toHaveValue("langsmith:baseten/zai-org/GLM-5.3");
-    expect(window.localStorage.getItem(APP_KEY)).toContain("lsv2_old");
-    await click("Play");
-    expect(board()).toHaveAttribute("data-orientation", "white");
-    expect(lastOptions.current).toMatchObject({ apiKey: "lsv2_old" });
-    await click("drop e2e4");
-    expect(lastConfigurable()).toEqual({
-      ...DEFAULT_CONTEXT,
-      k: 4,
-      model: "langsmith:baseten/zai-org/GLM-5.3",
-    });
   });
 
   it("resolves Random through the injected source", async () => {
@@ -348,7 +327,7 @@ describe("a game's own setup", () => {
     );
     render(<App />);
     expect(screen.getByText("View only")).toBeInTheDocument();
-    expect(screen.getByText(/didn't record its settings/)).toBeInTheDocument();
+    expect(screen.getByText(/can't read this game's settings/)).toBeInTheDocument();
     expect(board()).toHaveAttribute("data-draggable", "false");
     expect(screen.getByText("View only.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Ask opponent to move" })).not.toBeInTheDocument();
@@ -533,26 +512,6 @@ describe("after the game", () => {
     expect(board()).toHaveAttribute("data-position", START_FEN);
     expect(submitted()).toEqual(["go"]);
     expect(lastConfigurable()).toEqual(LLM_HIGH);
-  });
-
-  it("rematches a game from before versions, custom System 1 and all", async () => {
-    const legacy = legacyOf(DEFAULT_CONTEXT);
-    const recorded = {
-      ...legacy,
-      memory: "none",
-      show_legal_moves: false,
-      systemone_model: "someone/ranker",
-    };
-    fake.threads["t-1"] = { values: { ...MATE, setup: recorded } };
-    window.history.replaceState(null, "", "?thread=t-1");
-    render(<App />);
-    expect(screen.getByText("someone/ranker + GLM-5.3 Flash")).toBeInTheDocument();
-    await click("Rematch");
-    expect(lastConfigurable()).toEqual({
-      ...DEFAULT_CONTEXT,
-      move_list: "candidates",
-      systemone_model: "someone/ranker",
-    });
   });
 
   it("rematches as White without starting", async () => {

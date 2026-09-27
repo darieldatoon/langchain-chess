@@ -6,7 +6,6 @@ import {
   isOwnPiece,
   isPromotion,
   opposite,
-  positions,
   replay,
   sanAt,
   sideToMove,
@@ -78,7 +77,7 @@ describe("helpers", () => {
 describe("replay", () => {
   it("lists every position in one pass, each the replay of its prefix", () => {
     const moves = ["e2e4", "e7e5", "g1f3", "zz99", "b8c6"];
-    const fens = positions(START_FEN, moves);
+    const { fens } = replay(START_FEN, moves);
     expect(fens).toHaveLength(moves.length + 1);
     expect(fens[0]).toBe(START_FEN);
     fens
@@ -88,7 +87,7 @@ describe("replay", () => {
   });
 
   it("replays UCI moves, promotions included, and reports SAN", () => {
-    expect(replay(START_FEN, ["e2e4", "e7e5", "g1f3"])).toEqual({
+    expect(replay(START_FEN, ["e2e4", "e7e5", "g1f3"])).toMatchObject({
       fen: "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",
       sans: ["e4", "e5", "Nf3"],
     });

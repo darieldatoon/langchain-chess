@@ -1,4 +1,3 @@
-import { LEGACY_KEYS, type ChessContext } from "./generated/settings";
 import type { Call, Ply, SystemOneMeta, TurnRecord } from "./types";
 
 export function call(overrides: Partial<Call> = {}): Call {
@@ -97,9 +96,3 @@ export const E4_E5 = {
 };
 
 export const AFTER_E4 = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1";
-
-/** A context's keys from before versions, `show_legal_moves` left to the caller. */
-export function legacyOf(context: ChessContext): Record<string, unknown> {
-  const keys = LEGACY_KEYS.filter((key) => key !== "show_legal_moves");
-  return Object.fromEntries(keys.map((key) => [key, context[key as keyof ChessContext]]));
-}

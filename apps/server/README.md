@@ -53,7 +53,7 @@ documents every setting: `policy` (`llm`, `systemone`, `hybrid`), `model`, `reas
 `move_list`, `memory`, `systemone_model`, `threshold`, `k`, `top_p`, `gate`, `draw_claims` and the
 rest. Assistant context and `configurable` are each migrated from their settings version, then
 merged with `configurable` winning; an explicit null resets a setting to its default, and unknown
-keys are ignored. Assistants saved before versions still run.
+keys are ignored. A source without a `version` is read as the current version, as Studio saves one.
 
 `model_kwargs` from a run or an assistant is limited on the server to arguments that reach the
 gateway's request: `temperature`, `top_p`, `max_tokens` (or `max_output_tokens`,

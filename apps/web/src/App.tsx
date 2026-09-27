@@ -14,13 +14,12 @@ import {
   MoveList,
   opposite,
   PlyDetails,
-  replay,
   sideToMove,
   START_FEN,
   type ChessContext,
   type PlyView,
   type Side,
-  usePlyKeys,
+  usePlyCursor,
 } from "@langchain-chess/chess-ui";
 import { checkApiKey, type KeyCheck } from "./auth";
 import { downloadJson } from "./files";
@@ -208,24 +207,20 @@ export default function App({
         )}
       </div>
 
-      <NewGameDialog
-        key={overlay?.kind === "new-game" ? "new-game-open" : "new-game-closed"}
-        open={overlay?.kind === "new-game"}
-        initial={(overlay?.kind === "new-game" && overlay.draft) || setup}
-        canCancel={seat !== null}
-        onPlay={play}
-        onClose={closeNewGame}
-        onOpenSettings={openSettingsFromNewGame}
-        checkKey={() => checkKey(app.apiKey)}
-        modelLimit={limitFor}
-      />
-      <AppSettingsDialog
-        key={overlay?.kind === "settings" ? "settings-open" : "settings-closed"}
-        open={overlay?.kind === "settings"}
-        settings={app}
-        onSave={onSaveApp}
-        onClose={closeSettings}
-      />
+      {overlay?.kind === "new-game" && (
+        <NewGameDialog
+          initial={overlay.draft ?? setup}
+          canCancel={seat !== null}
+          onPlay={play}
+          onClose={closeNewGame}
+          onOpenSettings={openSettingsFromNewGame}
+          checkKey={() => checkKey(app.apiKey)}
+          modelLimit={limitFor}
+        />
+      )}
+      {overlay?.kind === "settings" && (
+        <AppSettingsDialog settings={app} onSave={onSaveApp} onClose={closeSettings} />
+      )}
     </div>
   );
 }
@@ -288,23 +283,12 @@ function Table({
   // A pending turn means a run failed mid-turn: only an empty submit resumes it.
   const canRetry = !over && idle && game.pendingTurn;
   const canGo = !over && idle && !game.pendingTurn && opponentToMove;
-  // Null follows the game; a number is an earlier position the player stepped back to. A move
-  // arriving meanwhile leaves them there: Last (or End) comes back.
-  const [viewed, setViewed] = useState<number | null>(null);
   // Follows the side, which a game opened from its link only knows once its thread loads.
   const [flipped, setFlipped] = useState(false);
   const orientation = flipped ? opposite(humanSide) : humanSide;
   const last = game.moves.length;
-  const live = viewed === null || viewed >= last;
-  const index = live ? last : viewed;
-  const go = useCallback(
-    (next: number) => setViewed(next >= last ? null : Math.max(0, next)),
-    [last],
-  );
-  usePlyKeys(index, last, go);
-  const boardFen = live
-    ? (game.pendingMove?.fen ?? game.fen)
-    : replay(game.startFen, game.moves.slice(0, index)).fen;
+  const { index, live, go } = usePlyCursor(last);
+  const boardFen = live ? (game.pendingMove?.fen ?? game.fen) : game.fens[index];
   const lastMove = live
     ? (game.pendingMove?.uci ?? game.moves.at(-1) ?? null)
     : (game.moves[index - 1] ?? null);
@@ -352,8 +336,8 @@ function Table({
       )}
       {record === null && game.restore === "ready" && (
         <Banner intent="info" title="View only">
-          This game's thread doesn't say which opponent it was set up with (older games don't), so
-          it can only be shown. Start a new game to play.
+          This app can't read which opponent this game was set up with (older games didn't record
+          it, or recorded it in an older form), so it can only be shown. Start a new game to play.
         </Banner>
       )}
       {isAuthError(failure) && (
@@ -492,7 +476,7 @@ function Table({
               </div>
             ) : (
               <Text variant="xs" color="tertiary">
-                This game didn't record its settings: start a new game to pick an opponent.
+                This app can't read this game's settings: start a new game to pick an opponent.
               </Text>
             )}
           </Card>

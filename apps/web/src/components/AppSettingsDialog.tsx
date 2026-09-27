@@ -5,17 +5,17 @@ import { useState } from "react";
 import type { AppSettings } from "../storage";
 
 interface Props {
-  open: boolean;
   settings: AppSettings;
   onSave: (settings: AppSettings) => void;
   onClose: () => void;
 }
 
-/** App-level settings only; the opponent is chosen per game in the new-game dialog. */
-export function AppSettingsDialog({ open, settings, onSave, onClose }: Props) {
+/** App-level settings only; the opponent is chosen per game in the new-game dialog. Mounted only
+ * while shown, so each opening starts from the saved settings. */
+export function AppSettingsDialog({ settings, onSave, onClose }: Props) {
   const [apiKey, setApiKey] = useState(settings.apiKey);
   return (
-    <Dialog open={open} onOpenChange={() => onClose()}>
+    <Dialog open onOpenChange={() => onClose()}>
       <DialogContent title="Settings" description="Stored in this browser only.">
         <div className="flex flex-col gap-space-5">
           <Input
