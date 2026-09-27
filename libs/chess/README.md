@@ -65,10 +65,17 @@ Without a checkpointer the agent is stateless and every run must carry a `positi
 - **Stalls.** When a `langsmith:` model's stream goes silent past langchain-openai's
   `stream_chunk_timeout` (120 s), the model is called once more in the same turn. A second stall
   fails the turn, which a retry can pick up.
-- **The record** is `start_fen`, `moves`, `plies`, `turns`, `outcome` and `error`. Read only those
-  keys, plus any your own middleware documents (the Agent Server's `setup`, for one). `messages`
-  is the model's working context and may be summarized. The thread-state API also returns private
-  channels.
+- **Time controls.** The client keeps the clock, as a UCI GUI does. Every run of a timed game
+  carries `clock` (`control` with `base_ms` and `increment_ms`, then `white_ms` and `black_ms`,
+  after the client's own increment); the first run fixes the game's `time_control`. Each ply's
+  `clock_ms` is the mover's time left after it. The agent is charged its wall time within the
+  run: a move that lands after its time ran out loses on time. `{"clock": ..., "flag": side}`
+  ends the game when the client says `side` ran out on its move; it's a draw if the other side
+  can't mate.
+- **The record** is `start_fen`, `moves`, `plies`, `turns`, `outcome`, `error` and `time_control`.
+  Read only those keys, plus any your own middleware documents (the Agent Server's `setup`, for
+  one). `messages` is the model's working context and may be summarized. The thread-state API also
+  returns private channels.
 
 ## How a turn runs
 

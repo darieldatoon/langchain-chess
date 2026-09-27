@@ -1,6 +1,7 @@
 """`create_chess_agent`: a chess agent on `create_agent(tools=[])`."""
 
-from collections.abc import Mapping, Sequence
+import time
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 from langchain.agents import create_agent
@@ -28,7 +29,7 @@ from langchain_chess.rules import DrawClaims
 from langchain_chess.settings import ListedMoves
 from langchain_chess.state import ChessState
 
-INPUT_KEYS = frozenset({"messages", "position"})
+INPUT_KEYS = frozenset({"messages", "position", "clock", "flag"})
 
 
 class NoModel(BaseChatModel):
@@ -83,6 +84,7 @@ def create_chess_agent(
     context_schema: type | None = None,
     checkpointer: Checkpointer | None = None,
     name: str | None = None,
+    now: Callable[[], float] = time.time,
 ) -> CompiledStateGraph:
     """Build a chess agent. One run plays at most one turn; one thread is one game.
 
@@ -94,6 +96,7 @@ def create_chess_agent(
     `fixed_topology=True` keeps the summarization node with `memory=False`, so the graph's
     nodes don't depend on `memory`: the Agent Server reads state with a graph built without
     the run's settings.
+    `now` is the wall clock a timed game's agent is charged by.
     """
     if system_prompt == "":
         msg = "system_prompt must not be empty; pass None for the bundled prompt"
@@ -119,6 +122,7 @@ def create_chess_agent(
         render=render,
         recorder=recorder,
         extensions=guarded,
+        now=now,
     )
     stack: list[AgentMiddleware[Any, Any, Any]] = [core]
     if forced_move:

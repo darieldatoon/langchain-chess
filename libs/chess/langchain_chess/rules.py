@@ -11,7 +11,7 @@ from typing import Literal
 
 import chess
 
-from langchain_chess.state import Draw, DrawReason, Outcome, Side
+from langchain_chess.state import Draw, DrawReason, Outcome, Side, Timeout
 
 type DrawClaims = Literal["auto", "never"]
 
@@ -48,6 +48,17 @@ def ending(board: chess.Board, draw_claims: DrawClaims) -> Outcome | None:
         if board.halfmove_clock >= 100:
             return Draw(kind="draw", reason="fifty_moves")
     return None
+
+
+def flag_fell(board: chess.Board, flagged: Side) -> Outcome:
+    """A loss on time, or a draw when the other side can't mate by any legal sequence.
+
+    python-chess's check is conservative: a rare dead position scores a loss, never the reverse.
+    """
+    winner = chess.BLACK if flagged == "white" else chess.WHITE
+    if board.has_insufficient_material(winner):
+        return Draw(kind="draw", reason="timeout_vs_insufficient_material")
+    return Timeout(kind="timeout", winner=side(winner))
 
 
 def root_board(start_fen: str) -> chess.Board:
@@ -116,6 +127,8 @@ def describe_outcome(outcome: Outcome) -> str:
         return f"draw by {outcome['reason'].replace('_', ' ')}"
     if outcome["kind"] == "checkmate":
         return f"checkmate, {outcome['winner']} wins"
+    if outcome["kind"] == "timeout":
+        return f"{outcome['winner']} wins on time"
     return f"{outcome['winner']} wins by resignation"
 
 
@@ -131,4 +144,6 @@ def result_text(outcome: Outcome) -> str:
     if outcome["kind"] == "checkmate":
         return f"Checkmate, {outcome['winner']} wins. {score(outcome)}"
     loser = "black" if outcome["winner"] == "white" else "white"
+    if outcome["kind"] == "timeout":
+        return f"{loser.capitalize()} runs out of time. {score(outcome)}"
     return f"{loser.capitalize()} resigns after repeated illegal moves. {score(outcome)}"

@@ -106,3 +106,9 @@ def test_result_text_and_score():
     assert describe_outcome(resign) == "white wins by resignation"
     fifty: Outcome = {"kind": "draw", "reason": "fifty_moves"}
     assert describe_outcome(fifty) == "draw by fifty moves"
+
+
+def test_a_loss_on_time():
+    timeout = {"kind": "timeout", "winner": "black"}
+    assert result_text(timeout) == "White runs out of time. 0-1"
+    assert describe_outcome(timeout) == "black wins on time"

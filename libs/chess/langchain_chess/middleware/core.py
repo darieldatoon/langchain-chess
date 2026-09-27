@@ -4,6 +4,7 @@ It is always first in the stack: its `before_agent` runs first, its `wrap_model_
 outermost, and its `after_model` and `after_agent` run last.
 """
 
+import math
 import time
 import uuid
 from collections.abc import Awaitable, Callable, Mapping, Sequence
@@ -37,6 +38,7 @@ from langchain_chess.rules import (
     DrawClaims,
     ending,
     fingerprint,
+    flag_fell,
     legal_member,
     legal_ucis,
     parse_chat,
@@ -48,12 +50,15 @@ from langchain_chess.rules import (
 from langchain_chess.state import (
     Call,
     ChessState,
+    ClockInput,
+    ClockStart,
     FailedCall,
     Invocation,
     Ply,
     PositionInput,
     Proposal,
     Resignation,
+    Side,
     TurnRecord,
 )
 
@@ -74,7 +79,10 @@ _DECISION_RESET: dict[str, Any] = {
     "candidates_by": None,
     "fallback_move": None,
     "failed_call": None,
+    "clock_start": None,
 }
+
+_CLEARED_INPUT: dict[str, Any] = {"position": None, "clock": None, "flag": None}
 
 
 def _new_id() -> str:
@@ -92,7 +100,30 @@ def looks_like_overflow(error: BaseException) -> bool:
     return any(hint in text for hint in _OVERFLOW_HINTS)
 
 
-def _external_ply(index: int, board: chess.Board, move: chess.Move) -> Ply:
+def _whole(value: object) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _well_formed(clock: object) -> bool:
+    if not isinstance(clock, Mapping):
+        return False
+    control = clock.get("control")
+    return (
+        isinstance(control, Mapping)
+        and _whole(base := control.get("base_ms"))
+        and base > 0
+        and _whole(increment := control.get("increment_ms"))
+        and increment >= 0
+        and _whole(clock.get("white_ms"))
+        and _whole(clock.get("black_ms"))
+    )
+
+
+def _time_left(clock: ClockInput, mover: Side) -> int:
+    return clock["white_ms"] if mover == "white" else clock["black_ms"]
+
+
+def _external_ply(index: int, board: chess.Board, move: chess.Move, clock_ms: int | None) -> Ply:
     return {
         "ply": index,
         "side": side(board.turn),
@@ -105,6 +136,7 @@ def _external_ply(index: int, board: chess.Board, move: chess.Move) -> Ply:
         "model": None,
         "latency_ms": 0.0,
         "meta": {},
+        "clock_ms": clock_ms,
     }
 
 
@@ -134,6 +166,7 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         render: PositionRenderer,
         recorder: CallRecorder,
         extensions: Sequence[AgentMiddleware] = (),
+        now: Callable[[], float] = time.time,
     ) -> None:
         self.memory = memory
         self.max_retries = max_retries
@@ -141,6 +174,7 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         self.render = render
         self.recorder = recorder
         self.extensions = list(extensions)
+        self.now = now
         # In memory only: after_model raises the original error in the run that failed. Absent
         # on a resume, which tries the model call again instead of re-raising forever.
         self._failures: dict[str, Exception] = {}
@@ -174,6 +208,7 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
             "turns": [],
             "outcome": None,
             "error": None,
+            "time_control": None,
             "consumed_message_ids": [],
         }
 
@@ -183,7 +218,7 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         update: dict[str, Any] = self._first_run(state) | {
             "error": reason,
             "invocation": _invocation("reject"),
-            "position": None,
+            **_CLEARED_INPUT,
             "jump_to": "end",
         }
         if message is not None and message.id is not None:
@@ -193,7 +228,7 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
     def _noop(self, state: Mapping[str, Any]) -> dict[str, Any]:
         return self._first_run(state) | {
             "invocation": _invocation("noop"),
-            "position": None,
+            **_CLEARED_INPUT,
             "error": None,
             "jump_to": "end",
         }
@@ -210,6 +245,8 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
 
     def _lifecycle(self, state: Mapping[str, Any]) -> dict[str, Any]:
         position: PositionInput | None = state.get("position")
+        clock: ClockInput | None = state.get("clock")
+        flag: Side | None = state.get("flag")
         messages: list[AnyMessage] = state.get("messages") or []
         consumed = set(state.get("consumed_message_ids") or [])
         last = messages[-1] if messages else None
@@ -219,11 +256,15 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
 
         if position is not None and new_human is not None:
             return self._reject(state, "send a position or a message, not both", new_human)
+        if flag is not None and (position is not None or new_human is not None):
+            return self._reject(state, "send a flag with the clock alone", new_human)
         # Before any sync: python-chess can't rederive a resignation from the board.
         if state.get("outcome") is not None:
-            if position is not None or new_human is not None:
+            if position is not None or new_human is not None or flag is not None:
                 return self._reject(state, "the game is over", new_human)
             return self._noop(state)
+        if flag is not None:
+            return self._flag(state, clock, flag)
 
         if position is not None:
             request: str | None = fingerprint(
@@ -237,19 +278,23 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
             request = None
 
         pending = turn is not None and turn["status"] == "pending"
-        if request is None:
-            return self._retry(state) if pending else self._noop(state)
-        if turn is not None and request == turn["request"]:
-            return self._retry(state) if pending else self._noop(state)
+        if request is None or (turn is not None and request == turn["request"]):
+            if not pending and clock is None:
+                return self._noop(state)
+            if (problem := self._clock_problem(state, clock)) is not None:
+                return self._reject(state, problem, new_human)
+            return self._retry(state, clock) if pending else self._noop(state)
         if pending and new_human is not None:
             return self._reject(state, "finish or retry the pending turn first", new_human)
+        if (problem := self._clock_problem(state, clock)) is not None:
+            return self._reject(state, problem, new_human)
 
         base = self._first_run(state) | dict(state)
         try:
             synced = (
-                self._sync_chat(base, new_human)
+                self._sync_chat(base, new_human, clock)
                 if new_human is not None
-                else self._sync_position(base, position or {})
+                else self._sync_position(base, position or {}, clock)
             )
         except CommandError as e:
             return self._reject(state, str(e), new_human)
@@ -276,9 +321,11 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
             "moves": synced.moves,
             "plies": synced.plies,
             "consumed_message_ids": [*(state.get("consumed_message_ids") or []), *synced.consumed],
-            "position": None,
+            **_CLEARED_INPUT,
             "error": None,
         }
+        if clock is not None and state.get("time_control") is None:
+            update["time_control"] = clock["control"]
         new_messages = list(synced.messages)
         outcome = ending(synced.board, self.draw_claims)
         if outcome is not None:
@@ -297,18 +344,24 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
             "turns": [*turns, {**opened, "initial_allowed": allowed}],
             "allowed_moves": allowed,
             "invocation": _invocation("execute", opened["id"]),
+            "clock_start": self._clock_start(clock, synced.board),
         }
         if new_messages:
             update["messages"] = new_messages
         return update
 
-    def _sync_chat(self, state: Mapping[str, Any], message: AnyMessage) -> _Synced:
+    def _sync_chat(
+        self, state: Mapping[str, Any], message: AnyMessage, clock: ClockInput | None
+    ) -> _Synced:
         board = self._board(state)
         move = parse_chat(board, text_of(message))
         plies = list(state["plies"])
         moves = list(state["moves"])
         if move is not None:
-            plies.append(_external_ply(len(plies), board, move))
+            mover = side(board.turn)
+            plies.append(
+                _external_ply(len(plies), board, move, _time_left(clock, mover) if clock else None)
+            )
             moves.append(move.uci())
             board.push(move)
         return _Synced(
@@ -322,7 +375,9 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
             restrict=None,
         )
 
-    def _sync_position(self, state: Mapping[str, Any], position: PositionInput) -> _Synced:
+    def _sync_position(
+        self, state: Mapping[str, Any], position: PositionInput, clock: ClockInput | None
+    ) -> _Synced:
         thread_moves: list[str] = list(state["moves"])
         root = root_board(position.get("start_fen") or chess.STARTING_FEN).fen()
         if thread_moves and root != root_board(state["start_fen"]).fen():
@@ -344,9 +399,13 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         new = requested[len(thread_moves) :]
         plies = list(state["plies"])
         cursor = replay(root, thread_moves, "never")
-        for uci in new:
+        for index, uci in enumerate(new):
             move = legal_member(cursor, uci)
-            plies.append(_external_ply(len(plies), cursor, move))
+            mover = side(cursor.turn)
+            # The clock is a snapshot: only each side's latest move has a known time left.
+            latest = index >= len(new) - 2
+            clock_ms = _time_left(clock, mover) if clock and latest else None
+            plies.append(_external_ply(len(plies), cursor, move, clock_ms))
             cursor.push(move)
         text = delta_text(
             root,
@@ -367,14 +426,76 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
             restrict=list(restrict) if restrict is not None else None,
         )
 
-    def _retry(self, state: Mapping[str, Any]) -> dict[str, Any]:
-        base = {"invocation": _invocation("execute"), "position": None, "error": None}
+    def _retry(self, state: Mapping[str, Any], clock: ClockInput | None) -> dict[str, Any]:
+        base = {
+            "invocation": _invocation("execute"),
+            **_CLEARED_INPUT,
+            "error": None,
+            "clock_start": self._clock_start(clock, self._board(state)),
+        }
         if state.get("proposal") is not None or state.get("terminal_intent") is not None:
             # The decision already passed validation: finalize it rather than ask again, which
             # would cost money and might change the move.
             return base | {"jump_to": "end"}
         turn = state["turns"][-1]
-        return base | _DECISION_RESET | {"allowed_moves": list(turn["initial_allowed"])}
+        return _DECISION_RESET | base | {"allowed_moves": list(turn["initial_allowed"])}
+
+    # ---- the clock ----------------------------------------------------------------------------
+
+    @staticmethod
+    def _clock_problem(
+        state: Mapping[str, Any], clock: ClockInput | None, *, flag: bool = False
+    ) -> str | None:
+        """Why a run's clock can't be played with, or None. The client keeps the clock."""
+        control = state.get("time_control")
+        if clock is None:
+            return None if control is None else "this game is timed: send the clock with every run"
+        if not _well_formed(clock):
+            return (
+                "the clock needs whole milliseconds, a positive base and a non-negative increment"
+            )
+        if control is None:
+            if state.get("moves") or state.get("turns"):
+                return "this game is untimed: a clock is set when the game starts"
+        elif clock["control"] != control:
+            return "the time control is fixed for the game"
+        if not flag and min(clock["white_ms"], clock["black_ms"]) <= 0:
+            return "a clock has run out: send a flag"
+        return None
+
+    def _clock_start(self, clock: ClockInput | None, board: chess.Board) -> ClockStart | None:
+        if clock is None:
+            return None
+        return {"remaining_ms": _time_left(clock, side(board.turn)), "at": self.now()}
+
+    def _flag(
+        self, state: Mapping[str, Any], clock: ClockInput | None, flag: Side
+    ) -> dict[str, Any]:
+        """Ends the game on the client's word that `flag` ran out; it must be `flag`'s move."""
+        if state.get("time_control") is None:
+            return self._reject(state, "this game has no clock", None)
+        if (problem := self._clock_problem(state, clock, flag=True)) is not None:
+            return self._reject(state, problem, None)
+        assert clock is not None
+        board = self._board(state)
+        if flag not in ("white", "black") or side(board.turn) != flag:
+            return self._reject(state, f"{flag} is not to move", None)
+        if _time_left(clock, flag) > 0:
+            return self._reject(state, f"{flag} still has time", None)
+        turns: list[TurnRecord] = list(state["turns"])
+        if turns and turns[-1]["status"] == "pending":
+            turns[-1] = {**self._finalized(turns[-1], state), "status": "terminal"}
+        outcome = flag_fell(board, flag)
+        return _DECISION_RESET | {
+            **_CLEARED_INPUT,
+            "turns": turns,
+            "outcome": outcome,
+            "messages": [AIMessage(result_text(outcome), id=_new_id())],
+            "allowed_moves": [],
+            "error": None,
+            "invocation": _invocation("noop"),
+            "jump_to": "end",
+        }
 
     # ---- the model call -----------------------------------------------------------------------
 
@@ -558,6 +679,21 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         turns: list[TurnRecord] = list(state["turns"])
         turn = self._finalized(turns[-1], state)
         calls = turn["calls"]
+        clock_ms: int | None = None
+        if (start := state.get("clock_start")) is not None:
+            left = start["remaining_ms"] - (self.now() - start["at"]) * 1000
+            if left <= 0:
+                # A decision that lands after the flag doesn't count.
+                board = self._board(state)
+                outcome = flag_fell(board, side(board.turn))
+                turns[-1] = {**turn, "status": "terminal"}
+                return _DECISION_RESET | {
+                    "turns": turns,
+                    "outcome": outcome,
+                    "messages": [AIMessage(result_text(outcome), id=_new_id())],
+                }
+            # Up, not to nearest: a move made in time never records an empty clock.
+            clock_ms = math.ceil(left) + state["time_control"]["increment_ms"]
         if (intent := state.get("terminal_intent")) is not None:
             turns[-1] = {**turn, "status": "terminal"}
             return _DECISION_RESET | {
@@ -604,6 +740,7 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
                 "model": str(model) if model is not None else None,
                 "latency_ms": turn["latency_ms"],
                 "meta": ply_meta,
+                "clock_ms": clock_ms,
             }
         )
         board.push(move)

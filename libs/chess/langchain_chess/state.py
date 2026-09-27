@@ -24,6 +24,7 @@ type DrawReason = Literal[
     "fivefold",
     "fifty_moves",
     "seventyfive_moves",
+    "timeout_vs_insufficient_material",
 ]
 type TurnStatus = Literal["pending", "committed", "abandoned", "terminal"]
 type CallKind = Literal["llm", "systemone", "summary"]
@@ -38,11 +39,38 @@ class PositionInput(TypedDict, total=False):
     """A hard restriction on the moves to consider (UCI `searchmoves`). Non-empty."""
 
 
+class TimeControl(TypedDict):
+    base_ms: int
+    increment_ms: int
+
+
+class ClockInput(TypedDict):
+    """A timed client's clocks as it sends the run, after its own move's increment.
+
+    The client keeps the clock, as a UCI GUI does; every run of a timed game carries it.
+    """
+
+    control: TimeControl
+    white_ms: int
+    black_ms: int
+
+
+class ClockStart(TypedDict):
+    """The side to move's clock as this run began, for charging the agent's time at commit."""
+
+    remaining_ms: int
+    at: float
+    """Wall-clock seconds: a resumed run may be finished by another worker."""
+
+
 class ChessInput(TypedDict, total=False):
     """What callers send. `create_agent` derives the real input schema from `ChessState`."""
 
     messages: list[AnyMessage]
     position: PositionInput
+    clock: ClockInput
+    flag: Side
+    """The side whose clock ran out, sent with `clock` and nothing else."""
 
 
 class Call(TypedDict):
@@ -126,6 +154,9 @@ class Ply(TypedDict):
     latency_ms: float
     meta: dict[str, dict[str, JSONValue]]
     """Keyed by middleware name."""
+    clock_ms: NotRequired[int | None]
+    """The mover's time left after the move, increment included; None untimed. Absent on
+    older checkpoints."""
 
 
 class Checkmate(TypedDict):
@@ -144,7 +175,12 @@ class Resignation(TypedDict):
     reason: Literal["illegal_moves"]
 
 
-type Outcome = Checkmate | Draw | Resignation
+class Timeout(TypedDict):
+    kind: Literal["timeout"]
+    winner: Side
+
+
+type Outcome = Checkmate | Draw | Resignation | Timeout
 
 
 class ChessState(AgentState):
@@ -158,8 +194,12 @@ class ChessState(AgentState):
     """Every turn, even ones that produced no move."""
     error: NotRequired[Annotated[str | None, OmitFromInput]]
     """The last rejection reason."""
-    # Input only; ChessCore clears it every run.
+    time_control: NotRequired[Annotated[TimeControl | None, OmitFromInput]]
+    """Set by the game's first run and fixed after it; None untimed."""
+    # Input only; ChessCore clears them every run.
     position: NotRequired[Annotated[PositionInput | None, OmitFromOutput]]
+    clock: NotRequired[Annotated[ClockInput | None, OmitFromOutput]]
+    flag: NotRequired[Annotated[Side | None, OmitFromOutput]]
     # Turn working state: private.
     allowed_moves: NotRequired[Annotated[list[str], PrivateStateAttr]]
     candidates: NotRequired[Annotated[list[str] | None, PrivateStateAttr]]
@@ -171,12 +211,13 @@ class ChessState(AgentState):
     terminal_intent: NotRequired[Annotated[Resignation | None, PrivateStateAttr]]
     failed_call: NotRequired[Annotated[FailedCall | None, PrivateStateAttr]]
     invocation: NotRequired[Annotated[Invocation, PrivateStateAttr]]
+    clock_start: NotRequired[Annotated[ClockStart | None, PrivateStateAttr]]
 
 
 CHESS_KEYS: frozenset[str] = frozenset(get_type_hints(ChessState, include_extras=True))
 """Every `ChessState` key, `messages` included."""
 
 RECORD_KEYS: frozenset[str] = frozenset(
-    {"start_fen", "moves", "plies", "outcome", "turns", "error"}
+    {"start_fen", "moves", "plies", "outcome", "turns", "error", "time_control"}
 )
 """What clients may read: the thread-state API also returns the private channels."""

@@ -320,10 +320,24 @@ async def test_invalid_fen_is_rejected(make_agent, run, cfg):
 
 async def test_schemas(make_agent, run, cfg):
     agent = make_agent(ScriptedModel(script=["MOVE: e4"]))
-    assert set(agent.get_input_jsonschema()["properties"]) == {"messages", "position"}
+    assert set(agent.get_input_jsonschema()["properties"]) == {
+        "messages",
+        "position",
+        "clock",
+        "flag",
+    }
     output = set(agent.get_output_jsonschema()["properties"])
-    assert {"moves", "plies", "turns", "outcome", "start_fen", "error"} <= output
-    assert not output & {"position", "allowed_moves", "proposal", "invocation", "candidates"}
+    assert {"moves", "plies", "turns", "outcome", "start_fen", "error", "time_control"} <= output
+    assert not output & {
+        "position",
+        "clock",
+        "flag",
+        "clock_start",
+        "allowed_moves",
+        "proposal",
+        "invocation",
+        "candidates",
+    }
     out = await run(agent, {**position(), "moves": ["d2d4"], "outcome": "x"}, cfg)
     assert out["moves"] == ["e2e4"]
     assert agent.get_state(cfg).values["position"] is None
