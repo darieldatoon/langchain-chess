@@ -95,7 +95,9 @@
       "langgraph_nodes": [
         "SystemOneMiddleware.before_model",
         "model"
-      ]
+      ],
+      "x-help": "Who picks the moves: the LLM alone, System 1 alone, or System 1 with the LLM for the hard moves.",
+      "x-label": "Opponent"
     },
     "model": {
       "default": "langsmith:baseten/zai-org/GLM-5.3-Flash",
@@ -105,7 +107,9 @@
       ],
       "minLength": 1,
       "title": "Model",
-      "type": "string"
+      "type": "string",
+      "x-help": "The reasoning model that thinks through the positions System 1 hands over.",
+      "x-label": "LLM"
     },
     "model_kwargs": {
       "additionalProperties": {
@@ -117,7 +121,9 @@
         "model"
       ],
       "title": "Model Kwargs",
-      "type": "object"
+      "type": "object",
+      "x-help": "Extra arguments for the model, as JSON, such as {\"temperature\": 0.2}. They win over the settings here. A token limit set only inside extra_body isn't counted, so memory can summarize too late.",
+      "x-label": "Model arguments"
     },
     "reasoning_effort": {
       "anyOf": [
@@ -132,7 +138,9 @@
       "description": "Reasoning effort passed to the model. Null sends none and uses the model's own default; models without reasoning (such as Claude Haiku 4.5) need it null.",
       "langgraph_nodes": [
         "model"
-      ]
+      ],
+      "x-help": "How long the model thinks before it answers. Higher is slower and costs more. Leave it on the model's default for models without reasoning.",
+      "x-label": "Reasoning effort"
     },
     "system_prompt": {
       "anyOf": [
@@ -149,7 +157,9 @@
       "langgraph_nodes": [
         "model"
       ],
-      "title": "System Prompt"
+      "title": "System Prompt",
+      "x-help": "Replaces the instructions the model starts from. Leave it empty for the bundled prompt. Every turn still asks for a final MOVE line.",
+      "x-label": "System prompt"
     },
     "show_fen": {
       "default": true,
@@ -158,7 +168,9 @@
         "model"
       ],
       "title": "Show Fen",
-      "type": "boolean"
+      "type": "boolean",
+      "x-help": "Include the position in FEN notation in every turn's message. Turn it off to see how the model does from the moves and the board alone.",
+      "x-label": "Show the FEN"
     },
     "show_board": {
       "default": true,
@@ -167,7 +179,9 @@
         "model"
       ],
       "title": "Show Board",
-      "type": "boolean"
+      "type": "boolean",
+      "x-help": "Include a text drawing of the board in every turn's message. The moves so far are always shown.",
+      "x-label": "Show the board"
     },
     "move_list": {
       "$ref": "#/$defs/ListedMoves",
@@ -175,7 +189,9 @@
       "description": "The moves listed in each turn's message. `both`: System 1's candidates, when there are any, and every legal move. `legal`: every legal move. `candidates`: only the candidates. `none`: no list. A restricted turn always lists the permitted moves.",
       "langgraph_nodes": [
         "model"
-      ]
+      ],
+      "x-help": "Which moves every turn's message lists: System 1's candidates, all legal moves, both, or none. Fewer lists mean a shorter prompt and a harder test.",
+      "x-label": "Moves to list"
     },
     "memory": {
       "default": false,
@@ -184,7 +200,9 @@
         "model"
       ],
       "title": "Memory",
-      "type": "boolean"
+      "type": "boolean",
+      "x-help": "Let the model see its earlier turns, summarized when the conversation gets long. Off, it sees only the current position, which is cheaper.",
+      "x-label": "Memory"
     },
     "draw_claims": {
       "$ref": "#/$defs/DrawClaims",
@@ -192,7 +210,9 @@
       "description": "`auto` ends the game on a threefold repetition or the fifty-move rule; `never` plays on until a draw is forced.",
       "langgraph_nodes": [
         "model"
-      ]
+      ],
+      "x-help": "End the game on a threefold repetition or after fifty moves without a capture or pawn move. Off, play continues until a draw is forced.",
+      "x-label": "Claim draws"
     },
     "systemone_model": {
       "default": "semif-qwen3.5-4b",
@@ -202,7 +222,9 @@
       ],
       "minLength": 1,
       "title": "Systemone Model",
-      "type": "string"
+      "type": "string",
+      "x-help": "The fast move ranker. It scores every legal move in about a second.",
+      "x-label": "System 1"
     },
     "style": {
       "$ref": "#/$defs/DescriptionStyle",
@@ -210,7 +232,9 @@
       "description": "How each legal move is described to System 1. `rich` adds captures, checks and exchange results; `terse` names the move only.",
       "langgraph_nodes": [
         "SystemOneMiddleware.before_model"
-      ]
+      ],
+      "x-help": "How each move is described to System 1: with captures, checks and exchanges, or by name only.",
+      "x-label": "Move descriptions"
     },
     "with_eval": {
       "default": false,
@@ -219,7 +243,9 @@
         "SystemOneMiddleware.before_model"
       ],
       "title": "With Eval",
-      "type": "boolean"
+      "type": "boolean",
+      "x-help": "Also ask System 1 who stands better. It's recorded on the move and doesn't change what's played.",
+      "x-label": "Ask for a position score"
     },
     "with_nouls": {
       "default": false,
@@ -228,7 +254,9 @@
         "SystemOneMiddleware.before_model"
       ],
       "title": "With Nouls",
-      "type": "boolean"
+      "type": "boolean",
+      "x-help": "Also ask System 1 whether the position needs calculation and has tactics. It's recorded on the move and doesn't change what's played.",
+      "x-label": "Ask about tactics"
     },
     "gate": {
       "$ref": "#/$defs/Gate",
@@ -236,7 +264,9 @@
       "description": "The signal compared with the threshold. `margin`: the top move's probability minus the second's. `confidence`: System 1's own confidence in its ranking.",
       "langgraph_nodes": [
         "SystemOneMiddleware.before_model"
-      ]
+      ],
+      "x-help": "What System 1's confidence is judged by: how far its top move leads the next one, or its own confidence score.",
+      "x-label": "Confidence measure"
     },
     "threshold": {
       "default": 0.9,
@@ -247,7 +277,9 @@
       "maximum": 1.0,
       "minimum": 0.0,
       "title": "Threshold",
-      "type": "number"
+      "type": "number",
+      "x-help": "How confident System 1 must be to play a move without the LLM. Lower hands fewer moves to the LLM, which is faster and cheaper.",
+      "x-label": "Bar to play alone"
     },
     "tournament_threshold": {
       "anyOf": [
@@ -265,7 +297,9 @@
       "langgraph_nodes": [
         "SystemOneMiddleware.before_model"
       ],
-      "title": "Tournament Threshold"
+      "title": "Tournament Threshold",
+      "x-help": "The same bar for positions with too many moves to rank at once, which System 1 ranks in rounds. Empty uses the bar above.",
+      "x-label": "Bar for long move lists"
     },
     "k": {
       "default": 5,
@@ -276,7 +310,9 @@
       "maximum": 255,
       "minimum": 1,
       "title": "K",
-      "type": "integer"
+      "type": "integer",
+      "x-help": "How many of System 1's best moves the LLM is shown when System 1 isn't sure. The LLM can still play any legal move.",
+      "x-label": "Candidates for the LLM"
     },
     "top_p": {
       "anyOf": [
@@ -294,7 +330,9 @@
       "langgraph_nodes": [
         "SystemOneMiddleware.before_model"
       ],
-      "title": "Top P"
+      "title": "Top P",
+      "x-help": "Show the LLM fewer candidates when the first few already cover this much of System 1's probability. Empty always shows them all.",
+      "x-label": "Probability cutoff"
     },
     "seed": {
       "default": 0,
@@ -305,7 +343,9 @@
       "maximum": 9007199254740991,
       "minimum": -9007199254740991,
       "title": "Seed",
-      "type": "integer"
+      "type": "integer",
+      "x-help": "Makes System 1's rounds repeatable. Change it to replay a game with different luck.",
+      "x-label": "Seed"
     }
   },
   "title": "ChessContext",

@@ -119,7 +119,7 @@ export function matchupOf(setup: Setup, summarize: Summarize): Matchup {
   }
   if (model === "") return { ok: false, reason: "Enter a model spec for the custom LLM." };
   const held = model === null ? [] : modelKwargsProblems(setup.knobs.model_kwargs, "server");
-  if (held.length > 0) return { ok: false, reason: `Model kwargs: ${held.join("; ")}.` };
+  if (held.length > 0) return { ok: false, reason: `Model arguments: ${held.join("; ")}.` };
   if (model !== null && setup.knobs.memory) {
     if (summarize === "checking") {
       return { ok: false, reason: `Checking whether ${modelName(model)} can summarize…` };

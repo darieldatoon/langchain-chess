@@ -76,13 +76,13 @@ def test_a_setup_s_settings_reach_the_agent(server: str, page: Page):
     page.goto(f"{server}/ui/")
     page.get_by_text("Black", exact=True).click()
     page.get_by_role("button", name="Advanced").click()
-    pick(page, "Moves Listed", "Candidates System 1's, when it has any")
-    pick(page, "Draw Claims", "Never Only forced draws end the game")
+    pick(page, "Moves to list", "Candidates System 1's, when it has any")
+    pick(page, "Claim draws", "No Only forced draws end the game")
     page.get_by_role("switch", name="Show the board").click()
-    page.get_by_label("System Prompt").fill("Play fast.")
-    shortlist = page.get_by_label("Shortlist Size")
+    page.get_by_label("System prompt", exact=True).fill("Play fast.")
+    shortlist = page.get_by_label("Candidates for the LLM", exact=True)
     shortlist.fill("2")
-    page.get_by_role("button", name="Play").click()
+    page.get_by_role("button", name="Play", exact=True).click()
 
     values = game_state(server, page)
     expected = ChessContext(

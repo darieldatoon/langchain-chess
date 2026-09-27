@@ -1,9 +1,19 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, screen } from "@testing-library/react";
+import { renderWithProviders as render } from "../support/renderApp";
 import type { KeyCheck } from "../../src/auth";
 import type { ModelLimit } from "../../src/modelLimit";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { DEFAULT_SETUP, type Setup } from "../../src/setup";
-import { DEFAULT_CONTEXT } from "@langchain-chess/chess-ui";
+import {
+  DEFAULT_CONTEXT,
+  SETTING_HELP,
+  SETTING_KEYS,
+  SETTING_LABELS,
+  type SettingKey,
+} from "@langchain-chess/chess-ui";
+import userEvent from "@testing-library/user-event";
+
+const PICKED: SettingKey[] = ["policy", "model", "systemone_model"];
 import { AppSettingsDialog } from "../../src/components/AppSettingsDialog";
 import { LIMIT_DELAY_MS, NewGameDialog } from "../../src/components/NewGameDialog";
 import { ResultCard } from "../../src/components/ResultCard";
@@ -154,7 +164,7 @@ describe("NewGameDialog", () => {
     );
     advanced();
     fireEvent.click(play());
-    change("Shortlist Size", k);
+    change("Candidates for the LLM", k);
     await act(async () => answer({ kind: "ok" }));
     expect(onPlay).not.toHaveBeenCalled();
   });
@@ -252,21 +262,21 @@ describe("NewGameDialog", () => {
       "aria-expanded",
       "true",
     );
-    expect(screen.getByLabelText("Reasoning Effort")).toBeInTheDocument();
-    expect(screen.getByLabelText("Move Descriptions")).toBeInTheDocument();
-    expect(screen.getByLabelText("Threshold")).toBeInTheDocument();
-    expect(screen.getByLabelText("Draw Claims")).toBeInTheDocument();
+    expect(screen.getByLabelText("Reasoning effort")).toBeInTheDocument();
+    expect(screen.getByLabelText("Move descriptions")).toBeInTheDocument();
+    expect(screen.getByLabelText("Bar to play alone")).toBeInTheDocument();
+    expect(screen.getByLabelText("Claim draws")).toBeInTheDocument();
 
     change("LLM", "none");
-    expect(screen.queryByLabelText("Reasoning Effort")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Threshold")).not.toBeInTheDocument();
-    expect(screen.getByText(/gate and shortlist apply when an LLM plays too/)).toBeInTheDocument();
-    expect(screen.getByLabelText("Move Descriptions")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Reasoning effort")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Bar to play alone")).not.toBeInTheDocument();
+    expect(screen.getByText(/apply when an LLM plays too/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Move descriptions")).toBeInTheDocument();
 
     change("LLM", "langsmith:openai/gpt-6-luna");
     change("System 1", "none");
-    expect(screen.queryByLabelText("Move Descriptions")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Reasoning Effort")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Move descriptions")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Reasoning effort")).toBeInTheDocument();
     expect(screen.getByLabelText("Seed")).toBeInTheDocument();
 
     advanced();
@@ -278,23 +288,23 @@ describe("NewGameDialog", () => {
     advanced();
     await settled();
     change("Memory", "on");
-    change("Moves Listed", "none");
-    change("Reasoning Effort", "low");
-    change("Threshold", "0.5");
+    change("Moves to list", "none");
+    change("Reasoning effort", "low");
+    change("Bar to play alone", "0.5");
     expect(screen.getByTestId("threshold-value")).toHaveTextContent("0.50");
-    change("Tournament Threshold", "0.7");
-    change("Signal", "confidence");
-    change("Shortlist Size", "3");
-    change("Top-p", "0.8");
-    change("Draw Claims", "never");
-    change("Move Descriptions", "terse");
+    change("Bar for long move lists", "0.7");
+    change("Confidence measure", "confidence");
+    change("Candidates for the LLM", "3");
+    change("Probability cutoff", "0.8");
+    change("Claim draws", "never");
+    change("Move descriptions", "terse");
     change("Seed", "7");
-    change("System Prompt", "Play the Caro-Kann.");
-    change("Model Kwargs", '{"temperature": 0.2}');
+    change("System prompt", "Play the Caro-Kann.");
+    change("Model arguments", '{"temperature": 0.2}');
     fireEvent.click(screen.getByRole("switch", { name: "Show the FEN" }));
     fireEvent.click(screen.getByRole("switch", { name: "Show the board" }));
-    fireEvent.click(screen.getByRole("switch", { name: "Ask for a position Score" }));
-    fireEvent.click(screen.getByRole("switch", { name: "Ask the Noul questions" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Ask for a position score" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Ask about tactics" }));
     await clickPlay();
     expect(onPlay.mock.calls[0][1]).toEqual({
       ...DEFAULT_CONTEXT,
@@ -321,18 +331,18 @@ describe("NewGameDialog", () => {
   it("holds Play while the model kwargs can't be sent, and says why", async () => {
     const { onPlay } = open();
     advanced();
-    change("Model Kwargs", "{");
+    change("Model arguments", "{");
     expect(screen.getByText("Not valid JSON.")).toBeInTheDocument();
     expect(matchup()).toHaveTextContent("Fix the Advanced settings marked invalid.");
-    change("Model Kwargs", '{"reasoning_effort": "high"}');
-    expect(screen.getByText(/Model kwargs set the effort/)).toBeInTheDocument();
-    change("System Prompt", "   ");
+    change("Model arguments", '{"reasoning_effort": "high"}');
+    expect(screen.getByText(/Model arguments set the effort/)).toBeInTheDocument();
+    change("System prompt", "   ");
     await clickPlay();
     expect(onPlay.mock.calls[0][1]).toMatchObject({
       model_kwargs: { reasoning_effort: "high" },
       system_prompt: null,
     });
-    change("Model Kwargs", "");
+    change("Model arguments", "");
     await clickPlay();
     expect(onPlay.mock.calls[1][1].model_kwargs).toEqual({});
   });
@@ -340,7 +350,19 @@ describe("NewGameDialog", () => {
   it("shows stored model kwargs as JSON", () => {
     open({ ...DEFAULT_SETUP, knobs: { ...DEFAULT_SETUP.knobs, model_kwargs: { top_p: 0.5 } } });
     advanced();
-    expect(screen.getByLabelText("Model Kwargs")).toHaveValue('{\n  "top_p": 0.5\n}');
+    expect(screen.getByLabelText("Model arguments")).toHaveValue('{\n  "top_p": 0.5\n}');
+  });
+
+  it("names every setting plainly and explains each in a tooltip", async () => {
+    open();
+    advanced();
+    const shown = SETTING_KEYS.filter((key) => !PICKED.includes(key));
+    for (const key of shown) {
+      expect(screen.getByLabelText(`About ${SETTING_LABELS[key]}`)).toBeInTheDocument();
+    }
+    await userEvent.hover(screen.getByLabelText("About Probability cutoff"));
+    const tip = await screen.findByRole("tooltip");
+    expect(tip).toHaveTextContent(SETTING_HELP.top_p);
   });
 
   it("sends no effort with Model default, as models without reasoning need", async () => {
@@ -350,8 +372,8 @@ describe("NewGameDialog", () => {
     });
     change("LLM", "langsmith:anthropic/claude-haiku-4-5-20251001");
     advanced();
-    expect(screen.getByLabelText("Reasoning Effort")).toHaveValue("medium");
-    change("Reasoning Effort", "default");
+    expect(screen.getByLabelText("Reasoning effort")).toHaveValue("medium");
+    change("Reasoning effort", "default");
     await clickPlay();
     expect(onPlay.mock.calls[0][1]).toMatchObject({
       model: "langsmith:anthropic/claude-haiku-4-5-20251001",
@@ -469,16 +491,16 @@ describe("NewGameDialog", () => {
       knobs: { ...DEFAULT_SETUP.knobs, top_p: 0.5, tournament_threshold: 0.6 },
     });
     advanced();
-    expect(screen.getByLabelText("Top-p")).toHaveValue(0.5);
-    change("Top-p", "");
-    change("Tournament Threshold", "");
-    change("Shortlist Size", "0");
+    expect(screen.getByLabelText("Probability cutoff")).toHaveValue(0.5);
+    change("Probability cutoff", "");
+    change("Bar for long move lists", "");
+    change("Candidates for the LLM", "0");
     change("Seed", "1.5");
-    expect(screen.getByLabelText("Shortlist Size")).toHaveValue(0);
-    expect(screen.getByLabelText("Shortlist Size")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText("Candidates for the LLM")).toHaveValue(0);
+    expect(screen.getByLabelText("Candidates for the LLM")).toHaveAttribute("aria-invalid", "true");
     expect(matchup()).toHaveTextContent("Fix the Advanced settings marked invalid.");
     expect(play()).toBeDisabled();
-    change("Shortlist Size", "3");
+    change("Candidates for the LLM", "3");
     expect(play()).toBeDisabled();
     change("Seed", "2");
     await clickPlay();
@@ -492,12 +514,12 @@ describe("NewGameDialog", () => {
   it("drops a hidden field's invalid text: the knob keeps the value it shows again", async () => {
     const { onPlay } = open();
     advanced();
-    change("Shortlist Size", "0");
+    change("Candidates for the LLM", "0");
     expect(play()).toBeDisabled();
     advanced();
     expect(play()).toBeEnabled();
     advanced();
-    expect(screen.getByLabelText("Shortlist Size")).toHaveValue(5);
+    expect(screen.getByLabelText("Candidates for the LLM")).toHaveValue(5);
     await clickPlay();
     expect(onPlay.mock.calls[0][1].k).toBe(5);
   });
