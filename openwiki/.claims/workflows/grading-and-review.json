@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2e36a78fa5b42950b7856cb370446cdfba1825e75a9f741217678d85e5ab0042",
+  "pageVersion": "sha256:ba841781750cd01122d98c5836e3d91765083b91a60b4a35442085b7014cae3e",
   "claims": [
     {
       "id": "claim_b748c13ffef4424890aa4cdea910404f",
@@ -11,22 +11,22 @@
           "version": "repo-lines-v1:sha256:ccb8f786904b24db409b8ff70821d88b3a31bb1d0d79e0b41ebf3606c0f1980b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2ODhkY2E3NzVjODg2YWU2YmE3Y2Q5NGQ5MWY1Mjc0ZDFkNWE1NTM3NDBkOGViZDUxYzljNmVlMWUyYWEyZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4YWFjNzUxZjlkYTA0MmY1ODJhMzIwYTg1ZDgxNzgxZTJiYTU1YjFhY2JhYzc4MWNiOGQwN2ZkZmNhNDlkMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNDZjNzJjNDZlYmQzMzI2Yjk2NzExYjgwMWMyZjYzMDkxMjEzYWI4NmIyYWRhZWU5OWY1ZjAxMTZmYzA2OWUifQ"
         },
         {
-          "resource": "repo://libs/cli/langchain_chess_cli/main.py#L228-L245",
-          "version": "repo-lines-v1:sha256:94b296f6ea69b3ded769bb9e65b079fe028256ef81b9a9b601e161c2bf62df15:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkYTVjNjZlMTdiMTQ1Mzk3ODM0YjhjODU0ZGM0MTkzZTIxMjUxODBhODk5NmExNGMzMTg4MzMyNmIyZWZiY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2Y2UzMzc2ODE3MjVjZmU4NDhhN2QzZjM3NzIzYzU1ZTcyNjQ2ZDE5NDkwOTU0YmY2OGQxNTFjMGJkMzc5OTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmYWEwNmUxZGYwMWI2NDBiZGI5OTYxNWZjZmIyMjBmZWRmOGMyMTc4ZThmOWMwNjE1MzI0NGZkNDk1ZmQ2ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlOGFhMDQ5MDc4YTE5MjM5OWIzYmRiZGE0OGI5NmQ0YmY1M2Q2Yjk1YmI5MzcwYjJiOTEzN2NlYWNkOTViYWEifQ"
+          "resource": "repo://libs/cli/langchain_chess_cli/main.py#L294-L314",
+          "version": "repo-lines-v1:sha256:24c2d24654826a6e107b7fb43310e2bd935e5c3c18a23dc50415cfa7c4fb3db4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkYTVjNjZlMTdiMTQ1Mzk3ODM0YjhjODU0ZGM0MTkzZTIxMjUxODBhODk5NmExNGMzMTg4MzMyNmIyZWZiY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2Y2UzMzc2ODE3MjVjZmU4NDhhN2QzZjM3NzIzYzU1ZTcyNjQ2ZDE5NDkwOTU0YmY2OGQxNTFjMGJkMzc5OTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1MzgwYTljMGZiM2U5ZGM5YjhkNWJjMDIwOGNjNjY4N2Y0OTE1NzQ5MTdjNmNmMWU2MTg4ZGFlOGMwMDRlZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlOGFhMDQ5MDc4YTE5MjM5OWIzYmRiZGE0OGI5NmQ0YmY1M2Q2Yjk1YmI5MzcwYjJiOTEzN2NlYWNkOTViYWEifQ"
         }
       ]
     },
     {
       "id": "claim_5f7db9c695c049b8a2c765e0e5a640c2",
-      "statement": "Only one of --depth, --nodes and --movetime may be given; the default search limit is depth 16, and --workers defaults to cpu_count divided by engine threads.",
+      "statement": "Only one of --depth, --nodes and --movetime may be given; the default search limit is depth 16, and --workers defaults to cpu_count divided by engine threads (at least 1).",
       "evidence": [
         {
           "resource": "repo://libs/cli/langchain_chess_cli/grade/cli.py#L16-L26",
           "version": "repo-lines-v1:sha256:6a57784fcb9185a9de968cee1dd5d1477ba01520794a551f775047b6b51d0157:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhMjU1MzU5MmRjNjY0YjI3OWE4MDFlN2ViOWY1NTc4OTI2NTkwYTAzMzUxZmZhMDcyNDRiNTVhMjM5ZWQyOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMWE4NWRmNzk2N2I4M2I5ZDg1ZWEzODExMjNmNTQxNzgwNzJmODEzNGM2MDM2NjY3N2UxMWJmYThhOWJmNzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhNWVhMzUzOTY3NGIyZjIzNmExMDIyODNlYmU4YzhiNDE1ZGE3YzY0MTA5ZDhhMGVmY2JkNjYxYzM2MjQ1M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhNTJjZDU5ODI1Yjk4MTEyMDA0ZTBjNDU1MTk2YzcxYzI4OTY5OTg0OWFiMTA4M2Y1OWRjOTJmYjA5YzE2MjQifQ"
         },
         {
-          "resource": "repo://libs/cli/langchain_chess_cli/main.py#L250-L259",
-          "version": "repo-lines-v1:sha256:ea41a96310a15e04eda406701cf527eabbd765f1d9d23cdf02eb4ed64655fa9b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5MDM1MjFjZmM4ZmJlY2MwZmI1MjkxZjk5ZDliNTljZDRkMjk5NDRlNTRhZjg4YjIxYjM4Yzk5YzM3ODgwZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmZGY4YWJiNDQ0NGVlOWQxYzQxMWFjNjBjODQ0NzA2NjM3MzRhYWIxMzg5ZDQ5YjA5NDE1N2ZiMDI0N2QxNDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2YzhiZWVhMWUyZWJhODhkNzJiNjRjZWEyMTQ5ZWRlNWUzNDU3ODA2NzY0Yzk3NGJmNDUxMGQyZDFiMDFlODMifQ"
+          "resource": "repo://libs/cli/langchain_chess_cli/main.py#L321-L330",
+          "version": "repo-lines-v1:sha256:8e36f097e43044921fac0100c9a04309bbcab9cf79604d6cb0cb965f951edf85:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5M2M2NmY1M2U1ZWE4MjFlNTMzYmViZTUxZmFhZDgzZDhlNWY4NDA5ODgzNDllZjVlZWQwYmNiY2UyMThkODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1ODE2NGJiNzgwYTU1NGYwNzZlODhiMmJkMWU4ZTRhMWFhZjAwNDFkYjE2M2JhN2JiMDAzMTEwY2Q3NzBhNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2NDEzNGZmMmY5YjYwYjcxMjU2YzM2MWQ1MjQwM2QwNzAwOWQ1YTBkZDJmMmM3ZmIwYjE4MzA0MzAzNTFmOWIifQ"
         }
       ]
     },
@@ -134,11 +134,11 @@
       "evidence": [
         {
           "resource": "repo://libs/chess/langchain_chess/grading.py#L129-L169",
-          "version": "repo-lines-v1:sha256:13bff47141eec54e56382eb3aa85444272e2514b39bbd5fefffcdca9b322df94:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NGU5NjMxYmYzOWZkY2YwOTk3ODg2ODY3NTg1OGMxMjYyMTYxMzdiM2U5MzZlMTIzY2RiN2I2Yjg0NWUxMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4Yjk0NmE1MzIxYzU4ZTBlNDZhM2ExODM0YzE1MDA4YTUyYmM2ZjQ4NWVjZmU3MjEzM2YxNDc5ZTVmOTZhOGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzYWUzNGJmMjQzMjRlYmViNzU5NWY5NjU5NWJkMWJhOTljOGYwZTMzNjE4YTAwY2E4ZjZkZTAyYjg4N2ZhOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkNjUzN2IwZTljYjY4Y2UwOWFiZjI4OGZmZTdlODgyZTBiZTU5MmIzMTUyNjUzZTMzZjkzMDRiYTg2MjM4ZjcifQ"
+          "version": "repo-lines-v1:sha256:13bff47141eec54e56382eb3aa85444272e2514b39bbd5fefffcdca9b322df94:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NGU5NjMxYmYzOWZkY2YwOTk3ODg2ODY3NTg1OGMxMjYyMTYxMzdiM2U5MzZlMTIzY2RiN2I2Yjg0NWUxMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4Yjk0NmE1MzIxYzU4ZTBlNDZhM2ExODM0YzE1MDA4YTUyYmM2ZjQ4NWVjZmU3MjEzM2YxNDc5ZTVmOTZhOGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzYWUzNGJmMjQzMjRlYmViNzU5NWY5NjU5NWJkMWJhOTljOGYwZTMzNjE4YTAwY2E4ZjZkZTAyYjg4N2ZhOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3NjNjMWQ3YWVhZDk4NDlmNTk2ODQwZjUwNDUxYmM2ZDRlYzc3NTE4NGVmNDNjYThlNDVmZDI5MmQ2MDg1ODUifQ"
         },
         {
-          "resource": "repo://libs/chess/langchain_chess/grading.py#L205-L236",
-          "version": "repo-lines-v1:sha256:9f7ed694cfe84824475b393bfff9d374fc44a498dbf90410263f6a78abbdfade:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlMzU3MDNlNmI5NmM2NTdmNjdiNTk2YTA1MDY4YmM4MjNlMDhjMDZkMjExYWMwMWYyMjA5OGZkZjkzZTBiN2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlZjQwMTM2M2Q3MTkyZDkyYWRmYWNmODQ0ZWUxM2E0OTMwMGZiNTBkYjU0ODJhMzNmYzc1ODQxMjI4MjQxMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5NDk2YWFlY2E3ZDEzNmYzNGRkNjQzMWIxMjZmMjFlY2ZjZjE3Y2RhYzBkYWRmYzAyNGJmM2VmY2NiMTdmYmQifQ"
+          "resource": "repo://libs/chess/langchain_chess/grading.py#L214-L245",
+          "version": "repo-lines-v1:sha256:c7a32d21d00ef1190935748229dad7e41bb535982ec2b59d776cbfc2d115eab9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlMzU3MDNlNmI5NmM2NTdmNjdiNTk2YTA1MDY4YmM4MjNlMDhjMDZkMjExYWMwMWYyMjA5OGZkZjkzZTBiN2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlZjQwMTM2M2Q3MTkyZDkyYWRmYWNmODQ0ZWUxM2E0OTMwMGZiNTBkYjU0ODJhMzNmYzc1ODQxMjI4MjQxMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5NDk2YWFlY2E3ZDEzNmYzNGRkNjQzMWIxMjZmMjFlY2ZjZjE3Y2RhYzBkYWRmYzAyNGJmM2VmY2NiMTdmYmQifQ"
         }
       ]
     },
@@ -185,12 +185,16 @@
       "statement": "LangSmithStore.replace deletes only this grader's existing feedback for all grading keys across all of the game's runs, deleting old game_review markers before other keys, then writes the other entries in parallel and the game_review marker last, so an interrupted replace (including a failed delete) never leaves a partly rewritten game marked graded and the next run redoes it.",
       "evidence": [
         {
-          "resource": "repo://libs/cli/langchain_chess_cli/grade/store.py#L83-L103",
-          "version": "repo-lines-v1:sha256:8794976e4e71b45e6be2f0609ac09869305ac45a12aafc3a895af9d145f51410:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2YmE2MjQ1ODU0MzAyYTczN2Q0MjMwMTBmZWIzZTZkODI3M2I5OThkMzc4NDAzZjU4MDU3ZjJhZjcyMzA5ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMGQ3YTYzMmRhMjZhM2UwMGE5Y2YxMjY0ODc3OTg2ZTdjZmFkMzU5YmQyMDZiNjkyYmNjMjYwMTQ0YzZlYTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkYTliOWZlNmI2ZTNjOGRmNWU3MjExZjg5YzBiYmU0NzNhMmE3MzQ3OTJmNjhiNjQyNGU5MmEyZGVhYTFiNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyOGU0MzIwZDI3NWIxNzBiNDZkZjc0YTRjMmU5MzRiNjFiNzkxYjY2NzFlZDUxNzQ3NjdmN2RiZGQyMzg0MzYifQ"
+          "resource": "repo://libs/cli/langchain_chess_cli/grade/store.py#L91-L115",
+          "version": "repo-lines-v1:sha256:0c4e9dbf8b62a85f5daea74b0422631ab2efee3cda1fe89231d20750e99a6785:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2YmE2MjQ1ODU0MzAyYTczN2Q0MjMwMTBmZWIzZTZkODI3M2I5OThkMzc4NDAzZjU4MDU3ZjJhZjcyMzA5ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkOTFmZjlmNDY2NThkNTc1NTJhNzg1MTEwZjdlOTNjMTA4MzIwY2M1ODJkZWJjZWJiMDBhOWZhZmExMjc4ZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkYTliOWZlNmI2ZTNjOGRmNWU3MjExZjg5YzBiYmU0NzNhMmE3MzQ3OTJmNjhiNjQyNGU5MmEyZGVhYTFiNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4NmRhMmQ3N2VlN2M4ODFjNmQ2NTEzMWYxZTJmM2NmZmE2YzI3ZTU2YjQxNGQ4ZmNkYWZmYzExYmU5YmI0ZGIifQ"
         },
         {
-          "resource": "repo://libs/cli/tests/test_grade.py#L227-L269",
-          "version": "repo-lines-v1:sha256:0680b97979196838b45a267be69b6cc9803db07555afb7348b5da3ef7c4fbe12:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ZTk2OGI1MjNmZDkxOTJhMTYyODY1ZDE3MGZmNTdkMDRlYTMzOTdlNTAzMDQ3MDMzMDA0MGY4YjU2MzFlZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNThjODdmODQ1NzczOTUwMmViZmRhNzRlZDQ5NGNiMDhkOThhZjNiOWY5ZWE3MmQwYmZiYjQxOTcyMDgxODQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiYzQ1YzkwMWRlYzAwZjkzOGZiOTEzMTFlZmUzYTM2YjA5NzY2NWE1Yjk2ODkwOTdiZWI0NjE3ZmFkNWEzZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5NmMwNWMyNzQ0MDY2OGFkYjllOTRlNDU3Y2UxY2VlZGFhMjk2ZDE1MzExZWY2MTc3OGY5NzBkNDViZmNhMzQifQ"
+          "resource": "repo://libs/cli/tests/test_grade.py#L235-L248",
+          "version": "repo-lines-v1:sha256:63d553c3da8ab8bd7ab6eb38ce61b9b60d37b2bb2af6826442a77a97de94b203:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ZTk2OGI1MjNmZDkxOTJhMTYyODY1ZDE3MGZmNTdkMDRlYTMzOTdlNTAzMDQ3MDMzMDA0MGY4YjU2MzFlZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDI0NDU4MmI2ZmIwM2QyM2I4NDE1YWJlY2QzNDZiMGM5ZjQ2NmI2Zjc1MmIwNjgxODljZTdlOWEyZGMzNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiYzQ1YzkwMWRlYzAwZjkzOGZiOTEzMTFlZmUzYTM2YjA5NzY2NWE1Yjk2ODkwOTdiZWI0NjE3ZmFkNWEzZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1OGNjY2UxNjJmNjNhOWM3OTVmZTI0OWI5ZTA0MDI1MzA5ZjM4NzE0OWQ5MzhlMWZkZGFmMzBhZDVkNzM0ZGUifQ"
+        },
+        {
+          "resource": "repo://libs/cli/tests/test_grade.py#L282-L308",
+          "version": "repo-lines-v1:sha256:721d74cdaa3b2bd7fea1b7a9f075dd4394d86f2ff0b7ebaeeff4197fe078c8b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiOTdiMjQyZWQyY2I1MjZhY2IzZDFkMjczZTcyMDhiYjQ3YmE3Yzk3NjZiMzU5NzRmOWJmN2Y0ZTBjN2FiZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNThjODdmODQ1NzczOTUwMmViZmRhNzRlZDQ5NGNiMDhkOThhZjNiOWY5ZWE3MmQwYmZiYjQxOTcyMDgxODQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkMzNkOTg0ZTBiYTUwNDEzNDg4MDVmODhiYTA1ODNhN2NiODJlMGUyZTZjZmMyZTY1YWMyYTg0MTIxNGU3NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5NmMwNWMyNzQ0MDY2OGFkYjllOTRlNDU3Y2UxY2VlZGFhMjk2ZDE1MzExZWY2MTc3OGY5NzBkNDViZmNhMzQifQ"
         }
       ]
     },
@@ -210,25 +214,29 @@
     },
     {
       "id": "claim_d350f40ef117408f936c774a3c5294c6",
-      "statement": "The review app pages threads 20 at a time via POST /api/v2/threads/query, fetches each thread's last root run and game_review feedback by last_trace_id, and considers only game_review feedback whose source metadata grader is 'lcchess grade'.",
+      "statement": "The review app pages threads 20 at a time via POST /api/v2/threads/query, fetches each thread's last root run and its game_review and grade_status feedback by last_trace_id, and considers only feedback whose source metadata grader is 'lcchess grade'.",
       "evidence": [
         {
-          "resource": "repo://apps/review/src/api.ts#L35-L83",
-          "version": "repo-lines-v1:sha256:49fdcf288c2b2ae54fae297ad8f0e3772702a18728f7c28b6ce70798a201d1e4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNmRlZjBhYTE0YzQ3MGRjOWI3YWU0MGNkNjUyNmEwMmRhOWQ5MTljYmI0NjZiODQyM2NmMjUxZDMyZDk4YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2Yjk0YzVjZWIzMDI0M2MyOGJkYjBjYmY0MzAzYjg4N2ZjYTdjYTMyNGM4OTVkNzA0M2QwZDRmYmI3YjE1ODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxNjJhNWJlZTI3MDRlMTRmMjc5Nzg4ZTg5ODdhYjdmY2Q0NDk0NjU1ZGIwOTRmNGYxMDgxZGY5N2NjMjM5NDEifQ"
+          "resource": "repo://apps/review/src/analysis.ts#L31-L42",
+          "version": "repo-lines-v1:sha256:7d941bf60d9970718d54b09263be569e201576d12cf0a181544a52636822c141:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1NDQ1Y2FlMWFlN2JiMDBjNzY5YTMyYTU3YTc3MzM0ZGY5NGQzMGEyMjAzYmQ3M2ViMWJhNzA4M2EzYzM4NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ZjFiZmNiZGUyMzdhMTIxNDEyMDUyNDRhOWNhNDAzM2I4OGVkYzAwNTlmNmQ1YzAzM2U0MTcxMmRhYTEyMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhMzIzMmMyM2FlYWJlNWI1ZTU1YzAyZWRkMmUyZGY2ZjE2MGE3MWVhMzhjM2QzMjI5MTA2ZTgyN2I4NWZjYzkifQ"
         },
         {
-          "resource": "repo://apps/review/src/review.ts#L110-L120",
+          "resource": "repo://apps/review/src/api.ts#L70-L124",
+          "version": "repo-lines-v1:sha256:2b5e5fe5b780343e75e7f1336f8400a441418171d145c029c56c388e9245e5f2:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNmRlZjBhYTE0YzQ3MGRjOWI3YWU0MGNkNjUyNmEwMmRhOWQ5MTljYmI0NjZiODQyM2NmMjUxZDMyZDk4YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxNGVjYTkzOTU2NjYyOTFhMjczZjRhYzczOTk0ZGFiYjAwMTBjZmE3OTVjMDRjOGZkZWFiMjdiZGQ5ZTVjNDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxNjJhNWJlZTI3MDRlMTRmMjc5Nzg4ZTg5ODdhYjdmY2Q0NDk0NjU1ZGIwOTRmNGYxMDgxZGY5N2NjMjM5NDEifQ"
+        },
+        {
+          "resource": "repo://apps/review/src/review.ts#L113-L123",
           "version": "repo-lines-v1:sha256:d5f4f8d5fe27dc5b3250b2553777458f9e1733333c379604511073924d031292:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5ODgxYjM0ZTQ3MjMyNmY2OWFlNzYyYTRkZTU2ZTg2M2Q3N2U2ZjViOTk5ZTBjOWMxYjc5YzU2NzE0MGU3ZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1ZjFiMGQ5Zjc4MzZlYTA4ZmU2NTY2YjlkNjAxYTRiNmMwYzI5MjRkZDVlYWUxOTI4ZTgyMjE4ZWI3YTZiZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmOTk3ZDJiMzcxYTJjNjRkYzJiZDc4ZDA4NWM3ZjJjOTUzZDdjZjMyZGJiMmIwNDgwZGZhMTczOWM0NmJjYWMifQ"
         }
       ]
     },
     {
       "id": "claim_9ecaabc3980c44aca6d7917d7575df37",
-      "statement": "The review app replays the game from start_fen and moves, and for a graded review shows an eval bar, played and best-move arrows, a grade card sized to the most engine lines any ply carries, and an eval graph; 'Open trace' opens the ply's run_id or the last run, an invalid review shows an 'unreadable' warning suggesting lcchess grade --force, and ungraded games show a banner suggesting lcchess grade.",
+      "statement": "The review app replays the game from start_fen and moves, and for a graded review shows an eval bar, played and best-move arrows, a grade card sized to the most engine lines any ply carries, and an eval graph; 'Open trace' opens the ply's run_id or the last run, and an AnalysisBanner below the board shows the game's grading/analysis status.",
       "evidence": [
         {
-          "resource": "repo://apps/review/src/components/GameView.tsx#L39-L157",
-          "version": "repo-lines-v1:sha256:5383571066c446e4f539bf5045a1cc7e35bdce79c8d93b5374eb2d4be952bfe5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5Y2I0YmI4ZDEwZTU5M2U3ZGMwMWE0MzhkNWY5ZGYxYTRmYTgxMWYzMzU3ZDJhNDAzMDg5NThhNTIyZDFjNzFlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0N2I4YzEwODVmOTVhMWFmYWJlNWQxNTJhZDU4ZGI5ZGMyNjMzNmMxMjE4ZTJiODQwYWU3YWQ4MjZhMGQ1NzQ4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiOGU3NmYxNmJiYzU5NWZhZTIyYTRmNmQ2MTE4OWUwZmIzOWFjNmU4MmNkOTFlOWRmZWVjYTlhZmJiMmI2Y2U4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4NDI5NGQ0MGNjMzM5ODY4YmRlNWJjZmQzYWM0M2E1MDVhMGE0NzUyZjA0MTM2NDUwZTMxMWQwOTFlM2Y2NDY4In0"
+          "resource": "repo://apps/review/src/components/GameView.tsx#L56-L178",
+          "version": "repo-lines-v1:sha256:e50cb8a471fbeb1f5424e3ecb82505c9a37a6a9f1b07ee4c7b264431ce6f2ba6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOTI4OWFlMDM1NzgyYWFmOTEzZTU4NjUyYWQ1MTdmZTdkYmE2NDNiODkwZjliZWQ1OGM3MGFkNDI2ZDc4NDU5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0N2I4YzEwODVmOTVhMWFmYWJlNWQxNTJhZDU4ZGI5ZGMyNjMzNmMxMjE4ZTJiODQwYWU3YWQ4MjZhMGQ1NzQ4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzNWQ3NzJjMmVjODY4YmM2MzMyZjlkMTM5ODRjYWM1ZTI0YjM4ZTg4ZDEyNWNkODg0MGY5MDQzNmNlMmM3NzBjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4NDI5NGQ0MGNjMzM5ODY4YmRlNWJjZmQzYWM0M2E1MDVhMGE0NzUyZjA0MTM2NDUwZTMxMWQwOTFlM2Y2NDY4In0"
         },
         {
           "resource": "repo://apps/review/src/components/GradeCard.tsx#L25-L98",
@@ -265,12 +273,12 @@
       "statement": "The review app classifies each thread's grading as ungraded, graded, or invalid: parseReview accepts only a complete version 1 review with index-matched plies and exactly one eval per position, and toGame marks a review invalid when its plies' uci values differ from the game's moves.",
       "evidence": [
         {
-          "resource": "repo://apps/review/src/games.ts#L64-L90",
-          "version": "repo-lines-v1:sha256:db798d2666e62668004c994fd3047b8869c09040a20c437cf9c4a58fd5eadd35:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmOTJjMjkxNzdlNTMzNDQ5OGUyNjBkYjIyYjJlNGUwOTYyYThmNmIyYjc1NmM3ZTMwNTM4OTlmOWViMjlmYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwYTY4YzQ3ZTA2OWM1ZTg1MGEyMmMxMDE4OGY1ZDFhOTY5ZWQ2MzY5ZDAwYzQyYzJkM2JhMWRkY2VkZGQzMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://apps/review/src/games.ts#L67-L98",
+          "version": "repo-lines-v1:sha256:4e3eb994ee587868f125957b4ff667c977ed405093228bf644cca0ae77fda4e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwNTY4NWFkZDU1YWVmNGY4NDhkMzdmNjJhNmYxOWY0NzUyNDE1MDA3OGZmZDk1ZTA4NmRmMGUzOGVlNWM2YjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3MTIzMDY1MjM5ZTEyMGFiYmZhN2Y1NDRiNWRkYzY4YmY1NTY3ZDFjYTQ0ZmNiZmRiOWRhYmY0MGNhZTRlMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://apps/review/src/review.ts#L48-L108",
-          "version": "repo-lines-v1:sha256:2cc62721dbf7722c7f6ae5025c1e4ca6e5f09c04f62823565702ca3df7f26342:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxMWJiNjc1NzIxNmY0OTMwOGQzMTM0ZjI0MzNiMzE0YzliNzliZDkwN2E0OTc2NWU1ODZiZWFjYmEyOGFlYTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljYzgyYmE4MDhmMjQ1MDU3ZTZmN2M5ODg1ODhlNzBlMGVlMWY2MzJhYzU5YjFkYmFmZmEzZTcwOTVhZmM3ZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5Y2NhZGNjYjJkN2EwYWQzNDUyNDI5ZmYwOTNkNThlYzRkZDkxMmE5ODE4ZDgzMTkzYTI3MDI5NDJjMDdhYTQifQ"
+          "resource": "repo://apps/review/src/review.ts#L79-L111",
+          "version": "repo-lines-v1:sha256:fce5dec2fe74f28980bff4175a9e1ec715ac4dd63b3d2039184e62afaca8b22e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljZmUyMjQwNzExMWE2MDZkYjVmYWUwOTQ3OTEwMWFjY2EwMmM2N2Y5Njc4MTM4MTZhMGEyODY3YjIxZTljZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5Y2NhZGNjYjJkN2EwYWQzNDUyNDI5ZmYwOTNkNThlYzRkZDkxMmE5ODE4ZDgzMTkzYTI3MDI5NDJjMDdhYTQifQ"
         }
       ]
     },
@@ -279,18 +287,154 @@
       "statement": "The review app decodes run outputs defensively: decodeValues accepts outputs only when moves is a UCI string array and optional start_fen, plies, turns and outcome have the expected shape; otherwise the thread has no game record and the app shows 'No game record'.",
       "evidence": [
         {
-          "resource": "repo://apps/review/src/App.tsx#L146-L160",
-          "version": "repo-lines-v1:sha256:932b6a3499d53a0a6f453365b08906b5b10618281967da7e6af5fa701ca6bdf6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzZDc3YTc4MDVhYWYxYTI0MDE2MGFhZjE5MGUzOWIyOWExMWYxYmE1YmI1OTFiZDA5NGU0OTc5YzNlMWZhMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjJjNDJjZDE5YzZkMDNkODA4YzQ1MjcyMDU1MjgyNWI3ZWExYzViNDkxYjIxODUxMWNhYzc0MTVjZjlkOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmMmM5YmIwYjNhYTA2ZTgyYzg5YWUyYTU0MmRiYWJjYzc3NzExNTg5YmM2NjVjZTcxYmI5MDRkNTBhMDI1ZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3MjRkODI0OWJmNjRkZWZkMmRkMTU0ZjhkYmMzMjliMGQ5YTZjYzdiNTcxNmRhMjFmZmIxOTY4NmRiMTMyYzYifQ"
+          "resource": "repo://apps/review/src/App.tsx#L209-L230",
+          "version": "repo-lines-v1:sha256:f3b1a0a734f0c7fd39440d7c0918df4c5f783f6b0ad929e61d63093c21e8938c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1OTgwMjJjYzY1ZTFiOGE4OGZiNWM1OGYwOTlkMjQzMzE3OWVkMTcyYWU3MjZmMmQ2MjQxYzMyZmQ4MDRkNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YjhjMTA4NWY5NWExYWZhYmU1ZDE1MmFkNThkYjlkYzI2MzM2YzEyMThlMmI4NDBhZTdhZDgyNmEwZDU3NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzYjVhYzUwZjZkYzYwMzY3YmEzOGQ2YWM5NzdmYTZjMjg1ZTYxY2RhYzZiODllNzE4ZTdmZDkzZTNhN2IyMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmYjhmNTFjYzEyZWQwOTgyYzEyZGQ2OTVmNWFjOTk2M2UxNzZjY2ZjZDU2MDBlZTRiZTk0OTY0ZWMyODk3YTIifQ"
         },
         {
           "resource": "repo://apps/review/src/values.ts#L71-L84",
           "version": "repo-lines-v1:sha256:4bd555b06122c8d001e638b57834e53372e04535cfedfce0e62e22cf4a7dc941:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkZDkzZjYxOGEwYzY3OGRmOWU4YTJkZTAxYzAwMjI0NmIyYjNkZTkzY2VlOTVlYzEwYzk1NzBiOTczNGI4MjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3OTEzNmQ5NGMwZWJiYWQ2NGJiZDVhOWY5YTdkMTBjYzFhYWVjNTQzMTIwODBjYWQyZWE2N2E1N2E2Y2ExNTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_85694a88706d41e68e51a94f6f8c4281",
+      "statement": "After writing the game_review marker, LangSmithStore.replace deletes this grader's grade_status marks on the game's runs, so a game launched from the review app never reads as neither analyzing nor graded; every feedback write passes extend_trace_retention=True.",
+      "evidence": [
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/grade/store.py#L91-L142",
+          "version": "repo-lines-v1:sha256:ff9df5b7b4ebbfc269d226fc1380a6c0e956357a299f29c164600c3fc59e48bf:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2YmE2MjQ1ODU0MzAyYTczN2Q0MjMwMTBmZWIzZTZkODI3M2I5OThkMzc4NDAzZjU4MDU3ZjJhZjcyMzA5ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkYTliOWZlNmI2ZTNjOGRmNWU3MjExZjg5YzBiYmU0NzNhMmE3MzQ3OTJmNjhiNjQyNGU5MmEyZGVhYTFiNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://libs/cli/tests/test_grade.py#L251-L263",
+          "version": "repo-lines-v1:sha256:b98b273e4bddc25229fbb122abf79df1df08cc0d33b8be2e1a18c39820890151:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwOWU2NmJlMWMwNTk0MDM4MDI0ZDc1ZmUyMjlkYjc3ZWIxNjA1M2NlMjBlOTQzMDczYmQ2ZDNhYWU4OGZlMmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NmIzYjcxMzEzNWUzMDhmNTdhZTEzODRjZGVhMTIzNTg3ZjJiYWJlYzhlN2U2ZDNmZjFhOTMwMjVkMWVjODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhODJlYmU5ZWQ0MDdjM2E2YmE0YjAwMzQyOTJiYWE1MmMxMWNlNWFlMjg2MTA3NDAyZGU0NzkyZWVlY2FjZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwNDA0ZGM0NTIzZTc0MmJmNmJhMzE5YzNkOTcwNTYwOGExYWUyNGVhNjdjY2RiOTNkZmNlMWU5NWI4ZmQzZGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0138ce25e91b4e07bc867662bc0c0554",
+      "statement": "LangSmithStore.settle deletes this grader's grade_status marks on the given runs when there is no failure, otherwise updates them to value 'failed' with the failure text as comment, and does nothing for an empty run list to avoid matching every mark in the workspace.",
+      "evidence": [
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/grade/store.py#L117-L130",
+          "version": "repo-lines-v1:sha256:647feab65b8bc45d1b2f07e800da30bd2f6897febd2162452f6f3c60d227373a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2N2JlMjM4MWY5OTg4MmUyMzQwNzAyMGUwMTcxMGE1YzNkNDViNTQxNmNkZDI2NGU4MjI5NGM3ZTkzNmQyYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzM2NiNjQ0ODI0NjI0ZjIwMWZhMTRmODNkODY1MjcwNTVkMTkyNmU0NGViOGU2ZGI2OTUwYWMyNTZjNzk0MmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjODM0N2ExNzc1MzVjMjBjNzY4YjY5MWNjZjEyMWQ4NTRiOGExYmM3ZjZkMDE1N2U0YjljMjRhMjNlZTljNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyOGU0MzIwZDI3NWIxNzBiNDZkZjc0YTRjMmU5MzRiNjFiNzkxYjY2NzFlZDUxNzQ3NjdmN2RiZGQyMzg0MzYifQ"
+        },
+        {
+          "resource": "repo://libs/cli/tests/test_grade.py#L266-L279",
+          "version": "repo-lines-v1:sha256:6f222b8ef7a92957b39afb3aaaed270fd3e83a7a9723dee25fe5f01f97936fe1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkMmZmOTJhNDBiMzgxYmI5MzUwNmU3MTY1OWM4NGRiOTRhMzRmYjc1MTZjNDUxNzg0MzVkZDM0ZDNiZTRmYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMDY0ZmRiMGU2MmU3ZDViNzYwZTM1NTgyMzAwZTJjYTc5NTZhYzA3ZmJkMmQ5MjVhN2YyMGI1NDY0ZTIxNGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkOWQ0N2Q4MTUzMjJmY2MwYzNmYzU0MjQ1Mjk4YzYwYTYyZjQ4MTFkN2YxMmQ5YWYzMDUxMmU2ZDljMjUxZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjNmI4Yjk0MmY5ODU5MTAwNWY3YjU5ODkyMjZhOWI4ZWQ3ZGY5ZjQ3ZWZhYzkzZjZjZWM2YjkwMWViZGRmOGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2f1085640e214d06af1469bd91be1299",
+      "statement": "With --sandbox-job (allowed only with explicit --thread ids), lcchess grade runs the batch through job.sandbox_job, which keeps a 20-line log tail, settles each requested game's grade_status mark via verdicts (no_game gets a fixed message, already-graded clears, others get the batch failure or clear), re-raises batch failures after failing unwritten games with the log tail, and always deletes its own sandbox last.",
+      "evidence": [
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/grade/job.py#L16-L88",
+          "version": "repo-lines-v1:sha256:fdadaed2c121bf8a3a2782153e33d0ad59d64995bc0e74662000bae731962016:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0OTJmOWY0YjZmMzU5NTliYTUzOGYwY2Q2NDY2NWMxNWNlZjY2NGM4NGZlZGFiZDA0NTVmYjM2OWEwNGFkZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlYmRiYjg2NzA5YTcxZDM4M2I0NDNiMDBiNTliMDU3NjQ1M2I3ZjdmNmI3MzdlZGNlZDU5MTk2NGI4ZjI1MjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwZTEzYTdkMzRkZmNlMTAzODgwYWU5MmM2Y2M4YzUzODk0YmYwMTY3MWYzZWQwOGY3ZWYyNWI3ZmM4OTkyMGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/main.py#L280-L340",
+          "version": "repo-lines-v1:sha256:013d1022f43fc8712c5280e265a3870e4ab4d402f3a0dd6e0b8dc49fb261d4b7:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1Yjk4ZWMxZTAzMmNiZGE2ODM3Yzk2NDg4MzQzYzQ1OWZhNGMwMzI4MzY1NmYwOGQzMzI5NGY3ZTA5OTc1YzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5YTk4ZWUyMzFmZGMyODJhODI4NzZmOTA3ZTMwNTUxZTM2MmRiZjMzZTllOTdlNzA0YWMyYTA2YjczMzYxZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1OTExNGYwYTcyM2EzNTZkMDMzZWE1NzFkOWI1YjdhNmE1ZWNiYjNlMTk5ZmNhMzY0ZTFkNDlmZjJiODg3NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmMTc1ZTg5MzE1ZDZiNWEzZTliNzkyMzZiMjkzZWU5MGI2MWM4MTE4MzAwOWU2NDUzNjc1ODExZjAyZGJiNjkifQ"
+        },
+        {
+          "resource": "repo://libs/cli/tests/test_grade.py#L454-L500",
+          "version": "repo-lines-v1:sha256:9a2c40de87d77d69bb726160ad16324cf56d8135435fcfdbc37795e6c3bcb029:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MjQzOTkzY2UyMDZmYWZhMTI2Mjk1YjIwZDllODAxNzE1NTQxODUzZmU4MTI4MDY1ZjRlNTBlMWQwZWVjY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlMGNiYzVmZmJlMzk0YzdiMWY0ZGRjNzUzYmNkNTU0ZTBkYjE5NjE4ODA3ZGRlMDMzODYzNmQ2YWFkMzUyOGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1ZmE5MmFmNjcwMTgzMzVkYTk2NDQ3MDc1NjcxZjk2MTA0YmMxMjEwNDQyODk1NDFmNDE3NzI2ZjJkOGM5MmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjNmMwZTJjY2Q1MzlhMjE4Mzk3ZDAxMDY0ZWJkNjdlZmRjYjE3NGQwZGZlMDMwMjg5M2JkYjkzMTQ0M2I2NmMifQ"
+        },
+        {
+          "resource": "repo://libs/cli/tests/test_grade.py#L591-L606",
+          "version": "repo-lines-v1:sha256:b7af6b1e1dbf2df0e4c04c7990c2de7076ed1d3bce938a47354fc7f7ee989c2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5ZmZhNjgxYTQwOTM4MmE5ZjEwMGRhNDEzZmViOWFmYzI4ZGZlYmQ4NWMwZjAwNzgxYzBmOGVkMGNjZWUwYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2ZmZjNzI3MTBjZmI3NGE0YjUyMzVhZDA3N2I0ODEzN2Q1ZmJmYTQ2YTJlNjNiMThlNTQ0YWM1ZDVjOGIwNGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhN2E0MjkwZTczYzQ3MDEwZWFjMTlkNWIwYmY2OTM4ZjQ4YmZjMjEyNzExMzRlNzQzOThhNWVmYzEzNGM0NTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0YmY5YjU4ZmVkZDVmZjJmNWE2MTQ2MDc5NmZlNWMyMjE2MWFjMTU5OWE3YWVkNzczNmIwN2MwMWMzN2U4MzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9c8cf987586f4451beda7af97efea544",
+      "statement": "delete_own_sandbox deletes the sandbox named by LANGSMITH_SANDBOX_NAME via langsmith SandboxClient; outside a sandbox or on failure it only prints a message, relying on the sandbox idle TTL as a backstop.",
+      "evidence": [
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/main.py#L343-L354",
+          "version": "repo-lines-v1:sha256:a60f205f212fb77ae3c965ef03828e36873143cbe1cd626d60ec088b80612b20:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1Mjg1YTNjNGY0OWRmOGE5MGMxY2U0YjYwYjEwYTQxMGY4ZTkwYmZmZTZiYWZlYWMxOTQ2YzkyYzM1MmYxN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5MTdjNGViZDE4N2M4OWUwMjVjMmEzOGUxNGQxN2QzODRlOTQ5MTI3ZGY3NjQ3YWUzZWJkNzQwMGZlNTU1YjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiY2U3ZDAwN2E4OTZkZmVhYzk3YzMyMDgyOTZjOGY5YjcwNDI4M2Y0OGZlNDIzYzAwNWNhNTk5MGJhMzBhM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4ZjYzZTM1YWMzNzJjNzFiOGQ5ZWNhNmQ3M2RkN2Q4N2QxZDFkN2I2NjhkM2Y1ZDljNGNhZTcxZjY1YmM5ZTIifQ"
+        },
+        {
+          "resource": "repo://libs/cli/tests/test_grade.py#L620-L633",
+          "version": "repo-lines-v1:sha256:2022d766cd8d5cb453a92f783d32262716aad428fc414ba4b78ab008409eadaa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzN2Q2MmI5NTZhNmM0ZTczMjIyYmI3MDUyM2MxMTg2MWQyYTVjNTBjNjU4ODQ5ZjEzMzYyOTExMzNjMDgxMzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDI0NDU4MmI2ZmIwM2QyM2I4NDE1YWJlY2QzNDZiMGM5ZjQ2NmI2Zjc1MmIwNjgxODljZTdlOWEyZGMzNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiMTAxYTA5NTk3OTkyMjhlODljNjE0YTJjMDkxZmFiZjExMTNiYTgyODM5N2JiOTI4YjExMWRjYWIzN2YwOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxMGVhYWYyYjQ3ZDg1YWE3NGQ0NmE2N2UyMGFmMTQ3YmZlZWMyYTdmZDA0YjI2YmI0MGJhYzQ3NDRhN2Q0ZWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_51f56916672b4c47aa755203ad9e49b7",
+      "statement": "AnalysisBanner shows, in priority order, a launch error with Try again, 'Analyzing…' for a started launch or analyzing mark, a stalled or failed job with Retry (failed shows the job's log), an unreadable review with Re-analyze and an lcchess grade --force hint, an ungraded game with Analyze and an lcchess grade hint, and nothing for a graded game at rest; its button is disabled while a launch is starting.",
+      "evidence": [
+        {
+          "resource": "repo://apps/review/src/components/AnalysisBanner.tsx#L15-L84",
+          "version": "repo-lines-v1:sha256:7ee11fe677ed4d80e0bc8f35c4d87e914b2efb7e696eec92911655d4eba360eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzODA1Mzg3ZDFjMzE4NzkyM2Y0YzA2NjI3MTgxZWZjMDllMGI2NGE3NWQ4OGQxZjQ1ZGFlOTViZGU2ODI0YmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3NmMyNzgyZDA4OWQzZDJmYmEwOTMyYmUxNTA0ZjVlNzI3ZDQxOTY3NDVmZjBiYjQ3OTExOGY2ZTNmNDdhZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bf3cd1adfad140e4be404ce7edaa3050",
+      "statement": "The review app's Analyze flow posts a grade_status 'analyzing' feedback mark on the game's last run, creates a per-game sandbox (lcchess-grade-<thread>) from the langchain-chess-grader snapshot with explicit, limited access delegation, waits for it to be ready, and runs a detached `lcchess grade --thread … --workers 4 [--force] --sandbox-job`; on any failure it deletes the mark and the sandbox and reports an explained error.",
+      "evidence": [
+        {
+          "resource": "repo://apps/review/src/App.tsx#L128-L154",
+          "version": "repo-lines-v1:sha256:36990bdebf42e0675c96008633e7792587bb4ebb2682f719b8028c79be3a27ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjZTRhNDA4OTlkMzVjNGRiZGQ0Zjc5MzEwZmM4MzQwNTBhODE5NmM4OWMwNzI3NmI4NGE5NzJjMWE5OGNjZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwY2MwMTE5ZTdkNWU1ZDk1NjE5NTk3YWViMDhmMDFiZTVjZmIzMDZhNzVhN2QyZmNhNTZkOTJhODJmMTkxYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzMmIxMTQ0MDgwOWY2YTU0NmM0NThiNjQ1YzM1ODUxNjc5OWQ3ZjY0Mzc2MDg4Y2FkMzFjOGNmYTM3YjU2ZjkifQ"
+        },
+        {
+          "resource": "repo://apps/review/src/analysis.ts#L66-L231",
+          "version": "repo-lines-v1:sha256:718f873a94fa49ff42f0e598904651055c47018e0d9875c7277e2c622e4c0be0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTY2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxYjk0MzU0YWJlMDI2NGFhNzZmOWQ4ZWZjNjIxN2EyZWFkMjEzNDQzYjNiMWExYWFjNWYzMDk4Yzk0NGU1NjVlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5NTljMDdiM2IxNGZlNzgyOGQwZGNhOWIyNjA5MzM1YjIxNmIwMjNlMzIwOTk0N2MzOWE5OTQwY2Y4ZGQxYzExIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiMzIwYzJlZWM1M2E0ZjZkZmRiOWFjNWJhOGNkNzhlMjg0NTFlZjZiYjNkMWY3YTQ5NmFmZGQ2YzY5YzhhNzhjIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_7144c9e929b84f68aae383adcd151a6c",
+      "statement": "A retry of a failed or stalled analysis first deletes the previous sandbox, waits for it to disappear, and deletes the previous mark; an 'analyzing' mark older than 10 minutes is treated as stalled, and a 'failed' mark carries the job's log as its comment.",
+      "evidence": [
+        {
+          "resource": "repo://apps/review/src/analysis.ts#L154-L171",
+          "version": "repo-lines-v1:sha256:49b1542db5901f6803a4fa27275ae99da8e34933a0ae2f63e15e008307c0d6b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2MWU4NTRmMjVmYjM5YmJmYzUwMWZiZDgzOTc1NDEzMGQxMTEyYjgwOWVhOTY1MjhhODlkNzg4NDkyM2NiY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkODgxODc4OTc3Y2E3YjI0ZDMzZmFkYmViZDM1NmZhOGE1ODE1YWYzMDJlNzU0YzIxNmU2NTkyMGQ2NGJhMTIifQ"
+        },
+        {
+          "resource": "repo://apps/review/src/analysis.ts#L9-L49",
+          "version": "repo-lines-v1:sha256:ac762e74509e2ce1b6237e1090d0831d73cb7833e5880ff4ad3215024728ce45:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZDQyYTM4MzUxMDQwMWFmMWI3OWZlNDhiNzdkZDc3YWVlZjY3MTE2ZmRhMjAyYTgyMmE0Y2RlY2RmYzQ1NzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNTY1NDY4ZDk3NjQ3NTE4ODExNWI1OTIxOGQ3MzgwNGY4YTk0ODYzYTI3MzlmMGQwMjI2NDU3NjI5NjRmMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjODQ5MzkyMTE4ZWNhYjdlNWI5NzgyY2JkMjRhNDNhODBkMGE1ZTUzNzQwMTk0YWI5YjUwZmNhMDc0ZWNmOWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_34be7b9ef6a7499e8574c07adaac304f",
+      "statement": "The grader snapshot image is Ubuntu 24.04 with ca-certificates, a checksum-verified unmodified Stockfish 19 at /usr/local/bin/stockfish, and a Python 3.13 venv with the locked requirements plus the three workspace wheels; PATH and STOCKFISH_PATH are set so lcchess grade runs without engine flags.",
+      "evidence": [
+        {
+          "resource": "repo://docker/grader.Dockerfile#L1-L37",
+          "version": "repo-lines-v1:sha256:751e364053d25e299a441dc6c8c66a6449f840bfb2752e6e774b96fb59da44eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlZDI1NzAxODMwNTc3NTc0YjYyZTcyM2RkMWJjM2E3MDMyZDY1ZjYwMzg5ZDE0MjA1NzE0MjIxNmZmNjM1MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhODFlMWUyNDQ2MmU5MzU2YTZhMmM3MmM2ZGQ1ZWU2MDE2MTM1NmU1YzQ0MzZiZTI3Nzk1MjcyOGUyNzg1YzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_86f984b5411d40218069530b87ccf24e",
+      "statement": "scripts/grader-snapshot.py (mise run review:snapshot) builds wheels for langchain-chess, langchain-chess-systemone and langchain-chess-cli plus a frozen requirements export, then builds the langchain-chess-grader snapshot from the Dockerfile inside a LangSmith sandbox, tagging it latest; it needs LANGSMITH_API_KEY and optionally LANGSMITH_WORKSPACE_ID.",
+      "evidence": [
+        {
+          "resource": "repo://mise.toml#L102-L104",
+          "version": "repo-lines-v1:sha256:f6996922362ae116355068536fa1d527a734937b979c7b7c51a8c6c95e9af6d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE5OWIzODY2NmI0Y2Q5OWJiZjk4OTRiNGUzMTM5NTMyZWFkYmQyMjdhZWFmNzQwNWJjZmYwZGM0YzNjNDRkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDkwMjI2YTQ4MmY1ODZmZDc2NTQ1ZDRiZTY0NjdkZmU4ZGE3MDY3YjQyZWU5ZGRiNDUzZjhmMzI0M2E3MGY3NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjk1ZjgwOTEzZTYxYTU1YTcxY2U5NWY3MWNkODlkNjIwNTliNjFlMDIwZmU5ZTczOWU1MTBjY2Y1MTk4YmIzMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzdmYWE3ZGFjMjlmM2ZmYzI0N2M5M2I4OWRjNGZlMmM5NzFjYWNiMzY3OWVhMzM2ZmRjNTY4ZjlhNzQwYTY3NyJ9"
+        },
+        {
+          "resource": "repo://scripts/grader-snapshot.py#L1-L68",
+          "version": "repo-lines-v1:sha256:500d3e1e6b265d5f460b94d396f2fffebde897b9446c5a2c08c5534e9027564a:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4YzE4OGQ5MGNlNzM4MzIzMDUxMTliMjMzZTI1YzU4ZDMxMzY4ZGYyNjVhZmNiZWFhOGJiNDhjMDhiMzJmNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzZmU1NDA1MDNjYzQ5ZjdlMjU5YjE2N2U1Y2U5NDEzNDFmY2VjN2MyYjRlNjdmYmI4NmZhNWE5ODA3MjNiMTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_165473fa57634096a764a858aedd4c9e",
+      "statement": "The deploy-grader GitHub workflow rebuilds the grader snapshot on pushes to main touching the grader's source paths (or manual dispatch from main) after running CI on main's tip, queued in push order, and skips a build superseded by a newer run that changes grader paths or fails if no newer run exists.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/deploy-grader.yml#L1-L105",
+          "version": "repo-lines-v1:sha256:a55d142f5083bd82e0f9a5cfa5c094579e66b319739b63f518aa10b8d70d1bb0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2NTk5OGU3MDhkZDI3MmVkZWM3MTIxNjc1MTIxNmY1ZjMzYjFmN2EwYmEzMTdiNjU0NjU2YjU4OTMyZDA1ODQ3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxMTc4NTJlZjc4YzU3MTBlNmJiOGE0MzhmMzgzYzk1OTE0OTU4NDExOTZjNTA5YTVhMTY0YzY5ODk1YmI5NTM4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-26T13:04:36.303Z"
+    "at": "2026-09-27T19:08:28.877Z"
   }
 }

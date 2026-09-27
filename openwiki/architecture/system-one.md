@@ -1,8 +1,11 @@
 ---
 type: architecture component
 title: System 1 (SystemOneMiddleware)
-description: How SystemOneMiddleware ranks the allowed moves with a System 1 classifier (SemIf or Jev via the TypeSafeClassifier-backed GatewayRanker), gates on margin or confidence to either play the top move or suggest a shortlist, runs a seeded tournament when there are more options than one request holds (16 for SemIf), keeps the graph shape with NoSystemOne, and behaves when ranking fails with and without an LLM.
-tags: [systemone, middleware, ranker, tournament, semif, jev, gate, typesafe]
+description: How SystemOneMiddleware ranks the allowed moves with a System 1 classifier (SemIf or Jev via the TypeSafeClassifier-backed GatewayRanker), gates on margin or confidence to either play the top move or suggest a shortlist, runs a seeded tournament when there are more options than one request holds (16 for SemIf), behaves when ranking fails with and without an LLM, and is wired per opponent policy by the shared build_agent in libs/systemone.
+tags: [systemone, middleware, ranker, tournament, semif, jev, gate, typesafe, build_agent, settings]
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-27T19:08:28.877Z
 sources:
   - id: openwiki-source-b9886f4aee6bc16bdaea61ff
     resource: repo://apps/server/langchain_chess_server/app.py
@@ -14,22 +17,30 @@ sources:
     resource: repo://apps/server/langchain_chess_server/graph.py
   - id: openwiki-source-e3b0d2af80ee0702b2be4a6b
     resource: repo://apps/server/langchain_chess_server/settings.py
+  - id: openwiki-source-abe54986bd51a87223916132
+    resource: repo://libs/cli/langchain_chess_cli/main.py
   - id: openwiki-source-595fa5f62bc6bdbfd212eed8
     resource: repo://libs/cli/langchain_chess_cli/options.py
   - id: openwiki-source-20ebabb38d27c2e3522a9062
     resource: repo://libs/cli/langchain_chess_cli/uci/completion.py
+  - id: openwiki-source-c228b1f5ddeb31cb2374ed59
+    resource: repo://libs/systemone/langchain_chess_systemone/agent.py
   - id: openwiki-source-39451b0f32fce9549d5a627b
     resource: repo://libs/systemone/langchain_chess_systemone/describe.py
   - id: openwiki-source-3c3f476720af9ceef23b678d
     resource: repo://libs/systemone/langchain_chess_systemone/middleware.py
   - id: openwiki-source-79af0d552c660a058f4241b8
     resource: repo://libs/systemone/langchain_chess_systemone/ranker.py
+  - id: openwiki-source-21de6a067affac443ab60933
+    resource: repo://libs/systemone/langchain_chess_systemone/settings.py
   - id: openwiki-source-a76c9be29dc6600c43903323
     resource: repo://libs/systemone/langchain_chess_systemone/tournament.py
   - id: openwiki-source-6fab39c16be24c024414cdbe
     resource: repo://libs/systemone/langchain_chess_systemone/types.py
   - id: openwiki-source-6f36e75e66a558931cfca909
     resource: repo://libs/systemone/langchain_chess_systemone/validate.py
+  - id: openwiki-source-95af6ce374db999cf2c4a7e0
+    resource: repo://libs/systemone/tests/test_agent.py
   - id: openwiki-source-0e44d1e7d0101f3027cd3f67
     resource: repo://libs/systemone/tests/test_middleware.py
   - id: openwiki-source-92a0492c75cc05b9782d1e35
@@ -38,10 +49,7 @@ sources:
     resource: repo://libs/systemone/tests/test_tournament.py
   - id: openwiki-source-fd0e9360c0eb5b2cec5ea440
     resource: repo://packages/chess-ui/src/types.ts
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T14:00:37.632Z" }
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T14:00:37.632Z
+generated: { by: "openwiki/0.6.0", at: "2026-09-27T19:08:28.877Z" }
 ---
 
 # System 1 (SystemOneMiddleware)
@@ -54,12 +62,16 @@ candidates into the prompt, and the LLM may still play any allowed move. The pac
 `libs/chess` and never the other way round (see
 [package map](package-map.md)). It uses only the public middleware contract: `position`,
 `propose`, `candidates`, `fallback_move`, `ply_meta`, `turn_calls` and `turn_latency_ms` (see
-[middleware contract](../concepts/middleware-contract.md)).
+[middleware contract](../concepts/middleware-contract.md)). The package also owns the opponent
+settings (`ChessContext`) and `build_agent`, the one agent builder that the server and the CLI
+share.
 
 The main pieces:
 
 | Piece | Role |
 |---|---|
+| `build_agent` (`agent.py`) | Builds the chess agent a `ChessContext` describes, for the server and the CLI alike. Chooses System 1's place in the middleware stack for the opponent policy. |
+| `ChessContext` (`settings.py`) | Every opponent setting, System 1's knobs included, plus the versioned settings file format. |
 | `SystemOneMiddleware` (`middleware.py`) | Builds the rank request, applies the gate, freezes the decision for the turn, replays it, and emits telemetry. |
 | `NoSystemOne` (`middleware.py`) | A do-nothing stand-in with the same node name and state schema, used when System 1 is switched off but the graph shape must stay fixed. |
 | `GatewayRanker` (`ranker.py`) | Turns a `RankRequest` into one or more `TypeSafeClassifier` requests to the LLM Gateway's System 1 route. Validates the answers and records one `Call` per request. |
@@ -98,8 +110,8 @@ flowchart TD
 FEN, the UCI move history, the **currently allowed** moves as options, and a seed. The seed is
 `turn_seed(agent_seed, turn_id)`, a SHA-256 of the agent seed and turn id. It is deliberately
 not `hash()`, which Python randomizes per process. So the tournament shuffle can be repeated
-within a turn but differs across turns. The agent seed comes from `create_chess_agent(seed=...)`,
-which the server exposes as the `seed` context knob.
+within a turn but differs across turns. The agent seed is the opponent's `seed` setting
+(`ChessContext.seed`, default 0), which `build_agent` passes to `create_chess_agent(seed=...)`.
 
 The request sent to the gateway has two parts:
 
@@ -110,10 +122,10 @@ The request sent to the gateway has two parts:
   Its criteria map each UCI option to a deterministic description from `describe_moves`. The
   instructions ask for "the strongest legal move". They deliberately state no value
   preferences, so the ranking does not simply echo the prompt. Heats and the final also append
-  "Only some of the legal moves are listed". When enabled, the single or final request also
-  carries a `Score` (`eval`, seven rungs from Black winning to White winning) and two `Noul`s
-  (`needs_calculation`, `tactics_present`). These are telemetry only and never affect the
-  gate.
+  "Only some of the legal moves are listed". When `with_eval` or `with_nouls` is on, the single
+  or final request also carries a `Score` (`eval`, seven rungs from Black winning to White
+  winning) and two `Noul`s (`needs_calculation`, `tactics_present`). These are telemetry only
+  and never affect the gate.
 
 The async path builds the request (including the move descriptions, which can take most of a
 second in a crowded position) in a worker thread via `asyncio.to_thread`, so it stays off the
@@ -123,10 +135,10 @@ event loop.
 
 `describe.py` computes `MoveFacts` with python-chess, never with a model. Static exchange
 evaluation walks the legal recaptures on the destination square, so pins and king safety are
-respected. The `rich` style (the default, and the server's default `style` knob) renders
-movement, then tactical phrases (checkmate or gives check, captures, wins or loses material in
-the exchange), then square safety. The phrase order is fixed, so the same facts always give the
-same string. The `terse` style keeps only the SAN plus the first tactical phrase.
+respected. The `rich` style (the default `style` setting) renders movement, then tactical
+phrases (checkmate or gives check, captures, wins or loses material in the exchange), then
+square safety. The phrase order is fixed, so the same facts always give the same string. The
+`terse` style keeps only the SAN plus the first tactical phrase.
 
 ## The gate
 
@@ -138,9 +150,10 @@ same string. The `terse` style keeps only the SAN plus the first tactical phrase
 - **Threshold.** The default is `0.9`. After a tournament, `tournament_threshold` replaces it
   when set; otherwise `threshold` applies. A final over fewer moves inflates the margin, and
   SemIf's confidence depends on the option count, so a tournament gets its own threshold. The
-  applied value is recorded as `threshold_used`. Design decisions and measurements are
-  collected in [design decisions](../concepts/decisions.md). At the time of writing that page
-  does not yet record numbers behind the `0.9` default or the tournament threshold.
+  applied value is recorded as `threshold_used`. The code says nothing about how well these
+  defaults are calibrated. For measured System 1 accuracy and gate calibration on labelled
+  positions, see [System 1 evals](../workflows/system-one-evals.md). Other design decisions are
+  collected in [design decisions](../concepts/decisions.md).
 - **Plays** when `threshold < 1.0 and signal >= threshold`. So `threshold=0` always plays
   (System 1 alone) and `threshold=1` never plays (a pure pruner), even for a distribution
   of 1.0/0.0.
@@ -179,10 +192,12 @@ a failed commit without a second ranking call. The general pattern is described 
 `NoSystemOne` has `SystemOneMiddleware`'s name and `SystemOneState` schema, but its
 `before_model`/`abefore_model` return nothing. The server's graph factory must build the same
 nodes, edges and state schema for every call (a setting may switch a node off but never remove
-it), so it uses `NoSystemOne` for `policy="llm"` and in `shape()`, the credential-free graph
-used for reads, updates and introspection. A test checks that a graph with `NoSystemOne` has the
-same topology as one with `SystemOneMiddleware`, and that the LLM then plays with empty ply meta.
-The CLI does not need a fixed topology and simply leaves the middleware out for `llm`.
+it). So `build_agent(..., fixed_topology=True)` installs `NoSystemOne` for `policy="llm"`, and
+the server's `shape()`, the credential-free graph used for reads, updates and introspection,
+always uses it. Tests check that a graph with `NoSystemOne` has the same topology as one with
+`SystemOneMiddleware` (the LLM then plays with empty ply meta), and that every policy and memory
+combination built with `fixed_topology=True` has one shape. The CLI builds without a fixed
+topology, so for `llm` it simply leaves the middleware out.
 
 ## GatewayRanker
 
@@ -195,8 +210,8 @@ so a long call is treated as a stalled connection and retried.
 
 - **Models and caps.** `semif-*` models get 16 options per Choice and `typesafe/jev-*` models
   get 255. Unknown models default to 16, which costs at most an extra round. `max_options`
-  must be within 2..255. The server documents `semif-qwen3.5-4b` (the default) and
-  `typesafe/jev-latest`.
+  must be within 2..255. The `systemone_model` setting documents `semif-qwen3.5-4b` (the
+  default) and `typesafe/jev-latest`.
 - **One option** returns a local distribution (probability 1, confidence 1) with no request
   and no `Call`. Under the default threshold this makes System 1 play a move that has been
   narrowed to one option. Under `threshold=1` the LLM still plays it.
@@ -254,34 +269,85 @@ each, then a 16-move final.
 | Transient error, recovered within 3 attempts | Normal decision | Normal decision |
 | Exhausted retries, hard error, or malformed answer | Status `skipped`, with `error` and the elapsed time recorded. No candidates or fallback are written, and the LLM chooses unaided. Completed calls stay on the turn. | `RankingFailed` propagates from `before_model`. The run fails and the turn stays `pending`. |
 | Heats succeed but the final fails | `skipped`; the heat call is kept | Run fails |
+| System 1 credentials missing on the server | `ValueError` while building the graph, before any turn | Same |
 
-## Wiring: server and CLI
+## Wiring: `build_agent` and the opponent settings
 
-In both surfaces, `policy="systemone"` builds the middleware with `threshold=0.0`,
-`tournament_threshold=0.0` and `has_model=False`, so System 1 alone always plays when ranking
-succeeds. `hybrid` (the default) uses the knobs `gate`, `threshold`, `tournament_threshold`,
-`k`, `top_p`, `style`, `with_eval`, `with_nouls` and `systemone_model`. For `policy="llm"` the
-server installs `NoSystemOne` and the CLI omits the middleware.
+### One builder for every surface
 
-The two surfaces wire the ranker differently:
+`build_agent` lives in `libs/systemone/langchain_chess_systemone/agent.py`. Both the server
+graph and the CLI (`lcchess uci`, `lcchess play`) call it. It takes a `ChessContext` (the
+opponent) and lets each surface inject what it owns: a `model_factory`, a `ranker_factory`, the
+checkpointer, extra middleware (which runs **after** System 1), `fixed_topology` and the
+context schema. Only the factories a policy uses are called.
 
-- **Server** (`apps/server/langchain_chess_server/graph.py`). `systemone()` builds a
-  `GatewayRanker` itself, passing `style`, `with_eval` and `with_nouls` plus a
-  `TypeSafeClassifier` built with the `TYPESAFE_API_KEY`/`TYPESAFE_BASE_URL` settings. It hands
-  that ranker to `SystemOneMiddleware`, which receives only the gate, threshold, `k`, `top_p`
-  and `has_model` knobs. `ServerSettings.typesafe()` raises if either setting is missing, so
-  only the policies that run System 1 need them. Each classifier gets its sync and async HTTP
-  clients from `POOL` (`clients.py`): one per-process `httpx2.Client`/`httpx2.AsyncClient` pair
-  with a 15 s timeout, created lazily under a lock on first use. All graphs built in the process
-  share the pair. The FastAPI app's lifespan (`app.py`), which the Agent Server merges with its
-  own, calls `POOL.aclose()` on shutdown. After that, the next `get()` creates a fresh pair. The
-  pool lives in its own module, always imported by package name, because langgraph loads
-  `graph.py` from its file path under a generated module name, and a pool kept there would exist
-  once per copy. The knobs are declared on `ChessContext` (`context.py`). `with_eval` and
-  `with_nouls` default to `False` and are described as telemetry.
-- **CLI** (`libs/cli/langchain_chess_cli/options.py`). It passes `style`, `with_eval` and
-  `with_nouls` straight to `SystemOneMiddleware`. With no `ranker`, the middleware builds its
-  own `GatewayRanker`, whose client is created lazily on first use.
+```mermaid
+flowchart TD
+    S["ChessContext (opponent settings)"] --> B["build_agent"]
+    B --> P{"policy"}
+    P -- systemone --> A1["No model built. SystemOneMiddleware with thresholds 0 and has_model False"]
+    P -- hybrid --> A2["model_factory. SystemOneMiddleware with gate, threshold, tournament_threshold, k, top_p"]
+    P -- llm --> A3{"fixed_topology?"}
+    A3 -- yes --> N["NoSystemOne"]
+    A3 -- no --> O["No System 1 middleware"]
+    A1 --> M["Surface middleware, then create_chess_agent"]
+    A2 --> M
+    N --> M
+    O --> M
+```
+
+*How `build_agent` places System 1 in the stack for each policy.*
+
+- **`policy="systemone"`.** No model is built (the model factory is never called), and
+  `systemone()` sets `threshold=0.0`, `tournament_threshold=0.0` and `has_model=False`,
+  whatever the settings say. So System 1 alone always plays when ranking succeeds. Memory is
+  off because there is no model.
+- **`policy="hybrid"`** (the default). The model is built, and the middleware gets the
+  settings' `gate`, `threshold`, `tournament_threshold`, `k` and `top_p`, with `has_model=True`.
+- **`policy="llm"`.** No ranker is built. With `fixed_topology=True` (the server) the stack
+  gets `NoSystemOne`. Otherwise (the CLI) System 1 is left out.
+
+The ranker comes from the `ranker_factory`, which reads the settings' `systemone_model`,
+`style`, `with_eval` and `with_nouls`:
+
+- **Default (CLI).** `default_ranker` builds a plain `GatewayRanker`. Its `TypeSafeClassifier`
+  is created lazily on first use, so building the graph needs no credentials.
+- **Server** (`apps/server/langchain_chess_server/graph.py`). `pooled_ranker` builds the
+  `GatewayRanker` with a `TypeSafeClassifier` that uses the `TYPESAFE_API_KEY` and
+  `TYPESAFE_BASE_URL` server settings. `ServerSettings.typesafe()` raises `ValueError` if either
+  is missing. It is called only from the ranker factory, so only the policies that run System 1
+  need them. `build_graph` calls `build_agent` with `fixed_topology=True`, the lenient
+  `ChessContextInput` context schema and `GameSetupMiddleware` as the surface middleware. Each
+  classifier gets its sync and async HTTP clients from `POOL` (`clients.py`): one per-process
+  `httpx2.Client`/`httpx2.AsyncClient` pair with a 15 s timeout, created lazily under a lock on
+  first use. All graphs built in the process share the pair. The FastAPI app's lifespan
+  (`app.py`), which the Agent Server merges with its own, calls `POOL.aclose()` on shutdown.
+  After that, the next `get()` creates a fresh pair. The pool lives in its own module, always
+  imported by package name, because langgraph loads `graph.py` from its file path under a
+  generated module name, and a pool kept there would exist once per copy.
+
+### Where the settings come from
+
+System 1's knobs are fields of `SystemOneSettings`, which is part of `ChessContext` in
+`libs/systemone/langchain_chess_systemone/settings.py`. They are `systemone_model`
+(`semif-qwen3.5-4b`), `style` (`rich`), `with_eval` and `with_nouls` (both `False`, recorded
+only), `gate` (`margin`), `threshold` (0.9), `tournament_threshold` (null, so `threshold`
+applies), `k` (5, at most 255), `top_p` (null) and `seed` (0). `policy` (default `hybrid`)
+chooses the opponent. `ChessContext` validates the ranges when it is built, and the middleware
+constructor checks them again. A settings file is `ChessContext` as versioned JSON (currently
+`version: 2`). Older versions are migrated forward, and a newer version or unknown keys are
+rejected. See [settings and model arguments](../concepts/settings-and-model-arguments.md) for
+the file format and migrations.
+
+- **CLI.** `--config` loads an opponent settings file (`load_file`). Each flag given then
+  overrides it, and each `--reset <name>` puts a setting back to its default (`overlay`).
+  Without `--config`, the flags apply over the defaults.
+- **Server.** `resolve_context` merges the assistant's `context` first, then the keys present
+  in `config["configurable"]`. A source without a `version` is read as the current version, and
+  keys the settings don't know are dropped. An explicit null resets a setting to its default (so
+  a run can clear an assistant's `top_p`). The merged values are validated up front, so a bad
+  value fails the run before any ranking. A graph factory call with no execution runtime (reads,
+  updates, introspection) gets `shape()` instead.
 
 ## Telemetry
 
@@ -306,6 +372,11 @@ keep them in step.
 
 ## Tests that matter
 
+- `tests/test_agent.py`: each policy builds its stack (System 1 present for `systemone` and
+  `hybrid`, absent for `llm`), `fixed_topology=True` gives one shape for every policy and
+  memory setting, settings reach the agent (`threshold_used`, `k`), `policy="systemone"` never
+  builds a model even with `threshold=1`, and `default_ranker` follows the settings' model and
+  style.
 - `tests/test_middleware.py`: gate edges (`threshold` 0 and 1, confident play skips the model),
   replay never re-gates, monotone replay under later narrowing, tournament threshold, malformed
   distributions leading to `skipped` with a model and a pending turn without one, a rounded-away
@@ -319,28 +390,33 @@ keep them in step.
   chunking, seeded shuffle, and the final always fitting.
 - `tests/test_live.py`: opt-in (`-m live`) runs against the real gateway. These cost money.
 
-## Runtime evidence
+## Runtime note: System 1 play versus hand-off, and ranking failures
 
 The consolidated findings live in [runtime behavior](../operations/runtime-behavior.md).
 
-- **Observed:** none for this page. The LangSmith sample pulled for this wiki update could not
-  be read from this page's generation context. This page therefore reports **no** sampled
-  counts for gate outcomes (`played` / `shortlist` / `skipped`), tournament frequency, System 1
-  latency, or per-call usage of `systemone.rank` / `systemone.heats` / `systemone.final`.
-  See the runtime-behavior page for any figures from this pull.
+- **Observed:** none recorded here. This page could not read the LangSmith sample for this
+  update, so it gives **no** sampled counts for how often System 1 played a move itself versus
+  handing off to the LLM (`played` versus `shortlist`), for `skipped` ranking failures,
+  tournament frequency, System 1 latency, or `systemone.*` span counts. Check the
+  runtime-behavior page for any figures from the current pull. Do not infer them from this page.
 - **Correlated (how to read traces against the code):**
+  - A System 1 play is a turn with a `systemone.*` span and no LLM span after it. A hand-off
+    has an LLM span after the System 1 span. Both outcomes are also in
+    `Ply.meta["SystemOneMiddleware"].status`, together with `latency_ms` and `threshold_used`.
+  - A ranking failure in a hybrid game shows failed or repeated `systemone.*` spans followed by
+    an LLM span, and `status: "skipped"` with `error` set. In a `policy="systemone"` game it
+    shows as an errored root and a pending turn.
   - Each gateway request is a span named after the constants in `ranker.py`. A single-request
     turn shows one `systemone.rank` span. A SemIf tournament shows exactly one
-    `systemone.heats` span followed by one `systemone.final` span.
-  - Retries appear as repeated spans with the same name within one turn.
-  - A turn with no System 1 span either had a single allowed option (ranked locally) or was
-    replayed from its frozen decision.
-  - Gate outcome, `latency_ms` and `threshold_used` are in `Ply.meta["SystemOneMiddleware"]`,
-    not in the span names.
+    `systemone.heats` span followed by one `systemone.final` span. Retries appear as repeated
+    spans with the same name within one turn.
+  - A turn with no System 1 span either had a single allowed option (ranked locally), was
+    replayed from its frozen decision, or ran with `policy="llm"`.
   - SemIf spans carry no token usage, so their cost is `None` by design.
 - **Hypothesis (checks to run on a future sample):**
   - Does the default `threshold=0.9` margin gate ever play in hybrid games, or does it act
-    mostly as a pruner?
+    mostly as a pruner? Compare with the calibration measured on the
+    [evals page](../workflows/system-one-evals.md).
   - How often do positions exceed 16 allowed moves and so pay for two sequential requests?
   - Do transient-error retries or the `skipped` path fire at all in production?
   - How much of a turn's wall time does System 1 add next to the LLM call?

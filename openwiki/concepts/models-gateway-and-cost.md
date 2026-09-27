@@ -1,8 +1,11 @@
 ---
 type: "Reference"
-title: "Models, gateway and cost"
-description: "How chess agents name models (init_chat_model specs and the langsmith: gateway provider), how the shared chat_model builder sizes output budgets, reasoning effort and input-limit profiles, how CallRecorder captures every provider response, and how calls are priced locally with genai-prices and summed into a possibly incomplete turn cost."
-tags: [models, llm-gateway, langsmith, pricing, cost, callbacks, genai-prices]
+title: "Model specs, LLM Gateway and cost"
+description: "How chess agents name models (init_chat_model specs and the langsmith: gateway provider), the default model, how reasoning effort and model_kwargs resolve into the shared chat_model builder's output budget and input-limit profile, how CallRecorder captures and locally prices every provider response, why stalled calls record nothing, and when a turn's cost is incomplete."
+tags: [models, llm-gateway, langsmith, pricing, cost, callbacks, genai-prices, model-kwargs]
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-27T19:08:28.877Z
 sources:
   - id: openwiki-source-5f5b95b3d6a215fa02ceb945
     resource: repo://.env.example
@@ -22,34 +25,47 @@ sources:
     resource: repo://libs/chess/langchain_chess/chat_models.py
   - id: openwiki-source-fc393bc7c06df7c3f85ece92
     resource: repo://libs/chess/langchain_chess/middleware/core.py
+  - id: openwiki-source-85ad0c871015c0f31a99e9a2
+    resource: repo://libs/chess/langchain_chess/middleware/stall_retry.py
   - id: openwiki-source-4a4d83b98e02f02b6b258e76
     resource: repo://libs/chess/langchain_chess/middleware/summarization.py
+  - id: openwiki-source-b97343132cd8bf8377dc9677
+    resource: repo://libs/chess/langchain_chess/model_arguments.py
   - id: openwiki-source-38435c7b4bb18f89613f47ba
     resource: repo://libs/chess/langchain_chess/models.py
   - id: openwiki-source-6c9b823f6aaa5fb3802d7fae
     resource: repo://libs/chess/langchain_chess/pricing.py
   - id: openwiki-source-cf036aa5f44c795ee62f143f
     resource: repo://libs/chess/langchain_chess/recorder.py
+  - id: openwiki-source-cbaaf1981eee0f537632c225
+    resource: repo://libs/chess/langchain_chess/settings.py
   - id: openwiki-source-89cf26730d6633d36dd4f627
     resource: repo://libs/chess/langchain_chess/state.py
   - id: openwiki-source-58ce79eace88f6d2b5c95962
     resource: repo://libs/chess/pyproject.toml
   - id: openwiki-source-8fce0e77e1ef5e8f2b83d864
     resource: repo://libs/chess/tests/test_chat_models.py
+  - id: openwiki-source-2c6a2617bc273a5be95fdd7d
+    resource: repo://libs/chess/tests/test_contract.py
+  - id: openwiki-source-a20a927671d49f88ead9466e
+    resource: repo://libs/chess/tests/test_model_arguments.py
   - id: openwiki-source-8e81257c38c3fd82d7e2deaa
     resource: repo://libs/chess/tests/test_pricing.py
   - id: openwiki-source-c3695f887ef91554d5f4fa31
     resource: repo://libs/chess/tests/test_recorder.py
+  - id: openwiki-source-abe54986bd51a87223916132
+    resource: repo://libs/cli/langchain_chess_cli/main.py
   - id: openwiki-source-595fa5f62bc6bdbfd212eed8
     resource: repo://libs/cli/langchain_chess_cli/options.py
   - id: openwiki-source-b5fa1d6f5447d2f67ca99846
     resource: repo://libs/cli/langchain_chess_cli/tui/view.py
+  - id: openwiki-source-c228b1f5ddeb31cb2374ed59
+    resource: repo://libs/systemone/langchain_chess_systemone/agent.py
   - id: openwiki-source-79af0d552c660a058f4241b8
     resource: repo://libs/systemone/langchain_chess_systemone/ranker.py
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T14:00:37.632Z" }
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T14:00:37.632Z
+  - id: openwiki-source-21de6a067affac443ab60933
+    resource: repo://libs/systemone/langchain_chess_systemone/settings.py
+generated: { by: "openwiki/0.6.0", at: "2026-09-27T19:08:28.877Z" }
 ---
 
 # Model specs, LLM Gateway and cost
@@ -58,23 +74,27 @@ Every model in this repo is named by a string, and every call it makes is writte
 record as a priced `Call`. This page covers three linked mechanisms:
 
 1. **Naming and construction.** `init_chat_model` specs, the `langsmith:` gateway provider, the
-   one canonical `provider:model` form (`libs/chess/langchain_chess/models.py`), and the shared
+   one canonical `provider:model` form (`libs/chess/langchain_chess/models.py`), how settings and
+   `model_kwargs` resolve (`libs/chess/langchain_chess/model_arguments.py`), and the shared
    chat-model builder (`libs/chess/langchain_chess/chat_models.py`).
 2. **Capture.** `CallRecorder`, a callback handler that writes each provider response into a
-   sink held in a context variable (`libs/chess/langchain_chess/recorder.py`).
+   sink held in a context variable (`libs/chess/langchain_chess/recorder.py`), and `StallRetry`,
+   which retries a stalled stream without recording it.
 3. **Pricing and context windows.** Costs are computed locally from `usage_metadata` with a
    pinned `genai-prices` snapshot, and the same snapshot supplies context windows. `turn_cost`
    adds costs up per turn and says whether the total is complete
    (`libs/chess/langchain_chess/pricing.py`).
 
 Where calls end up (`turns[-1]["calls"]`) is covered in [the state record](./state-record.md).
-System 1 request details are in [System 1](../architecture/system-one.md). How the input limit
-feeds the summarization trigger is covered in [prompt and memory](./prompt-and-memory.md).
+The full settings schema and the `model_kwargs` hold-back rules are covered in
+[settings and model arguments](./settings-and-model-arguments.md). System 1 request details are in
+[System 1](../architecture/system-one.md). How the input limit feeds the summarization trigger is
+covered in [prompt and memory](./prompt-and-memory.md).
 
 ## Model specs and the `langsmith:` provider
 
-Models are plain `init_chat_model` specs, set through the server context `model` knob or the
-CLI `--model` option:
+Models are plain `init_chat_model` specs, set through the `model` setting (server context,
+Studio, the CLI `--model` option or a settings file):
 
 | Spec form | Example | Route |
 |---|---|---|
@@ -82,12 +102,13 @@ CLI `--model` option:
 | `provider:model` | `openai:gpt-5.6-sol` | That provider's own LangChain package and key, or the gateway passthrough when `LANGSMITH_GATEWAY` is on |
 | bare name | `gpt-5.6-sol` | `init_chat_model` infers the provider. The CLI needs the provider extra installed |
 
-The default model, for both the server (`ChessContext.model` in
-`apps/server/langchain_chess_server/context.py`) and the CLI (`AgentOptions.model` in
-`libs/cli/langchain_chess_cli/options.py`, which mirrors the server defaults), is
-`langsmith:baseten/zai-org/GLM-5.3-Flash`. The default `reasoning_effort` is `None` in both.
-System 1 models are separate names: `semif-qwen3.5-4b` (the default) or `typesafe/jev-latest`.
-These go to `langchain-typesafe`, not to `init_chat_model`.
+**Defaults live in one place.** `DEFAULT_MODEL = "langsmith:baseten/zai-org/GLM-5.3-Flash"` and
+`reasoning_effort = None` are defaults on `CoreSettings` (`libs/chess/langchain_chess/settings.py`).
+`ChessContext` (`libs/systemone/langchain_chess_systemone/settings.py`) extends it with System 1's
+settings and is the one settings type the server and the CLI both use, so they cannot drift apart.
+`reasoning_effort` accepts `low`, `medium`, `high` or null. System 1 models are separate names:
+`systemone_model` defaults to `semif-qwen3.5-4b`, with `typesafe/jev-latest` (Jev) as the
+alternative. These go to `langchain-typesafe`, not to `init_chat_model`.
 
 ### `model_identity` and `canonical_model`
 
@@ -110,26 +131,61 @@ name, or a callback's `ls_model_name`:
 lookup use. If you change this function, you change the stored model names, which price entry each
 call matches, and which context window a model gets.
 
-## Building the chat model: output budget, reasoning effort and the profile
+## Reasoning effort and `model_kwargs` resolution
 
-There is one builder, `chat_model(model, reasoning_effort=None)` in
-`libs/chess/langchain_chess/chat_models.py`. The server's `chat_model(context)`
-(`apps/server/langchain_chess_server/graph.py`) and the CLI's `default_model(options)`
-(`libs/cli/langchain_chess_cli/options.py`) are thin wrappers around it. Every model it builds
-gets:
+Before a model is built, the settings are resolved into a `ModelArguments` value by
+`model_arguments(model_kwargs, reasoning_effort=..., surface=...)`. The precedence is
+**`model_kwargs` beats the settings, which beat the app's defaults**:
 
-- `max_tokens=<output budget>`. The budget comes from `output_budget(window, ceiling)`: it is
-  `MAX_TOKENS` (64000), lowered to the model's own output limit (`ceiling`) when one is known and
-  to half the context window when the window is small. The cap includes reasoning tokens (the
-  source records that 8000 ran out mid-game at medium effort). 64000 is also the budget for a
-  gateway model whose own output limit is unknown; the source notes that Claude Haiku 4.5, the only
-  web preset that enforces its limit, allows exactly that.
+- **Aliases collapse to one value.** `reasoning_effort` and `reasoning.effort` are one effort;
+  `max_tokens`, `max_output_tokens` and `max_completion_tokens` are one output limit. Aliases that
+  disagree are an error. Otherwise the integration would send both, or the app's `max_tokens`
+  would beat a passed-through `max_output_tokens`.
+- **The effort.** An effort in `model_kwargs` wins over the `reasoning_effort` setting. If
+  `model_kwargs` has a `reasoning` object, the effort is merged into it; otherwise it becomes
+  `reasoning_effort`. With no effort at all, no reasoning argument is set, because models without
+  reasoning (such as Claude Haiku 4.5) reject the parameter outright, even as a default.
+  `extra_body.reasoning` replaces the whole request object, so `ModelArguments.reasoning_effort`
+  (the value actually sent) is then whatever effort that object carries, possibly none.
+- **The output limit** from `model_kwargs` becomes `ModelArguments.max_tokens` and overrides the
+  app's computed budget (below). A limit set only inside `extra_body` isn't seen, so memory may
+  summarize too late.
+- **Held-back names** (credentials and connections, model names, what the agent sends, app-owned
+  constructor arguments; on the `server` surface also account resources and anything off its
+  allowlist) raise `ModelArgumentsError`. `CoreSettings` validates the `local` rules when settings
+  load. The server's `server_model` resolves with `surface="server"`. Details are on
+  [settings and model arguments](./settings-and-model-arguments.md).
+
+`arguments(settings, surface)` and `sent(settings, surface)` in
+`libs/systemone/langchain_chess_systemone/agent.py` wrap this for a `ChessContext`. `sent` puts the
+values as sent (`reasoning_effort` and any `max_tokens` override) into run metadata: the server
+graph via `with_config(metadata=...)` and CLI runs via `run_config`. The recorded `setup` keeps
+`model_kwargs` exactly as given. With `policy="systemone"`, nothing is sent and `sent` reports
+`reasoning_effort: None`.
+
+## Building the chat model: output budget and the profile
+
+There is one builder, `chat_model(model, arguments=None, *, connection=None)` in
+`libs/chess/langchain_chess/chat_models.py`. `default_model(settings)` in the systemone package
+calls it with the `local` arguments. This is the default `model_factory` of the shared
+`build_agent`, which the CLI's `play` and UCI commands use. The server's `server_model(settings)`
+(`apps/server/langchain_chess_server/graph.py`) calls it with the `server` arguments.
+`connection` is for trusted code only (for example an HTTP client in tests), never settings.
+Every model it builds gets:
+
+- `max_tokens=<output budget>`. Without a `model_kwargs` override, the budget comes from
+  `output_budget(window, ceiling)`: `MAX_TOKENS` (64000), lowered to the model's own output limit
+  (`ceiling`) when one is known and to half the context window when the window is small. The cap
+  includes reasoning tokens (the source records that 8000 ran out mid-game at medium effort).
+  64000 is also the budget for a gateway model whose own output limit is unknown; the source notes
+  that Claude Haiku 4.5, the only web preset that enforces its limit, allows exactly that.
 - `name=<model part of model_identity>` sets the trace span name (for example `claude-opus-5-5`
   or `zai-org/GLM-5.3-Flash`). Without it, every vendor behind the gateway would show up as
   `ChatOpenAI`.
-- `reasoning_effort` **only when it is not `None`**. Models without reasoning (such as
-  Claude Haiku 4.5) reject the parameter outright, even as a default, so an empty knob sends no
-  reasoning setting at all and the model uses its own default.
+- the resolved `ModelArguments.kwargs` (reasoning, temperature and so on), then `connection`.
+
+`_check_room` raises `ModelArgumentsError` when an explicit output limit is at least the model's
+context window: it would leave no input, and memory would summarize before every call.
 
 The `profile` (which carries `max_input_tokens`, the limit the fractional summarization trigger
 is a fraction of) depends on the route:
@@ -154,18 +210,18 @@ Examples pinned by tests: gateway Opus 5.5 gets `1,000,000 − 64,000`; GLM-5.3-
 `max_tokens=4096` and `8192 − 4096`; `gpt-4-turbo` and `gpt-4o` are held to their 4,096 and 16,384
 output limits, over the gateway or natively.
 
-The server turns this into two user-facing behaviors:
+The shared `build_agent` and the server turn this into two user-facing behaviors:
 
-- `build_agent` raises `ChessContractError` ("… has no known input limit … use memory='none'")
-  when `memory="summarize"` is requested for a model whose profile lacks `max_input_tokens`
-  (`input_limit` in `libs/chess/langchain_chess/middleware/summarization.py`). The `systemone`
-  policy builds no chat model and forces `memory="none"`, so it never hits this check. The CLI's
-  `build_agent` uses the same `input_limit` check.
-- `model_limit(model)` (cached with `lru_cache`) builds the chat model and returns its
-  `input_limit`, or `None` if the model can't be built (`ValueError`, `ImportError`). The
-  `/ui/model-limit?model=…` route in `apps/server/langchain_chess_server/app.py` returns it as
-  `{"max_input_tokens": …}` so the web UI's new-game dialog only offers `summarize` for models with
-  a known limit.
+- `build_agent` raises `ChessContractError` ("… has no known input limit, so it can't use memory;
+  turn it off") when `memory=True` is requested for a model whose profile lacks
+  `max_input_tokens` (`input_limit` in `libs/chess/langchain_chess/middleware/summarization.py`).
+  With `policy="systemone"` no chat model is built, so memory is forced off and the check never
+  runs. `memory` is a boolean; the old `full`/`summarize` string modes are gone and rejected.
+- `model_limit(model)` (cached with `lru_cache`) builds `default_model(ChessContext(model=model))`
+  and returns its `input_limit`, or `None` if the model can't be built (`ValueError`,
+  `ImportError`). The `/ui/model-limit?model=…` route in `apps/server/langchain_chess_server/app.py`
+  returns it as `{"max_input_tokens": …}` so the web UI's new-game dialog only offers memory for
+  models with a known limit.
 
 Building the graph never calls a model. With `policy="systemone"`, no chat model is built at all.
 The System 1 classifier (`TypeSafeClassifier`) gets its key and base URL from
@@ -192,8 +248,9 @@ shell first and `.env` second) rejects a blank `LANGSMITH_GATEWAY_API_KEY`, `TYP
 introspection (no `execution_runtime`) get the credential-free `shape()` graph, so they need none
 of these variables. `ServerSettings.typesafe()` raises when either TypeSafe variable is unset;
 only policies that run System 1 (`hybrid`, `systemone`) call it. The CLI deliberately enforces none
-of these rules and relies on langchain-core's resolution plus the provider's own environment.
-Local commands that call models must load `.env` explicitly (`uv run --env-file .env ...`).
+of these rules: it builds through the shared `build_agent`/`default_model`, which relies on
+langchain-core's resolution plus the provider's own environment. Local commands that call models
+must load `.env` explicitly (`uv run --env-file .env ...`).
 [Deployment](../operations/deployment.md) covers the deployed environment.
 
 ## CallRecorder: capturing every provider response
@@ -203,26 +260,31 @@ sequenceDiagram
     participant Core as ChessCore.wrap_model_call
     participant Rec as CallRecorder
     participant Sink as _SINK contextvar
+    participant Retry as StallRetry
     participant Chat as Chat model
     Core->>Rec: sink("llm")
     Rec->>Sink: set new sink
-    Core->>Chat: handler(request)
+    Core->>Retry: handler(request)
+    Retry->>Chat: attempt
     Chat->>Rec: on_chat_model_start (ls_model_name, ls_provider)
     Rec->>Sink: read sink, store pending by run_id
+    Chat-->>Rec: on_llm_error (stalled stream)
+    Rec->>Rec: drop pending, no Call
+    Retry->>Chat: one more attempt
     Chat->>Rec: on_llm_end (AIMessage with usage_metadata)
     Rec->>Rec: make_call, price it
     Rec->>Sink: append Call
     Core->>Sink: reset on exit
     Core->>Core: append calls to turns[-1].calls
 ```
-*One model call. Retries and fallbacks inside `handler` each produce another start/end pair
-that lands in the same sink.*
+*One model call whose first stream stalls. Every retry or fallback inside `handler` produces
+another start/end (or start/error) pair in the same sink; only responses become Calls.*
 
 How it works:
 
-- `create_chess_agent` creates one `CallRecorder` and passes it to `ChessCore` and
-  `ChessSummarization`. It then returns `graph.with_config(callbacks=[recorder])`, so the recorder
-  sees every chat-model callback in the graph (`libs/chess/langchain_chess/agent.py`).
+- `create_chess_agent` creates one `CallRecorder` and passes it to `ChessCore` and, when memory is
+  on, to `ChessSummarization`. It then returns `graph.with_config(callbacks=[recorder])`, so the
+  recorder sees every chat-model callback in the graph (`libs/chess/langchain_chess/agent.py`).
 - `recorder.sink(kind)` puts a fresh `_Sink(kind, calls)` into a module-level `ContextVar` and
   resets it on exit. `ChessCore.wrap_model_call` / `awrap_model_call` open `sink("llm")` around
   the handler. `ChessSummarization.before_model` / `abefore_model` open `sink("summary")` around
@@ -234,11 +296,15 @@ How it works:
   re-raised as `ContextBudgetError`.
 - `on_chat_model_start` does nothing outside a sink. Inside one, it records a pending entry keyed
   by `run_id`, holding the model (`ls_model_name`, then the serialized name, then `"unknown"`),
-  `ls_provider`, and a UTC start time. The start time becomes `called_at`.
+  `ls_provider`, a UTC start time, and whether the request carries hosted tools (`tools` in the
+  invocation params or in `extra_body`). The start time becomes `called_at`.
 - `on_llm_end` removes the pending entry and appends a priced `Call`, but only when the first
   generation is a `ChatGeneration` whose message is an `AIMessage`. Plain text `Generation`s are
-  ignored. `on_llm_error` drops the pending entry, so **failed attempts record no Call**.
-  Every attempt that returned a response is recorded, including inner retries and fallbacks.
+  ignored. A call that carried hosted tools gets `cost_complete=False`, because token prices don't
+  cover a hosted tool's own charges (a chess agent binds no tools, so only `model_kwargs` can add
+  them, and the server holds `tools` back). `on_llm_error` drops the pending entry, so **failed
+  attempts record no Call**. Every attempt that returned a response is recorded, including inner
+  retries and fallbacks.
 - `run_inline = True` and a lock protect the pending map. `recorder.pending` should be zero
   between runs.
 
@@ -247,6 +313,23 @@ spans sit between the node and the provider call, and parent-run lookups would r
 The context variable is the only link between a sink and its calls. Code that makes a model call
 outside `wrap_model_call` or the summarization hook is simply not recorded. A new call site must
 open its own sink.
+
+### Stalled calls record nothing
+
+`StallRetry` (`libs/chess/langchain_chess/middleware/stall_retry.py`) is a `ModelRetryMiddleware`
+that `create_chess_agent` always appends last in the stack. It sits inside `ChessCore`'s wrapper,
+so a retry repeats only the provider call and stays inside the same `llm` sink and turn:
+
+- It retries only what `stall_errors()` returns: `langchain_openai.StreamChunkTimeoutError`
+  (every `langsmith:` gateway model is a `ChatOpenAI`), or nothing when `langchain_openai` isn't
+  installed. Any other error, such as a plain `TimeoutError`, fails the turn at once.
+- It retries once (`max_retries=1`) with no delay, since the stall already waited out
+  langchain-openai's 120 s chunk timeout. With `on_failure="error"`, a second stall raises, so the
+  pending turn's own retry path sees the error rather than a fake reply.
+- **A stalled attempt records no `Call`.** Its usage would arrive in the final chunk, which never
+  came, and `on_llm_error` drops its pending entry. The tokens the provider may have billed for the
+  stalled attempt are therefore invisible to `turn_cost`; they do not mark it incomplete. A
+  stalled-then-successful turn shows one `Call`, not two.
 
 System 1 does not go through `CallRecorder`. `GatewayRanker._call` builds its own `Call` with
 `make_call("systemone", self.model, tokens, at, provider="typesafe")` from the classifier
@@ -305,10 +388,11 @@ A turn's cost is incomplete (a lower bound) when any call:
   when usage is reported. Jev is priced as `typesafe:jev-latest`;
 - reported no usage;
 - uses a model genai-prices doesn't know;
-- had approximated usage dimensions.
+- had approximated usage dimensions;
+- carried hosted tools (priced by tokens, but `cost_complete=False`).
 
-Attempts that errored without a response record no `Call` at all, so they are invisible to
-`turn_cost` rather than marking it incomplete.
+Attempts that errored or stalled without a response record no `Call` at all, so they are invisible
+to `turn_cost` rather than marking it incomplete.
 
 The terminal UI shows `—` for `None` and prefixes incomplete totals with `≥`
 (`libs/cli/langchain_chess_cli/tui/view.py`, `cost_text`). `turn_cost` and `TurnCost` are
@@ -327,6 +411,10 @@ not repeated here.
   room for it; gateway models' `window - budget` profile, span name and reasoning effort; no profile
   for unknown gateway models; the vendor output ceiling applied over the gateway, and the cap kept
   when the vendor integration isn't installed; bare names sized like their qualified specs.
+- `libs/chess/tests/test_model_arguments.py`: the final request body captured at the HTTP
+  transport — `model_kwargs` beating the settings and the app, every output-limit alias becoming
+  one `max_output_tokens`, the effort joining a `reasoning` object, `extra_body.reasoning`
+  replacing it; names held back everywhere and on the server only.
 - `libs/chess/tests/test_pricing.py`:
   - no usage stays unknown (no cost, no `priced_with`);
   - Opus through the Responses route (vendor taken from the gateway name, cache reads and writes);
@@ -335,16 +423,22 @@ not repeated here.
   - context windows come from the price snapshot, `None` for unknown models;
   - unknown models and service-tier / unmapped output keys give incomplete costs;
   - `turn_cost` completeness rules.
+- `libs/chess/tests/test_recorder.py`: calls outside a sink are ignored; only chat generations are
+  recorded, errors drop pending entries, and the sink's `kind` is carried through; a call with
+  hosted tools is priced but incomplete.
+- `libs/chess/tests/test_contract.py`: inner double calls and retry-middleware calls each recorded;
+  calls before a wrapper failure kept; a stalled stream retried within the turn with one recorded
+  call; a second stall failing the turn and a retry resuming it; only a stall retried; no stall
+  errors without `langchain_openai`.
+- `libs/systemone/tests/test_agent.py`: the default model is the gateway chat model and takes
+  `model_kwargs`; memory needs a known input limit; `sent` values match what the request carries;
+  System 1 alone never builds a model.
 - `apps/server/tests/test_graph.py`: the default gateway chat model (`max_tokens`, span name,
   `window - 64000` profile); no reasoning sent when `reasoning_effort` is empty; provider specs
-  routed through the passthrough; reads needing no credentials; `summarize` rejected without a
-  known input limit; `model_limit` agreeing with the agent, including a small window split between
-  input and output.
-- `libs/cli/tests/test_options.py`: the CLI's `default_model` builds the same gateway model.
-- `libs/chess/tests/test_recorder.py`:
-  - calls outside a sink are ignored;
-  - only chat generations are recorded, errors drop pending entries, and the sink's `kind` is
-    carried through.
+  routed through the passthrough; reads needing no credentials; memory rejected without a known
+  input limit; `model_limit` agreeing with the agent, including a small window split between input
+  and output; the server holding back arguments it doesn't allow; run metadata recording the
+  values sent.
 - `libs/chess/tests/test_live.py` (opt-in `-m live`, costs money): real Opus turns through the
   gateway record `anthropic:claude-opus-5-5` with positive tokens and a complete `turn_cost`.
 - `apps/server/tests/test_settings.py`: blank-key rejection and `.env` loading.
@@ -353,11 +447,14 @@ not repeated here.
 
 The consolidated findings live in [runtime behavior](../operations/runtime-behavior.md).
 
-- **Observed (this pull, volatile):** no per-call-kind token or cost figures could be read from
-  this page's generation context. This page therefore gives **no** sampled numbers for `llm`,
-  `summary` or `systemone` calls. Take them from the runtime-behavior page.
+- **Observed (this LangSmith pull, volatile):** no per-call-kind token or cost patterns could be
+  read from this page's generation context, so this page reports **no** sampled token counts,
+  cost totals or call-count patterns for `llm`, `summary` or `systemone` calls. Take any figures
+  from the runtime-behavior page, which scopes each pull's numbers.
 - **Correlated (how to read traces against the code):** LLM spans are named after the model
-  (`name=` in `chat_model`), not `ChatOpenAI`. A turn with several LLM spans had parse retries
-  or provider-level retries (each response is recorded as a separate `Call`). SemIf spans carry
-  no priced cost by design, so a hybrid turn's `turn_cost` is marked incomplete whenever SemIf
-  ran.
+  (`name=` in `chat_model`), not `ChatOpenAI`. A turn with several LLM spans had parse retries,
+  provider-level retries or a stall retry; each response is a separate `Call`, but a stalled span
+  has no matching `Call`. SemIf spans carry no priced cost by design, so a hybrid turn's
+  `turn_cost` is marked incomplete whenever SemIf ran. Run metadata shows the `reasoning_effort`
+  and `max_tokens` actually sent, which can differ from the settings when `model_kwargs` overrode
+  them.

@@ -1,11 +1,8 @@
 ---
 type: extension contract
 title: The middleware contract
-description: How chess extensions plug into create_chess_agent. Covers the ChessMiddleware helpers, the write guard that gives each hook a detached copy of state and checks every write, the rules for allowed_moves, proposal, candidates and fallback_move, per-agent seed binding, and the idempotent before_model with a frozen per-turn decision that SystemOneMiddleware uses.
-tags: [middleware, write-guard, extension-contract, chess-middleware, idempotency, systemone]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-26T13:04:36.303Z
+description: How chess extensions plug into create_chess_agent. Covers the ChessMiddleware helpers, the write guard that gives each hook a detached copy of state and checks every write, the rules for allowed_moves, proposal, candidates and fallback_move, per-agent seed binding, the core-owned StallRetry that stays innermost after all user middleware, and the idempotent before_model with a frozen per-turn decision that SystemOneMiddleware uses.
+tags: [middleware, write-guard, extension-contract, chess-middleware, idempotency, systemone, stall-retry]
 sources:
   - id: openwiki-source-88d085345a1ecd09c61f7ab0
     resource: repo://apps/server/langchain_chess_server/game_setup.py
@@ -19,17 +16,24 @@ sources:
     resource: repo://libs/chess/langchain_chess/middleware/core.py
   - id: openwiki-source-39bd12bdddf97b4c91560f31
     resource: repo://libs/chess/langchain_chess/middleware/forced_move.py
+  - id: openwiki-source-85ad0c871015c0f31a99e9a2
+    resource: repo://libs/chess/langchain_chess/middleware/stall_retry.py
   - id: openwiki-source-e92c3d9adb77a4ffddf28116
     resource: repo://libs/chess/langchain_chess/prompt.py
   - id: openwiki-source-2c6a2617bc273a5be95fdd7d
     resource: repo://libs/chess/tests/test_contract.py
   - id: openwiki-source-20ebabb38d27c2e3522a9062
     resource: repo://libs/cli/langchain_chess_cli/uci/completion.py
+  - id: openwiki-source-c228b1f5ddeb31cb2374ed59
+    resource: repo://libs/systemone/langchain_chess_systemone/agent.py
   - id: openwiki-source-3c3f476720af9ceef23b678d
     resource: repo://libs/systemone/langchain_chess_systemone/middleware.py
   - id: openwiki-source-0e44d1e7d0101f3027cd3f67
     resource: repo://libs/systemone/tests/test_middleware.py
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-27T19:08:28.877Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-27T19:08:28.877Z
 ---
 
 # The middleware contract
@@ -50,9 +54,25 @@ For the turn phases these hooks run inside, see [the turn lifecycle](/openwiki/a
 1. `ChessCore`
 2. `ForcedMoveMiddleware`, when `forced_move=True`
 3. the guarded extensions, in the order you passed them
-4. `ChessSummarization` with `memory="summarize"`, or a `NoSummarization` placeholder with `fixed_topology=True`. The placeholder keeps the graph's nodes the same whatever the `memory` setting is.
+4. `ChessSummarization` with `memory=True`, or a `NoSummarization` placeholder with `fixed_topology=True`. The placeholder keeps the graph's nodes the same whatever the `memory` setting is.
+5. `StallRetry`, always, and always last.
 
 It then calls `create_agent` with `tools=[]`, and with `NoModel()` when `model=None`. `NoModel` raises if it is ever called. Because `ChessCore` comes first, its `before_agent` opens or retries the turn before any extension runs. Its `wrap_model_call` is the outermost wrapper. Its `after_model` parses the reply, and its `after_agent` commits the turn after every extension hook has run. Extensions run in list order, so a later extension sees the narrowing and candidates written by earlier ones.
+
+### Core-owned `StallRetry` stays last
+
+`StallRetry` ([stall_retry.py](/libs/chess/langchain_chess/middleware/stall_retry.py)) is a `ModelRetryMiddleware` that the core appends itself. You never pass it, and it is not guarded. It retries only errors that mean the response stream stalled: `langchain_openai.StreamChunkTimeoutError`, or nothing at all when `langchain_openai` isn't installed. It retries once, with no delay, because the stall has already waited out the 120 s chunk timeout. It uses `on_failure="error"`, so a second stall raises and the pending turn's retry can resume it. With `"continue"`, the last stall would instead become the model's reply. It only wraps the model call, so it adds no graph node.
+
+`create_agent` nests `wrap_model_call` wrappers in list order, so the last middleware is the innermost wrapper, the one closest to the provider. Putting `StallRetry` there means a retry repeats **only the provider call**. `ChessCore`'s wrapper, which prepares the prompt and keeps the call bookkeeping, runs once, and so does every user extension's wrapper. Summarization is a `before_model` hook, not a wrapper, so a stall retry never re-summarizes either. A stalled attempt records no call, because its usage would have come in the final chunk. User middleware can never sit after `StallRetry`, because `create_chess_agent` appends it after the extensions and the summarization slot. If it moved earlier, a stall would re-run the wrappers that come after it, including any user extension's wrapper or retry logic.
+
+```mermaid
+flowchart LR
+    Core["ChessCore wrap"] --> Ext["guarded extension wraps"]
+    Ext --> Stall["StallRetry"]
+    Stall --> Prov["provider call"]
+    Prov -. "stall, retried once" .-> Stall
+```
+*Model-call wrappers from outermost to innermost. A stall retry never leaves the innermost layer.*
 
 Construction also enforces some rules:
 
@@ -62,13 +82,13 @@ Construction also enforces some rules:
 - `create_chess_agent` raises if two extensions declare the same private state key.
 - `create_chess_agent` raises if the compiled graph's input schema exposes anything beyond `messages` and `position`. This catches a key that isn't marked `PrivateStateAttr`/`OmitFromInput`, and a redeclared `ChessState` key.
 
-The server's graph ([graph.py](/apps/server/langchain_chess_server/graph.py)) passes two extensions: a SystemOne middleware (or its `NoSystemOne` stand-in for the `llm` policy) and `GameSetupMiddleware`. It always sets `fixed_topology=True`.
+The server's graph ([graph.py](/apps/server/langchain_chess_server/graph.py)) always ends up with two extensions and `fixed_topology=True`. For a run, `build_graph` calls SystemOne's `build_agent` ([agent.py](/libs/systemone/langchain_chess_systemone/agent.py)) with `middleware=[GameSetupMiddleware(settings)]`. `build_agent` puts a SystemOne middleware first, or its `NoSystemOne` stand-in for the `llm` policy, and then that middleware. For reads and introspection, `shape()` calls `create_chess_agent(None, middleware=[NoSystemOne(), GameSetupMiddleware(ChessContext())])` directly, so both paths build the same nodes.
 
 ## `ChessMiddleware` helpers
 
 | Helper | What it gives you |
 |---|---|
-| `position(state)` → `PositionView` | A frozen snapshot of the turn: `start_fen`, `moves`, `allowed` (the current hard constraint), `initial_allowed` (legal moves ∩ `restrict` when the turn opened), `candidates` (or `None`), and `turn_id`. `view.board()` replays a fresh `chess.Board` from the root, including the move stack. |
+| `position(state)` → `PositionView` | A frozen snapshot of the turn: `start_fen`, `moves`, `allowed` (the current hard constraint), `initial_allowed` (legal moves ∩ `restrict` when the turn opened), `candidates` (or `None`), and `turn_id`. `view.board()` replays a fresh `chess.Board` from the root, including the move stack. `view.restricted` says whether `allowed` differs from the legal moves. The prompt renderer reads the same view type. |
 | `propose(uci, *, source=None, analysis=None, meta=None)` | Returns `{"proposal": {...}, "jump_to": "end"}`. `source` defaults to the middleware's `name`. Use it only from `before_model`. At commit, a non-LLM proposal's `meta["model"]` becomes `Ply.model`. |
 | `narrow(state, moves)` | Returns `{"allowed_moves": [...]}` holding the current allowed moves that are also in `moves`, in their current order. It can never widen the set. |
 | `ply_meta(state)` | Override to return JSON telemetry. It is stored as `Ply.meta[self.name]` when this turn commits a move. Default: `None`. |
@@ -116,9 +136,9 @@ sequenceDiagram
 
 | Key | Rule enforced by the guard | Meaning |
 |---|---|---|
-| `allowed_moves` | Must be non-empty and a subset of the current allowed moves ("may only narrow", "the narrowing leaves no move"). | The hard constraint. `ChessCore` parses the reply against it, lists it in the prompt when it differs from the legal moves, and checks it again at commit. If an extension narrows the moves after a proposal exists, the commit fails with "proposal … is not an allowed move". |
+| `allowed_moves` | Must be non-empty and a subset of the current allowed moves ("may only narrow", "the narrowing leaves no move"). | The hard constraint. `ChessCore` parses the reply against it and checks it again at commit. In the prompt, a restricted turn gets an "Only these moves are permitted" line instead of the legal-move list. If an extension narrows the moves after a proposal exists, the commit fails with "proposal … is not an allowed move". |
 | `proposal` | Only allowed when no proposal exists this turn. Its `uci` must be allowed. | The decision. One per turn. A proposer must jump to `end` from `before_model` and must declare `@hook_config(can_jump_to=["end"])`. Without it, `create_agent` silently ignores the jump. A jump to `end` with neither a proposal nor an outcome fails at commit with "the turn ended without a move or an outcome". |
-| `candidates` | Must be duplicate-free and a subset of the allowed moves. Only one middleware may write it per turn: the guard records the writer in `candidates_by`, and a different writer fails with "X already set candidates this turn". The same writer may rewrite it on replay. `None` is accepted. | A **soft** suggestion. The prompt shows the candidates that are still allowed ("you may play any allowed move"), so a later hard restriction never leaves stale suggestions visible. `ForcedMoveMiddleware` reads `initial_allowed`, never `candidates`, so a one-move shortlist is not treated as a forced move. |
+| `candidates` | Must be duplicate-free and a subset of the allowed moves. Only one middleware may write it per turn: the guard records the writer in `candidates_by`, and a different writer fails with "X already set candidates this turn". The same writer may rewrite it on replay. `None` is accepted. | A **soft** suggestion. `ChessCore.turn_message` filters them to the moves that are still allowed before rendering, so a later hard restriction never leaves stale suggestions visible. The bundled renderer shows them, when `move_list` is `"both"` or `"candidates"`, as "Suggested candidates: … you may play any allowed move". `ForcedMoveMiddleware` reads `initial_allowed`, never `candidates`, so a one-move shortlist is not treated as a forced move. |
 | `fallback_move` | If set, it must be allowed. | A move to play if the run never completes. Core only resets it. The UCI adapter plays it after a cancelled or failed search, as long as it's still in the root pool of the same request ([completion.py](/libs/cli/langchain_chess_cli/uci/completion.py)). |
 
 `ChessCore` clears `proposal`, `terminal_intent`, `candidates`, `candidates_by`, `fallback_move` and `failed_call` whenever a turn opens, retries from scratch, or finalizes (`_DECISION_RESET`). Extension-owned keys are **not** cleared. That is why a frozen decision survives a retry. The illegal-reply budget is not part of this reset: it is counted on the durable `TurnRecord.illegal_attempts`.
@@ -202,7 +222,8 @@ flowchart TD
 - failures in `after_model`, `after_agent` and model wrappers, and resuming after them;
 - a jump without a decision;
 - a proposal narrowed away before commit;
-- the `PositionView` and helper outputs (`test_position_view_and_helpers`).
+- the `PositionView` and helper outputs (`test_position_view_and_helpers`);
+- the core-owned `StallRetry`: a stall retried inside the turn with one recorded call, a second stall failing the turn so that a retry resumes it, other timeouts not retried, no stall types without `langchain_openai`, and no extra graph node (`test_stall_retry_adds_no_node`).
 
 SystemOne's freeze and replay behaviour is covered in `libs/systemone/tests/test_middleware.py`:
 
@@ -211,6 +232,10 @@ SystemOne's freeze and replay behaviour is covered in `libs/systemone/tests/test
 - `test_a_later_restriction_hides_stale_suggestions`
 - `test_two_move_orders_to_one_fen_are_ranked_separately`
 - `test_the_agent_seed_reaches_systemone` and `test_turn_seed_is_stable_and_turn_specific`
+- `test_a_hybrid_turn_counts_the_ranking_once_across_retries`
+
+The shared fakes (`ScriptedModel`, `position`, `human`) live in `langchain_chess.testing`. See [testing conventions](/openwiki/testing/testing-conventions.md).
+rn_specific`
 - `test_a_hybrid_turn_counts_the_ranking_once_across_retries`
 
 The shared fakes (`ScriptedModel`, `position`, `human`) live in `langchain_chess.testing`. See [testing conventions](/openwiki/testing/testing-conventions.md).

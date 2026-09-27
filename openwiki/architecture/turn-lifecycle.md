@@ -1,11 +1,11 @@
 ---
 type: architecture
 title: Turn lifecycle
-description: How create_chess_agent assembles its fixed middleware stack (including fixed_topology) and how ChessCore plays at most one turn per run, covering command classification, invocation and opened_turn bookkeeping, pending, abandoned, committed and terminal turns, reply parsing, illegal-move retries and resignation, the forced-move shortcut, failed provider calls, atomic finalization, draw claims and ContextBudgetError.
+description: How create_chess_agent assembles its fixed middleware stack (including fixed_topology and the core-owned StallRetry) and how ChessCore plays at most one turn per run, covering command classification, invocation and opened_turn bookkeeping, pending, abandoned, committed and terminal turns, reply parsing, illegal-move retries and resignation, stall retries, the forced-move shortcut, failed provider calls, atomic finalization, draw claims and ContextBudgetError.
 tags: [chess-core, turn-lifecycle, agent-loop, middleware, retries, finalization]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-26T13:04:36.303Z
+    at: 2026-09-27T19:08:28.877Z
 sources:
   - id: openwiki-source-88d085345a1ecd09c61f7ab0
     resource: repo://apps/server/langchain_chess_server/game_setup.py
@@ -19,6 +19,8 @@ sources:
     resource: repo://libs/chess/langchain_chess/middleware/core.py
   - id: openwiki-source-39bd12bdddf97b4c91560f31
     resource: repo://libs/chess/langchain_chess/middleware/forced_move.py
+  - id: openwiki-source-85ad0c871015c0f31a99e9a2
+    resource: repo://libs/chess/langchain_chess/middleware/stall_retry.py
   - id: openwiki-source-4a4d83b98e02f02b6b258e76
     resource: repo://libs/chess/langchain_chess/middleware/summarization.py
   - id: openwiki-source-c79cd4ef1f60f33f3f30297b
@@ -37,9 +39,15 @@ sources:
     resource: repo://libs/chess/tests/test_memory.py
   - id: openwiki-source-6e2fb5fdba06bd3460a12c1f
     resource: repo://libs/chess/tests/test_rules.py
+  - id: openwiki-source-485da67626463e234bbc471c
+    resource: repo://libs/chess/tests/test_text.py
+  - id: openwiki-source-1dd02340acf0ca7c8c33f18b
+    resource: repo://libs/cli/langchain_chess_cli/uci/engine.py
+  - id: openwiki-source-c228b1f5ddeb31cb2374ed59
+    resource: repo://libs/systemone/langchain_chess_systemone/agent.py
   - id: openwiki-source-3c3f476720af9ceef23b678d
     resource: repo://libs/systemone/langchain_chess_systemone/middleware.py
-generated: { by: "openwiki/0.6.0", at: "2026-09-26T13:04:36.303Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-27T19:08:28.877Z" }
 ---
 
 # Turn lifecycle
@@ -55,7 +63,8 @@ The stack always has the same shape:
 1. **`ChessCore`** comes first. Its `before_agent` runs first, its `wrap_model_call` is the outermost wrapper, and its `after_model` and `after_agent` run last. It receives the guarded extensions so that it can collect their `turn_calls`, `turn_latency_ms` and `ply_meta` when a turn finishes.
 2. **`ForcedMoveMiddleware`** comes next, unless you pass `forced_move=False`.
 3. **User middleware** comes after that. Each one is wrapped by `guard()` from `contract.py`. The guard gives each hook a detached copy of the state and checks every write. Two extensions may not declare the same private state key; if they do, construction fails with a `ChessContractError`.
-4. **A summarization node** comes last. With `memory="summarize"` it is `ChessSummarization`. Being last means it runs only right before a real LLM call. This mode requires a model. With any other memory setting the node is present only if `fixed_topology=True`, in which case it is `NoSummarization`, a no-op `before_model` that uses the same node name (`SummarizationMiddleware`).
+4. **A summarization node**, when present. With `memory=True` it is `ChessSummarization`. Being late in the stack means it runs only right before a real LLM call. This mode requires a model. With `memory=False` the node is present only if `fixed_topology=True`, in which case it is `NoSummarization`, a no-op `before_model` that uses the same node name (`SummarizationMiddleware`).
+5. **`StallRetry`** is always last. It is core-owned (callers cannot remove it) and adds only a model-call wrapper, no graph node (`test_stall_retry_adds_no_node`). See [Stall retries](#stall-retries-stallretry).
 
 If `model` is `None`, the stack gets a `NoModel` stand-in. Calling it raises `ChessContractError`, so a System-1-only agent fails loudly when no proposer fires. It never plays a random move. After compiling, the factory checks that the graph's input schema contains only `messages` and `position`. An extension that leaks a public state key fails at build time. The compiled graph is returned with a `CallRecorder` callback attached. That callback captures every provider response for the turn's `calls`.
 
@@ -65,9 +74,9 @@ Without a checkpointer the agent is stateless, so every run must carry a `positi
 
 The Agent Server reads, updates and introspects thread state with a graph built *without* the run's settings (`make_graph` returns `shape()` when there is no execution runtime). If the graph's nodes depended on settings, the reading graph and the running graph would disagree. The rule is therefore that a setting may switch a node off but must never remove it:
 
-- `fixed_topology=True` keeps a summarization node under `memory="none"` by adding `NoSummarization`. `test_a_fixed_topology_keeps_a_summarization_node_that_never_summarizes` checks that the `none` and `summarize` graphs then have identical topology and that no summary call is ever made.
-- The server applies the same idea to its own extension: it always adds a System 1 node, either `SystemOneMiddleware` or `NoSystemOne`, which keeps System 1's node and state keys when the policy is `llm`. It also always adds `GameSetupMiddleware`, and it builds with `fixed_topology=True`, both for runs (`build_agent`) and for the model-free `shape()` graph.
-- `fixed_topology` covers only the summarization node. `forced_move=False` still removes `ForcedMoveMiddleware`, so a caller that needs a stable graph must keep `forced_move` constant.
+- `fixed_topology=True` keeps a summarization node under `memory=False` by adding `NoSummarization`. `test_a_fixed_topology_keeps_a_summarization_node_that_never_summarizes` checks that the `memory=False, fixed_topology=True` and `memory=True` graphs then have identical topology, that it differs from a plain `memory=False` graph, and that no summary call is ever made.
+- The server applies the same idea to System 1. `build_graph` calls `build_agent` with `fixed_topology=True` and `GameSetupMiddleware`; `build_agent` then adds `SystemOneMiddleware`, or `NoSystemOne` when the policy is `llm`, so System 1's node and state keys always exist. The model-free `shape()` graph is built directly with `NoSystemOne`, `GameSetupMiddleware` and `fixed_topology=True`.
+- `fixed_topology` covers only the summarization node (and, in `build_agent`, System 1). `forced_move=False` still removes `ForcedMoveMiddleware`, so a caller that needs a stable graph must keep `forced_move` constant. `StallRetry` never affects topology.
 
 ## Invariants a change must keep
 
@@ -86,6 +95,7 @@ sequenceDiagram
     participant Core as ChessCore
     participant Fm as ForcedMove
     participant Ext as Guarded extensions
+    participant Sr as StallRetry
     participant M as Model
     C->>Core: run with position or message
     Core->>Core: before_agent classifies and syncs
@@ -95,7 +105,8 @@ sequenceDiagram
         Fm->>Fm: before_model, one initial move?
         Ext->>Ext: before_model narrows or proposes
         opt no proposal yet
-            Core->>M: wrap_model_call with model view and position block
+            Core->>Sr: wrap_model_call with model view and position block
+            Sr->>M: provider call, repeated once on a stream stall
             M-->>Core: reply, calls recorded on turn
             Core->>Core: after_model parses reply
             Core->>Fm: illegal reply jumps back to model
@@ -104,7 +115,7 @@ sequenceDiagram
         Core-->>C: committed or terminal turn
     end
 ```
-*The hook order of one run. An illegal reply loops back through every `before_model` before the next model call, and a proposal from `before_model` skips the model entirely.*
+*The hook order of one run. An illegal reply loops back through every `before_model` before the next model call, a proposal from `before_model` skips the model entirely, and a stall retry repeats only the provider call inside the same model step.*
 
 ## Command classification (`before_agent`)
 
@@ -178,7 +189,9 @@ Whenever a turn leaves `pending` (committed, terminal or abandoned), `_finalized
 
 ## The model call (`wrap_model_call`)
 
-`ChessCore` is the outermost wrapper. It rewrites the request's messages as `model_view(...)` followed by a trailing position block from `render_position`. The position block is never stored. It contains the movetext, FEN, ASCII board, side to move, any suggested `candidates`, and either the restricted move list or the full legal-move list (controlled by `show_legal_moves`). `model_view` depends on `memory`. With `none` the model sees only the current turn, starting from its opening message. With `full` or `summarize` it sees the whole history, minus earlier turns' rejected attempts and feedback. In both modes the current turn shows only its latest rejected reply, reasoning blocks are removed from other AI messages, and every message is deep-copied so that wrappers cannot change state. See [prompt and memory](/openwiki/concepts/prompt-and-memory.md).
+`ChessCore` is the outermost wrapper. `_prepare` rewrites the request's messages as `model_view(...)` followed by a trailing position message from `turn_message`/`render_position`. The position message is never stored. It always contains the movetext, a custom starting FEN when the root is not the standard one, the side to move, check, the permitted moves on a restricted turn, and the request for `MOVE: <move>`. The renderer adds the rest: by default the FEN and ASCII board (`show_fen`, `show_board`) and, per `move_list` (`both`, `candidates`, `legal`), suggested `candidates` and the full legal-move list. A custom `render_position` replaces that section but cannot drop what every turn must say.
+
+`model_view` depends on `memory`. With `memory=False` the model sees only the current turn, starting from its opening message. With `memory=True` it sees the whole history, minus earlier turns' rejected attempts and feedback. In both modes the current turn shows only its latest rejected reply (which keeps its reasoning blocks), reasoning blocks are removed from other AI messages, and every message is deep-copied so that wrappers cannot change state (`test_model_view_memory_modes`). See [prompt and memory](/openwiki/concepts/prompt-and-memory.md).
 
 Everything the provider returns inside the wrapper is captured through `recorder.sink("llm")` and appended to the turn's `calls` in the wrapper's own state update. The wall-clock time of the wrapper is added to `turn.latency_ms`. An empty AI reply is stored as the `EMPTY_REPLY` placeholder (`[no text in reply]`), because Anthropic rejects a replayed assistant turn that has no text.
 
@@ -189,6 +202,15 @@ Everything the provider returns inside the wrapper is captured through `recorder
 
 **`ContextBudgetError`**: if the provider raises an exception whose text matches one of the overflow hints (`prompt is too long`, `context length`, `context_length`, `maximum context`, `too many tokens`, `input is too long`), the wrapper converts it to `ContextBudgetError`. It then follows the same two paths: raised directly, or re-raised by `after_model` when calls had completed (`test_an_overflow_after_a_completed_call_is_still_a_budget_error`). Either way the turn stays `pending`.
 
+## Stall retries (`StallRetry`)
+
+`StallRetry` (`libs/chess/langchain_chess/middleware/stall_retry.py`) is a `ModelRetryMiddleware` that `create_chess_agent` always appends last. Being last makes it the innermost model-call wrapper, so a retry repeats only the provider call. It does not rebuild the model view, re-run guarded wrappers or leave `ChessCore`'s recorder sink, and it stays inside the same turn and the same model step.
+
+- **What it retries.** Only a stalled response stream: `stall_errors()` returns `langchain_openai.StreamChunkTimeoutError` (every `langsmith:` gateway model is a `ChatOpenAI`), or nothing when `langchain_openai` is not installed. Any other error, such as a plain `TimeoutError`, fails the turn at once (`test_only_a_stall_is_retried`, `test_without_langchain_openai_nothing_is_a_stall`).
+- **How often.** `max_retries=1`, so at most two attempts, with `initial_delay=0`, because the stall has already waited out langchain-openai's 120 s chunk timeout.
+- **On exhaustion.** `on_failure="error"`: the second stall re-raises rather than being turned into the model's reply (`"continue"` would do that). The error reaches `ChessCore.wrap_model_call`, the run fails, and the turn stays `pending`, so the client's Retry resumes the same turn (`test_a_second_stall_fails_the_turn_and_retry_resumes_it`).
+- **Accounting.** A stalled attempt records no call: its usage would have arrived in the final chunk, which never came, and `CallRecorder` drops errored attempts. A turn that stalls once and then succeeds has one call, `illegal_attempts` unchanged, and no pending recorder entries (`test_a_stalled_stream_is_retried_within_the_turn`). The stalled attempt's wall time still counts toward `turn.latency_ms`, because it happens inside `ChessCore`'s wrapper.
+
 ## Reply parsing, retries and resignation (`after_model`)
 
 `parse.parse_move` reads the move from the reply. If the reply contains a `MOVE:` marker (case-insensitive), only the **last** marker counts: its line is read to the end, and the first word (with `*` and backticks stripped, `0-0` normalised to `O-O`) is the candidate. An empty or unreadable last marker is rejected; the parser does not fall back to an earlier marker. Only when there is no marker at all is the last move-like token used. The candidate is tried as SAN first, then as UCI, and it must be legal. `_parse` then applies these rules:
@@ -196,6 +218,8 @@ Everything the provider returns inside the wrapper is captured through `recorder
 - If the move is legal **and** in `allowed_moves`, it becomes the `proposal` (`source: "llm"`, with the reply text as `analysis` and the reply id in `meta`).
 - If the move is legal but not allowed (because of `restrict` or a middleware narrowing it), or if no move was found, the reply id is added to `rejected_message_ids` and `illegal_attempts` goes up by one. If the previous count was below `max_retries`, a feedback `HumanMessage` ("Try again, ... Choose from: ...") is added and the run jumps back to `model`. Remember that this re-runs `before_model`.
 - Once `max_retries` (default 3) retries are used up, a `terminal_intent` resignation for the side to move is set (`reason: "illegal_moves"`). With the default setting that happens after four illegal replies.
+
+Illegal-move retries and stall retries are independent: a stall never reaches `after_model`, so it never consumes the illegal-move budget.
 
 ## Forced-move shortcut
 
@@ -211,19 +235,23 @@ When `turn.initial_allowed` has exactly one move and no proposal exists yet, `Fo
 
 ## Draw claims
 
-`rules.ending` always applies automatic endings: checkmate, stalemate, insufficient material, fivefold repetition and the 75-move rule. With `draw_claims="auto"`, it also ends the game on a threefold repetition or fifty-move rule that has **actually happened**. It never uses `outcome(claim_draw=True)` or `can_claim_threefold_repetition()`, because those would declare a draw the next move merely could reach, before the agent has moved (`test_threefold_is_not_adjudicated_before_the_agent_moves`). The default is `"never"`, which leaves claimable draws to the caller. The UCI adapter relies on this default. `replay` checks for an ending before every ply, so a position with moves after the game ended is rejected as a `CommandError`.
+`rules.ending` always applies automatic endings: checkmate, stalemate, insufficient material, fivefold repetition and the 75-move rule. With `draw_claims="auto"`, it also ends the game on a threefold repetition or fifty-move rule that has **actually happened**. It never uses `outcome(claim_draw=True)` or `can_claim_threefold_repetition()`, because those would declare a draw the next move merely could reach, before the agent has moved (`test_threefold_is_not_adjudicated_before_the_agent_moves`). `create_chess_agent` defaults to `"auto"`. `"never"` leaves claimable draws to the caller; the UCI adapter forces it (`DRAW_CLAIMS = "never"` in `libs/cli/langchain_chess_cli/uci/engine.py`) because the GUI adjudicates. `replay` checks for an ending before every ply, so a position with moves after the game ended is rejected as a `CommandError`.
 
 ## Focused tests
 
-- `libs/chess/tests/test_lifecycle.py`: classification (noop, reject, retry), `opened_turn`, abandonment, the durable illegal-move budget, illegal retries and the model view on the third attempt, resignation, `restrict`, terminal inputs, draws, empty replies and `ContextBudgetError`.
+- `libs/chess/tests/test_lifecycle.py`: classification (noop, reject, retry), `opened_turn`, abandonment, the durable illegal-move budget, illegal retries, resignation, `restrict`, terminal inputs, draws, empty replies, `ContextBudgetError`, and which messages each memory mode sends.
+- `libs/chess/tests/test_text.py`: `parse_move`, `model_view` memory modes, the position message and `move_list`.
 - `libs/chess/tests/test_rules.py`: endings, draw claims only once they have occurred, replay rejecting moves after an ending, `parse_chat` strictness, fingerprint semantics.
-- `libs/chess/tests/test_contract.py`: finalization surviving a failing `after_agent` or `after_model` hook, `failed_call` recovery after a partial wrapper failure, overflow after a completed call, and `NoModel` failing loudly.
+- `libs/chess/tests/test_contract.py`: finalization surviving a failing `after_agent` or `after_model` hook, `failed_call` recovery after a partial wrapper failure, overflow after a completed call, `NoModel` failing loudly, and the `StallRetry` tests (one stall retried within the turn, a second stall failing the turn so Retry resumes it, only stalls retried, no extra node).
 - `libs/chess/tests/test_memory.py`: `fixed_topology` keeping an inert summarization node.
 
-## Runtime evidence
+## Observed at runtime
 
-This subsection covers **sampled traces only**. The trace sample is weighted toward anomalies (error and outlier buckets), so read nothing here as a fleet-wide rate. This pull's figures for model calls per turn, illegal-retry frequency and turn latency are kept on [runtime behavior](/openwiki/operations/runtime-behavior.md). This page does not restate them, because they change with every pull.
+> **Observed at runtime (this pull only):** no trace figures were available for this pull. There are no measured turn counts, model calls per turn, stall-retry rates or turn latencies to report here. When a pull has figures, they go on [runtime behavior](/openwiki/operations/runtime-behavior.md). They apply only to that pull's anomaly-weighted sample, not the whole fleet, so do not copy them onto this page as stable facts.
 
-- **Observed:** no aggregated trace figures were available while this page was written. Take per-turn call counts and latency from [runtime behavior](/openwiki/operations/runtime-behavior.md) rather than from this page.
-- **Correlated:** the code sets expectations you can check against traces. A normal LLM turn makes one `llm` call. Each illegal reply adds one more call, up to `max_retries + 1` calls, which is 4 with the default, before the turn resigns. A forced move, or a proposal from middleware, makes zero LLM calls. `turn.latency_ms`, which is also copied onto the ply, is the time inside `ChessCore.wrap_model_call` plus whatever each extension reports through `turn_latency_ms` at finalization (System 1 reports its frozen ranking time). Other `before_model` work and graph overhead are not counted, so trace root latency can still be higher than the recorded ply latency.
-- **Hypothesis:** if sampled turns often show several LLM calls, the retry and feedback path is a cost driver. Check the rejected-reply signature (no `MOVE:` line, empty reply, or a disallowed move) before you change `feedback_text`, `SYSTEM_PROMPT` or `max_retries`.
+What the code tells you to expect when you compare against traces (**Correlated**):
+
+- A normal LLM turn makes one recorded `llm` call. Each illegal reply adds one more, up to `max_retries + 1` calls (4 by default) before the turn resigns. A forced move, or a proposal from middleware, makes zero LLM calls.
+- A stall retry shows up in LangSmith as an extra errored provider span. It does not appear in the turn's `calls`, so the recorded calls can be fewer than the traced attempts.
+- `turn.latency_ms`, which is also copied onto the ply, is the time inside `ChessCore.wrap_model_call` (stalled attempts included) plus whatever each extension reports through `turn_latency_ms` at finalization (System 1 reports its frozen ranking time). Other `before_model` work, summarization and graph overhead are not counted, so trace root latency can still be higher than the recorded ply latency.
+- **Hypothesis:** if sampled turns often show several LLM calls, the retry and feedback path is a cost driver. Check the rejected-reply signature (no `MOVE:` line, empty reply, or a disallowed move) before you change `feedback_text`, `SYSTEM_PROMPT`, `move_list` or `max_retries`.
