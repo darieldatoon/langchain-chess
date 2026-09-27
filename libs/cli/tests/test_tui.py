@@ -1,14 +1,16 @@
 import asyncio
+import contextlib
 from types import SimpleNamespace
 
 import chess
 from langchain_core.messages import AIMessageChunk
 from textual.widgets import Input, Static
-from textual.worker import WorkerState
+from textual.worker import WorkerCancelled, WorkerState
 
 from langchain_chess import create_chess_agent
 from langchain_chess.testing import ScriptedModel
 from langchain_chess_cli.tui.app import ChessApp
+from langchain_chess_cli.tui.clock import start
 from langchain_chess_systemone.settings import ChessContext
 
 
@@ -242,3 +244,140 @@ async def test_a_finished_game_drops_its_checkpoints_on_a_new_game():
         await pilot.press("ctrl+n")
         await settle(app, pilot)
         assert saved_threads(app) == set()
+
+
+class Monotonic:
+    def __init__(self) -> None:
+        self.at = 0.0
+
+    def __call__(self) -> float:
+        return self.at
+
+
+CONTROL = {"base_ms": 60_000, "increment_ms": 2_000}
+
+
+def timed_app(script, *, side="white", model=None):
+    model = model or ScriptedModel(script=list(script))
+    factory = lambda saver: create_chess_agent(model, checkpointer=saver)  # noqa: E731
+    monotonic = Monotonic()
+    app = ChessApp(factory, ChessContext(), side=side, time_control=CONTROL, monotonic=monotonic)
+    return app, model, monotonic
+
+
+async def test_an_untimed_game_hides_the_clock():
+    app, _model = app_with([])
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        assert not app.query_one("#clock", Static).display
+        assert app.clock is None
+
+
+async def test_a_timed_game_records_both_clocks():
+    app, _model, monotonic = timed_app(["MOVE: e5"])
+    async with app.run_test() as pilot:
+        assert app.sub_title.endswith("· 1+2")
+        monotonic.at = 5.0  # the first move is free: the clock starts with the first run
+        await play(pilot, "e4")
+        await settle(app, pilot)
+        white, black = (p["clock_ms"] for p in app.values["plies"])
+        assert white == 62_000
+        assert 61_000 < black <= 62_000
+        assert app.clock.running == "white"
+        assert app.clock.black_ms == black
+        monotonic.at = 6.5
+        app._show_clock()
+        assert text(app, "clock").startswith("▸ White 1:00")
+
+
+async def test_the_agents_flag_cancels_its_run():
+    class Stalling(ScriptedModel):
+        async def _agenerate(self, messages, stop=None, run_manager=None, **kwargs):
+            await asyncio.Future()  # never answers: the flag cancels it
+
+    model = Stalling(script=["MOVE: e5"])
+    app, _model, monotonic = timed_app([], model=model)
+    async with app.run_test() as pilot:
+        await play(pilot, "e4")
+        await pilot.pause(0.05)
+        assert app.clock.running == "black"
+        monotonic.at = 61.0
+        app._tick()
+        with contextlib.suppress(WorkerCancelled):  # the agent's run
+            await app.workers.wait_for_complete()
+        await settle(app, pilot)
+        assert app.values["outcome"] == {"kind": "timeout", "winner": "white"}
+        assert app.values["moves"] == ["e2e4"]
+        assert "Black runs out of time. 1-0" in text(app, "status")
+        assert app.clock.running is None
+        app._tick()  # the game is over: nothing more to flag
+        assert not app.running
+
+
+async def test_the_humans_flag_falls_too():
+    app, _model, monotonic = timed_app(["MOVE: e5"])
+    async with app.run_test() as pilot:
+        await play(pilot, "e4")
+        await settle(app, pilot)
+        app._tick()  # time left: nothing happens
+        monotonic.at = 62.0
+        app._tick()
+        await settle(app, pilot)
+        assert app.values["outcome"] == {"kind": "timeout", "winner": "black"}
+
+
+async def test_a_failed_turn_pauses_the_clock_until_retry():
+    app, model, monotonic = timed_app([RuntimeError("provider down"), "MOVE: e4"], side="black")
+    async with app.run_test() as pilot:
+        await settle(app, pilot)
+        assert "failed (provider down)" in text(app, "status")
+        assert app.clock.running is None
+        monotonic.at = 600.0  # far past the flag, but paused
+        app._tick()
+        assert not app.running
+        await pilot.press("ctrl+r")
+        await settle(app, pilot)
+        assert app.values["moves"] == ["e2e4"]
+        assert 61_000 < app.values["plies"][0]["clock_ms"] <= 62_000
+        assert model.calls == 2
+
+
+async def test_a_rejected_move_keeps_the_humans_clock():
+    app, _model, monotonic = timed_app(["MOVE: e5"])
+    async with app.run_test() as pilot:
+        await play(pilot, "e4")
+        await settle(app, pilot)
+        before = app.clock
+        monotonic.at = 3.0
+        await play(pilot, "Qh8")
+        await settle(app, pilot)
+        assert "neither `go` nor a legal move" in text(app, "status")
+        assert app.clock is before
+
+
+async def test_a_move_after_the_humans_flag_fell_is_a_flag():
+    app, model, monotonic = timed_app(["MOVE: e5"])
+    async with app.run_test() as pilot:
+        await play(pilot, "e4")
+        await settle(app, pilot)
+        monotonic.at = 62.001
+        app._play("d4")  # before the timer's next tick
+        await settle(app, pilot)
+        assert app.values["outcome"] == {"kind": "timeout", "winner": "black"}
+        assert app.values["moves"] == ["e2e4", "e7e5"]
+        assert model.calls == 1
+
+
+async def test_no_flag_for_a_move_that_landed_in_time():
+    app, _model, monotonic = timed_app(["MOVE: e5"])
+    async with app.run_test() as pilot:
+        await play(pilot, "e4")
+        await settle(app, pilot)
+        # The agent's move is saved, but the clock still has the agent running out.
+        app.clock = start(app.clock, "black", monotonic.at)
+        monotonic.at = 100.0
+        app._tick()
+        await settle(app, pilot)
+        assert app.values["outcome"] is None
+        assert app.values["error"] is None
+        assert app.clock.running == "white"

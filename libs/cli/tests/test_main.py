@@ -28,6 +28,21 @@ def test_play_runs_the_tui(monkeypatch):
     assert ran == [("black", "systemone", True, "chess")]
 
 
+def test_play_takes_a_time_control(monkeypatch):
+    import langchain_chess_cli.tui.app as tui
+
+    ran = []
+    monkeypatch.setattr(tui.ChessApp, "run", lambda self: ran.append(self.time_control))
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
+    args = ["play", "--policy", "systemone", "--time-control", "15+10"]
+    result = CliRunner().invoke(app, args)
+    assert result.exit_code == 0, result.output
+    assert ran == [{"base_ms": 900_000, "increment_ms": 10_000}]
+    bad = CliRunner().invoke(app, ["play", "--time-control", "fast"])
+    assert bad.exit_code == 2
+    assert "not a time control" in bad.output
+
+
 def test_uci_speaks_the_protocol(monkeypatch):
     monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
     result = CliRunner().invoke(app, ["uci", "--policy", "systemone"], input="uci\nisready\nquit\n")

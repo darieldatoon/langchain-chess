@@ -53,6 +53,7 @@ lcchess play --config opponent.json --k 3 --reset reasoning_effort
 ```sh
 mise run dev:tui                                  # hybrid: SemIf + GLM-5.3 Flash
 mise run dev:tui -- --side black --policy llm     # the LLM alone, you play Black
+mise run dev:tui -- --time-control 15+10          # 15 minutes each, 10 s added per move
 ```
 
 - **Move** by typing SAN (standard notation, `Nf3`) or UCI (from and to squares, `g1f3`) and pressing Enter, by clicking a piece and then
@@ -60,6 +61,9 @@ mise run dev:tui -- --side black --policy llm     # the LLM alone, you play Blac
   Legal targets are marked.
 - **Keys:** `ctrl+n` new game, `ctrl+f` new game with the other side, `ctrl+r` retry a failed
   move, `ctrl+s` ask the agent to open, `ctrl+q` quit, `ctrl+p` command palette.
+- **Clocks.** With `--time-control`, both clocks show above the status and start with the first
+  move. A side whose time runs out loses (a draw if the other side can't mate). The agent's
+  clock pauses while its failed move waits for `ctrl+r`.
 - The pieces grow with the terminal. The board colours are `chess-board--*` component classes,
   so CSS can restyle them. The block-art pieces are chess-tui's.
 

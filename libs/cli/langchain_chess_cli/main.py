@@ -167,11 +167,16 @@ def uci(
 
 
 SideOption = Annotated[Literal["white", "black"], typer.Option(help="The side you play.")]
+TimeControlOption = Annotated[
+    str | None,
+    typer.Option(help="Minutes + seconds of increment per move, e.g. 15+10. Default: untimed."),
+]
 
 
 @app.command()
 def play(
     side: SideOption = "white",
+    time_control: TimeControlOption = None,
     config: ConfigOption = None,
     reset: ResetOption = None,
     policy: PolicyOption = None,
@@ -197,6 +202,12 @@ def play(
 ) -> None:
     """Play a game in the terminal (Textual)."""
     from langchain_chess_cli.tui.app import ChessApp
+    from langchain_chess_cli.tui.clock import parse_time_control
+
+    try:
+        control = parse_time_control(time_control) if time_control is not None else None
+    except ValueError as e:
+        raise typer.BadParameter(str(e), param_hint="--time-control") from e
 
     settings = _settings(
         config=config,
@@ -226,7 +237,7 @@ def play(
     def factory(checkpointer: Checkpointer) -> CompiledStateGraph:
         return build_agent(settings, checkpointer=checkpointer)
 
-    ChessApp(factory, settings, side=side).run()
+    ChessApp(factory, settings, side=side, time_control=control).run()
 
 
 PositiveOption = Annotated[int | None, typer.Option(min=1)]
