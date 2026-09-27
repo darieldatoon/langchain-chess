@@ -3,7 +3,7 @@
 // whether it landed. The pure parsing lives in setup.ts and settings.ts.
 import { DEFAULT_PLY_VIEW, type PlyView } from "@langchain-chess/chess-ui";
 import { isRecord } from "./settings";
-import { DEFAULT_SETUP, sanitizeSetup, setupFromContext, type Setup } from "./setup";
+import { DEFAULT_SETUP, sanitizeSetup, setupFromContext, storedSetup, type Setup } from "./setup";
 
 export const SETUP_KEY = "langchain-chess:setup";
 export const APP_KEY = "langchain-chess:app";
@@ -73,7 +73,7 @@ export function loadSetup(storage = browserStorage()): Setup {
 }
 
 export function saveSetup(setup: Setup, storage = browserStorage()): boolean {
-  return write(storage, SETUP_KEY, setup);
+  return write(storage, SETUP_KEY, storedSetup(setup));
 }
 
 function appSettingsOf(stored: unknown): AppSettings {

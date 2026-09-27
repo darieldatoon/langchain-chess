@@ -1,0 +1,299 @@
+{
+  "$comment": "Read by the Python and TypeScript settings tests alike, so both accept and reject the same settings. `output` lists what differs from the current defaults.",
+  "files": [
+    {
+      "name": "a partial file takes the defaults",
+      "input": { "version": 1, "model": "anthropic:claude-haiku-4-5" },
+      "output": { "model": "anthropic:claude-haiku-4-5" }
+    },
+    { "name": "only the version", "input": { "version": 1 }, "output": {} },
+    {
+      "name": "a null resets a setting",
+      "input": { "version": 1, "k": null, "top_p": null, "reasoning_effort": null },
+      "output": {}
+    },
+    {
+      "name": "every setting",
+      "input": {
+        "version": 1,
+        "policy": "llm",
+        "model": "openai:gpt-6-luna",
+        "reasoning_effort": "high",
+        "move_list": "none",
+        "memory": true,
+        "draw_claims": "never",
+        "systemone_model": "someone/custom-ranker",
+        "style": "terse",
+        "with_eval": true,
+        "with_nouls": true,
+        "gate": "confidence",
+        "threshold": 0,
+        "tournament_threshold": 1,
+        "k": 255,
+        "top_p": 0.5,
+        "seed": -9007199254740991
+      },
+      "output": {
+        "policy": "llm",
+        "model": "openai:gpt-6-luna",
+        "reasoning_effort": "high",
+        "move_list": "none",
+        "memory": true,
+        "draw_claims": "never",
+        "systemone_model": "someone/custom-ranker",
+        "style": "terse",
+        "with_eval": true,
+        "with_nouls": true,
+        "gate": "confidence",
+        "threshold": 0,
+        "tournament_threshold": 1,
+        "k": 255,
+        "top_p": 0.5,
+        "seed": -9007199254740991
+      }
+    },
+    {
+      "name": "whole-number floats read as integers",
+      "input": { "version": 1.0, "k": 3.0, "seed": -2.0 },
+      "output": { "k": 3, "seed": -2 }
+    },
+    { "name": "no version", "input": { "model": "x" }, "error": true },
+    { "name": "a null version", "input": { "version": null }, "error": true },
+    { "name": "a newer version", "input": { "version": 2 }, "error": true },
+    { "name": "version 0", "input": { "version": 0 }, "error": true },
+    { "name": "a version that isn't an integer", "input": { "version": "1" }, "error": true },
+    { "name": "a boolean version", "input": { "version": true }, "error": true },
+    { "name": "a typo", "input": { "version": 1, "modle": "x" }, "error": true },
+    {
+      "name": "a key from before versions",
+      "input": { "version": 1, "show_legal_moves": true },
+      "error": true
+    },
+    { "name": "a bad value", "input": { "version": 1, "k": 0 }, "error": true },
+    { "name": "not an object", "input": [1], "error": true },
+    { "name": "null", "input": null, "error": true }
+  ],
+  "recorded": [
+    {
+      "name": "a game recorded before versions",
+      "input": {
+        "policy": "hybrid",
+        "model": "langsmith:baseten/zai-org/GLM-5.3",
+        "reasoning_effort": "medium",
+        "show_legal_moves": false,
+        "memory": "summarize",
+        "systemone_model": "typesafe/jev-latest",
+        "style": "rich",
+        "with_eval": false,
+        "with_nouls": false,
+        "gate": "margin",
+        "threshold": 0.5,
+        "tournament_threshold": null,
+        "k": 3,
+        "top_p": null,
+        "draw_claims": "auto",
+        "seed": 7
+      },
+      "output": {
+        "model": "langsmith:baseten/zai-org/GLM-5.3",
+        "reasoning_effort": "medium",
+        "move_list": "candidates",
+        "memory": true,
+        "systemone_model": "typesafe/jev-latest",
+        "threshold": 0.5,
+        "k": 3,
+        "seed": 7
+      }
+    },
+    {
+      "name": "a game recorded before versions, with the defaults",
+      "input": {
+        "policy": "hybrid",
+        "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
+        "reasoning_effort": null,
+        "show_legal_moves": true,
+        "memory": "none",
+        "systemone_model": "semif-qwen3.5-4b",
+        "style": "rich",
+        "with_eval": false,
+        "with_nouls": false,
+        "gate": "margin",
+        "threshold": 0.9,
+        "tournament_threshold": null,
+        "k": 5,
+        "top_p": null,
+        "draw_claims": "auto",
+        "seed": 0
+      },
+      "output": {}
+    },
+    {
+      "name": "a version 1 game",
+      "input": {
+        "version": 1,
+        "policy": "systemone",
+        "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
+        "reasoning_effort": null,
+        "move_list": "legal",
+        "memory": false,
+        "draw_claims": "never",
+        "systemone_model": "someone/custom-ranker",
+        "style": "terse",
+        "with_eval": true,
+        "with_nouls": false,
+        "gate": "confidence",
+        "threshold": 0.9,
+        "tournament_threshold": 0.4,
+        "k": 5,
+        "top_p": 0.8,
+        "seed": 0
+      },
+      "output": {
+        "policy": "systemone",
+        "move_list": "legal",
+        "draw_claims": "never",
+        "systemone_model": "someone/custom-ranker",
+        "style": "terse",
+        "with_eval": true,
+        "gate": "confidence",
+        "tournament_threshold": 0.4,
+        "top_p": 0.8
+      }
+    },
+    {
+      "name": "a game before versions missing a key",
+      "input": {
+        "policy": "hybrid",
+        "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
+        "reasoning_effort": null,
+        "show_legal_moves": true,
+        "memory": "none",
+        "systemone_model": "semif-qwen3.5-4b",
+        "style": "rich",
+        "with_eval": false,
+        "with_nouls": false,
+        "gate": "margin",
+        "threshold": 0.9,
+        "tournament_threshold": null,
+        "k": 5,
+        "top_p": null,
+        "draw_claims": "auto"
+      },
+      "error": true
+    },
+    {
+      "name": "a version 1 game missing a key",
+      "input": {
+        "version": 1,
+        "policy": "hybrid",
+        "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
+        "reasoning_effort": null,
+        "move_list": "both",
+        "memory": false,
+        "draw_claims": "auto",
+        "systemone_model": "semif-qwen3.5-4b",
+        "style": "rich",
+        "with_eval": false,
+        "with_nouls": false,
+        "gate": "margin",
+        "threshold": 0.9,
+        "tournament_threshold": null,
+        "k": 5,
+        "top_p": null
+      },
+      "error": true
+    },
+    {
+      "name": "a version 1 game with a null for a setting that has no null",
+      "input": {
+        "version": 1,
+        "policy": "hybrid",
+        "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
+        "reasoning_effort": null,
+        "move_list": "both",
+        "memory": false,
+        "draw_claims": "auto",
+        "systemone_model": "semif-qwen3.5-4b",
+        "style": "rich",
+        "with_eval": false,
+        "with_nouls": false,
+        "gate": "margin",
+        "threshold": 0.9,
+        "tournament_threshold": null,
+        "k": null,
+        "top_p": null,
+        "seed": 0
+      },
+      "error": true
+    },
+    {
+      "name": "a game before versions with an older memory",
+      "input": {
+        "policy": "hybrid",
+        "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
+        "reasoning_effort": null,
+        "show_legal_moves": true,
+        "memory": "full",
+        "systemone_model": "semif-qwen3.5-4b",
+        "style": "rich",
+        "with_eval": false,
+        "with_nouls": false,
+        "gate": "margin",
+        "threshold": 0.9,
+        "tournament_threshold": null,
+        "k": 5,
+        "top_p": null,
+        "draw_claims": "auto",
+        "seed": 0
+      },
+      "error": true
+    },
+    {
+      "name": "a game before versions with a null for a key migration removes",
+      "input": {
+        "policy": "hybrid",
+        "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
+        "reasoning_effort": null,
+        "show_legal_moves": null,
+        "memory": "none",
+        "systemone_model": "semif-qwen3.5-4b",
+        "style": "rich",
+        "with_eval": false,
+        "with_nouls": false,
+        "gate": "margin",
+        "threshold": 0.9,
+        "tournament_threshold": null,
+        "k": 5,
+        "top_p": null,
+        "draw_claims": "auto",
+        "seed": 0
+      },
+      "error": true
+    },
+    { "name": "not an object", "input": "hybrid", "error": true }
+  ],
+  "values": {
+    "policy": { "valid": ["llm", "systemone", "hybrid"], "invalid": ["jev", "", null, 1] },
+    "model": { "valid": ["x", "langsmith:openai/gpt-6-luna"], "invalid": ["", null, 1] },
+    "reasoning_effort": { "valid": ["low", "medium", "high", null], "invalid": ["max", ""] },
+    "move_list": {
+      "valid": ["both", "legal", "candidates", "none"],
+      "invalid": ["all", true, null]
+    },
+    "memory": { "valid": [true, false], "invalid": ["none", "summarize", 0, null] },
+    "draw_claims": { "valid": ["auto", "never"], "invalid": ["always", null] },
+    "systemone_model": { "valid": ["semif-qwen3.5-4b", "custom"], "invalid": ["", null] },
+    "style": { "valid": ["rich", "terse"], "invalid": ["long", null] },
+    "with_eval": { "valid": [true, false], "invalid": ["true", 1, null] },
+    "with_nouls": { "valid": [true, false], "invalid": ["false", 0, null] },
+    "gate": { "valid": ["margin", "confidence"], "invalid": ["vibes", null] },
+    "threshold": { "valid": [0, 0.5, 1], "invalid": [-0.1, 1.1, "0.5", null, true] },
+    "tournament_threshold": { "valid": [0, 1, null], "invalid": [-1, 2, "1"] },
+    "k": { "valid": [1, 255], "invalid": [0, 256, 1.5, "5", null, true] },
+    "top_p": { "valid": [0.01, 1, null], "invalid": [0, -1, 1.5] },
+    "seed": {
+      "valid": [0, -9007199254740991, 9007199254740991],
+      "invalid": [9007199254740992, -9007199254740992, 0.5, "0", null]
+    }
+  }
+}

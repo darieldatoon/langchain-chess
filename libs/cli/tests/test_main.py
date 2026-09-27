@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from typer.testing import CliRunner
 
@@ -18,13 +20,14 @@ def test_play_runs_the_tui(monkeypatch):
     ran = []
 
     def fake_run(self):
-        ran.append((self.side, self.options.policy, self.agent.name))
+        ran.append((self.side, self.settings.policy, self.settings.memory, self.agent.name))
 
     monkeypatch.setattr(tui.ChessApp, "run", fake_run)
     monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
-    result = CliRunner().invoke(app, ["play", "--side", "black", "--policy", "systemone"])
+    args = ["play", "--side", "black", "--policy", "systemone", "--memory"]
+    result = CliRunner().invoke(app, args)
     assert result.exit_code == 0, result.output
-    assert ran == [("black", "systemone", "chess")]
+    assert ran == [("black", "systemone", True, "chess")]
 
 
 def test_uci_speaks_the_protocol(monkeypatch):
@@ -36,7 +39,9 @@ def test_uci_speaks_the_protocol(monkeypatch):
     assert lines[-1] == "readyok"
 
 
-@pytest.mark.parametrize("flag", [["--gate", "vibes"], ["--style", "long"]])
+@pytest.mark.parametrize(
+    "flag", [["--gate", "vibes"], ["--style", "long"], ["--model", ""], ["--move-list", "all"]]
+)
 def test_bad_choices(flag):
     result = CliRunner().invoke(app, ["uci", *flag], input="quit\n")
     assert result.exit_code == 2
@@ -44,11 +49,11 @@ def test_bad_choices(flag):
 
 def test_the_uci_factory_builds_real_agents(monkeypatch):
     built = []
-    monkeypatch.setattr(main, "build_agent", lambda options, **kw: built.append(kw) or object())
+    monkeypatch.setattr(main, "build_agent", lambda settings, **kw: built.append(settings))
 
     class FakeEngine:
-        def __init__(self, factory, options, out):
-            factory(options, None)
+        def __init__(self, factory, settings, out):
+            factory(settings, None)
             out("hello")
 
     async def fake_run(engine):
@@ -58,6 +63,15 @@ def test_the_uci_factory_builds_real_agents(monkeypatch):
 
     monkeypatch.setattr(engine_module, "Engine", FakeEngine)
     monkeypatch.setattr(engine_module, "run", fake_run)
-    result = CliRunner().invoke(app, ["uci"])
+    result = CliRunner().invoke(app, ["uci", "--move-list", "none", "--no-with-eval"])
     assert result.output == "hello\n"
-    assert built[0]["draw_claims"] == "never"
+    assert (built[0].move_list, built[0].with_eval) == ("none", False)
+
+
+def test_help_documents_flags_with_their_settings():
+    result = CliRunner().invoke(app, ["play", "--help"], env={"COLUMNS": "200"})
+    # CI forces colour, and its codes split the flag names.
+    output = re.sub(r"\x1b\[[0-9;]*m", "", result.output)
+    assert "The most candidates suggested to the LLM." in output
+    assert "langsmith:baseten/zai-org/GLM-5.3-Flash" in output
+    assert "--memory" in output

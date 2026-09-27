@@ -252,7 +252,7 @@ describe("new game", () => {
 
 describe("a game's own setup", () => {
   it("plays its picks: a later setup never reaches it, and a reload continues from its thread", async () => {
-    saveSetup({ ...DEFAULT_SETUP, systemOne: "none", llm: "langsmith:openai/gpt-6-luna" });
+    saveSetup({ ...DEFAULT_SETUP, systemOneOff: true, llm: "langsmith:openai/gpt-6-luna" });
     const view = await playFromModal();
     reportThread("t-1");
     const luna: ChessContext = {
@@ -517,6 +517,26 @@ describe("after the game", () => {
     expect(board()).toHaveAttribute("data-position", START_FEN);
     expect(submitted()).toEqual(["go"]);
     expect(lastConfigurable()).toEqual(LLM_HIGH);
+  });
+
+  it("rematches a game from before versions, custom System 1 and all", async () => {
+    const { version: _, move_list: __, ...legacy } = DEFAULT_CONTEXT;
+    const recorded = {
+      ...legacy,
+      memory: "none",
+      show_legal_moves: false,
+      systemone_model: "someone/ranker",
+    };
+    fake.threads["t-1"] = { values: { ...MATE, setup: recorded } };
+    window.history.replaceState(null, "", "?thread=t-1");
+    render(<App />);
+    expect(screen.getByText("someone/ranker + GLM-5.3 Flash")).toBeInTheDocument();
+    await click("Rematch");
+    expect(lastConfigurable()).toEqual({
+      ...DEFAULT_CONTEXT,
+      move_list: "candidates",
+      systemone_model: "someone/ranker",
+    });
   });
 
   it("rematches as White without starting", async () => {

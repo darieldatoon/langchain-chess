@@ -201,11 +201,30 @@ describe("NewGameDialog", () => {
     });
   });
 
+  it("offers a System 1 from elsewhere under its own name, and keeps it while it's off", async () => {
+    const { onPlay } = open({ ...DEFAULT_SETUP, systemOne: "none" });
+    const picker = screen.getByLabelText("System 1");
+    expect(picker).toHaveValue("other");
+    expect(screen.getByRole("option", { name: "none" })).toBeInTheDocument();
+    expect(matchup()).toHaveTextContent("none plays confident moves");
+    change("System 1", "none");
+    expect(matchup()).toHaveTextContent("GLM-5.3 Flash plays every move.");
+    change("System 1", "other");
+    await clickPlay();
+    expect(onPlay.mock.calls[0][1]).toMatchObject({ policy: "hybrid", systemone_model: "none" });
+    change("System 1", "typesafe/jev-latest");
+    change("System 1", "other");
+    await clickPlay();
+    expect(onPlay.mock.calls[1][1]).toMatchObject({ systemone_model: "none" });
+  });
+
   it("keeps a picker's value when the select reports a deselect", async () => {
     const { onPlay } = open();
     change("LLM", "");
+    change("System 1", "");
     await clickPlay();
     expect(onPlay.mock.calls[0][1].model).toBe("langsmith:baseten/zai-org/GLM-5.3-Flash");
+    expect(onPlay.mock.calls[0][1].systemone_model).toBe("semif-qwen3.5-4b");
   });
 
   it("takes any model spec as a custom LLM, and needs one to play", async () => {
@@ -258,7 +277,8 @@ describe("NewGameDialog", () => {
     const { onPlay } = open();
     advanced();
     await settled();
-    change("Memory", "summarize");
+    change("Memory", "on");
+    change("Moves Listed", "none");
     change("Reasoning Effort", "low");
     change("Threshold", "0.5");
     expect(screen.getByTestId("threshold-value")).toHaveTextContent("0.50");
@@ -269,13 +289,13 @@ describe("NewGameDialog", () => {
     change("Draw Claims", "never");
     change("Move Descriptions", "terse");
     change("Seed", "7");
-    fireEvent.click(screen.getByRole("switch", { name: "List legal moves in the prompt" }));
     fireEvent.click(screen.getByRole("switch", { name: "Ask for a position Score" }));
     fireEvent.click(screen.getByRole("switch", { name: "Ask the Noul questions" }));
     await clickPlay();
     expect(onPlay.mock.calls[0][1]).toEqual({
       ...DEFAULT_CONTEXT,
-      memory: "summarize",
+      memory: true,
+      move_list: "none",
       reasoning_effort: "low",
       threshold: 0.5,
       tournament_threshold: 0.7,
@@ -285,7 +305,6 @@ describe("NewGameDialog", () => {
       draw_claims: "never",
       style: "terse",
       seed: 7,
-      show_legal_moves: false,
       with_eval: true,
       with_nouls: true,
     });
@@ -311,7 +330,7 @@ describe("NewGameDialog", () => {
     const glm = "langsmith:fireworks/accounts/fireworks/models/glm-5p3";
     const summarizing = {
       ...DEFAULT_SETUP,
-      knobs: { ...DEFAULT_SETUP.knobs, memory: "summarize" },
+      knobs: { ...DEFAULT_SETUP.knobs, memory: true },
     };
     const { onPlay, modelLimit } = open(
       summarizing as Setup,
@@ -332,18 +351,18 @@ describe("NewGameDialog", () => {
       glm,
     ]);
     advanced();
-    expect(screen.getByLabelText("Memory")).toHaveValue("none");
+    expect(screen.getByLabelText("Memory")).toHaveValue("off");
     expect(screen.getByRole("option", { name: "Summarize" })).toBeDisabled();
     expect(screen.getByText(/no known input limit, so it can't summarize/)).toBeInTheDocument();
     await clickPlay();
-    expect(onPlay.mock.calls[0][1]).toMatchObject({ model: glm, memory: "none" });
+    expect(onPlay.mock.calls[0][1]).toMatchObject({ model: glm, memory: false });
   });
 
   it("ignores a late limit for a model no longer picked", async () => {
     const answers: ((limit: ModelLimit) => void)[] = [];
     const summarizing = {
       ...DEFAULT_SETUP,
-      knobs: { ...DEFAULT_SETUP.knobs, memory: "summarize" },
+      knobs: { ...DEFAULT_SETUP.knobs, memory: true },
     };
     render(
       <NewGameDialog
@@ -369,7 +388,7 @@ describe("NewGameDialog", () => {
   it("keeps summarize and holds Play when the limit check fails, until a retry answers", async () => {
     const summarizing = {
       ...DEFAULT_SETUP,
-      knobs: { ...DEFAULT_SETUP.knobs, memory: "summarize" },
+      knobs: { ...DEFAULT_SETUP.knobs, memory: true },
     } as Setup;
     const { onPlay, modelLimit } = open(
       summarizing,
@@ -383,7 +402,7 @@ describe("NewGameDialog", () => {
     expect(matchup()).toHaveTextContent("Couldn't check whether GLM-5.3 Flash can summarize.");
     expect(play()).toBeDisabled();
     advanced();
-    expect(screen.getByLabelText("Memory")).toHaveValue("summarize");
+    expect(screen.getByLabelText("Memory")).toHaveValue("on");
     expect(screen.getByRole("option", { name: "Summarize" })).toBeEnabled();
     expect(screen.getByText(/Couldn't reach the server/)).toBeInTheDocument();
 
@@ -393,7 +412,7 @@ describe("NewGameDialog", () => {
     await settled();
     expect(modelLimit).toHaveBeenCalledTimes(2);
     await clickPlay();
-    expect(onPlay.mock.calls[0][1]).toMatchObject({ memory: "summarize" });
+    expect(onPlay.mock.calls[0][1]).toMatchObject({ memory: true });
   });
 
   it("plays past a failed limit check when summarize isn't asked for", async () => {
@@ -408,7 +427,7 @@ describe("NewGameDialog", () => {
     await settled();
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
     await clickPlay();
-    expect(onPlay.mock.calls[0][1]).toMatchObject({ memory: "none" });
+    expect(onPlay.mock.calls[0][1]).toMatchObject({ memory: false });
   });
 
   it("clears nullable knobs, and holds Play while a number field shows invalid text", async () => {

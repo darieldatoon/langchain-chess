@@ -9,9 +9,9 @@ from textual.app import App, ComposeResult
 
 from langchain_chess import create_chess_agent
 from langchain_chess.testing import ScriptedModel
-from langchain_chess_cli.options import AgentOptions
 from langchain_chess_cli.tui.app import ChessApp
 from langchain_chess_cli.tui.board import ChessBoard
+from langchain_chess_systemone.settings import ChessContext
 
 AFTER_E4_E5 = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2"
 
@@ -84,7 +84,7 @@ def test_the_game_screen(snap_compare):
     model = ScriptedModel(script=["The Italian keeps options open.\nMOVE: e5"])
     app = ChessApp(
         lambda saver: create_chess_agent(model, checkpointer=saver),
-        AgentOptions(policy="llm"),
+        ChessContext(policy="llm"),
     )
 
     async def play_e4(pilot):

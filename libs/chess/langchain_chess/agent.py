@@ -17,9 +17,10 @@ from langchain_chess.middleware.core import ChessCore
 from langchain_chess.middleware.forced_move import ForcedMoveMiddleware
 from langchain_chess.middleware.stall_retry import StallRetry
 from langchain_chess.middleware.summarization import ChessSummarization, NoSummarization
-from langchain_chess.prompt import SYSTEM_PROMPT, Memory
+from langchain_chess.prompt import SYSTEM_PROMPT
 from langchain_chess.recorder import CallRecorder
 from langchain_chess.rules import DrawClaims
+from langchain_chess.settings import ListedMoves
 from langchain_chess.state import ChessState
 
 INPUT_KEYS = frozenset({"messages", "position"})
@@ -48,7 +49,7 @@ def _summarizer(
     max_retries: int,
 ) -> ChessSummarization:
     if model is None:
-        msg = "memory='summarize' needs a model"
+        msg = "memory needs a model"
         raise ChessContractError(msg)
     if summarization is not None:
         return ChessSummarization.from_middleware(
@@ -62,11 +63,11 @@ def create_chess_agent(
     *,
     middleware: Sequence[AgentMiddleware[Any, Any, Any]] = (),
     system_prompt: str | None = None,
-    show_legal_moves: bool = True,
-    memory: Memory = "none",
+    move_list: ListedMoves = "both",
+    memory: bool = False,
     summarization: SummarizationMiddleware | None = None,
     max_retries: int = 3,
-    draw_claims: DrawClaims = "never",
+    draw_claims: DrawClaims = "auto",
     forced_move: bool = True,
     seed: int = 0,
     fixed_topology: bool = False,
@@ -78,7 +79,7 @@ def create_chess_agent(
 
     `model=None` only works if middleware always proposes (a System-1-only agent). Without a
     checkpointer the agent is stateless and every run must carry a `position`.
-    `fixed_topology=True` keeps the summarization node under `memory='none'`, so the graph's
+    `fixed_topology=True` keeps the summarization node with `memory=False`, so the graph's
     nodes don't depend on `memory`: the Agent Server reads state with a graph built without
     the run's settings.
     """
@@ -97,7 +98,7 @@ def create_chess_agent(
             memory=memory,
             max_retries=max_retries,
             draw_claims=draw_claims,
-            show_legal_moves=show_legal_moves,
+            move_list=move_list,
             recorder=recorder,
             extensions=guarded,
         )
@@ -105,7 +106,7 @@ def create_chess_agent(
     if forced_move:
         stack.append(ForcedMoveMiddleware())
     stack.extend(guarded)
-    if memory == "summarize":
+    if memory:
         # Last, so it runs only right before an actual LLM call.
         stack.append(_summarizer(model, summarization, recorder=recorder, max_retries=max_retries))
     elif fixed_topology:

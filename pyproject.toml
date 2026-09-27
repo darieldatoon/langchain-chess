@@ -23,6 +23,7 @@ dev = [
     "httpx>=0.28.1",
     "pytest-textual-snapshot>=1.0.0",
     "pytest-xdist>=3.8",
+    "playwright>=1.63,<2",
 ]
 
 [tool.uv]
@@ -66,9 +67,10 @@ testpaths = [
 asyncio_mode = "auto"
 markers = [
     "live: hits the real LLM Gateway (run with -m live --no-cov)",
+    "e2e: drives the built web UI in a browser (mise run test:e2e)",
 ]
 addopts = [
-    "-m", "not live",
+    "-m", "not live and not e2e",
     "--import-mode=importlib",
     "--cov=langchain_chess",
     "--cov=langchain_chess_systemone",
@@ -86,4 +88,4 @@ branch = true
 fail_under = 100
 show_missing = true
 skip_covered = true
-exclude_also = ["if TYPE_CHECKING:", "@overload"]
+exclude_also = ["if TYPE_CHECKING:", "@overload", "if __name__ == .__main__.:"]

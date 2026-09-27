@@ -36,7 +36,8 @@ uv tool install "langchain-chess-cli[anthropic] @ git+https://github.com/darield
 lcchess play --policy llm --model claude-opus-5-5
 ```
 
-Every command has `--help`.
+Every command has `--help`, which documents each setting from `ChessContext`. A flag you leave
+out keeps the setting's default.
 
 ## Play in the terminal
 
@@ -70,7 +71,7 @@ option name SystemOneModel type string default semif-qwen3.5-4b
 option name Policy type combo default systemone var llm var systemone var hybrid
 option name Threshold type string default 0.9
 option name K type spin default 5 min 1 max 255
-option name Memory type combo default none var none var summarize
+option name Memory type check default false
 option name Seed type spin default 0 min 0 max 2147483647
 uciok
 > isready

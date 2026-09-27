@@ -24,7 +24,7 @@ from langgraph.types import Command
 from langchain_chess.contract import ply_meta_of, turn_calls_of, turn_latency_of
 from langchain_chess.errors import ChessContractError, ContextBudgetError
 from langchain_chess.parse import EMPTY_REPLY, parse_move, text_of
-from langchain_chess.prompt import Memory, delta_text, feedback_text, model_view, render_position
+from langchain_chess.prompt import delta_text, feedback_text, model_view, render_position
 from langchain_chess.recorder import CallRecorder
 from langchain_chess.rules import (
     CommandError,
@@ -39,6 +39,7 @@ from langchain_chess.rules import (
     root_board,
     side,
 )
+from langchain_chess.settings import ListedMoves
 from langchain_chess.state import (
     Call,
     ChessState,
@@ -122,17 +123,17 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
     def __init__(
         self,
         *,
-        memory: Memory,
+        memory: bool,
         max_retries: int,
         draw_claims: DrawClaims,
-        show_legal_moves: bool,
+        move_list: ListedMoves,
         recorder: CallRecorder,
         extensions: Sequence[AgentMiddleware] = (),
     ) -> None:
-        self.memory: Memory = memory
+        self.memory = memory
         self.max_retries = max_retries
         self.draw_claims: DrawClaims = draw_claims
-        self.show_legal_moves = show_legal_moves
+        self.move_list: ListedMoves = move_list
         self.recorder = recorder
         self.extensions = list(extensions)
         # In memory only: after_model raises the original error in the run that failed. Absent
@@ -375,14 +376,14 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
     def _prepare(self, request: ModelRequest) -> ModelRequest:
         state: Any = request.state
         board = self._board(state)
-        view = model_view(state["messages"], state["turns"], self.memory)
+        view = model_view(state["messages"], state["turns"], memory=self.memory)
         block = render_position(
             state["start_fen"],
             [p["san"] for p in state["plies"]],
             board,
             state["allowed_moves"],
             state.get("candidates"),
-            show_legal_moves=self.show_legal_moves,
+            move_list=self.move_list,
         )
         return request.override(messages=[*view, HumanMessage(block)])
 

@@ -5,24 +5,24 @@ import pytest
 
 from langchain_chess import create_chess_agent
 from langchain_chess.testing import ScriptedModel
-from langchain_chess_cli.options import AgentOptions
 from langchain_chess_cli.uci.engine import Engine, run
 from langchain_chess_systemone import SystemOneMiddleware
+from langchain_chess_systemone.settings import ChessContext
 from langchain_chess_systemone.testing import FakeRanker, distribution
 
 INSUFFICIENT = "8/8/8/4k3/8/8/8/4K3 w - - 0 1"
 
 
 class Factory:
-    """Builds agents around one shared scripted model, recording every build's options."""
+    """Builds agents around one shared scripted model, recording every build's settings."""
 
     def __init__(self, script, *, delay=0.0, systemone=None):
         self.model = ScriptedModel(script=list(script), delay=delay)
         self.systemone = systemone
-        self.builds: list[AgentOptions] = []
+        self.builds: list[ChessContext] = []
 
-    def __call__(self, options, checkpointer):
-        self.builds.append(options)
+    def __call__(self, settings, checkpointer):
+        self.builds.append(settings)
         middleware = [self.systemone] if self.systemone is not None else []
         return create_chess_agent(
             self.model, middleware=middleware, draw_claims="never", checkpointer=checkpointer
@@ -30,10 +30,10 @@ class Factory:
 
 
 class Harness:
-    def __init__(self, factory, options=None):
+    def __init__(self, factory, settings=None):
         self.lines: list[str] = []
         self.factory = factory
-        self.engine = Engine(factory, options, out=self.lines.append)
+        self.engine = Engine(factory, settings, out=self.lines.append)
 
     async def send(self, *commands):
         for command in commands:
@@ -69,8 +69,16 @@ async def test_uci_handshake_and_isready():
     assert (
         "option name Policy type combo default hybrid var llm var systemone var hybrid" in h.lines
     )
+    assert "option name Memory type check default false" in h.lines
     assert not any("Ponder" in line for line in h.lines)
     assert h.lines[-2:] == ["uciok", "readyok"]
+
+
+async def test_the_engine_never_claims_draws_whatever_the_settings_say():
+    factory = Factory([])
+    h = Harness(factory, ChessContext(draw_claims="auto", k=3))
+    await h.send("setoption name K value 4")
+    assert [(s.draw_claims, s.k) for s in factory.builds] == [("never", 3), ("never", 4)]
 
 
 async def test_a_search_commits_and_prints_bestmove_with_analysis():
@@ -211,11 +219,11 @@ async def test_isready_during_a_search_setoption_queued_and_quit_mid_search():
     await h.send("position startpos moves e2e4", "go infinite", "isready")
     assert h.lines[-1] == "readyok"
     await h.send("setoption name K value 3")
-    assert h.engine.options.k == 5
+    assert h.engine.settings.k == 5
     await h.send("quit")
     assert len(h.bestmoves()) == 1
     assert h.engine.quitting
-    assert h.engine.options.k == 3
+    assert h.engine.settings.k == 3
 
 
 async def test_go_infinite_setoption_isready_then_the_next_search_uses_it():
@@ -296,20 +304,23 @@ async def test_setoption_rebuilds_when_idle_and_rejects_bad_values():
         "setoption name Nope value 1",
         "setoption name ReasoningEffort value extreme",
         "setoption name Model",
-        "setoption name Memory value summarize",
+        "setoption name SystemOneModel value typesafe/jev-latest",
+        "setoption name Memory value True",
         "setoption name Memory value full",
     )
-    assert h.engine.options.memory == "summarize"
-    assert h.engine.options.policy == "llm"
-    assert h.engine.options.threshold == 0.5
-    assert h.engine.options.model == ""
+    assert h.engine.settings.memory is True
+    assert h.engine.settings.policy == "llm"
+    assert h.engine.settings.threshold == 0.5
+    assert h.engine.settings.model == "langsmith:baseten/zai-org/GLM-5.3-Flash"
+    assert h.engine.settings.systemone_model == "typesafe/jev-latest"
     assert h.infos() == [
         "invalid value for Threshold: expected a number within 0..1",
         "invalid value for K: invalid literal for int() with base 10: 'lots'",
         "invalid value for K: expected an integer within 1..255",
         "unknown option: Nope",
         "invalid value for ReasoningEffort: expected one of default, low, medium, high",
-        "invalid value for Memory: expected one of none, summarize",
+        "invalid value for Model: expected a model name",
+        "invalid value for Memory: expected one of true, false, summarize, none",
     ]
     assert len(factory.builds) == 5
 
@@ -317,9 +328,9 @@ async def test_setoption_rebuilds_when_idle_and_rejects_bad_values():
 async def test_reasoning_effort_default_sends_none():
     h = Harness(Factory([]))
     await h.send("setoption name ReasoningEffort value high")
-    assert h.engine.options.reasoning_effort == "high"
+    assert h.engine.settings.reasoning_effort == "high"
     await h.send("setoption name ReasoningEffort value default")
-    assert h.engine.options.reasoning_effort is None
+    assert h.engine.settings.reasoning_effort is None
 
 
 async def test_stop_when_idle_unknown_commands_and_blank_lines():
@@ -366,20 +377,20 @@ async def test_an_invalid_fen_after_a_game_starts_a_new_thread():
 
 
 class Picky(Factory):
-    def __call__(self, options, checkpointer):
-        if options.memory == "summarize":
+    def __call__(self, settings, checkpointer):
+        if settings.memory:
             msg = "no known input limit"
             raise ValueError(msg)
-        return super().__call__(options, checkpointer)
+        return super().__call__(settings, checkpointer)
 
 
 async def test_options_that_fail_to_build_are_not_applied():
     factory = Picky(["MOVE: e5"])
     h = Harness(factory)
     agent = h.engine._agent
-    await h.send("setoption name Memory value summarize")
+    await h.send("setoption name Memory value true")
     assert h.infos() == ["options not applied: no known input limit"]
-    assert h.engine.options.memory == "none"
+    assert h.engine.settings.memory is False
     assert h.engine._agent is agent
     await h.send("position startpos moves e2e4", "go movetime 3000")
     await h.wait_for("bestmove")

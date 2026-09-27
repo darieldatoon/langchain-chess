@@ -1,5 +1,4 @@
 from contextlib import suppress
-from dataclasses import asdict
 from itertools import product
 from types import SimpleNamespace
 
@@ -12,14 +11,11 @@ from pydantic import ValidationError
 from langchain_chess import ChessContractError, create_chess_agent
 from langchain_chess.testing import ScriptedModel, position, topology
 from langchain_chess_server import graph as graph_module
-from langchain_chess_server.context import ChessContext, resolve_context
-from langchain_chess_server.graph import (
-    build_agent,
-    chat_model,
-    make_graph,
-    model_limit,
-)
+from langchain_chess_server.context import resolve_context
+from langchain_chess_server.graph import build_graph, make_graph, model_limit, pooled_ranker
 from langchain_chess_server.settings import ServerSettings
+from langchain_chess_systemone.agent import default_model as chat_model
+from langchain_chess_systemone.settings import ChessContext, dump
 from langchain_chess_systemone.testing import FakeTypeSafeClient
 
 ITALIAN = "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"
@@ -35,12 +31,19 @@ def fake_systemone(env, monkeypatch):
 READ = SimpleNamespace(execution_runtime=None)
 
 
+def build_agent(settings, *replies, **kwargs):
+    """The server's graph; with `replies`, around a scripted model."""
+    if replies:
+        kwargs["model_factory"] = lambda _: ScriptedModel(script=list(replies))
+    return build_graph(settings, ranker_factory=pooled_ranker(ServerSettings()), **kwargs)
+
+
 def run_runtime(**context):
     return SimpleNamespace(execution_runtime=SimpleNamespace(context=context))
 
 
 @pytest.mark.parametrize(
-    ("policy", "memory"), list(product(["llm", "systemone", "hybrid"], ["none", "summarize"]))
+    ("policy", "memory"), list(product(["llm", "systemone", "hybrid"], [False, True]))
 )
 def test_every_setting_builds_the_graph_reads_rebuild(fake_systemone, policy, memory):
     run = make_graph({}, run_runtime(policy=policy, memory=memory))
@@ -59,63 +62,54 @@ def test_reads_need_no_credentials(env):
     assert make_graph({}, READ).name == "chess"
 
 
-async def test_the_llm_policy_never_asks_system_one(fake_systemone, monkeypatch):
-    model = ScriptedModel(script=["MOVE: e4"])
-    monkeypatch.setattr(graph_module, "chat_model", lambda context: model)
-    agent = build_agent(ChessContext(policy="llm"), ServerSettings(), checkpointer=InMemorySaver())
+async def test_the_llm_policy_never_asks_system_one(fake_systemone):
+    agent = build_agent(ChessContext(policy="llm"), "MOVE: e4", checkpointer=InMemorySaver())
     out = await agent.ainvoke(position(), {"configurable": {"thread_id": "t"}})
     assert out["plies"][0]["source"] == "llm"
     assert fake_systemone.requests == []
 
 
-def _scripted(monkeypatch, *replies):
-    monkeypatch.setattr(graph_module, "chat_model", lambda context: ScriptedModel(script=replies))
-
-
-def test_the_first_turn_records_the_setup_and_later_runs_keep_it(env, monkeypatch):
-    _scripted(monkeypatch, "MOVE: e5", "MOVE: Nc6")
+def test_the_first_turn_records_the_setup_and_later_runs_keep_it(env):
     saver, config = InMemorySaver(), {"configurable": {"thread_id": "t"}}
     first = ChessContext(policy="llm", threshold=0.5)
-    agent = build_agent(first, ServerSettings(), checkpointer=saver)
+    agent = build_agent(first, "MOVE: e5", checkpointer=saver)
     out = agent.invoke(position(["e2e4"]), config)
-    assert out["setup"] == asdict(first)
+    assert out["setup"] == dump(first)
+    assert out["setup"]["version"] == 1
 
     later = ChessContext(policy="llm", model="langsmith:openai/gpt-6-luna")
-    again = build_agent(later, ServerSettings(), checkpointer=saver)
+    again = build_agent(later, "MOVE: Nc6", checkpointer=saver)
     out = again.invoke(position(["e2e4", "e7e5", "g1f3"]), config)
     assert len(out["plies"]) == 4
-    assert again.get_state(config).values["setup"] == asdict(first)
+    assert again.get_state(config).values["setup"] == dump(first)
 
 
 FOOLS_MATE = ["f2f3", "e7e5", "g2g4", "d8h4"]
 
 
-def test_a_first_turn_that_ends_the_game_records_the_setup(env, monkeypatch):
-    _scripted(monkeypatch)
+def test_a_first_turn_that_ends_the_game_records_the_setup(env):
     context = ChessContext(policy="llm")
-    agent = build_agent(context, ServerSettings(), checkpointer=InMemorySaver())
+    agent = build_agent(context, checkpointer=InMemorySaver())
     out = agent.invoke(position(FOOLS_MATE), {"configurable": {"thread_id": "t"}})
     assert out["outcome"] == {"kind": "checkmate", "winner": "black"}
-    assert out["setup"] == asdict(context)
+    assert out["setup"] == dump(context)
 
 
-async def test_a_first_turn_that_ends_the_game_records_the_setup_async(env, monkeypatch):
-    _scripted(monkeypatch)
+async def test_a_first_turn_that_ends_the_game_records_the_setup_async(env):
     context = ChessContext(policy="llm")
-    agent = build_agent(context, ServerSettings(), checkpointer=InMemorySaver())
+    agent = build_agent(context, checkpointer=InMemorySaver())
     out = await agent.ainvoke(position(FOOLS_MATE), {"configurable": {"thread_id": "t"}})
     assert out["outcome"] == {"kind": "checkmate", "winner": "black"}
-    assert out["setup"] == asdict(context)
+    assert out["setup"] == dump(context)
 
 
-def _legacy_thread(monkeypatch, *replies, first="MOVE: e5"):
+def _legacy_thread(*replies, first="MOVE: e5"):
     """A thread whose one turn ran without the setup middleware."""
     saver, config = InMemorySaver(), {"configurable": {"thread_id": "t"}}
     old = create_chess_agent(ScriptedModel(script=[first]), checkpointer=saver)
     with suppress(RuntimeError):
         old.invoke(position(["e2e4"]), config)
-    _scripted(monkeypatch, *replies)
-    agent = build_agent(ChessContext(policy="llm"), ServerSettings(), checkpointer=saver)
+    agent = build_agent(ChessContext(policy="llm"), *replies, checkpointer=saver)
     return agent, config
 
 
@@ -128,38 +122,36 @@ LEGACY_RUNS = {
 
 
 @pytest.mark.parametrize("run", LEGACY_RUNS.values(), ids=LEGACY_RUNS.keys())
-def test_a_thread_from_before_setup_never_gains_one(env, monkeypatch, run):
-    agent, config = _legacy_thread(monkeypatch, "MOVE: Nc6")
+def test_a_thread_from_before_setup_never_gains_one(env, run):
+    agent, config = _legacy_thread("MOVE: Nc6")
     assert "setup" not in agent.invoke(run, config)
 
 
 @pytest.mark.parametrize("run", LEGACY_RUNS.values(), ids=LEGACY_RUNS.keys())
-async def test_a_thread_from_before_setup_never_gains_one_async(env, monkeypatch, run):
-    agent, config = _legacy_thread(monkeypatch, "MOVE: Nc6")
+async def test_a_thread_from_before_setup_never_gains_one_async(env, run):
+    agent, config = _legacy_thread("MOVE: Nc6")
     assert "setup" not in await agent.ainvoke(run, config)
 
 
-def test_a_retried_first_turn_from_before_setup_gains_none(env, monkeypatch):
-    agent, config = _legacy_thread(monkeypatch, "MOVE: e5", first=RuntimeError("provider down"))
+def test_a_retried_first_turn_from_before_setup_gains_none(env):
+    agent, config = _legacy_thread("MOVE: e5", first=RuntimeError("provider down"))
     assert agent.get_state(config).values["turns"][0]["status"] == "pending"
     out = agent.invoke({}, config)
     assert len(out["plies"]) == 2
     assert "setup" not in out
 
 
-def test_a_first_turn_that_fails_still_records_the_setup(env, monkeypatch):
-    _scripted(monkeypatch, RuntimeError("provider down"))
+def test_a_first_turn_that_fails_still_records_the_setup(env):
     context = ChessContext(policy="llm")
     saver, config = InMemorySaver(), {"configurable": {"thread_id": "t"}}
-    agent = build_agent(context, ServerSettings(), checkpointer=saver)
+    agent = build_agent(context, RuntimeError("provider down"), checkpointer=saver)
     with pytest.raises(RuntimeError):
         agent.invoke(position(["e2e4"]), config)
-    assert agent.get_state(config).values["setup"] == asdict(context)
+    assert agent.get_state(config).values["setup"] == dump(context)
 
 
-async def test_a_rejected_first_input_records_no_setup(env, monkeypatch):
-    _scripted(monkeypatch)
-    agent = build_agent(ChessContext(policy="llm"), ServerSettings(), checkpointer=InMemorySaver())
+async def test_a_rejected_first_input_records_no_setup(env):
+    agent = build_agent(ChessContext(policy="llm"), checkpointer=InMemorySaver())
     out = await agent.ainvoke(position(["e2e5"]), {"configurable": {"thread_id": "t"}})
     assert out["error"]
     assert "setup" not in out
@@ -197,14 +189,14 @@ def test_provider_specs_and_bare_names_use_the_environment(env, spec):
 
 def test_systemone_needs_typesafe_settings_only_when_it_runs(env):
     env.delenv("TYPESAFE_API_KEY")
-    assert build_agent(ChessContext(policy="llm"), ServerSettings()) is not None
+    assert build_agent(ChessContext(policy="llm")) is not None
     with pytest.raises(ValueError, match="System 1 needs TYPESAFE_API_KEY"):
-        build_agent(ChessContext(policy="hybrid"), ServerSettings())
+        build_agent(ChessContext(policy="hybrid"))
 
 
 async def test_systemone_alone_always_plays_even_with_a_tournament_threshold(fake_systemone):
     context = ChessContext(policy="systemone", threshold=0.95, tournament_threshold=0.99)
-    agent = build_agent(context, ServerSettings(), checkpointer=InMemorySaver())
+    agent = build_agent(context, checkpointer=InMemorySaver())
     out = await agent.ainvoke(position(start_fen=ITALIAN), {"configurable": {"thread_id": "t"}})
     ply = out["plies"][0]
     assert ply["source"] == "systemone"
@@ -232,22 +224,22 @@ def test_classifiers_share_one_connection_pool(env):
         "gpt-5.6-sol",
     ],
 )
-def test_summarize_with_a_known_input_limit(fake_systemone, model):
-    assert build_agent(ChessContext(memory="summarize", model=model), ServerSettings()) is not None
+def test_memory_with_a_known_input_limit(fake_systemone, model):
+    assert build_agent(ChessContext(memory=True, model=model)) is not None
 
 
-def test_summarize_needs_a_known_input_limit(fake_systemone):
+def test_memory_needs_a_known_input_limit(fake_systemone):
     unknown = "langsmith:fireworks/accounts/fireworks/models/nope"
-    with pytest.raises(ChessContractError, match="use memory='none'"):
-        build_agent(ChessContext(memory="summarize", model=unknown), ServerSettings())
-    assert build_agent(ChessContext(memory="none", model=unknown), ServerSettings()) is not None
-    alone = ChessContext(policy="systemone", memory="summarize", model=unknown)
-    assert build_agent(alone, ServerSettings()) is not None
+    with pytest.raises(ChessContractError, match="can't use memory; turn it off"):
+        build_agent(ChessContext(memory=True, model=unknown))
+    assert build_agent(ChessContext(memory=False, model=unknown)) is not None
+    alone = ChessContext(policy="systemone", memory=True, model=unknown)
+    assert build_agent(alone) is not None
 
 
 def test_full_memory_is_gone():
     with pytest.raises(ValidationError):
-        resolve_context(ChessContext, {"configurable": {"memory": "full"}})
+        resolve_context({"configurable": {"memory": "full"}})
 
 
 def test_the_model_limit_agrees_with_the_agent(env):

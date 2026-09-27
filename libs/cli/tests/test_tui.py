@@ -6,14 +6,14 @@ from textual.worker import WorkerState
 
 from langchain_chess import create_chess_agent
 from langchain_chess.testing import ScriptedModel
-from langchain_chess_cli.options import AgentOptions
 from langchain_chess_cli.tui.app import ChessApp
+from langchain_chess_systemone.settings import ChessContext
 
 
-def app_with(script, *, side="white", delay=0.0, options=None):
+def app_with(script, *, side="white", delay=0.0, settings=None):
     model = ScriptedModel(script=list(script), delay=delay)
     factory = lambda saver: create_chess_agent(model, checkpointer=saver)  # noqa: E731
-    return ChessApp(factory, options or AgentOptions(), side=side), model
+    return ChessApp(factory, settings or ChessContext(), side=side), model
 
 
 def text(app, widget_id):

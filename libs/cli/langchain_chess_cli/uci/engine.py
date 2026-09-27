@@ -25,7 +25,7 @@ from langgraph.types import Checkpointer
 
 from langchain_chess.parse import text_of
 from langchain_chess.rules import DrawClaims, fingerprint
-from langchain_chess_cli.options import AgentOptions, run_config
+from langchain_chess_cli.options import run_config
 from langchain_chess_cli.uci.clock import deadline_ms
 from langchain_chess_cli.uci.completion import (
     RunStatus,
@@ -47,19 +47,20 @@ from langchain_chess_cli.uci.protocol import (
     Unknown,
     parse,
 )
+from langchain_chess_systemone.settings import ChessContext, dump
 
-type AgentFactory = Callable[[AgentOptions, Checkpointer], CompiledStateGraph]
+type AgentFactory = Callable[[ChessContext, Checkpointer], CompiledStateGraph]
 type Output = Callable[[str], None]
 
 NAME = "langchain-chess"
 AUTHOR = "Dariel Dato-on"
 DRAW_CLAIMS: DrawClaims = "never"
-"""The GUI adjudicates draws."""
+"""The GUI adjudicates draws: a claimed one would end the game as `bestmove 0000`."""
 
 
 @dataclass(frozen=True, slots=True)
 class Option:
-    """One UCI option: its declaration and how its value lands on `AgentOptions`."""
+    """One UCI option: its declaration and how its value lands on the settings."""
 
     field: str
     declaration: str
@@ -82,6 +83,21 @@ def _effort(value: str) -> str | None:
     return None if effort == "default" else effort
 
 
+def _name(value: str) -> str:
+    if not value.strip():
+        msg = "expected a model name"
+        raise ValueError(msg)
+    return value
+
+
+_CHECKS = {"true": True, "false": False, "summarize": True, "none": False}
+"""`summarize` and `none` are Memory's values from before it was a check box."""
+
+
+def _check(value: str) -> bool:
+    return _CHECKS[_choice(*_CHECKS)(value.lower())]
+
+
 def _unit(value: str) -> float:
     number = float(value)
     if not 0.0 <= number <= 1.0:
@@ -101,11 +117,11 @@ def _spin(low: int, high: int) -> Callable[[str], int]:
     return convert
 
 
-def uci_options(defaults: AgentOptions) -> dict[str, Option]:
+def uci_options(defaults: ChessContext) -> dict[str, Option]:
     """Keyed by lowercase name; UCI option names are case-insensitive."""
     d = defaults
     options = [
-        Option("model", f"option name Model type string default {d.model}", str),
+        Option("model", f"option name Model type string default {d.model}", _name),
         Option(
             "reasoning_effort",
             f"option name ReasoningEffort type combo default {d.reasoning_effort or 'default'}"
@@ -115,7 +131,7 @@ def uci_options(defaults: AgentOptions) -> dict[str, Option]:
         Option(
             "systemone_model",
             f"option name SystemOneModel type string default {d.systemone_model}",
-            str,
+            _name,
         ),
         Option(
             "policy",
@@ -126,8 +142,8 @@ def uci_options(defaults: AgentOptions) -> dict[str, Option]:
         Option("k", f"option name K type spin default {d.k} min 1 max 255", _spin(1, 255)),
         Option(
             "memory",
-            f"option name Memory type combo default {d.memory} var none var summarize",
-            _choice("none", "summarize"),
+            f"option name Memory type check default {str(d.memory).lower()}",
+            _check,
         ),
         Option(
             "seed",
@@ -161,16 +177,16 @@ class Engine:
     def __init__(
         self,
         factory: AgentFactory,
-        options: AgentOptions | None = None,
+        settings: ChessContext | None = None,
         *,
         out: Output,
         checkpointer: BaseCheckpointSaver | None = None,
     ) -> None:
         self._factory = factory
-        self._options = options or AgentOptions()
-        self._declared = uci_options(self._options)
+        self._settings = _for_uci(settings or ChessContext())
+        self._declared = uci_options(self._settings)
         self._checkpointer = checkpointer or InMemorySaver()
-        self._agent = factory(self._options, self._checkpointer)
+        self._agent = factory(self._settings, self._checkpointer)
         self._out = out
         self._queued: dict[str, Any] = {}
         self._position = Position()
@@ -181,8 +197,8 @@ class Engine:
         self.quitting = False
 
     @property
-    def options(self) -> AgentOptions:
-        return self._options
+    def settings(self) -> ChessContext:
+        return self._settings
 
     # ---- plumbing -----------------------------------------------------------------------------
 
@@ -191,7 +207,7 @@ class Engine:
         return f"uci-{uuid.uuid4()}"
 
     def _config(self) -> RunnableConfig:
-        return run_config("uci", self._thread, self._options, draw_claims=DRAW_CLAIMS)
+        return run_config("uci", self._thread, self._settings)
 
     def _info(self, text: str) -> None:
         for line in info_lines(text):
@@ -200,14 +216,14 @@ class Engine:
     def _apply_queued(self) -> None:
         if not self._queued:
             return
-        options = dataclasses.replace(self._options, **self._queued)
-        self._queued = {}
+        queued, self._queued = self._queued, {}
         try:
-            agent = self._factory(options, self._checkpointer)
-        except Exception as e:  # the options and the agent change together, or not at all
+            settings = ChessContext.model_validate({**dump(self._settings), **queued})
+            agent = self._factory(settings, self._checkpointer)
+        except Exception as e:  # the settings and the agent change together, or not at all
             self._info(f"options not applied: {e}")
             return
-        self._options, self._agent = options, agent
+        self._settings, self._agent = settings, agent
 
     async def _replace_thread(self) -> None:
         """Only with no search outstanding: nothing can reopen the old game, so drop it."""
@@ -365,7 +381,7 @@ class Engine:
                 status=search.status,
                 error=search.error,
                 pool=search.pool,
-                seed=f"{self._options.seed}:{search.request}",
+                seed=f"{self._settings.seed}:{search.request}",
             )
             for line in complete(values, result):
                 self._out(line)
@@ -385,6 +401,10 @@ class Engine:
     async def _retire(self) -> None:
         if self._search is not None:
             await self._release(self._search)
+
+
+def _for_uci(settings: ChessContext) -> ChessContext:
+    return settings.model_copy(update={"draw_claims": DRAW_CLAIMS})
 
 
 def _normal_fen(fen: str) -> str:

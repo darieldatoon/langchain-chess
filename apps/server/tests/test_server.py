@@ -7,7 +7,6 @@ graph, so every build must have the same shape as the one that ran.
 import os
 from collections.abc import Callable, Iterator
 from contextlib import AbstractContextManager
-from dataclasses import asdict
 from types import SimpleNamespace
 from typing import Any
 
@@ -16,11 +15,13 @@ from langgraph_sdk import get_sync_client
 from langgraph_sdk.client import SyncLangGraphClient
 
 from langchain_chess.testing import position, topology
-from langchain_chess_server.context import ChessContext
 from langchain_chess_server.graph import make_graph
+from langchain_chess_systemone.settings import ChessContext, dump
 
 PAUSED = ["SummarizationMiddleware.before_model"]
-SETTINGS = {"policy": "llm", "memory": "summarize"}
+# An assistant saved before versions: the server still reads it.
+SETTINGS = {"policy": "llm", "memory": "summarize", "show_legal_moves": False}
+RESOLVED = ChessContext(policy="llm", memory=True, move_list="candidates")
 
 
 @pytest.fixture(scope="module")
@@ -63,10 +64,18 @@ def test_a_paused_run_reads_back_as_the_graph_that_ran(client, env, via):
     assert reported == PAUSED
     state = client.threads.get_state(thread)
     assert state["next"] == reported
-    assert state["values"]["setup"] == asdict(ChessContext(**SETTINGS))
+    assert state["values"]["setup"] == dump(RESOLVED)
     ran = make_graph({}, SimpleNamespace(execution_runtime=SimpleNamespace(context=SETTINGS)))
     described = client.assistants.get_graph(assistant)
     assert {node["id"] for node in described["nodes"]} == topology(ran)[0]
+
+
+def test_an_older_assistant_with_a_current_partial_override(client):
+    assistant = client.assistants.create("chess", context=SETTINGS)["assistant_id"]
+    override = {"version": 1, "k": 3, "top_p": 0.5}
+    thread, _ = _paused_run(client, assistant, config={"configurable": override})
+    setup = client.threads.get_state(thread)["values"]["setup"]
+    assert setup == dump(RESOLVED.model_copy(update={"k": 3, "top_p": 0.5}))
 
 
 def test_a_run_without_system_1_keys_fails_before_writing_and_its_thread_still_reads(client):

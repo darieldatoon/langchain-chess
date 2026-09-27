@@ -1,0 +1,254 @@
+{
+  "$defs": {
+    "DescriptionStyle": {
+      "enum": [
+        "terse",
+        "rich"
+      ],
+      "type": "string"
+    },
+    "DrawClaims": {
+      "enum": [
+        "auto",
+        "never"
+      ],
+      "type": "string"
+    },
+    "Gate": {
+      "enum": [
+        "margin",
+        "confidence"
+      ],
+      "type": "string"
+    },
+    "ListedMoves": {
+      "enum": [
+        "both",
+        "legal",
+        "candidates",
+        "none"
+      ],
+      "type": "string"
+    },
+    "Policy": {
+      "enum": [
+        "llm",
+        "systemone",
+        "hybrid"
+      ],
+      "type": "string"
+    },
+    "ReasoningEffort": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A game's opponent. `move_list`, `memory` and `reasoning_effort` affect only the LLM.",
+  "properties": {
+    "version": {
+      "const": 1,
+      "default": 1,
+      "description": "The settings file's version.",
+      "title": "Version",
+      "type": "integer"
+    },
+    "policy": {
+      "$ref": "#/$defs/Policy",
+      "default": "hybrid",
+      "description": "Who chooses moves. `llm`: the LLM alone. `systemone`: System 1 alone. `hybrid`: System 1 plays the moves it is confident about and suggests candidates otherwise.",
+      "langgraph_nodes": [
+        "SystemOneMiddleware.before_model",
+        "model"
+      ]
+    },
+    "model": {
+      "default": "langsmith:baseten/zai-org/GLM-5.3-Flash",
+      "description": "init_chat_model spec: `langsmith:<provider>/<model>` for the LLM Gateway, or `provider:model` and bare names with that provider's package installed.",
+      "langgraph_nodes": [
+        "model"
+      ],
+      "minLength": 1,
+      "title": "Model",
+      "type": "string"
+    },
+    "reasoning_effort": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ReasoningEffort"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Reasoning effort passed to the model. Null sends none and uses the model's own default; models without reasoning (such as Claude Haiku 4.5) need it null.",
+      "langgraph_nodes": [
+        "model"
+      ]
+    },
+    "move_list": {
+      "$ref": "#/$defs/ListedMoves",
+      "default": "both",
+      "description": "The moves listed in each turn's message. `both`: System 1's candidates, when there are any, and every legal move. `legal`: every legal move. `candidates`: only the candidates. `none`: no list. A restricted turn always lists the permitted moves.",
+      "langgraph_nodes": [
+        "model"
+      ]
+    },
+    "memory": {
+      "default": false,
+      "description": "Keep earlier turns, summarized at 70% of the model's input limit. Needs a model with a known input limit. Ignored when the LLM doesn't play.",
+      "langgraph_nodes": [
+        "model"
+      ],
+      "title": "Memory",
+      "type": "boolean"
+    },
+    "draw_claims": {
+      "$ref": "#/$defs/DrawClaims",
+      "default": "auto",
+      "description": "`auto` ends the game on a threefold repetition or the fifty-move rule; `never` plays on until a draw is forced.",
+      "langgraph_nodes": [
+        "model"
+      ]
+    },
+    "systemone_model": {
+      "default": "semif-qwen3.5-4b",
+      "description": "System 1 model: `semif-qwen3.5-4b` (SemIf) or `typesafe/jev-latest` (Jev). Another TypeSafe classifier works too, with a conservative cap on the moves per request.",
+      "langgraph_nodes": [
+        "SystemOneMiddleware.before_model"
+      ],
+      "minLength": 1,
+      "title": "Systemone Model",
+      "type": "string"
+    },
+    "style": {
+      "$ref": "#/$defs/DescriptionStyle",
+      "default": "rich",
+      "description": "How each legal move is described to System 1. `rich` adds captures, checks and exchange results; `terse` names the move only.",
+      "langgraph_nodes": [
+        "SystemOneMiddleware.before_model"
+      ]
+    },
+    "with_eval": {
+      "default": false,
+      "description": "Also ask System 1 to score the position. Recorded only; it doesn't change the move.",
+      "langgraph_nodes": [
+        "SystemOneMiddleware.before_model"
+      ],
+      "title": "With Eval",
+      "type": "boolean"
+    },
+    "with_nouls": {
+      "default": false,
+      "description": "Also ask System 1 whether the position needs calculation and has tactics. Recorded only; it doesn't change the move.",
+      "langgraph_nodes": [
+        "SystemOneMiddleware.before_model"
+      ],
+      "title": "With Nouls",
+      "type": "boolean"
+    },
+    "gate": {
+      "$ref": "#/$defs/Gate",
+      "default": "margin",
+      "description": "The signal compared with the threshold. `margin`: the top move's probability minus the second's. `confidence`: System 1's own confidence in its ranking.",
+      "langgraph_nodes": [
+        "SystemOneMiddleware.before_model"
+      ]
+    },
+    "threshold": {
+      "default": 0.9,
+      "description": "System 1 plays its top move when the signal is at least this; otherwise the LLM gets its candidates. 0 always plays; 1 never does.",
+      "langgraph_nodes": [
+        "SystemOneMiddleware.before_model"
+      ],
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Threshold",
+      "type": "number"
+    },
+    "tournament_threshold": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The threshold when there were more moves than one System 1 request holds, so they were ranked in a tournament. Null uses `threshold`.",
+      "langgraph_nodes": [
+        "SystemOneMiddleware.before_model"
+      ],
+      "title": "Tournament Threshold"
+    },
+    "k": {
+      "default": 5,
+      "description": "The most candidates suggested to the LLM.",
+      "langgraph_nodes": [
+        "SystemOneMiddleware.before_model"
+      ],
+      "maximum": 255,
+      "minimum": 1,
+      "title": "K",
+      "type": "integer"
+    },
+    "top_p": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Cut the top `k` candidates further, to the fewest whose probabilities add up to at least this. Null keeps all `k`.",
+      "langgraph_nodes": [
+        "SystemOneMiddleware.before_model"
+      ],
+      "title": "Top P"
+    },
+    "seed": {
+      "default": 0,
+      "description": "Seeds System 1's tournament shuffle.",
+      "langgraph_nodes": [
+        "SystemOneMiddleware.before_model"
+      ],
+      "maximum": 9007199254740991,
+      "minimum": -9007199254740991,
+      "title": "Seed",
+      "type": "integer"
+    }
+  },
+  "title": "ChessContext",
+  "type": "object",
+  "required": [
+    "version",
+    "policy",
+    "model",
+    "reasoning_effort",
+    "move_list",
+    "memory",
+    "draw_claims",
+    "systemone_model",
+    "style",
+    "with_eval",
+    "with_nouls",
+    "gate",
+    "threshold",
+    "tournament_threshold",
+    "k",
+    "top_p",
+    "seed"
+  ]
+}

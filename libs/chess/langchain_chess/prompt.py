@@ -5,16 +5,14 @@ Change the wording only deliberately, with rendered-prompt tests.
 
 import copy
 from collections.abc import Sequence
-from typing import Literal
 
 import chess
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage
 
 from langchain_chess.position import ascii_board, movetext, san_list
 from langchain_chess.rules import legal_ucis, side
+from langchain_chess.settings import ListedMoves
 from langchain_chess.state import TurnRecord
-
-type Memory = Literal["none", "summarize"]
 
 SYSTEM_PROMPT = (
     "You are a strong chess player. You will be shown a game in progress and asked for your "
@@ -33,7 +31,7 @@ def render_position(
     allowed: Sequence[str],
     candidates: Sequence[str] | None,
     *,
-    show_legal_moves: bool,
+    move_list: ListedMoves,
 ) -> str:
     """The trailing human message appended to every move request. Never stored."""
     lines = [
@@ -46,7 +44,8 @@ def render_position(
     if board.is_check():
         lines.append("You are in check.")
     # Effective candidates are computed here, so a later hard restriction never leaves stale ones.
-    effective = [uci for uci in candidates or () if uci in allowed]
+    shown = candidates if move_list in ("both", "candidates") else None
+    effective = [uci for uci in shown or () if uci in allowed]
     if effective:
         lines.append(
             "Suggested candidates: "
@@ -55,7 +54,7 @@ def render_position(
         )
     if set(allowed) != set(legal_ucis(board)):
         lines.append("Only these moves are permitted: " + ", ".join(san_list(board, allowed)) + ".")
-    elif show_legal_moves:
+    elif move_list in ("both", "legal"):
         lines.append("Legal moves: " + ", ".join(san_list(board, allowed)))
     lines.append("Reply with your analysis, then the final line `MOVE: <move>`.")
     return "\n".join(lines)
@@ -96,7 +95,7 @@ def _without_reasoning(message: AnyMessage) -> AnyMessage:
 
 
 def model_view(
-    messages: Sequence[AnyMessage], turns: Sequence[TurnRecord], memory: Memory
+    messages: Sequence[AnyMessage], turns: Sequence[TurnRecord], *, memory: bool
 ) -> list[AnyMessage]:
     """Stored messages to what the model sees, before the trailing position message.
 
@@ -107,7 +106,7 @@ def model_view(
     current = turns[-1]
     rejected = current["rejected_message_ids"]
     hidden = set(rejected[:-1])
-    if memory == "none":
+    if not memory:
         opened = current["opened_message_id"]
         start = next((i for i, m in enumerate(messages) if m.id == opened), len(messages))
         window = list(messages[start:])

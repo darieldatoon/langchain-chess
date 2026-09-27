@@ -3,18 +3,21 @@
 import { isRecord, oneOf, recordedContext, sanitizeContext } from "./settings";
 import {
   DEFAULT_CONTEXT,
+  SETTINGS_VERSION,
   fenOrStart,
+  isSetting,
   opposite,
   sideToMove,
   type ChessContext,
   type ChessValues,
-  type Memory,
   type Side,
-  type SystemOneModel,
 } from "@langchain-chess/chess-ui";
 
 export type SideChoice = Side | "random";
-export type SystemOneChoice = SystemOneModel | "none";
+
+/** The System 1 models the dialog offers; any other name is kept and shown as itself. */
+export const SYSTEM_ONE_PRESETS = ["semif-qwen3.5-4b", "typesafe/jev-latest"] as const;
+export type SystemOnePreset = (typeof SYSTEM_ONE_PRESETS)[number];
 
 /** Inexpensive models only; anything else is a custom spec. */
 export const LLM_PRESETS = [
@@ -29,19 +32,22 @@ export type LlmPreset = (typeof LLM_PRESETS)[number];
 export type LlmChoice = LlmPreset | "custom" | "none";
 
 /** The knobs the Advanced section edits; the pickers own the other three. */
-export type Knobs = Omit<ChessContext, "policy" | "model" | "systemone_model">;
+export type Knobs = Omit<ChessContext, "version" | "policy" | "model" | "systemone_model">;
 
 export interface Setup {
   side: SideChoice;
-  systemOne: SystemOneChoice;
+  /** System 1's model, kept while it's off, so turning it back on restores it. */
+  systemOne: string;
+  systemOneOff: boolean;
   llm: LlmChoice;
   /** Kept while another LLM is picked, so switching back to Custom restores it. */
   customModel: string;
   knobs: Knobs;
 }
 
+const PICKED = new Set(["version", "policy", "model", "systemone_model"]);
 const KNOB_KEYS = (Object.keys(DEFAULT_CONTEXT) as (keyof ChessContext)[]).filter(
-  (key): key is keyof Knobs => key !== "policy" && key !== "model" && key !== "systemone_model",
+  (key): key is keyof Knobs => !PICKED.has(key),
 );
 
 export function knobsOf(context: ChessContext): Knobs {
@@ -51,15 +57,22 @@ export function knobsOf(context: ChessContext): Knobs {
 export const DEFAULT_SETUP: Setup = {
   side: "white",
   systemOne: DEFAULT_CONTEXT.systemone_model,
+  systemOneOff: false,
   llm: "langsmith:baseten/zai-org/GLM-5.3-Flash",
   customModel: "",
   knobs: knobsOf(DEFAULT_CONTEXT),
 };
 
-export const SYSTEM_ONE_NAMES: Record<SystemOneModel, string> = {
+export const SYSTEM_ONE_NAMES: Record<SystemOnePreset, string> = {
   "semif-qwen3.5-4b": "SemIf",
   "typesafe/jev-latest": "Jev",
 };
+
+const isSystemOnePreset = oneOf(...SYSTEM_ONE_PRESETS);
+
+export function systemOneName(model: string): string {
+  return isSystemOnePreset(model) ? SYSTEM_ONE_NAMES[model] : model;
+}
 
 export const LLM_NAMES: Record<LlmPreset, string> = {
   "langsmith:baseten/zai-org/GLM-5.3-Flash": "GLM-5.3 Flash",
@@ -90,19 +103,19 @@ export function modelOf(setup: Pick<Setup, "llm" | "customModel">): string | nul
   return setup.llm === "custom" ? setup.customModel.trim() : setup.llm;
 }
 
-/** The memory a game gets: `summarize` falls back to `none` for a model that can't summarize. */
-export function memoryOf(knobs: Pick<Knobs, "memory">, summarize: Summarize): Memory {
-  return summarize === "no" ? "none" : knobs.memory;
+/** The memory a game gets: off for a model that can't summarize. */
+export function memoryOf(knobs: Pick<Knobs, "memory">, summarize: Summarize): boolean {
+  return summarize === "no" ? false : knobs.memory;
 }
 
 export function matchupOf(setup: Setup, summarize: Summarize): Matchup {
   const model = modelOf(setup);
-  const systemOne = setup.systemOne === "none" ? null : setup.systemOne;
+  const systemOne = setup.systemOneOff ? null : setup.systemOne;
   if (model === null && systemOne === null) {
     return { ok: false, reason: "Pick a System 1, an LLM, or both." };
   }
   if (model === "") return { ok: false, reason: "Enter a model spec for the custom LLM." };
-  if (model !== null && setup.knobs.memory === "summarize") {
+  if (model !== null && setup.knobs.memory) {
     if (summarize === "checking") {
       return { ok: false, reason: `Checking whether ${modelName(model)} can summarize…` };
     }
@@ -115,18 +128,19 @@ export function matchupOf(setup: Setup, summarize: Summarize): Matchup {
     ok: true,
     context: {
       ...setup.knobs,
+      version: SETTINGS_VERSION,
       memory: memoryOf(setup.knobs, summarize),
       policy,
       // The server ignores the model a policy doesn't use, but the field is required.
       model: model ?? DEFAULT_CONTEXT.model,
-      systemone_model: systemOne ?? DEFAULT_CONTEXT.systemone_model,
+      systemone_model: setup.systemOne,
     },
   };
 }
 
 /** The matchup in plain words, for the modal. */
 export function matchupLine(context: ChessContext): string {
-  const systemOne = SYSTEM_ONE_NAMES[context.systemone_model];
+  const systemOne = systemOneName(context.systemone_model);
   const llm = modelName(context.model);
   switch (context.policy) {
     case "hybrid":
@@ -140,7 +154,7 @@ export function matchupLine(context: ChessContext): string {
 
 /** The opponent on the game screen, e.g. "SemIf + GLM-5.3 · medium". */
 export function opponentLabel(context: ChessContext): string {
-  const systemOne = SYSTEM_ONE_NAMES[context.systemone_model];
+  const systemOne = systemOneName(context.systemone_model);
   const effort = context.reasoning_effort;
   const llm =
     effort === null ? modelName(context.model) : `${modelName(context.model)} · ${effort}`;
@@ -161,9 +175,9 @@ export interface Sections {
   gate: boolean;
 }
 
-export function sectionsOf(setup: Pick<Setup, "llm" | "systemOne">): Sections {
+export function sectionsOf(setup: Pick<Setup, "llm" | "systemOneOff">): Sections {
   const llm = setup.llm !== "none";
-  const systemOne = setup.systemOne !== "none";
+  const systemOne = !setup.systemOneOff;
   return { llm, systemOne, gate: llm && systemOne };
 }
 
@@ -176,13 +190,13 @@ function sectionsOfPolicy(policy: ChessContext["policy"]): Sections {
 }
 
 const KNOB_SECTIONS: Record<keyof Sections | "rules", readonly (keyof Knobs)[]> = {
-  llm: ["show_legal_moves", "memory"],
+  llm: ["move_list", "memory"],
   systemOne: ["style", "with_eval", "with_nouls"],
   gate: ["gate", "threshold", "tournament_threshold", "k", "top_p"],
   rules: ["draw_claims", "seed"],
 };
 
-const knobText = (value: Knobs[keyof Knobs]) =>
+export const knobText = (value: Knobs[keyof Knobs]) =>
   typeof value === "boolean" ? (value ? "on" : "off") : String(value);
 
 /** Knobs the game's policy uses that differ from the defaults, e.g. ["threshold 0.5", "k 3"]. */
@@ -206,19 +220,33 @@ export function resolveSide(choice: SideChoice, random: () => number): Side {
 }
 
 const isSideChoice = oneOf("white", "black", "random");
-const isSystemOneChoice = oneOf("semif-qwen3.5-4b", "typesafe/jev-latest", "none");
 const isLlmChoice = oneOf(...LLM_PRESETS, "custom", "none");
 
-/** Stored setups are untrusted: every field falls back to its default on its own. */
+/**
+ * Stored setups are untrusted: every field falls back to its default on its own. A setup stored
+ * before versions named System 1 "none" when it was off, and its knobs have the older forms.
+ */
 export function sanitizeSetup(stored: unknown): Setup {
   const record = isRecord(stored) ? stored : {};
+  const versioned = "version" in record;
+  const systemOneOff = versioned ? record.systemOneOff === true : record.systemOne === "none";
+  const systemOne = isSetting("systemone_model", record.systemOne)
+    ? record.systemOne
+    : DEFAULT_SETUP.systemOne;
+  const knobs = isRecord(record.knobs) ? record.knobs : {};
   return {
     side: isSideChoice(record.side) ? record.side : DEFAULT_SETUP.side,
-    systemOne: isSystemOneChoice(record.systemOne) ? record.systemOne : DEFAULT_SETUP.systemOne,
+    systemOne: !versioned && systemOne === "none" ? DEFAULT_SETUP.systemOne : systemOne,
+    systemOneOff,
     llm: isLlmChoice(record.llm) ? record.llm : DEFAULT_SETUP.llm,
     customModel: typeof record.customModel === "string" ? record.customModel : "",
-    knobs: knobsOf(sanitizeContext(record.knobs)),
+    knobs: knobsOf(sanitizeContext(versioned ? { ...knobs, version: record.version } : knobs)),
   };
+}
+
+/** What storage keeps: the setup, and the settings version its knobs are in. */
+export function storedSetup(setup: Setup): Record<string, unknown> {
+  return { version: SETTINGS_VERSION, ...setup };
 }
 
 /** Maps a pre-modal stored context (policy, model, systemone_model) onto the pickers. */
@@ -227,7 +255,8 @@ export function setupFromContext(stored: unknown): Setup {
   const preset = isPreset(context.model) ? context.model : null;
   return {
     side: DEFAULT_SETUP.side,
-    systemOne: context.policy === "llm" ? "none" : context.systemone_model,
+    systemOne: context.systemone_model,
+    systemOneOff: context.policy === "llm",
     llm: context.policy === "systemone" ? "none" : (preset ?? "custom"),
     customModel: preset === null ? context.model : "",
     knobs: knobsOf(context),

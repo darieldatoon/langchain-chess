@@ -64,9 +64,9 @@ class ChessSummarization(SummarizationMiddleware):
             super().__init__(model, **settings)
         except ValueError as e:
             msg = (
-                "memory='summarize' needs the model's input limit for a fractional trigger: "
+                "memory needs the model's input limit for a fractional trigger: "
                 "give the model a profile (profile={'max_input_tokens': ...}), pass "
-                "`summarization` with an absolute trigger, or use memory='none'"
+                "`summarization` with an absolute trigger, or turn memory off"
             )
             raise ChessContractError(msg) from e
         self.recorder = recorder

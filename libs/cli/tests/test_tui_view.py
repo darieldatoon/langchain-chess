@@ -1,14 +1,14 @@
 import chess
 
-from langchain_chess_cli.options import AgentOptions
 from langchain_chess_cli.tui.view import (
     board_of,
     cost_text,
-    describe_options,
+    describe_settings,
     move_list,
     ply_details,
     status_text,
 )
+from langchain_chess_systemone.settings import ChessContext
 
 BLACK_TO_MOVE = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
 
@@ -105,11 +105,11 @@ def test_status_text():
 
 def test_board_of_and_options():
     assert board_of({"moves": ["e2e4"]}).fen().split()[1] == "b"
-    assert describe_options(AgentOptions()) == (
+    assert describe_settings(ChessContext()) == (
         "semif-qwen3.5-4b + langsmith:baseten/zai-org/GLM-5.3-Flash"
     )
     assert (
-        describe_options(AgentOptions(policy="llm", reasoning_effort="medium"))
+        describe_settings(ChessContext(policy="llm", reasoning_effort="medium"))
         == "langsmith:baseten/zai-org/GLM-5.3-Flash (medium)"
     )
-    assert describe_options(AgentOptions(policy="systemone")).startswith("System 1 alone")
+    assert describe_settings(ChessContext(policy="systemone")).startswith("System 1 alone")

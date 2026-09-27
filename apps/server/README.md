@@ -42,18 +42,21 @@ client.runs.wait(
 print(client.threads.get_state(thread["thread_id"])["values"]["plies"][-1]["san"])
 ```
 
-The game's first turn records its resolved settings in the thread as `setup` (every
-`ChessContext` field), so any client can continue the game. It is never rewritten: a later run
+The game's first turn records its resolved settings in the thread as `setup` (every key of its
+settings version), so any client can continue the game. It is never rewritten: a later run
 with other settings plays with them, and `setup` still names the first turn's. The web UI sends
 `setup` back with every move, so its games keep one opponent. A run rejected before it opens a
 turn records nothing, and a thread from before `setup` never gains one.
 
-`ChessContext` in [`context.py`](langchain_chess_server/context.py) documents every knob:
-`policy` (`llm`, `systemone`, `hybrid`), `model`, `reasoning_effort`, `memory`, `systemone_model`,
-`threshold`, `k`, `top_p`, `gate`, `draw_claims` and the rest.
+`ChessContext` in [`libs/systemone`](../../libs/systemone/langchain_chess_systemone/settings.py)
+documents every setting: `policy` (`llm`, `systemone`, `hybrid`), `model`, `reasoning_effort`,
+`move_list`, `memory`, `systemone_model`, `threshold`, `k`, `top_p`, `gate`, `draw_claims` and the
+rest. Assistant context and `configurable` are each migrated from their settings version, then
+merged with `configurable` winning; an explicit null resets a setting to its default, and unknown
+keys are ignored. Assistants saved before versions still run.
 
 Settings switch nodes off but never remove them: `policy="llm"` keeps a SystemOne node that does
-nothing, and `memory="none"` a summarization node that does nothing. The server rebuilds the
+nothing, and `memory=False` a summarization node that does nothing. The server rebuilds the
 graph without the run's settings to read or update a thread and to describe the graph (Studio,
 `assistants/{id}/graph`), and that build must match the one that ran or the thread's pending
 tasks come back wrong. Only a run builds a model or System 1 client, so reads need no keys.
@@ -97,3 +100,6 @@ uv run --all-packages pytest apps/server --no-cov -q
 ```
 
 `test_server.py` runs the graph under an offline `langgraph dev`; nothing it runs reaches a model.
+`mise run test:e2e` builds the web UI and plays a game in Chromium against `langgraph dev` with a
+fake model ([`tests/e2e`](tests/e2e)), checking a setup's settings reach the agent. Install the
+browser once with `uv run playwright install chromium`.

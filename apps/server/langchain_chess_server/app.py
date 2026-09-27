@@ -8,18 +8,16 @@ check. The static directory is the Vite build output, produced in CI right befor
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import TypeAdapter
 
 from langchain_chess_server.clients import POOL
-from langchain_chess_server.context import ChessContext
 from langchain_chess_server.graph import model_limit
+from langchain_chess_systemone.settings import ChessContext, dump
 
 STATIC_DIR = Path(__file__).parent / "static"
 GRAPH_ID = "chess"
@@ -29,8 +27,8 @@ def ui_config() -> dict[str, Any]:
     """What the UI needs to build its settings form: schema, defaults, the graph id."""
     return {
         "graph": GRAPH_ID,
-        "schema": TypeAdapter(ChessContext).json_schema(),
-        "defaults": asdict(ChessContext()),
+        "schema": ChessContext.model_json_schema(),
+        "defaults": dump(ChessContext()),
     }
 
 
@@ -58,7 +56,7 @@ def create_app(static_dir: Path | None = STATIC_DIR) -> FastAPI:
 
     @app.get("/ui/model-limit")
     def limit(model: str) -> dict[str, int | None]:
-        """The new-game dialog offers `summarize` only for a model with a known input limit."""
+        """The new-game dialog offers memory only for a model with a known input limit."""
         return {"max_input_tokens": model_limit(model)}
 
     @app.get("/ui", include_in_schema=False)

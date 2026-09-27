@@ -7,7 +7,7 @@ import chess
 
 from langchain_chess import turn_cost
 from langchain_chess.rules import result_text
-from langchain_chess_cli.options import AgentOptions
+from langchain_chess_systemone.settings import ChessContext
 
 SOURCES = {
     "external": "you",
@@ -115,11 +115,11 @@ def status_text(
     return "The agent's move."
 
 
-def describe_options(options: AgentOptions) -> str:
-    if options.policy == "systemone":
-        return f"System 1 alone ({options.systemone_model})"
-    effort = options.reasoning_effort
-    llm = options.model if effort is None else f"{options.model} ({effort})"
-    if options.policy == "llm":
+def describe_settings(settings: ChessContext) -> str:
+    if settings.policy == "systemone":
+        return f"System 1 alone ({settings.systemone_model})"
+    effort = settings.reasoning_effort
+    llm = settings.model if effort is None else f"{settings.model} ({effort})"
+    if settings.policy == "llm":
         return llm
-    return f"{options.systemone_model} + {llm}"
+    return f"{settings.systemone_model} + {llm}"

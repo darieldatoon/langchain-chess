@@ -249,7 +249,7 @@ Design decisions and measurements live in the [OpenWiki](openwiki/index.md).
 | `port 2024 is already in use` | Stop the other server, or set `LANGGRAPH_PORT` / `WEB_PORT`. |
 | The server exits: gateway key is empty | Export `LC_GATEWAY_KEY` in the shell that runs `mise`. |
 | 403 on traces or grading | Set `LANGSMITH_WORKSPACE_ID` to the tracing key's workspace. |
-| `Memory: summarize` is disabled in the web UI | That model's input limit is unknown, so summarizing can't be scheduled. |
+| `Memory: Summarize` is disabled in the web UI | That model's input limit is unknown, so summarizing can't be scheduled. |
 | `lcchess grade` can't find the game | Pass the project it was traced to: `--project langchain-chess-local` locally, `langchain-chess-app` for the deployment. |
 
 ## License
