@@ -30,6 +30,10 @@ That starts `langgraph dev` on `:2024` and this app on `:5173`, then prints the 
    opponent thinks, the same card shows spinners and streams the reasoning in. Show/Hide hides
    the top moves or the reasoning, and stays as you left it.
 4. **After the game**, Rematch swaps colours and keeps the opponent. New game starts over.
+   Any game that recorded its settings offers Rematch and Export under Opponent, mid-game too.
+5. **Share an opponent.** Export in the New game dialog (or under Opponent) saves the settings
+   as `opponent.json`, the file `lcchess --config`, UCI's `Config` and the evals read. Import
+   loads one, keeping the side you picked.
 
 ![The New game dialog](../../docs/images/web-new-game.png)
 

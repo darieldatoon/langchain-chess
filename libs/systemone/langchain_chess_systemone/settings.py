@@ -5,7 +5,9 @@ renamed or removed, a default changed, or a value's meaning changed. `DEFAULTS` 
 version's keys and defaults, and `MIGRATIONS` carries a version's keys to the next one.
 """
 
+import json
 from collections.abc import Callable, Mapping
+from pathlib import Path
 from types import MappingProxyType
 from typing import Annotated, Any, Literal, TypedDict, cast
 
@@ -372,6 +374,16 @@ def resolve(*sources: Mapping[str, Any]) -> ChessContext:
 def load(data: object) -> ChessContext:
     """A settings file: `version` required, any other key optional, unknown keys an error."""
     return resolve(migrate(_mapping(data)))
+
+
+def load_file(path: Path) -> ChessContext:
+    """A settings file on disk, as JSON."""
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as e:
+        msg = f"can't read settings from {path}: {e}"
+        raise SettingsError(msg) from e
+    return load(data)
 
 
 def load_recorded(data: object) -> ChessContext:

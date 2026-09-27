@@ -79,7 +79,7 @@ export function apiUrl(
   return env.DEV ? DEV_API_URL : window.location.origin;
 }
 
-/** `configurable` for a run: exactly the server's `ChessContext` keys, `version` included. */
+/** `configurable` for a run, and an exported file: every key, `version` first, in order. */
 export function configurableOf(context: ChessContext): Record<string, unknown> {
   return {
     version: SETTINGS_VERSION,

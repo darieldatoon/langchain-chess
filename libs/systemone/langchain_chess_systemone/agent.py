@@ -34,7 +34,9 @@ def arguments(settings: ChessContext, surface: Surface = "local") -> ModelArgume
 
 def sent(settings: ChessContext, surface: Surface = "local") -> dict[str, Any]:
     """The settings as sent, for labels and run metadata; the recorded settings keep
-    `model_kwargs` as given."""
+    `model_kwargs` as given. Without the LLM nothing is sent, and its settings go unread."""
+    if settings.policy == "systemone":
+        return {"reasoning_effort": None}
     resolved = arguments(settings, surface)
     values: dict[str, Any] = {"reasoning_effort": resolved.reasoning_effort}
     if resolved.max_tokens is not None:

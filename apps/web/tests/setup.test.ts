@@ -4,6 +4,7 @@ import {
   DEFAULT_SETUP,
   effortOverridden,
   gameOf,
+  importedSetup,
   knobText,
   knobsOf,
   matchupLine,
@@ -308,6 +309,31 @@ describe("sanitizeSetup", () => {
     expect(sanitizeSetup({ systemOne: "typesafe/jev-latest", knobs: { memory: "none" } })).toEqual({
       ...DEFAULT_SETUP,
       systemOne: "typesafe/jev-latest",
+    });
+  });
+});
+
+describe("importedSetup", () => {
+  it("plays a settings file with the side picked", () => {
+    const file = { version: 2, policy: "llm", model: "openai:gpt-6-luna", k: 3 };
+    expect(importedSetup(file, "black")).toEqual({
+      ok: true,
+      setup: {
+        ...DEFAULT_SETUP,
+        side: "black",
+        systemOneOff: true,
+        llm: "custom",
+        customModel: "openai:gpt-6-luna",
+        knobs: { ...DEFAULT_SETUP.knobs, k: 3 },
+      },
+    });
+    expect(importedSetup({ k: 3 }, "white")).toEqual({
+      ok: false,
+      why: "settings need a `version`",
+    });
+    expect(importedSetup({ version: 2, k: 0 }, "white")).toEqual({
+      ok: false,
+      why: "invalid settings: k",
     });
   });
 });

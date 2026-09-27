@@ -23,13 +23,14 @@ import {
   usePlyKeys,
 } from "@langchain-chess/chess-ui";
 import { checkApiKey, type KeyCheck } from "./auth";
+import { downloadJson } from "./files";
 import { fetchModelLimit, type ModelLimit } from "./modelLimit";
 import { AppSettingsDialog } from "./components/AppSettingsDialog";
 import { NewGameDialog } from "./components/NewGameDialog";
 import { ResultCard } from "./components/ResultCard";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { describeError, isAuthError, isBusyRejection, statusLine } from "./format";
-import { apiUrl } from "./settings";
+import { apiUrl, configurableOf } from "./settings";
 import { changedKnobs, opponentLabel, resolveSide, type GameRecord, type Setup } from "./setup";
 import {
   browserStorage,
@@ -465,6 +466,33 @@ function Table({
             {game.threadId && (
               <Text variant="xs" color="tertiary">
                 Thread <span className="font-mono">{game.threadId}</span>
+              </Text>
+            )}
+            {record ? (
+              <div className="flex gap-space-2">
+                {/* After the game, the result card offers it. */}
+                {!game.outcome && (
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    size="sm"
+                    onClick={() => onRematch(record)}
+                  >
+                    Rematch
+                  </Button>
+                )}
+                <Button
+                  variant="plain"
+                  color="secondary"
+                  size="sm"
+                  onClick={() => downloadJson("opponent.json", configurableOf(record.context))}
+                >
+                  Export
+                </Button>
+              </div>
+            ) : (
+              <Text variant="xs" color="tertiary">
+                This game didn't record its settings: start a new game to pick an opponent.
               </Text>
             )}
           </Card>

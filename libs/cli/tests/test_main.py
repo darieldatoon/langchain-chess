@@ -108,3 +108,28 @@ def test_model_kwargs_and_the_prompt_are_flags(monkeypatch):
     )
     for bad in ("{not json", '{"base_url": "https://x"}'):
         assert CliRunner().invoke(app, ["uci", "--model-kwargs", bad]).exit_code == 2
+
+
+def test_a_config_file_with_flags_and_resets_over_it(monkeypatch, tmp_path):
+    built = []
+    monkeypatch.setattr(main, "build_agent", lambda settings, **kw: built.append(settings))
+    import langchain_chess_cli.tui.app as tui
+
+    monkeypatch.setattr(tui.ChessApp, "run", lambda self: None)
+    config = tmp_path / "opponent.json"
+    config.write_text('{"version": 2, "policy": "llm", "k": 3, "top_p": 0.5, "memory": true}')
+    args = ["play", "--config", str(config), "--k", "4", "--reset", "top_p", "--no-memory"]
+    result = CliRunner().invoke(app, args)
+    assert result.exit_code == 0, result.output
+    assert (built[0].policy, built[0].k, built[0].top_p, built[0].memory) == ("llm", 4, None, False)
+    config.write_text('{"k": 3}')
+    assert CliRunner().invoke(app, ["play", "--config", str(config)]).exit_code == 2
+    config.write_text("{")
+    assert CliRunner().invoke(app, ["play", "--config", str(config)]).exit_code == 2
+
+
+def test_uci_refuses_a_seed_it_cannot_declare():
+    result = CliRunner().invoke(
+        app, ["uci", "--policy", "systemone", "--seed", "-1"], input="quit\n"
+    )
+    assert result.exit_code == 2

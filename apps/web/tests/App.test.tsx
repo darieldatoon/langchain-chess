@@ -69,6 +69,10 @@ vi.mock("../src/auth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../src/auth")>()),
   checkApiKey: vi.fn(() => Promise.resolve(keyCheck.result)),
 }));
+const downloads = vi.hoisted(() => [] as [string, unknown][]);
+vi.mock("../src/files", () => ({
+  downloadJson: (name: string, value: unknown) => downloads.push([name, value]),
+}));
 vi.mock("../src/modelLimit", () => ({
   fetchModelLimit: vi.fn(() => Promise.resolve({ kind: "known", tokens: 968000 })),
 }));
@@ -287,6 +291,17 @@ describe("a game's own setup", () => {
     expect(lastConfigurable()).toEqual(luna);
   });
 
+  it("rematches or exports a recorded game's opponent mid-game", async () => {
+    onThread("abc", E4_AS_BLACK, LLM_HIGH);
+    render(<App />);
+    await click("Export");
+    expect(downloads.at(-1)).toEqual(["opponent.json", LLM_HIGH]);
+    await click("Rematch");
+    expect(board()).toHaveAttribute("data-orientation", "white");
+    await click("drop e2e4");
+    expect(lastConfigurable()).toEqual(LLM_HIGH);
+  });
+
   it("continues a Black game from its thread in a browser that has never seen it", async () => {
     onThread("abc", E4_AS_BLACK, LLM_HIGH);
     render(<App />);
@@ -333,6 +348,7 @@ describe("a game's own setup", () => {
     );
     render(<App />);
     expect(screen.getByText("View only")).toBeInTheDocument();
+    expect(screen.getByText(/didn't record its settings/)).toBeInTheDocument();
     expect(board()).toHaveAttribute("data-draggable", "false");
     expect(screen.getByText("View only.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Ask opponent to move" })).not.toBeInTheDocument();

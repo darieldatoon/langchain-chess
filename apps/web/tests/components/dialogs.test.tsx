@@ -14,6 +14,19 @@ import {
 import userEvent from "@testing-library/user-event";
 
 const PICKED: SettingKey[] = ["policy", "model", "systemone_model"];
+
+const downloads = vi.hoisted(() => [] as [string, unknown][]);
+vi.mock("../../src/files", async (original) => ({
+  ...(await original<typeof import("../../src/files")>()),
+  downloadJson: (name: string, value: unknown) => downloads.push([name, value]),
+}));
+
+async function importFile(content: string) {
+  const file = new File([content], "opponent.json", { type: "application/json" });
+  await act(async () => {
+    fireEvent.change(screen.getByLabelText("Setup file"), { target: { files: [file] } });
+  });
+}
 import { AppSettingsDialog } from "../../src/components/AppSettingsDialog";
 import { LIMIT_DELAY_MS, NewGameDialog } from "../../src/components/NewGameDialog";
 import { ResultCard } from "../../src/components/ResultCard";
@@ -363,6 +376,72 @@ describe("NewGameDialog", () => {
     await userEvent.hover(screen.getByLabelText("About Probability cutoff"));
     const tip = await screen.findByRole("tooltip");
     expect(tip).toHaveTextContent(SETTING_HELP.top_p);
+  });
+
+  it("imports a setup file, keeping the side picked, and exports the one on screen", async () => {
+    const { onPlay } = open();
+    fireEvent.click(screen.getByRole("radio", { name: "Black" }));
+    const click = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => {});
+    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    expect(click).toHaveBeenCalledOnce();
+    advanced();
+    const file = {
+      version: 2,
+      systemone_model: "someone/ranker",
+      k: 3,
+      model_kwargs: { top_p: 1 },
+    };
+    await importFile(JSON.stringify(file));
+    expect(screen.getByLabelText("System 1")).toHaveValue("other");
+    expect(screen.getByLabelText("Candidates for the LLM")).toHaveValue(3);
+    expect(screen.getByLabelText("Model arguments")).toHaveValue('{\n  "top_p": 1\n}');
+    fireEvent.click(screen.getByRole("button", { name: "Export" }));
+    const exported = {
+      ...DEFAULT_CONTEXT,
+      systemone_model: "someone/ranker",
+      k: 3,
+      model_kwargs: { top_p: 1 },
+    };
+    expect(downloads.at(-1)).toEqual(["opponent.json", exported]);
+    await clickPlay();
+    expect(onPlay.mock.calls[0][0].side).toBe("black");
+    expect(onPlay.mock.calls[0][1]).toEqual(exported);
+  });
+
+  it("ignores an import that finishes after the dialog closed", async () => {
+    const view = render(
+      <NewGameDialog
+        open
+        initial={DEFAULT_SETUP}
+        canCancel={false}
+        onPlay={() => {}}
+        onClose={() => {}}
+        onOpenSettings={() => {}}
+        checkKey={() => Promise.resolve({ kind: "ok" })}
+        modelLimit={() => Promise.resolve(KNOWN)}
+      />,
+    );
+    const file = new File(['{"version": 2}'], "opponent.json");
+    fireEvent.change(screen.getByLabelText("Setup file"), { target: { files: [file] } });
+    view.unmount();
+    await act(async () => {});
+    expect(screen.queryByText(/Couldn't import/)).not.toBeInTheDocument();
+  });
+
+  it("says why a file can't be imported, and changes nothing", async () => {
+    open();
+    await importFile("{");
+    expect(screen.getByText("That file isn't JSON.")).toBeInTheDocument();
+    await importFile('{"version": 2, "modle": "x"}');
+    expect(screen.getByText("unknown settings for version 2: modle")).toBeInTheDocument();
+    await importFile('{"version": 2, "k": 2}');
+    expect(screen.queryByText(/Couldn't import/)).not.toBeInTheDocument();
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Setup file"), { target: { files: [] } });
+    });
+    change("LLM", "none");
+    change("System 1", "none");
+    expect(screen.getByRole("button", { name: "Export" })).toBeDisabled();
   });
 
   it("sends no effort with Model default, as models without reasoning need", async () => {

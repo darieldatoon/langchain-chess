@@ -8,7 +8,8 @@ published: nothing imports it, and changing it never redeploys the agent.
 | `langchain_chess_evals/positions/` | The labelled positions dataset. Knows nothing about System 1; any move-choice eval can reuse it. |
 | `langchain_chess_evals/systemone/` | System 1 experiments over that dataset: target, row scores, summary metrics. |
 | `datasets/positions/vN.jsonl` | The committed dataset, one LangSmith example per line, and `vN.manifest.json` beside it. |
-| `experiments/systemone-baseline.toml` | The baseline grid. |
+| `experiments/systemone-baseline.toml` | The baseline grid. An entry names System 1 with `model` and `style`, or with `opponent`: an opponent settings file, next to the eval-only controls such as `max_options`. |
+| `experiments/opponents/` | Opponent settings files the grid references. |
 | `reports/` | Dated, static HTML reports of experiments and tournaments, written in TSX. See [its README](reports/README.md). |
 | `.cache/` (gitignored) | Lichess downloads, the resumable label cache, local copies of run summaries. |
 
@@ -48,6 +49,7 @@ version (`v2`), never an edit of `v1`.
 mise run eval:positions:upload                                  # the committed JSONL into your LangSmith workspace, tagged v1
 mise run eval:systemone -- --model semif-qwen3.5-4b --style rich # one experiment on the dev split
 mise run eval:systemone -- --model typesafe/jev-latest --split full
+mise run eval:systemone -- --opponent experiments/opponents/semif-terse.json
 mise run eval:systemone:baseline                                 # the five baseline runs on full
 ```
 

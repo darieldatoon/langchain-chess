@@ -1,5 +1,7 @@
 # `mise run eval:systemone:baseline`: the model × description style grid, plus a control that
 # forces SemIf's 16-option tournament onto Jev, so the tournament's own cost shows on one model.
+# An entry names System 1 with `model` and `style`, or with `opponent`: an opponent settings
+# file, relative to this one, as every surface reads them.
 
 [[experiment]]
 name = "semif-rich"
@@ -8,8 +10,7 @@ style = "rich"
 
 [[experiment]]
 name = "semif-terse"
-model = "semif-qwen3.5-4b"
-style = "terse"
+opponent = "opponents/semif-terse.json"
 
 [[experiment]]
 name = "jev-rich"

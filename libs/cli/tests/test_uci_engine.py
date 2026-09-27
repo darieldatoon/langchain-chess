@@ -426,3 +426,82 @@ async def test_a_multiline_error_cannot_forge_a_command():
     assert stdout[:2] == ["info string error: upstream failed", "info string bestmove e2e5"]
     assert [line for line in stdout if line.startswith("bestmove")] == stdout[2:]
     assert len(stdout) == 3
+
+
+async def test_a_config_file_replaces_the_settings_and_later_options_patch_it(tmp_path):
+    config = tmp_path / "opponent.json"
+    config.write_text('{"version": 2, "policy": "llm", "k": 3, "draw_claims": "auto"}')
+    factory = Factory([])
+    h = Harness(factory, ChessContext(threshold=0.5))
+    await h.send("uci")
+    assert "option name Config type string default <empty>" in h.lines
+    assert (
+        "option name MoveList type combo default both var both var legal var candidates var none"
+        in h.lines
+    )
+    await h.send(f"setoption name Config value {config}", "setoption name K value 7")
+    settings = h.engine.settings
+    assert (settings.policy, settings.k, settings.threshold) == ("llm", 7, 0.9)
+    assert settings.draw_claims == "never"
+    await h.send("setoption name MoveList value none", "setoption name Config value <empty>")
+    assert (h.engine.settings.policy, h.engine.settings.move_list) == ("hybrid", "both")
+
+
+async def test_a_config_file_that_fails_changes_nothing(tmp_path):
+    h = Harness(Factory([]), ChessContext(k=3))
+    await h.send(f"setoption name Config value {tmp_path / 'missing.json'}")
+    assert h.infos()[0].startswith("invalid value for Config: can't read settings")
+    (tmp_path / "bad.json").write_text('{"version": 2, "k": 0}')
+    await h.send(f"setoption name Config value {tmp_path / 'bad.json'}")
+    assert h.infos()[1].startswith("invalid value for Config:")
+    assert h.engine.settings.k == 3
+
+
+async def test_config_during_a_search_waits_for_it_to_settle(tmp_path):
+    config = tmp_path / "opponent.json"
+    config.write_text('{"version": 2, "k": 2}')
+    h = Harness(Factory(["MOVE: e5"], delay=5.0))
+    await h.send("position startpos moves e2e4", "go infinite")
+    await h.send(f"setoption name Config value {config}")
+    assert h.engine.settings.k == 5
+    await h.send("stop")
+    assert h.engine.settings.k == 2
+
+
+async def test_an_empty_config_is_the_settings_the_engine_started_with(tmp_path):
+    config = tmp_path / "opponent.json"
+    config.write_text('{"version": 2, "k": 2}')
+    started = ChessContext(top_p=0.5, style="terse", k=3)
+    h = Harness(Factory([]), started)
+    await h.send(f"setoption name Config value {config}", "setoption name Config value <empty>")
+    settings = h.engine.settings
+    assert (settings.top_p, settings.style, settings.k) == (0.5, "terse", 3)
+
+
+class Failing(Factory):
+    def __call__(self, settings, checkpointer):
+        if settings.model == "boom":
+            msg = "no such model"
+            raise ValueError(msg)
+        return super().__call__(settings, checkpointer)
+
+
+async def test_a_failing_option_queued_during_a_search_costs_only_itself(tmp_path):
+    config = tmp_path / "opponent.json"
+    config.write_text('{"version": 2, "k": 2}')
+    h = Harness(Failing(["MOVE: e5"], delay=5.0))
+    await h.send("position startpos moves e2e4", "go infinite")
+    await h.send(f"setoption name Config value {config}", "setoption name Model value boom")
+    await h.send("stop")
+    assert h.engine.settings.k == 2
+    assert "options not applied: no such model" in h.infos()
+
+
+async def test_the_engine_keeps_its_seed_within_the_spin_range(tmp_path):
+    config = tmp_path / "opponent.json"
+    config.write_text('{"version": 2, "seed": -5}')
+    h = Harness(Factory([]))
+    await h.send(f"setoption name Config value {config}")
+    assert "the seed must be within 0..2147483647" in h.infos()[0]
+    with pytest.raises(ValueError, match="the seed must be within"):
+        Harness(Factory([]), ChessContext(seed=2**40))

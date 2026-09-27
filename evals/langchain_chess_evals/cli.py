@@ -6,7 +6,7 @@ import os
 import subprocess
 import tomllib
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any, cast
 
 import typer
 from langsmith import Client
@@ -26,9 +26,11 @@ from langchain_chess_evals.systemone.experiment import (
     ExperimentSpec,
     Finished,
     grid,
+    ranker_settings,
     run_experiment,
 )
 from langchain_chess_evals.systemone.summary import headline_table
+from langchain_chess_systemone.settings import load_file
 
 ROOT = Path(__file__).resolve().parents[1]
 POSITIONS_DIR = ROOT / "datasets" / "positions"
@@ -159,8 +161,18 @@ Concurrency = Annotated[int, typer.Option(help="Rankings in flight at once.")]
 
 @systemone.command("run")
 def run_command(
-    model: Annotated[str, typer.Option(help="semif-qwen3.5-4b or typesafe/jev-latest.")],
-    style: Annotated[str, typer.Option(help="rich or terse move descriptions.")] = "rich",
+    model: Annotated[
+        str | None, typer.Option(help="semif-qwen3.5-4b or typesafe/jev-latest.")
+    ] = None,
+    style: Annotated[
+        str | None, typer.Option(help="rich (default) or terse move descriptions.")
+    ] = None,
+    opponent: Annotated[
+        Path | None,
+        typer.Option(
+            exists=True, dir_okay=False, help="An opponent settings file, instead of --model."
+        ),
+    ] = None,
     max_options: Annotated[int | None, typer.Option(help="Cap per Choice.")] = None,
     split: Split = "dev",
     version: Version = "v1",
@@ -169,14 +181,33 @@ def run_command(
     concurrency: Concurrency = MAX_CONCURRENCY,
 ) -> None:
     """One experiment."""
-    if style not in ("rich", "terse"):
+    if (model is None) == (opponent is None):
+        say("error: give --model or --opponent")
+        raise typer.Exit(2)
+    ranker: dict[str, Any] = {"style": style or "rich"}
+    if model is not None:
+        ranker["model"] = model
+    elif style is not None:
+        say("error: --opponent sets the style; leave out --style")
+        raise typer.Exit(2)
+    else:
+        try:
+            ranker = ranker_settings(load_file(cast("Path", opponent)))
+        except ValueError as e:
+            say(f"error: {e}")
+            raise typer.Exit(2) from e
+    chosen: str = ranker["model"]
+    described: str = ranker["style"]
+    if described not in ("rich", "terse"):
         say("error: --style must be rich or terse")
         raise typer.Exit(2)
     spec = ExperimentSpec(
-        name=name or default_name(model, style, max_options),
-        model=model,
-        style=style,
+        name=name or default_name(chosen, described, max_options),
+        model=chosen,
+        style=described,
         max_options=max_options,
+        with_eval=ranker.get("with_eval", False),
+        with_nouls=ranker.get("with_nouls", False),
     )
     done = _run(spec, version=version, split=split, dataset=dataset, concurrency=concurrency)
     typer.echo(headline_table([(done.name, done.url, done.summary)]))
@@ -191,7 +222,11 @@ def baseline_command(
     concurrency: Concurrency = MAX_CONCURRENCY,
 ) -> None:
     """Every experiment in the grid, one after another, then their headline table."""
-    specs = grid(tomllib.loads(config.read_text()))
+    try:
+        specs = grid(tomllib.loads(config.read_text()), config.parent)
+    except ValueError as e:
+        say(f"error: {e}")
+        raise typer.Exit(2) from e
     finished = [
         _run(spec, version=version, split=split, dataset=dataset, concurrency=concurrency)
         for spec in specs
