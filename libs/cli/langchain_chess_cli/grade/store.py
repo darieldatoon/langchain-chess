@@ -138,4 +138,5 @@ class LangSmithStore:
             score=entry.score,
             value=entry.value,
             source_info=entry.source_info,
+            extend_trace_retention=True,
         )

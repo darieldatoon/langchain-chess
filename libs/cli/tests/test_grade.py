@@ -176,6 +176,7 @@ class FakeClient:
         self.runs = list(runs)
         self.feedback = list(feedback)
         self.calls = []
+        self.created = []
 
     def list_runs(self, **kw):
         self.calls.append(("list_runs", kw))
@@ -193,6 +194,7 @@ class FakeClient:
 
     def create_feedback(self, run_id, **kw):
         self.calls.append(("create", run_id, kw["key"], kw["session_id"]))
+        self.created.append(kw)
 
 
 def listed(thread_id):
@@ -245,6 +247,13 @@ def test_replace_drops_this_graders_feedback_and_writes_the_marker_last():
         ("create", "r1", "best_move", "p1"),
         ("create", "r1", REVIEW_KEY, "p1"),
     ]
+
+
+def test_replace_writes_grades_that_extend_the_games_retention():
+    run = RootRun("r1", "p1", T0)
+    client = FakeClient()
+    LangSmithStore(client, write_concurrency=1).replace([run], [Feedback(run, REVIEW_KEY, {})])
+    assert [kw["extend_trace_retention"] for kw in client.created] == [True]
 
 
 def test_replace_clears_the_apps_mark_once_the_game_reads_as_graded():
