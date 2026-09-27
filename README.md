@@ -171,8 +171,9 @@ mise run dev:review
 
 `lcchess grade` replays a game from its traces, grades every move with Stockfish, and writes
 the grades back to the traces as LangSmith feedback. The [review app](apps/review) is a
-LangSmith custom app that replays graded games as an analysis board. It runs through the
-`langsmith` CLI's own credentials, not `.env`, hence the login:
+LangSmith custom app that replays graded games as an analysis board, and its **Analyze** button
+grades a game for you in a LangSmith sandbox. It runs through the `langsmith` CLI's own
+credentials, not `.env`, hence the login:
 
 ![The review app on a System 1 blunder](docs/images/review-blunder.png)
 
@@ -233,9 +234,9 @@ mise tasks           # every task
   plus `ty` and the web checks over the whole repo, and a secret scan. Pre-push runs
   `mise run test`.
 - **CI and deploys.** Pull requests that change more than Markdown run `check` and `test`. A push to `main` that changes the
-  agent (`langchain-chess-app` on LangSmith Deployments, web UI included) or the review app runs
-  them again, then deploys what changed. See [apps/server](apps/server#deploy) and
-  [apps/review](apps/review#publish).
+  agent (`langchain-chess-app` on LangSmith Deployments, web UI included), the review app or
+  its grader snapshot runs them again, then deploys what changed. See
+  [apps/server](apps/server#deploy) and [apps/review](apps/review#publish).
 - **OpenWiki.** [`openwiki/`](openwiki) is a generated wiki of this repo for coding agents.
   `mise run wiki:update` refreshes stale pages; `mise run wiki:view` browses it.
 

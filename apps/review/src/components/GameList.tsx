@@ -3,6 +3,8 @@ import { Card } from "@langchain/macaw-components/Card";
 import { SkeletonRows } from "@langchain/macaw-components/Skeleton";
 import { Text } from "@langchain/macaw-components/Text";
 import { cn } from "@langchain/macaw-components/utils/cn";
+import { ArrowClockwiseIcon } from "@phosphor-icons/react/dist/ssr/ArrowClockwise";
+import { analysisOf, type Analysis } from "../analysis";
 import { resultText, type Game } from "../games";
 import type { Grading } from "../review";
 
@@ -13,21 +15,50 @@ interface Props {
   onSelect: (threadId: string) => void;
   /** Null when there are no more pages. */
   onMore: (() => void) | null;
+  onRefresh: () => void;
+  refreshing: boolean;
+  now: Date;
 }
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 
-export function GameList({ games, selected, loading, onSelect, onMore }: Props) {
+export function GameList({
+  games,
+  selected,
+  loading,
+  onSelect,
+  onMore,
+  onRefresh,
+  refreshing,
+  now,
+}: Props) {
   return (
     <Card intent="neutral" className="flex min-h-0 flex-col gap-space-3" aria-label="games">
-      <Text variant="h4" as="h2" color="secondary">
-        Games
-      </Text>
+      <div className="flex items-center justify-between gap-space-2">
+        <Text variant="h4" as="h2" color="secondary">
+          Games
+        </Text>
+        <Button
+          variant="plain"
+          color="secondary"
+          size="sm"
+          leftDecorator={ArrowClockwiseIcon}
+          loading={refreshing}
+          onClick={onRefresh}
+        >
+          Refresh
+        </Button>
+      </div>
       <ul className="flex min-h-0 flex-col gap-space-1 overflow-auto">
         {games.map((game) => (
           <li key={game.threadId}>
-            <GameRow game={game} current={game.threadId === selected} onSelect={onSelect} />
+            <GameRow
+              game={game}
+              analysis={analysisOf(game.mark, now)}
+              current={game.threadId === selected}
+              onSelect={onSelect}
+            />
           </li>
         ))}
       </ul>
@@ -48,10 +79,12 @@ export function GameList({ games, selected, loading, onSelect, onMore }: Props) 
 
 function GameRow({
   game,
+  analysis,
   current,
   onSelect,
 }: {
   game: Game;
+  analysis: Analysis | null;
   current: boolean;
   onSelect: (threadId: string) => void;
 }) {
@@ -80,16 +113,22 @@ function GameRow({
         </Text>
         <Text
           variant="xs"
-          color={game.grading.status === "graded" ? "secondary" : "tertiary"}
+          color={game.grading.status === "graded" && !analysis ? "secondary" : "tertiary"}
           as="span"
           className="shrink-0 whitespace-nowrap"
         >
-          {gradeText(game.grading)}
+          {analysis ? ANALYSIS_TEXT[analysis.status] : gradeText(game.grading)}
         </Text>
       </span>
     </button>
   );
 }
+
+const ANALYSIS_TEXT: Record<Analysis["status"], string> = {
+  analyzing: "Analyzing…",
+  stalled: "Analysis didn't finish",
+  failed: "Analysis failed",
+};
 
 function gradeText(grading: Grading): string {
   switch (grading.status) {

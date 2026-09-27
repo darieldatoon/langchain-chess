@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { DEFAULT_PLY_VIEW } from "@langchain-chess/chess-ui";
 import { describe, expect, it, vi } from "vite-plus/test";
+import type { Analysis, LaunchState } from "../src/analysis";
 import { EvalBar } from "../src/components/EvalBar";
 import { GameList } from "../src/components/GameList";
 import { GameView } from "../src/components/GameView";
@@ -14,7 +15,13 @@ vi.mock("@langchain/macaw-components/LineChart", async () =>
   (await import("./support/mocks")).lineChartMock(),
 );
 
-const renderView = (g = game(), onOpenRun = vi.fn()) =>
+interface ViewExtras {
+  analysis?: Analysis | null;
+  launch?: LaunchState;
+  onAnalyze?: () => void;
+}
+
+const renderView = (g = game(), onOpenRun = vi.fn(), extras: ViewExtras = {}) =>
   render(
     <HostTheme mode="light">
       <GameView
@@ -23,6 +30,9 @@ const renderView = (g = game(), onOpenRun = vi.fn()) =>
         view={DEFAULT_PLY_VIEW}
         onViewChange={() => {}}
         onOpenRun={onOpenRun}
+        analysis={extras.analysis ?? null}
+        launch={extras.launch}
+        onAnalyze={extras.onAnalyze ?? (() => {})}
       />
     </HostTheme>,
   );
@@ -94,6 +104,9 @@ describe("GameList", () => {
     loading: false,
     onSelect: vi.fn(),
     onMore: null,
+    onRefresh: vi.fn(),
+    refreshing: false,
+    now: new Date("2026-09-25T12:00:00Z"),
   };
 
   it("lists games with their result, plies and accuracy", () => {
@@ -123,10 +136,27 @@ describe("GameList", () => {
     expect(screen.getByText("88 / –")).toBeInTheDocument();
     expect(screen.getByText("– / 70")).toBeInTheDocument();
     expect(screen.getByText("Unreadable review")).toBeInTheDocument();
-    const rows = screen.getAllByRole("button");
+    const [, ...rows] = screen.getAllByRole("button");
     expect(rows[1]).toHaveAttribute("aria-current", "true");
     fireEvent.click(rows[2]);
     expect(onSelect).toHaveBeenCalledWith("t3");
+  });
+
+  it("shows where each game's analysis stands, and refreshes", () => {
+    const onRefresh = vi.fn();
+    const mark = (startedAt: string) => ({ status: "analyzing" as const, id: "m", startedAt });
+    const games = [
+      game({ threadId: "t1", mark: mark("2026-09-25T11:58:00Z") }),
+      game({ threadId: "t2", mark: mark("2026-09-25T11:00:00Z") }),
+      game({ threadId: "t3", mark: { status: "failed", id: "m", log: "" } }),
+    ];
+    render(<GameList {...base} games={games} onRefresh={onRefresh} />);
+    expect(screen.getByText("Analyzing…")).toBeInTheDocument();
+    expect(screen.getByText("Analysis didn't finish")).toBeInTheDocument();
+    expect(screen.getByText("Analysis failed")).toBeInTheDocument();
+    expect(screen.queryByText("98 / 61")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+    expect(onRefresh).toHaveBeenCalled();
   });
 
   it("shows loading, empty and load-more states", () => {
@@ -209,19 +239,87 @@ describe("GameView", () => {
     expect(onOpenRun).toHaveBeenLastCalledWith("run-3");
   });
 
-  it("shows an ungraded game without engine output", () => {
-    renderView(game({ grading: UNGRADED }));
+  it("offers to analyze an ungraded game, which shows no engine output", () => {
+    const onAnalyze = vi.fn();
+    renderView(game({ grading: UNGRADED }), vi.fn(), { onAnalyze });
     expect(screen.getByText("Not graded yet")).toBeInTheDocument();
+    expect(screen.getByText("lcchess grade --thread thread-1")).toBeInTheDocument();
     expect(screen.queryByLabelText(/^evaluation/)).toBeNull();
     expect(screen.queryByLabelText("engine grade")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Re-analyze" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Analyze" }));
+    expect(onAnalyze).toHaveBeenCalled();
   });
 
-  it("says why a review can't be drawn instead of drawing it", () => {
-    renderView(game({ grading: { status: "invalid", problem: "evaluation 3 is malformed" } }));
+  it("says why a review can't be drawn instead of drawing it, and offers to redo it", () => {
+    const onAnalyze = vi.fn();
+    const g = game({ grading: { status: "invalid", problem: "evaluation 3 is malformed" } });
+    renderView(g, vi.fn(), { onAnalyze });
     expect(screen.getByText(/evaluation 3 is malformed/)).toBeInTheDocument();
     expect(screen.getByText("lcchess grade --thread thread-1 --force")).toBeInTheDocument();
     expect(screen.queryByLabelText(/^evaluation/)).toBeNull();
     expect(current()).toBe("Qxf7#");
+    fireEvent.click(screen.getByRole("button", { name: "Re-analyze" }));
+    expect(onAnalyze).toHaveBeenCalled();
+  });
+
+  it("re-analyzes a graded game from the board's controls", () => {
+    const onAnalyze = vi.fn();
+    const { rerender } = renderView(game(), vi.fn(), { onAnalyze });
+    fireEvent.click(screen.getByRole("button", { name: "Re-analyze" }));
+    expect(onAnalyze).toHaveBeenCalled();
+    expect(screen.queryByRole("alert")).toBeNull();
+    rerender(
+      <HostTheme mode="light">
+        <GameView
+          game={game()}
+          values={values()}
+          view={DEFAULT_PLY_VIEW}
+          onViewChange={() => {}}
+          onOpenRun={() => {}}
+          analysis={null}
+          launch={{ status: "starting" }}
+          onAnalyze={onAnalyze}
+        />
+      </HostTheme>,
+    );
+    expect(screen.getByRole("button", { name: /Re-analyze/ })).toBeDisabled();
+  });
+
+  it("shows a running analysis, and hides the button meanwhile", () => {
+    renderView(game(), vi.fn(), { analysis: { status: "analyzing" } });
+    expect(screen.getByText("Analyzing…")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /analyze/i })).toBeNull();
+    expect(screen.getByLabelText("engine grade")).toBeInTheDocument();
+    renderView(game({ grading: UNGRADED }), vi.fn(), { launch: { status: "started" } });
+    expect(screen.getAllByText("Analyzing…")).toHaveLength(2);
+    expect(screen.queryByText("Not graded yet")).toBeNull();
+  });
+
+  it("offers a retry after an analysis stalls, fails or can't start", () => {
+    const onAnalyze = vi.fn();
+    const mark = { status: "failed" as const, id: "m", log: "RuntimeError: engine died" };
+    renderView(game({ grading: UNGRADED }), vi.fn(), {
+      analysis: { status: "stalled", mark },
+      onAnalyze,
+    });
+    expect(screen.getByText("Analysis didn't finish")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(onAnalyze).toHaveBeenCalledTimes(1);
+
+    renderView(game(), vi.fn(), { analysis: { status: "failed", mark, log: mark.log } });
+    expect(screen.getByText("Analysis failed")).toBeInTheDocument();
+    expect(screen.getByText("RuntimeError: engine died")).toBeInTheDocument();
+    renderView(game(), vi.fn(), { analysis: { status: "failed", mark, log: "" } });
+    expect(screen.getByText("The job left no log.")).toBeInTheDocument();
+
+    renderView(game(), vi.fn(), {
+      launch: { status: "error", message: "Sandboxes aren't enabled for this organization." },
+    });
+    expect(screen.getByText("Analysis couldn't start")).toBeInTheDocument();
+    expect(screen.getByText(/Sandboxes aren't enabled/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Re-analyze" })).toBeNull();
   });
 
   it("copes with missing plies, turns and moves", () => {

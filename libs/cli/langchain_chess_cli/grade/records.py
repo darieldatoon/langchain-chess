@@ -12,6 +12,9 @@ from langchain_chess.state import JSONValue, Outcome
 
 GRADER = "lcchess grade"
 REVIEW_KEY = "game_review"
+STATUS_KEY = "grade_status"
+"""The review app's mark on a game it launched a grading job for: `analyzing`, then `failed`."""
+FAILED = "failed"
 PLY_KEYS = ("move_quality", "cp_loss", "win_pct_loss", "best_move")
 GAME_KEYS = ("accuracy_white", "accuracy_black", REVIEW_KEY)
 KEYS = (*PLY_KEYS, *GAME_KEYS)

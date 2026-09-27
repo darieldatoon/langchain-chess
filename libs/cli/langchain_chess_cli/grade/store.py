@@ -7,7 +7,15 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from langchain_chess_cli.grade.records import GRADER, KEYS, REVIEW_KEY, Feedback, RootRun
+from langchain_chess_cli.grade.records import (
+    FAILED,
+    GRADER,
+    KEYS,
+    REVIEW_KEY,
+    STATUS_KEY,
+    Feedback,
+    RootRun,
+)
 
 if TYPE_CHECKING:
     from langsmith import Client
@@ -83,24 +91,43 @@ class LangSmithStore:
     def replace(self, runs: Sequence[RootRun], entries: Sequence[Feedback]) -> None:
         """Drop this grader's earlier feedback on the game's runs, then write `entries`.
 
-        The last entry is written only after all the others: it marks the game as graded.
+        The last entry is written only after all the others: it marks the game as graded. The
+        review app's `grade_status` mark goes after that, so the game never reads as neither.
         """
         stale = [
             fb
             for fb in self._client.list_feedback(
-                run_ids=[r.id for r in runs], feedback_key=list(KEYS)
+                run_ids=[r.id for r in runs], feedback_key=[*KEYS, STATUS_KEY]
             )
             if _ours(fb) is not None
         ]
         # The game reads as graded while an old marker survives, so markers go first.
         markers = [f.id for f in stale if f.key == REVIEW_KEY]
-        others = [f.id for f in stale if f.key != REVIEW_KEY]
+        others = [f.id for f in stale if f.key in KEYS and f.key != REVIEW_KEY]
+        statuses = [f.id for f in stale if f.key == STATUS_KEY]
         *rest, marker = entries
         with ThreadPoolExecutor(self._write_concurrency) as pool:
             list(pool.map(self._client.delete_feedback, markers))
             list(pool.map(self._client.delete_feedback, others))
             list(pool.map(self._create, rest))
         self._create(marker)
+        for status in statuses:
+            self._client.delete_feedback(status)
+
+    def settle(self, runs: Sequence[RootRun], failure: str | None) -> None:
+        """Clear the `grade_status` marks on these runs, or fail them, `failure` saying why."""
+        # No runs would be no filter at all: every mark in the workspace.
+        if not runs:
+            return
+        for fb in self._client.list_feedback(
+            run_ids=[r.id for r in runs], feedback_key=[STATUS_KEY]
+        ):
+            if _ours(fb) is None:
+                continue
+            if failure is None:
+                self._client.delete_feedback(fb.id)
+            else:
+                self._client.update_feedback(fb.id, value=FAILED, comment=failure)
 
     def _create(self, entry: Feedback) -> None:
         self._client.create_feedback(

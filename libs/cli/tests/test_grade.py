@@ -2,8 +2,10 @@ import asyncio
 import contextlib
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
+from typing import ClassVar
 
 import chess
+import click
 import pytest
 from typer.testing import CliRunner
 
@@ -11,7 +13,7 @@ from langchain_chess.engine import Grader, SearchLimit
 from langchain_chess.grading import Analysis, Cp, Line
 from langchain_chess.testing import FAKE_ENGINE_NAME, fake_engine
 from langchain_chess_cli import main
-from langchain_chess_cli.grade import cli
+from langchain_chess_cli.grade import cli, job
 from langchain_chess_cli.grade.batch import (
     Graded,
     Planned,
@@ -21,8 +23,10 @@ from langchain_chess_cli.grade.batch import (
     grade_batch,
 )
 from langchain_chess_cli.grade.records import (
+    FAILED,
     GRADER,
     REVIEW_KEY,
+    STATUS_KEY,
     Feedback,
     RootRun,
     feedback,
@@ -184,6 +188,9 @@ class FakeClient:
     def delete_feedback(self, feedback_id):
         self.calls.append(("delete", feedback_id))
 
+    def update_feedback(self, feedback_id, **kw):
+        self.calls.append(("update", feedback_id, kw))
+
     def create_feedback(self, run_id, **kw):
         self.calls.append(("create", run_id, kw["key"], kw["session_id"]))
 
@@ -240,6 +247,30 @@ def test_replace_drops_this_graders_feedback_and_writes_the_marker_last():
     ]
 
 
+def test_replace_clears_the_apps_mark_once_the_game_reads_as_graded():
+    run = RootRun("r1", "p1", T0)
+    client = FakeClient(feedback=[fb(STATUS_KEY, "r1"), fb(STATUS_KEY, "r1", grader="human")])
+    LangSmithStore(client, write_concurrency=1).replace([run], [Feedback(run, REVIEW_KEY, {})])
+    ops = [c for c in client.calls if c[0] != "list_feedback"]
+    assert ops == [("create", "r1", REVIEW_KEY, "p1"), ("delete", f"r1/{STATUS_KEY}/{GRADER}")]
+
+
+def test_settle_clears_or_fails_this_graders_marks():
+    runs = [RootRun("r0", "p1", T0), RootRun("r1", "p1", T0)]
+    marks = [fb(STATUS_KEY, "r1"), fb(STATUS_KEY, "r1", grader="human"), fb(REVIEW_KEY, "r1")]
+    client = FakeClient(feedback=marks)
+    store = LangSmithStore(client)
+    store.settle(runs, None)
+    store.settle(runs, "engine died")
+    store.settle([], "engine died")
+    ops = [c for c in client.calls if c[0] != "list_feedback"]
+    assert ops == [
+        ("delete", f"r1/{STATUS_KEY}/{GRADER}"),
+        ("update", f"r1/{STATUS_KEY}/{GRADER}", {"value": FAILED, "comment": "engine died"}),
+    ]
+    assert [c[1] for c in client.calls if c[0] == "list_feedback"] == [["r0", "r1"]] * 2
+
+
 class FlakyClient(FakeClient):
     """Deletes for real, but fails deleting the feedback keyed `broken`."""
 
@@ -279,6 +310,7 @@ class FakeStore:
         self.threads = list(threads)
         self.queries = []
         self.writes = []
+        self.settled = []
 
     def find_threads(self, query):
         self.queries.append(query)
@@ -292,6 +324,9 @@ class FakeStore:
 
     def replace(self, runs, entries):
         self.writes.append(([r.id for r in runs], [e.key for e in entries]))
+
+    def settle(self, runs, failure):
+        self.settled.append(([r.id for r in runs], failure))
 
 
 class FakePool:
@@ -405,6 +440,58 @@ async def test_a_failure_keeps_the_games_already_written():
     assert [w[0] for w in store.writes] == [["a-r0"]]
 
 
+# the sandbox job
+
+
+def test_verdicts_settle_each_ungraded_game():
+    record = game_record("a", web_game("a", ITALIAN[:1]))
+    events = [
+        Skipped("x", "no_game"),
+        Skipped("y", "graded"),
+        Graded(record, _grade(record), 2, 2, 0.5),
+    ]
+    ids = ["a", "x", "y", "z", "z"]
+    assert job.verdicts(ids, events, None) == {"x": job.NO_GAME, "y": None, "z": None}
+    assert job.verdicts(ids, events, "log")["z"] == "log"
+
+
+def job_run(store, pools, deleted, lines, threads=("a", "x")):
+    async def batch(report):
+        return await grade_batch(Threads("proj", threads), store, pools, workers=1, report=report)
+
+    return job.sandbox_job(
+        Threads("proj", threads),
+        store,
+        batch,
+        echo=lines.append,
+        delete_sandbox=lambda: deleted.append(True),
+    )
+
+
+async def test_a_sandbox_job_settles_the_marks_then_deletes_its_sandbox():
+    store = FakeStore({"a": web_game("a", ITALIAN[:2])})
+    deleted, lines = [], []
+    summary = await job_run(store, fake_pools([], []), deleted, lines)
+    assert summary == Summary(graded=1, skipped=1, positions=3)
+    assert store.settled == [([], job.NO_GAME)]
+    assert deleted == [True]
+    assert lines[0] == "skip x: no game in its traces"
+
+
+async def test_a_failed_sandbox_job_fails_the_unwritten_games_with_the_log_tail():
+    games = {"a": web_game("a", ["d2d4", "d7d5"])}
+    fail_on = game_record("a", games["a"]).positions[1].fen
+    store = FakeStore(games)
+    deleted, lines = [], []
+    with pytest.raises(RuntimeError, match="engine died"):
+        await job_run(store, fake_pools([], [], fail_on), deleted, lines, threads=("a",))
+    [(runs, failure)] = store.settled
+    assert runs == ["a-r0"]
+    assert failure.startswith("grading 1 games, 3 positions")
+    assert failure.endswith("RuntimeError: engine died")
+    assert deleted == [True]
+
+
 # options and output
 
 
@@ -491,6 +578,51 @@ def test_grade_command_end_to_end(monkeypatch, tmp_path):
     )
     assert result.exit_code == 0, result.output
     assert "done:" not in result.output
+
+
+def test_grade_command_as_a_sandbox_job(monkeypatch, tmp_path):
+    store = FakeStore({"a": web_game("a", ITALIAN)})
+    deleted = []
+    monkeypatch.setattr(main, "make_client", lambda: "client")
+    monkeypatch.setattr("langchain_chess_cli.grade.store.LangSmithStore", lambda client: store)
+    monkeypatch.setattr(main, "delete_own_sandbox", lambda echo: deleted.append(echo))
+    args = ["grade", "--project", "proj", "--engine", fake_engine(tmp_path), "--depth", "1"]
+    result = CliRunner().invoke(app, [*args, "--thread", "a", "--thread", "b", "--sandbox-job"])
+    assert result.exit_code == 0, result.output
+    assert "done: 1 graded, 1 skipped" in result.output
+    assert store.settled == [([], job.NO_GAME)]
+    assert len(deleted) == 1
+
+    result = CliRunner().invoke(app, [*args, "--sandbox-job"])
+    assert result.exit_code == 2
+    assert "grades the games" in click.unstyle(result.output)
+
+
+class FakeSandboxes:
+    deleted: ClassVar[list[str]] = []
+    fail = False
+
+    def delete_sandbox(self, name):
+        if self.fail:
+            msg = "403 forbidden"
+            raise RuntimeError(msg)
+        self.deleted.append(name)
+
+
+def test_delete_own_sandbox(monkeypatch):
+    monkeypatch.setattr("langsmith.sandbox.SandboxClient", FakeSandboxes)
+    lines = []
+    monkeypatch.delenv("LANGSMITH_SANDBOX_NAME", raising=False)
+    main.delete_own_sandbox(lines.append)
+    monkeypatch.setenv("LANGSMITH_SANDBOX_NAME", "lcchess-grade-a")
+    main.delete_own_sandbox(lines.append)
+    assert FakeSandboxes.deleted == ["lcchess-grade-a"]
+    monkeypatch.setattr(FakeSandboxes, "fail", True)
+    main.delete_own_sandbox(lines.append)
+    assert lines == [
+        "not in a sandbox: nothing to delete",
+        "could not delete sandbox lcchess-grade-a: 403 forbidden",
+    ]
 
 
 def test_grade_command_rejects_bad_options():

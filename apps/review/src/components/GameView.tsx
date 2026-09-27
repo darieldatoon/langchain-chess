@@ -1,4 +1,3 @@
-import { Banner } from "@langchain/macaw-components/Banner";
 import { Button } from "@langchain/macaw-components/Button";
 import { Card } from "@langchain/macaw-components/Card";
 import { Text } from "@langchain/macaw-components/Text";
@@ -24,7 +23,9 @@ import {
 } from "@langchain-chess/chess-ui";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react/dist/ssr/ArrowSquareOut";
 import { useCallback, useMemo, useState } from "react";
+import type { Analysis, LaunchState } from "../analysis";
 import type { Game } from "../games";
+import { AnalysisBanner } from "./AnalysisBanner";
 import { EvalBar } from "./EvalBar";
 import { EvalGraph } from "./EvalGraph";
 import { GradeCard } from "./GradeCard";
@@ -35,11 +36,23 @@ interface Props {
   view: PlyView;
   onViewChange: (view: PlyView) => void;
   onOpenRun: (runId: string) => void;
+  analysis: Analysis | null;
+  launch: LaunchState | undefined;
+  onAnalyze: () => void;
 }
 
 const NO_MOVES: string[] = [];
 
-export function GameView({ game, values, view, onViewChange, onOpenRun }: Props) {
+export function GameView({
+  game,
+  values,
+  view,
+  onViewChange,
+  onOpenRun,
+  analysis,
+  launch,
+  onAnalyze,
+}: Props) {
   const startFen = fenOrStart(values.start_fen);
   const moves = values.moves ?? NO_MOVES;
   const plies = values.plies ?? [];
@@ -115,6 +128,18 @@ export function GameView({ game, values, view, onViewChange, onOpenRun }: Props)
             <Text variant="sm" color="secondary" className="min-w-0 flex-1 truncate text-center">
               {values.outcome ? outcomeLine(values.outcome) : "In progress"}
             </Text>
+            {review && !analysis && (!launch || launch.status === "starting") && (
+              <Button
+                variant="outlined"
+                color="secondary"
+                size="sm"
+                loading={launch?.status === "starting"}
+                disabled={launch?.status === "starting"}
+                onClick={onAnalyze}
+              >
+                Re-analyze
+              </Button>
+            )}
             <Button
               variant="outlined"
               color="secondary"
@@ -126,7 +151,14 @@ export function GameView({ game, values, view, onViewChange, onOpenRun }: Props)
             </Button>
           </BoardControls>
         </Card>
-        {review ? (
+        <AnalysisBanner
+          threadId={game.threadId}
+          grading={grading}
+          analysis={analysis}
+          launch={launch}
+          onAnalyze={onAnalyze}
+        />
+        {review && (
           <>
             <GradeCard
               move={
@@ -147,16 +179,6 @@ export function GameView({ game, values, view, onViewChange, onOpenRun }: Props)
               <EvalGraph evals={review.evals} index={index} onSelect={go} />
             </Card>
           </>
-        ) : grading.status === "invalid" ? (
-          <Banner intent="warning" title="Review unreadable">
-            The engine review can't be drawn: {grading.problem}. Regrade it with{" "}
-            <code>lcchess grade --thread {game.threadId} --force</code>.
-          </Banner>
-        ) : (
-          <Banner intent="info" title="Not graded yet">
-            Grade it with <code>lcchess grade --thread {game.threadId}</code> to see engine
-            evaluations here.
-          </Banner>
         )}
       </section>
 

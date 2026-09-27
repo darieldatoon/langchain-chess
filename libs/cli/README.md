@@ -147,6 +147,9 @@ flowchart LR
   `blunder`, and `cp_loss` is how many centipawns (hundredths of a pawn) the move gave away. Moves that came in as input (yours, in the web UI) count toward `game_review` and
   the accuracies but get no per-turn feedback. Every entry's source info records the engine, the
   settings and their fingerprint.
+- **From the review app.** The app's Analyze button runs `lcchess grade --thread <id>
+  --sandbox-job` in a LangSmith sandbox. `--sandbox-job` settles the app's `grade_status` mark
+  (cleared on success, `failed` with the log's last lines otherwise), then deletes its own sandbox.
 
 ## Test
 

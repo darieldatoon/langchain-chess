@@ -15,7 +15,11 @@ from langgraph.types import Checkpointer
 from langchain_chess_cli.options import AgentOptions, build_agent
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Coroutine
+
     from langsmith import Client
+
+    from langchain_chess_cli.grade.batch import Summary
 
 app = typer.Typer(
     name="lcchess",
@@ -212,11 +216,18 @@ def grade(
     workers: Annotated[
         int | None, typer.Option(min=1, help="Engines in parallel (default: cores / threads).")
     ] = None,
+    sandbox_job: Annotated[
+        bool,
+        typer.Option(
+            help="As the review app's Analyze job: settle each game's grade_status mark, "
+            "then delete this sandbox."
+        ),
+    ] = False,
 ) -> None:
     """Grade games with a UCI engine and write the grades to their traces as feedback."""
     from langchain_chess.engine import EngineConfig, EnginePool
-    from langchain_chess_cli.grade import cli
-    from langchain_chess_cli.grade.batch import grade_batch
+    from langchain_chess_cli.grade import cli, job
+    from langchain_chess_cli.grade.batch import Event, Threads, grade_batch
     from langchain_chess_cli.grade.store import LangSmithStore
 
     try:
@@ -235,25 +246,51 @@ def grade(
             threads=engine_threads,
             hash_mb=hash_mb,
         )
+        if sandbox_job and not isinstance(chosen, Threads):
+            msg = "--sandbox-job grades the games given with --thread"
+            raise cli.OptionError(msg)
     except cli.OptionError as e:
         raise typer.BadParameter(str(e)) from e
 
     def echo(line: str) -> None:
         typer.echo(line, err=True)
 
-    summary = asyncio.run(
-        grade_batch(
+    store = LangSmithStore(make_client())
+
+    def batch(report: "Callable[[Event], None]") -> "Coroutine[None, None, Summary]":
+        return grade_batch(
             chosen,
-            LangSmithStore(make_client()),
+            store,
             lambda n: EnginePool(config, n),
             workers=workers or max(1, (os.cpu_count() or 1) // engine_threads),
             force=force,
             dry_run=dry_run,
-            report=cli.printer(echo),
+            report=report,
         )
-    )
+
+    if isinstance(chosen, Threads) and sandbox_job:
+        run = job.sandbox_job(
+            chosen, store, batch, echo=echo, delete_sandbox=lambda: delete_own_sandbox(echo)
+        )
+    else:
+        run = batch(cli.printer(echo))
+    summary = asyncio.run(run)
     if not dry_run:
         echo(f"done: {summary.graded} graded, {summary.skipped} skipped")
+
+
+def delete_own_sandbox(echo: "Callable[[str], None]") -> None:
+    """The idle TTL is the backstop when this fails, so a failure is only reported."""
+    from langsmith.sandbox import SandboxClient
+
+    name = os.environ.get("LANGSMITH_SANDBOX_NAME")
+    if not name:
+        echo("not in a sandbox: nothing to delete")
+        return
+    try:
+        SandboxClient().delete_sandbox(name)
+    except Exception as e:
+        echo(f"could not delete sandbox {name}: {e}")
 
 
 def make_client() -> "Client":
