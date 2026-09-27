@@ -4,6 +4,8 @@ import { Slider } from "@langchain/macaw-components/Slider";
 import { Switch } from "@langchain/macaw-components/Switch";
 import { Text } from "@langchain/macaw-components/Text";
 import { Textarea } from "@langchain/macaw-components/Textarea";
+import { Tooltip } from "@langchain/macaw-components/Tooltip";
+import { InfoIcon } from "@phosphor-icons/react/dist/ssr/Info";
 import { useEffect, useState } from "react";
 import { parseKnob, parseNullableKnob, sliderValue } from "../format";
 import { CONTEXT_CHECKS } from "../settings";
@@ -17,6 +19,9 @@ import {
   type Summarize,
 } from "../setup";
 import {
+  SETTING_HELP,
+  SETTING_LABELS,
+  type SettingKey,
   type DescriptionStyle,
   type DrawClaims,
   type GateSignal,
@@ -51,11 +56,11 @@ const EFFORTS: SelectOption<ReasoningEffort | "default">[] = [
 ];
 /** Select values are strings; memory is a boolean. */
 const memories = (summarize: Summarize): SelectOption<"off" | "on">[] => [
-  { value: "off", label: "None", description: "Each turn sees only the current position" },
+  { value: "off", label: "Off", description: "Each turn sees only the current position" },
   {
     value: "on",
     label: "Summarize",
-    description: "The conversation, summarized at 70% of the model's input limit",
+    description: "Earlier turns, summarized when they fill 70% of the model's input limit",
     disabled: summarize === "no",
   },
 ];
@@ -66,17 +71,23 @@ const MOVE_LISTS: SelectOption<ListedMoves>[] = [
   { value: "none", label: "None" },
 ];
 const DRAW_CLAIMS: SelectOption<DrawClaims>[] = [
-  { value: "auto", label: "Auto", description: "Threefold and fifty-move draws end the game" },
-  { value: "never", label: "Never", description: "Only forced draws end the game" },
+  { value: "auto", label: "Yes", description: "Threefold repetition and fifty moves end the game" },
+  { value: "never", label: "No", description: "Only forced draws end the game" },
 ];
 const STYLES: SelectOption<DescriptionStyle>[] = [
-  { value: "rich", label: "Rich", description: "Captures, checks, exchange results" },
-  { value: "terse", label: "Terse", description: "Move names only" },
+  { value: "rich", label: "Detailed", description: "Captures, checks, exchange results" },
+  { value: "terse", label: "Names only", description: "Just the move, e.g. Nf3" },
 ];
 const GATES: SelectOption<GateSignal>[] = [
-  { value: "margin", label: "Margin", description: "Top-1 minus top-2 probability" },
-  { value: "confidence", label: "Confidence", description: "System 1's Choice confidence" },
+  {
+    value: "margin",
+    label: "Lead over the next move",
+    description: "The top move's probability minus the second's",
+  },
+  { value: "confidence", label: "Its own confidence", description: "System 1's confidence score" },
 ];
+
+const L = SETTING_LABELS;
 
 /** The knobs behind the pickers; only the sections the chosen opponent uses are shown. */
 export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onValidity }: Props) {
@@ -94,31 +105,28 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
     isValid: (v: string) => parseNullableKnob(v, CONTEXT_CHECKS[key]) !== undefined,
     onChange: (v: string) => set(key, parseNullableKnob(v, CONTEXT_CHECKS[key])),
   });
+  const toggle = (key: "show_fen" | "show_board" | "with_eval" | "with_nouls") => (
+    <div className="flex items-center gap-space-2">
+      <Switch label={L[key]} checked={knobs[key]} onChange={(v) => set(key, v)} />
+      <Info setting={key} />
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-space-5">
       {sections.llm && (
         <Section title="LLM">
-          <Textarea
-            id="system-prompt"
-            label="System Prompt"
-            value={knobs.system_prompt ?? ""}
-            placeholder="The bundled prompt"
-            rows={3}
-            hintText="Replaces the bundled prompt. Each turn still asks for MOVE: <move>."
-            onChange={(v) => set("system_prompt", v.trim() === "" ? null : v)}
-          />
           <Field
             id="effort"
-            label="Reasoning Effort"
+            setting="reasoning_effort"
             hint={
               effortOverridden(knobs)
-                ? "Model kwargs set the effort, so this is ignored."
+                ? "Model arguments set the effort, so this is ignored."
                 : undefined
             }
           >
             <Select
-              aria-label="Reasoning Effort"
+              aria-label={L.reasoning_effort}
               size="md"
               value={knobs.reasoning_effort ?? "default"}
               options={EFFORTS}
@@ -126,19 +134,18 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
               onChange={(v) => set("reasoning_effort", v === "default" ? null : v)}
             />
           </Field>
-          <Switch
-            label="Show the FEN"
-            checked={knobs.show_fen}
-            onChange={(v) => set("show_fen", v)}
-          />
-          <Switch
-            label="Show the board"
-            checked={knobs.show_board}
-            onChange={(v) => set("show_board", v)}
-          />
-          <Field id="move-list" label="Moves Listed">
+          <Field id="system-prompt" setting="system_prompt">
+            <Textarea
+              aria-label={L.system_prompt}
+              value={knobs.system_prompt ?? ""}
+              placeholder="The bundled prompt"
+              rows={3}
+              onChange={(v) => set("system_prompt", v.trim() === "" ? null : v)}
+            />
+          </Field>
+          <Field id="move-list" setting="move_list">
             <Select
-              aria-label="Moves Listed"
+              aria-label={L.move_list}
               size="md"
               value={knobs.move_list}
               options={MOVE_LISTS}
@@ -146,19 +153,21 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
               onChange={(v) => set("move_list", v)}
             />
           </Field>
+          {toggle("show_fen")}
+          {toggle("show_board")}
           <Field
             id="memory"
-            label="Memory"
+            setting="memory"
             hint={
               summarize === "no"
                 ? "This model has no known input limit, so it can't summarize."
                 : summarize === "unknown"
                   ? "Couldn't reach the server to check this model's input limit."
-                  : "What the model sees of earlier turns."
+                  : undefined
             }
           >
             <Select
-              aria-label="Memory"
+              aria-label={L.memory}
               size="md"
               value={memoryOf(knobs, summarize) ? "on" : "off"}
               options={memories(summarize)}
@@ -176,9 +185,9 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
 
       {sections.systemOne && (
         <Section title="System 1">
-          <Field id="style" label="Move Descriptions">
+          <Field id="style" setting="style">
             <Select
-              aria-label="Move Descriptions"
+              aria-label={L.style}
               size="md"
               value={knobs.style}
               options={STYLES}
@@ -186,21 +195,13 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
               onChange={(v) => set("style", v)}
             />
           </Field>
-          <Switch
-            label="Ask for a position Score"
-            checked={knobs.with_eval}
-            onChange={(v) => set("with_eval", v)}
-          />
-          <Switch
-            label="Ask the Noul questions"
-            checked={knobs.with_nouls}
-            onChange={(v) => set("with_nouls", v)}
-          />
+          {toggle("with_eval")}
+          {toggle("with_nouls")}
           {sections.gate ? (
             <>
-              <Field id="gate" label="Signal">
+              <Field id="gate" setting="gate">
                 <Select
-                  aria-label="Signal"
+                  aria-label={L.gate}
                   size="md"
                   value={knobs.gate}
                   options={GATES}
@@ -210,7 +211,7 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
               </Field>
               <Field
                 id="threshold"
-                label="Threshold"
+                setting="threshold"
                 hint="0 lets System 1 play every move, 1 hands every move to the LLM."
                 trailing={
                   <Text variant="sm" as="span" className="font-mono" data-testid="threshold-value">
@@ -219,7 +220,7 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
                 }
               >
                 <Slider
-                  aria-label="Threshold"
+                  aria-label={L.threshold}
                   min={0}
                   max={1}
                   step={0.05}
@@ -229,21 +230,19 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
               </Field>
               <NumberField
                 id="tournament-threshold"
-                label="Tournament Threshold"
+                setting="tournament_threshold"
                 {...nullable("tournament_threshold")}
-                placeholder="Same as threshold"
-                hintText="Used after a tournament. Empty uses the threshold."
+                placeholder="Same as above"
                 min={0}
                 max={1}
                 step={0.05}
               />
-              <NumberField id="k" label="Shortlist Size" {...number("k")} min={1} max={255} />
+              <NumberField id="k" setting="k" {...number("k")} min={1} max={255} />
               <NumberField
                 id="top-p"
-                label="Top-p"
+                setting="top_p"
                 {...nullable("top_p")}
                 placeholder="Off"
-                hintText="Cut the shortlist at this probability mass instead. Empty uses the size."
                 min={0}
                 max={1}
                 step={0.05}
@@ -251,16 +250,17 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
             </>
           ) : (
             <Text variant="xs" color="tertiary">
-              The gate and shortlist apply when an LLM plays too.
+              How confident System 1 must be, and what the LLM is shown, apply when an LLM plays
+              too.
             </Text>
           )}
         </Section>
       )}
 
       <Section title="Rules">
-        <Field id="draw-claims" label="Draw Claims">
+        <Field id="draw-claims" setting="draw_claims">
           <Select
-            aria-label="Draw Claims"
+            aria-label={L.draw_claims}
             size="md"
             value={knobs.draw_claims}
             options={DRAW_CLAIMS}
@@ -268,15 +268,24 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
             onChange={(v) => set("draw_claims", v)}
           />
         </Field>
-        <NumberField
-          id="seed"
-          label="Seed"
-          {...number("seed")}
-          hintText="Seeds System 1's tournament shuffle."
-          step={1}
-        />
+        <NumberField id="seed" setting="seed" {...number("seed")} step={1} />
       </Section>
     </div>
+  );
+}
+
+/** An info icon whose tooltip says what a setting does and when to change it. */
+export function Info({ setting }: { setting: SettingKey }) {
+  return (
+    <Tooltip title={SETTING_HELP[setting]}>
+      <button
+        type="button"
+        aria-label={`About ${SETTING_LABELS[setting]}`}
+        className="inline-flex text-tertiary hover:text-primary"
+      >
+        <InfoIcon aria-hidden size={14} />
+      </button>
+    </Tooltip>
   );
 }
 
@@ -291,25 +300,29 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+/** A labelled control: a setting's name and tooltip, or a plain `label`. */
 export function Field({
   id,
   label,
+  setting,
   hint,
   trailing,
   children,
 }: {
   id: string;
-  label: string;
   hint?: string;
   trailing?: React.ReactNode;
   children: React.ReactNode;
-}) {
+} & ({ label: string; setting?: never } | { setting: SettingKey; label?: never })) {
   return (
     <div className="flex flex-col gap-space-1">
       <div className="flex items-center justify-between">
-        <Text variant="sm" weight="medium" as="label" htmlFor={id}>
-          {label}
-        </Text>
+        <span className="inline-flex items-center gap-space-1">
+          <Text variant="sm" weight="medium" as="label" htmlFor={id}>
+            {setting ? SETTING_LABELS[setting] : label}
+          </Text>
+          {setting && <Info setting={setting} />}
+        </span>
         {trailing}
       </div>
       <div id={id}>{children}</div>
@@ -342,22 +355,21 @@ function ModelKwargsField({
     return () => onValidity("model_kwargs", true);
   }, [parsed.ok, onValidity]);
   return (
-    <Textarea
-      id="model-kwargs"
-      label="Model Kwargs"
-      value={draft}
-      rows={3}
-      placeholder='{"temperature": 0.2}'
-      isError={!parsed.ok}
-      hintText={
-        parsed.ok ? "Extra model arguments as JSON; they win over the settings above." : parsed.why
-      }
-      onChange={(v) => {
-        setDraft(v);
-        const next = parseKwargs(v);
-        if (next.ok) onChange(next.value);
-      }}
-    />
+    <Field id="model-kwargs" setting="model_kwargs">
+      <Textarea
+        aria-label={L.model_kwargs}
+        value={draft}
+        rows={3}
+        placeholder='{"temperature": 0.2}'
+        isError={!parsed.ok}
+        hintText={parsed.ok ? undefined : parsed.why}
+        onChange={(v) => {
+          setDraft(v);
+          const next = parseKwargs(v);
+          if (next.ok) onChange(next.value);
+        }}
+      />
+    </Field>
   );
 }
 
@@ -371,16 +383,17 @@ function NumberField({
   value,
   isValid,
   onChange,
+  id,
+  setting,
   ...rest
 }: {
   knob: NumberKnob;
-  onValidity: (knob: NumberKnob, valid: boolean) => void;
+  onValidity: (knob: DraftKnob, valid: boolean) => void;
   id: string;
-  label: string;
+  setting: SettingKey;
   value: number | null;
   isValid: (text: string) => boolean;
   onChange: (text: string) => void;
-  hintText?: string;
   placeholder?: string;
   min?: number;
   max?: number;
@@ -394,16 +407,19 @@ function NumberField({
     return () => onValidity(knob, true);
   }, [knob, valid, onValidity]);
   return (
-    <Input
-      {...rest}
-      size="md"
-      type="number"
-      value={draft}
-      isError={!valid}
-      onChange={(v) => {
-        setDraft(v);
-        onChange(v);
-      }}
-    />
+    <Field id={id} setting={setting}>
+      <Input
+        {...rest}
+        aria-label={SETTING_LABELS[setting]}
+        size="md"
+        type="number"
+        value={draft}
+        isError={!valid}
+        onChange={(v) => {
+          setDraft(v);
+          onChange(v);
+        }}
+      />
+    </Field>
   );
 }

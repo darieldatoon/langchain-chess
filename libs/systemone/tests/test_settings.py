@@ -119,3 +119,16 @@ def test_the_lenient_input_type_documents_every_setting_for_studio():
     k = schema["properties"]["k"]
     assert k["description"] == "The most candidates suggested to the LLM."
     assert k["langgraph_nodes"] == ["SystemOneMiddleware.before_model"]
+
+
+def test_every_setting_has_a_plain_name_and_a_tooltip():
+    extras = {
+        name: field.json_schema_extra or {}
+        for name, field in ChessContext.model_fields.items()
+        if name != "version"
+    }
+    labels = [extra["x-label"] for extra in extras.values()]
+    assert len(set(labels)) == len(labels)
+    for name, extra in extras.items():
+        assert extra["x-help"].endswith("."), name
+        assert "`" not in extra["x-help"], name

@@ -118,6 +118,54 @@ export const SETTING_DESCRIPTIONS: Record<SettingKey, string> = {
   seed: "Seeds System 1's tournament shuffle.",
 };
 
+/** Each setting's name in the web app. */
+export const SETTING_LABELS: Record<SettingKey, string> = {
+  policy: "Opponent",
+  model: "LLM",
+  model_kwargs: "Model arguments",
+  reasoning_effort: "Reasoning effort",
+  system_prompt: "System prompt",
+  show_fen: "Show the FEN",
+  show_board: "Show the board",
+  move_list: "Moves to list",
+  memory: "Memory",
+  draw_claims: "Claim draws",
+  systemone_model: "System 1",
+  style: "Move descriptions",
+  with_eval: "Ask for a position score",
+  with_nouls: "Ask about tactics",
+  gate: "Confidence measure",
+  threshold: "Bar to play alone",
+  tournament_threshold: "Bar for long move lists",
+  k: "Candidates for the LLM",
+  top_p: "Probability cutoff",
+  seed: "Seed",
+};
+
+/** Each setting's tooltip: what it does and when to change it. */
+export const SETTING_HELP: Record<SettingKey, string> = {
+  policy: "Who picks the moves: the LLM alone, System 1 alone, or System 1 with the LLM for the hard moves.",
+  model: "The reasoning model that thinks through the positions System 1 hands over.",
+  model_kwargs: "Extra arguments for the model, as JSON, such as {\"temperature\": 0.2}. They win over the settings here. A token limit set only inside extra_body isn't counted, so memory can summarize too late.",
+  reasoning_effort: "How long the model thinks before it answers. Higher is slower and costs more. Leave it on the model's default for models without reasoning.",
+  system_prompt: "Replaces the instructions the model starts from. Leave it empty for the bundled prompt. Every turn still asks for a final MOVE line.",
+  show_fen: "Include the position in FEN notation in every turn's message. Turn it off to see how the model does from the moves and the board alone.",
+  show_board: "Include a text drawing of the board in every turn's message. The moves so far are always shown.",
+  move_list: "Which moves every turn's message lists: System 1's candidates, all legal moves, both, or none. Fewer lists mean a shorter prompt and a harder test.",
+  memory: "Let the model see its earlier turns, summarized when the conversation gets long. Off, it sees only the current position, which is cheaper.",
+  draw_claims: "End the game on a threefold repetition or after fifty moves without a capture or pawn move. Off, play continues until a draw is forced.",
+  systemone_model: "The fast move ranker. It scores every legal move in about a second.",
+  style: "How each move is described to System 1: with captures, checks and exchanges, or by name only.",
+  with_eval: "Also ask System 1 who stands better. It's recorded on the move and doesn't change what's played.",
+  with_nouls: "Also ask System 1 whether the position needs calculation and has tactics. It's recorded on the move and doesn't change what's played.",
+  gate: "What System 1's confidence is judged by: how far its top move leads the next one, or its own confidence score.",
+  threshold: "How confident System 1 must be to play a move without the LLM. Lower hands fewer moves to the LLM, which is faster and cheaper.",
+  tournament_threshold: "The same bar for positions with too many moves to rank at once, which System 1 ranks in rounds. Empty uses the bar above.",
+  k: "How many of System 1's best moves the LLM is shown when System 1 isn't sure. The LLM can still play any legal move.",
+  top_p: "Show the LLM fewer candidates when the first few already cover this much of System 1's probability. Empty always shows them all.",
+  seed: "Makes System 1's rounds repeatable. Change it to replay a game with different luck.",
+};
+
 export const DEFAULT_CONTEXT: ChessContext = {
   version: 2,
   policy: "hybrid",

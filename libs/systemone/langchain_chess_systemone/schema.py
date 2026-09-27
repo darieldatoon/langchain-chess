@@ -25,7 +25,11 @@ def input_schema() -> dict[str, Any]:
     for name, prop in properties.items():
         if name == "version" or _admits_null(prop):
             continue
-        described = {k: prop.pop(k) for k in ("description", "langgraph_nodes") if k in prop}
+        described = {
+            k: prop.pop(k)
+            for k in ("description", "langgraph_nodes", "x-label", "x-help")
+            if k in prop
+        }
         default = prop.pop("default")
         properties[name] = {"anyOf": [prop, {"type": "null"}], **described, "default": default}
     schema["title"] = "Opponent"

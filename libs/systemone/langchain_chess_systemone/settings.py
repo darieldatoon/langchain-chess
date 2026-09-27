@@ -39,6 +39,8 @@ class SystemOneSettings(Settings):
             "TypeSafe classifier works too, with a conservative cap on the moves per request.",
             _SYSTEMONE,
             min_length=1,
+            label="System 1",
+            help="The fast move ranker. It scores every legal move in about a second.",
         ),
     ] = "semif-qwen3.5-4b"
     style: Annotated[
@@ -47,6 +49,11 @@ class SystemOneSettings(Settings):
             "How each legal move is described to System 1. `rich` adds captures, checks and "
             "exchange results; `terse` names the move only.",
             _SYSTEMONE,
+            label="Move descriptions",
+            help=(
+                "How each move is described to System 1: with captures, checks and exchanges, or "
+                "by name only."
+            ),
         ),
     ] = "rich"
     with_eval: Annotated[
@@ -54,6 +61,11 @@ class SystemOneSettings(Settings):
         setting(
             "Also ask System 1 to score the position. Recorded only; it doesn't change the move.",
             _SYSTEMONE,
+            label="Ask for a position score",
+            help=(
+                "Also ask System 1 who stands better. It's recorded on the move and doesn't change"
+                " what's played."
+            ),
         ),
     ] = False
     with_nouls: Annotated[
@@ -62,6 +74,11 @@ class SystemOneSettings(Settings):
             "Also ask System 1 whether the position needs calculation and has tactics. Recorded "
             "only; it doesn't change the move.",
             _SYSTEMONE,
+            label="Ask about tactics",
+            help=(
+                "Also ask System 1 whether the position needs calculation and has tactics. It's "
+                "recorded on the move and doesn't change what's played."
+            ),
         ),
     ] = False
     gate: Annotated[
@@ -70,6 +87,11 @@ class SystemOneSettings(Settings):
             "The signal compared with the threshold. `margin`: the top move's probability minus "
             "the second's. `confidence`: System 1's own confidence in its ranking.",
             _SYSTEMONE,
+            label="Confidence measure",
+            help=(
+                "What System 1's confidence is judged by: how far its top move leads the next one,"
+                " or its own confidence score."
+            ),
         ),
     ] = "margin"
     threshold: Annotated[
@@ -80,6 +102,11 @@ class SystemOneSettings(Settings):
             _SYSTEMONE,
             ge=0.0,
             le=1.0,
+            label="Bar to play alone",
+            help=(
+                "How confident System 1 must be to play a move without the LLM. Lower hands fewer "
+                "moves to the LLM, which is faster and cheaper."
+            ),
         ),
     ] = 0.9
     tournament_threshold: Annotated[
@@ -90,11 +117,26 @@ class SystemOneSettings(Settings):
             _SYSTEMONE,
             ge=0.0,
             le=1.0,
+            label="Bar for long move lists",
+            help=(
+                "The same bar for positions with too many moves to rank at once, which System 1 "
+                "ranks in rounds. Empty uses the bar above."
+            ),
         ),
     ] = None
     k: Annotated[
         int,
-        setting("The most candidates suggested to the LLM.", _SYSTEMONE, ge=1, le=CHOICE_LIMIT),
+        setting(
+            "The most candidates suggested to the LLM.",
+            _SYSTEMONE,
+            ge=1,
+            le=CHOICE_LIMIT,
+            label="Candidates for the LLM",
+            help=(
+                "How many of System 1's best moves the LLM is shown when System 1 isn't sure. The "
+                "LLM can still play any legal move."
+            ),
+        ),
         BeforeValidator(_integral),
     ] = 5
     top_p: Annotated[
@@ -105,11 +147,26 @@ class SystemOneSettings(Settings):
             _SYSTEMONE,
             gt=0.0,
             le=1.0,
+            label="Probability cutoff",
+            help=(
+                "Show the LLM fewer candidates when the first few already cover this much of "
+                "System 1's probability. Empty always shows them all."
+            ),
         ),
     ] = None
     seed: Annotated[
         int,
-        setting("Seeds System 1's tournament shuffle.", _SYSTEMONE, ge=-MAX_SEED, le=MAX_SEED),
+        setting(
+            "Seeds System 1's tournament shuffle.",
+            _SYSTEMONE,
+            ge=-MAX_SEED,
+            le=MAX_SEED,
+            label="Seed",
+            help=(
+                "Makes System 1's rounds repeatable. Change it to replay a game with different "
+                "luck."
+            ),
+        ),
         BeforeValidator(_integral),
     ] = 0
 
@@ -123,6 +180,11 @@ class _Head(Settings):
             "System 1 plays the moves it is confident about and suggests candidates otherwise.",
             _SYSTEMONE,
             "model",
+            label="Opponent",
+            help=(
+                "Who picks the moves: the LLM alone, System 1 alone, or System 1 with the LLM for "
+                "the hard moves."
+            ),
         ),
     ] = "hybrid"
 

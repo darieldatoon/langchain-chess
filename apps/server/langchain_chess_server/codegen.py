@@ -125,6 +125,16 @@ def typescript(schema: dict[str, Any]) -> str:
         + _object({name: prop["description"] for name, prop in settings.items()})
         + ";",
         "",
+        "/** Each setting's name in the web app. */",
+        "export const SETTING_LABELS: Record<SettingKey, string> = "
+        + _object({name: prop["x-label"] for name, prop in settings.items()})
+        + ";",
+        "",
+        "/** Each setting's tooltip: what it does and when to change it. */",
+        "export const SETTING_HELP: Record<SettingKey, string> = "
+        + _object({name: prop["x-help"] for name, prop in settings.items()})
+        + ";",
+        "",
         "export const DEFAULT_CONTEXT: ChessContext = "
         + _object({name: prop["default"] for name, prop in properties.items()})
         + ";",

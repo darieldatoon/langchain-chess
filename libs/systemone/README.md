@@ -110,9 +110,10 @@ is an error. Older versions are migrated. Games record every key of their versio
 [`packages/chess-ui/src/generated`](../../packages/chess-ui/src/generated): `opponent.schema.json`
 for a file and `settings.schema.json` for the resolved settings.
 
-Change a setting in `settings.py`, bump `VERSION` and add its migration and frozen defaults when
-the change needs one, then run `mise run generate:settings`: the web app's types, checks and
-defaults are generated from it, and a test fails while they are stale.
+Each setting's `label` and `help` are the web app's name and tooltip for it. Change a setting
+in `settings.py`, bump `VERSION` and add its migration and frozen defaults when the change needs
+one, then run `mise run generate:settings`: the web app's types, checks, defaults, labels and
+tooltips are generated from it, and a test fails while they are stale.
 
 ## Options
 

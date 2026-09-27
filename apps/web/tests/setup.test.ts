@@ -65,7 +65,7 @@ describe("matchupOf", () => {
     const knobs = { ...DEFAULT_SETUP.knobs, model_kwargs: { seed: 3 } };
     expect(matchupOf(setup({ knobs }), "yes")).toEqual({
       ok: false,
-      reason: "Model kwargs: `seed`: the server doesn't send it.",
+      reason: "Model arguments: `seed`: the server doesn't send it.",
     });
     expect(matchupOf(setup({ knobs, llm: "none" }), "yes")).toMatchObject({ ok: true });
   });
