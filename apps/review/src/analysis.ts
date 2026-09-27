@@ -87,6 +87,7 @@ export function gradeCommand(target: Target, force: boolean): string {
 const BOXES = "/api/v2/sandboxes/boxes";
 // What `lcchess grade --sandbox-job` does as the viewer: read the game, replace its feedback,
 // settle the mark, delete its sandbox. A ceiling on the viewer's own access, never more.
+// Grades extend their game's retention, so LangSmith reads the usage limits (`workspaces:read`) first.
 const PERMISSIONS = [
   "projects:read",
   "runs:read",
@@ -96,6 +97,7 @@ const PERMISSIONS = [
   "feedback:update",
   "feedback:delete",
   "sandboxes:delete",
+  "workspaces:read",
 ];
 const POLLS = 10;
 const POLL_MS = 1000;

@@ -175,7 +175,10 @@ describe("analyze", () => {
       snapshot_name: "langchain-chess-grader",
       vcpus: 4,
       idle_ttl_seconds: 900,
-      access_delegation: { mode: "EXPLICIT" },
+      access_delegation: {
+        mode: "EXPLICIT",
+        permissions: expect.arrayContaining(["feedback:create", "workspaces:read"]),
+      },
     });
     expect(bodies[`POST /api/v2/sandboxes/${BOX}/execute`]).toEqual({
       command: gradeCommand(TARGET, false),
