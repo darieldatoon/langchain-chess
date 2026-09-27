@@ -16,6 +16,7 @@ const DRAW_REASONS: Record<DrawReason, true> = {
   fivefold: true,
   fifty_moves: true,
   seventyfive_moves: true,
+  timeout_vs_insufficient_material: true,
 };
 const S1_STATUSES: readonly unknown[] = ["played", "shortlist", "skipped"];
 
@@ -27,7 +28,9 @@ const isStringOrNull = (v: unknown) => optional(v, (x) => nullable(x, isString))
 function isOutcome(v: unknown): boolean {
   if (!isJson(v)) return false;
   if (v.kind === "draw") return isString(v.reason) && Object.hasOwn(DRAW_REASONS, v.reason);
-  return (v.kind === "checkmate" || v.kind === "resignation") && isSide(v.winner);
+  return (
+    (v.kind === "checkmate" || v.kind === "resignation" || v.kind === "timeout") && isSide(v.winner)
+  );
 }
 
 const isRanked = (v: unknown) => isJson(v) && isString(v.uci) && isNumber(v.probability);
@@ -53,6 +56,7 @@ function isPly(v: unknown): boolean {
     isString(v.san) &&
     isString(v.source) &&
     isNumber(v.latency_ms) &&
+    optional(v.clock_ms, (ms) => nullable(ms, isNumber)) &&
     [v.analysis, v.model, v.turn_id].every(isStringOrNull) &&
     isJson(v.meta) &&
     isSystemOne(v.meta[SYSTEMONE_META_KEY])
@@ -65,6 +69,8 @@ const isCall = (v: unknown) =>
   nullable(v.cost_usd, isNumber) &&
   typeof v.cost_complete === "boolean";
 
+const isTimeControl = (v: unknown) => isJson(v) && isNumber(v.base_ms) && isNumber(v.increment_ms);
+
 const isTurn = (v: unknown) =>
   isJson(v) && isString(v.id) && isNumber(v.illegal_attempts) && isArrayOf(v.calls, isCall);
 
@@ -74,7 +80,8 @@ function isValues(v: Json): boolean {
     optional(v.start_fen, (fen) => isString(fen) && (fen === "" || isFen(fen))) &&
     optional(v.plies, (plies) => isArrayOf(plies, isPly)) &&
     optional(v.turns, (turns) => isArrayOf(turns, isTurn)) &&
-    optional(v.outcome, (outcome) => nullable(outcome, isOutcome))
+    optional(v.outcome, (outcome) => nullable(outcome, isOutcome)) &&
+    optional(v.time_control, (control) => nullable(control, isTimeControl))
   );
 }
 

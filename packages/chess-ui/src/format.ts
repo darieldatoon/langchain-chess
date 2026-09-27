@@ -1,6 +1,6 @@
 import { fullmoveNumber, opposite, sideToMove } from "./chess";
 import type { TurnCost } from "./selectors";
-import type { DrawReason, Outcome, Quality, Side } from "./types";
+import type { DrawReason, Outcome, Quality, Side, TimeControl } from "./types";
 
 export function money(usd: number): string {
   return usd < 0.01 ? `$${usd.toFixed(4)}` : `$${usd.toFixed(3)}`;
@@ -21,6 +21,21 @@ export function costText(cost: TurnCost | null): CostText {
 
 export function seconds(ms: number): string {
   return ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${Math.round(ms)} ms`;
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/** A clock face: mm:ss, with tenths under 10 s. Rounded down, so it never shows time not left. */
+export function clockText(ms: number): string {
+  const left = Math.max(0, ms);
+  if (left < 10_000) return `00:0${(Math.floor(left / 100) / 10).toFixed(1)}`;
+  const secs = Math.floor(left / 1000);
+  return `${pad(Math.floor(secs / 60))}:${pad(secs % 60)}`;
+}
+
+/** A time control as players write it, minutes plus seconds: "15+10". */
+export function timeControlText(control: TimeControl): string {
+  return `${control.base_ms / 60_000}+${control.increment_ms / 1000}`;
 }
 
 export function percent(probability: number): string {
@@ -106,6 +121,7 @@ const DRAW_REASONS: Record<DrawReason, string> = {
   fivefold: "fivefold repetition",
   fifty_moves: "the fifty-move rule",
   seventyfive_moves: "the seventy-five-move rule",
+  timeout_vs_insufficient_material: "timeout vs insufficient material",
 };
 
 const colour = (side: Side) => (side === "white" ? "White" : "Black");
@@ -119,6 +135,8 @@ export function outcomeLine(outcome: Outcome): string {
       return `Draw by ${DRAW_REASONS[outcome.reason]}. 1/2-1/2`;
     case "resignation":
       return `${colour(opposite(outcome.winner))} resigns after repeated illegal moves. ${score(outcome.winner)}`;
+    case "timeout":
+      return `${colour(opposite(outcome.winner))} runs out of time. ${score(outcome.winner)}`;
   }
 }
 

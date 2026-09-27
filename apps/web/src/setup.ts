@@ -15,6 +15,7 @@ import {
   type ChessValues,
   type JSONValue,
   type Side,
+  type TimeControl,
 } from "@langchain-chess/chess-ui";
 
 export type SideChoice = Side | "random";
@@ -35,6 +36,25 @@ export const LLM_PRESETS = [
 export type LlmPreset = (typeof LLM_PRESETS)[number];
 export type LlmChoice = LlmPreset | "custom" | "none";
 
+const MINUTE = 60_000;
+
+/** The timed games the dialog offers, besides untimed; sized from measured turn times (#28). */
+export const TIME_CONTROL_PRESETS: readonly TimeControl[] = [
+  { base_ms: 10 * MINUTE, increment_ms: 5_000 },
+  { base_ms: 15 * MINUTE, increment_ms: 10_000 },
+  { base_ms: 30 * MINUTE, increment_ms: 20_000 },
+];
+
+/** The preset `stored` names, else null: untimed. */
+export function presetControl(stored: unknown): TimeControl | null {
+  if (!isRecord(stored)) return null;
+  return (
+    TIME_CONTROL_PRESETS.find(
+      (preset) => preset.base_ms === stored.base_ms && preset.increment_ms === stored.increment_ms,
+    ) ?? null
+  );
+}
+
 /** The knobs the Advanced section edits; the pickers own the other three. */
 export type Knobs = Omit<ChessContext, "version" | "policy" | "model" | "systemone_model">;
 
@@ -47,6 +67,8 @@ export interface Setup {
   /** Kept while another LLM is picked, so switching back to Custom restores it. */
   customModel: string;
   knobs: Knobs;
+  /** Null plays untimed. */
+  timeControl: TimeControl | null;
 }
 
 const PICKED = new Set(["version", "policy", "model", "systemone_model"]);
@@ -65,6 +87,7 @@ export const DEFAULT_SETUP: Setup = {
   llm: "langsmith:baseten/zai-org/GLM-5.3-Flash",
   customModel: "",
   knobs: knobsOf(DEFAULT_CONTEXT),
+  timeControl: null,
 };
 
 export const SYSTEM_ONE_NAMES: Record<SystemOnePreset, string> = {
@@ -261,6 +284,7 @@ export function sanitizeSetup(stored: unknown): Setup {
     llm: isLlmChoice(record.llm) ? record.llm : DEFAULT_SETUP.llm,
     customModel: typeof record.customModel === "string" ? record.customModel : "",
     knobs: knobsOf(sanitizeContext({ ...knobs, version: record.version })),
+    timeControl: presetControl(record.timeControl),
   };
 }
 
@@ -269,11 +293,15 @@ export function storedSetup(setup: Setup): Record<string, unknown> {
   return { version: SETTINGS_VERSION, ...setup };
 }
 
+/** The picks outside the opponent: a settings file sets neither. */
+export type Seating = Pick<Setup, "side" | "timeControl">;
+
 /** The pickers and knobs that play `context`. */
-export function setupOf(context: ChessContext, side: SideChoice = DEFAULT_SETUP.side): Setup {
+export function setupOf(context: ChessContext, seating: Seating = DEFAULT_SETUP): Setup {
   const preset = isPreset(context.model) ? context.model : null;
   return {
-    side,
+    side: seating.side,
+    timeControl: seating.timeControl,
     systemOne: context.systemone_model,
     systemOneOff: context.policy === "llm",
     llm: context.policy === "systemone" ? "none" : (preset ?? "custom"),
@@ -282,23 +310,24 @@ export function setupOf(context: ChessContext, side: SideChoice = DEFAULT_SETUP.
   };
 }
 
-/** A settings file's setup, keeping the side picked; else why it can't be played. */
+/** A settings file's setup, keeping the side and clock picked; else why it can't be played. */
 export function importedSetup(
   data: unknown,
-  side: SideChoice,
+  seating: Seating,
 ): { ok: true; setup: Setup } | { ok: false; why: string } {
   try {
-    return { ok: true, setup: setupOf(loadSettings(data), side) };
+    return { ok: true, setup: setupOf(loadSettings(data), seating) };
   } catch (error) {
     // loadSettings throws only SettingsError.
     return { ok: false, why: (error as Error).message };
   }
 }
 
-/** A game's human side and the context every run of it sends. */
+/** A game's human side, the context every run of it sends, and its clock: null untimed. */
 export interface GameRecord {
   side: Side;
   context: ChessContext;
+  timeControl: TimeControl | null;
 }
 
 /**
@@ -318,8 +347,15 @@ function humanSideOf(values: ChessValues, picked: Side | null): Side {
  * them. Null for a thread with no readable `setup`: a guessed context would play another game.
  */
 export function gameOf(values: ChessValues, chosen: GameRecord | null): GameRecord | null {
-  const context = recordedContext(values.setup) ?? chosen?.context;
-  return context ? { side: humanSideOf(values, chosen?.side ?? null), context } : null;
+  const recorded = recordedContext(values.setup);
+  const context = recorded ?? chosen?.context;
+  if (!context) return null;
+  return {
+    side: humanSideOf(values, chosen?.side ?? null),
+    context,
+    // Recorded with the setup; older games recorded none, so they are untimed.
+    timeControl: recorded ? (values.time_control ?? null) : (chosen?.timeControl ?? null),
+  };
 }
 
 export type Kwargs = { [key: string]: JSONValue };

@@ -25,11 +25,13 @@ import { checkApiKey, type KeyCheck } from "./auth";
 import { downloadJson } from "./files";
 import { fetchModelLimit, type ModelLimit } from "./modelLimit";
 import { AppSettingsDialog } from "./components/AppSettingsDialog";
+import { GameClock } from "./components/GameClock";
 import { NewGameDialog } from "./components/NewGameDialog";
 import { ResultCard } from "./components/ResultCard";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { describeError, isAuthError, isBusyRejection, statusLine } from "./format";
 import { apiUrl, configurableOf } from "./settings";
+import { flaggedSide } from "./clock";
 import { changedKnobs, opponentLabel, resolveSide, type GameRecord, type Setup } from "./setup";
 import {
   browserStorage,
@@ -41,6 +43,7 @@ import {
   saveSetup,
   type AppSettings,
 } from "./storage";
+import { monotonic, useFlag, type Now } from "./useClock";
 import { threadFromUrl, useGame, writeThreadToUrl } from "./useGame";
 
 /** One game on screen. */
@@ -49,7 +52,7 @@ interface Seat {
   number: number;
   /** A fresh game where the opponent opens: the table sends `go` once, on mount. */
   autoStart: boolean;
-  /** A new game's side and context, until its first turn records them; null from a link. */
+  /** A new game's picks, until its first turn records them; null from a link. */
   chosen: GameRecord | null;
 }
 
@@ -61,12 +64,8 @@ type Overlay =
 
 const NEW_GAME: Overlay = { kind: "new-game", draft: null };
 
-function nextSeat(previous: Seat | null, side: Side, context: ChessContext): Seat {
-  return {
-    number: (previous?.number ?? 0) + 1,
-    chosen: { side, context },
-    autoStart: side === "black",
-  };
+function nextSeat(previous: Seat | null, chosen: GameRecord): Seat {
+  return { number: (previous?.number ?? 0) + 1, chosen, autoStart: chosen.side === "black" };
 }
 
 interface Props {
@@ -76,6 +75,8 @@ interface Props {
   checkKey?: (apiKey: string) => Promise<KeyCheck>;
   /** Asks the server for a model's input limit; injectable so tests need no server. */
   modelLimit?: (apiKey: string, model: string) => Promise<ModelLimit>;
+  /** The clocks' time source; injectable so tests control it. */
+  now?: Now;
 }
 
 const serverCheck = (apiKey: string) => checkApiKey(apiUrl(), apiKey);
@@ -85,6 +86,7 @@ export default function App({
   random = Math.random,
   checkKey = serverCheck,
   modelLimit = serverLimit,
+  now = monotonic,
 }: Props) {
   const [app, setApp] = useState<AppSettings>(() => loadAppSettings());
   const [setup, setSetup] = useState<Setup>(() => loadSetup());
@@ -140,7 +142,7 @@ export default function App({
       setSetup(next);
       writeThreadToUrl(null);
       const side = resolveSide(next.side, random);
-      setSeat((s) => nextSeat(s, side, context));
+      setSeat((s) => nextSeat(s, { side, context, timeControl: next.timeControl }));
       setOverlay(null);
     },
     [random, noteSaved],
@@ -148,7 +150,7 @@ export default function App({
 
   const rematch = useCallback((from: GameRecord) => {
     writeThreadToUrl(null);
-    setSeat((s) => nextSeat(s, opposite(from.side), from.context));
+    setSeat((s) => nextSeat(s, { ...from, side: opposite(from.side) }));
   }, []);
 
   // The same thread, on a fresh stream: the URL still names it.
@@ -201,6 +203,7 @@ export default function App({
             onOpenSettings={openSettings}
             view={view}
             onViewChange={onViewChange}
+            now={now}
           />
         ) : (
           <EmptyTable view={view} onViewChange={onViewChange} />
@@ -255,6 +258,7 @@ interface TableProps extends ViewProps {
   onReload: (from: Seat) => void;
   onNewGame: () => void;
   onOpenSettings: () => void;
+  now: Now;
 }
 
 function Table({
@@ -266,8 +270,9 @@ function Table({
   onOpenSettings,
   view,
   onViewChange,
+  now,
 }: TableProps) {
-  const game = useGame(apiKey, seat.chosen);
+  const game = useGame(apiKey, seat.chosen, now);
   const { record } = game;
   // A stand-in for a thread with no record: its board stays locked.
   const humanSide = record?.side ?? "white";
@@ -281,7 +286,7 @@ function Table({
   const playable = record !== null && game.restore === "ready";
   const idle = playable && !game.isLoading && game.pendingMove === null;
   // A pending turn means a run failed mid-turn: only an empty submit resumes it.
-  const canRetry = !over && idle && game.pendingTurn;
+  const canRetry = !over && idle && (game.pendingTurn || game.fallen !== null);
   const canGo = !over && idle && !game.pendingTurn && opponentToMove;
   // Follows the side, which a game opened from its link only knows once its thread loads.
   const [flipped, setFlipped] = useState(false);
@@ -306,6 +311,19 @@ function Table({
       if (!isBusyRejection(error)) setSubmitError(error);
     });
   };
+
+  useFlag(game.flaggable, now, (side) => issue(() => game.flag(side)));
+  const outOfTime = flaggedSide(game.outcome, sideToMove(game.fen));
+  const clockOf = (side: Side) =>
+    game.clock && (
+      <GameClock
+        clock={game.clock}
+        side={side}
+        label={side === humanSide ? "You" : "Opponent"}
+        now={now}
+        flagged={side === outOfTime}
+      />
+    );
 
   // The ref, not the deps, makes this once per game: StrictMode re-runs mount effects.
   useEffect(() => {
@@ -355,6 +373,7 @@ function Table({
       )}
       <main className="grid items-start gap-space-5 lg:grid-cols-[minmax(320px,640px)_minmax(280px,1fr)]">
         <Card intent="neutral" className="flex flex-col gap-space-3">
+          {clockOf(opposite(orientation))}
           <Board
             fen={boardFen}
             orientation={orientation}
@@ -366,10 +385,12 @@ function Table({
               game.isLoading ||
               over ||
               game.pendingTurn ||
+              game.fallen !== null ||
               game.pendingMove !== null
             }
             onMove={(uci, fen) => issue(() => game.play(uci, fen))}
           />
+          {clockOf(orientation)}
           <BoardControls index={index} last={last} onGo={go} onFlip={() => setFlipped((f) => !f)} />
           {game.outcome && record ? (
             <ResultCard
@@ -428,7 +449,12 @@ function Table({
           )}
         </Card>
         <aside className="flex flex-col gap-space-4">
-          <PlyDetails reply={game.reply} view={view} onViewChange={onViewChange} />
+          <PlyDetails
+            reply={game.reply}
+            view={view}
+            onViewChange={onViewChange}
+            timed={game.clock !== null}
+          />
           <MoveList
             entries={game.entries}
             startFen={game.startFen}

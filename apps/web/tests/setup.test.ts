@@ -12,17 +12,20 @@ import {
   modelName,
   opponentLabel,
   parseKwargs,
+  presetControl,
   resolveSide,
   sanitizeSetup,
   sectionsOf,
   storedSetup,
   systemOneName,
+  TIME_CONTROL_PRESETS,
   type Setup,
 } from "../src/setup";
 import { DEFAULT_CONTEXT, type ChessContext } from "@langchain-chess/chess-ui";
 import { E4_E5, ply, turn } from "@langchain-chess/chess-ui/testing";
 
 const setup = (overrides: Partial<Setup> = {}): Setup => ({ ...DEFAULT_SETUP, ...overrides });
+const [BLITZ, RAPID] = TIME_CONTROL_PRESETS;
 
 function contextOf(s: Setup): ChessContext {
   const matchup = matchupOf(s, "yes");
@@ -267,6 +270,7 @@ describe("sanitizeSetup", () => {
       llm: "custom",
       customModel: "openai:gpt-5.6-sol",
       knobs: { ...DEFAULT_SETUP.knobs, k: 7, move_list: "legal", memory: true },
+      timeControl: RAPID,
     });
     expect(sanitizeSetup(JSON.parse(JSON.stringify(storedSetup(stored))))).toEqual(stored);
     expect(
@@ -278,6 +282,7 @@ describe("sanitizeSetup", () => {
         llm: 3,
         customModel: null,
         knobs: { k: 0, policy: "llm", human_side: "black", memory: "summarize" },
+        timeControl: { base_ms: 1, increment_ms: 0 },
       }),
     ).toEqual(DEFAULT_SETUP);
     expect(sanitizeSetup({ version: 99, knobs: { k: 7 } })).toEqual(DEFAULT_SETUP);
@@ -291,10 +296,19 @@ describe("sanitizeSetup", () => {
   });
 });
 
+describe("presetControl", () => {
+  it("finds the preset a stored control names, and plays anything else untimed", () => {
+    expect(presetControl({ ...BLITZ })).toBe(BLITZ);
+    expect(presetControl({ base_ms: BLITZ.base_ms, increment_ms: 0 })).toBeNull();
+    expect(presetControl(null)).toBeNull();
+    expect(presetControl("10+5")).toBeNull();
+  });
+});
+
 describe("importedSetup", () => {
-  it("plays a settings file with the side picked", () => {
+  it("plays a settings file with the side and clock picked", () => {
     const file = { version: 2, policy: "llm", model: "openai:gpt-6-luna", k: 3 };
-    expect(importedSetup(file, "black")).toEqual({
+    expect(importedSetup(file, { side: "black", timeControl: BLITZ })).toEqual({
       ok: true,
       setup: {
         ...DEFAULT_SETUP,
@@ -303,17 +317,18 @@ describe("importedSetup", () => {
         llm: "custom",
         customModel: "openai:gpt-6-luna",
         knobs: { ...DEFAULT_SETUP.knobs, k: 3 },
+        timeControl: BLITZ,
       },
     });
-    expect(importedSetup({ version: 2, policy: "systemone" }, "white")).toEqual({
+    expect(importedSetup({ version: 2, policy: "systemone" }, DEFAULT_SETUP)).toEqual({
       ok: true,
       setup: { ...DEFAULT_SETUP, llm: "none" },
     });
-    expect(importedSetup({ k: 3 }, "white")).toEqual({
+    expect(importedSetup({ k: 3 }, DEFAULT_SETUP)).toEqual({
       ok: false,
       why: "settings need a `version`",
     });
-    expect(importedSetup({ version: 2, k: 0 }, "white")).toEqual({
+    expect(importedSetup({ version: 2, k: 0 }, DEFAULT_SETUP)).toEqual({
       ok: false,
       why: "invalid settings: k",
     });
@@ -332,13 +347,14 @@ describe("games", () => {
     expect(gameOf({ ...E4_E5, setup: recorded }, null)).toEqual({
       side: "white",
       context: recorded,
+      timeControl: null,
     });
     const black = {
       moves: ["e2e4", "e7e5"],
       plies: [E4_AS_BLACK.plies[0], ply({ ply: 1, side: "black", uci: "e7e5", san: "e5" })],
       setup: recorded,
     };
-    expect(gameOf(black, null)).toEqual({ side: "black", context: recorded });
+    expect(gameOf(black, null)).toEqual({ side: "black", context: recorded, timeControl: null });
   });
 
   it("before the human's first move, gives them the side the opponent didn't open with", () => {
@@ -353,12 +369,15 @@ describe("games", () => {
   });
 
   it("plays a new game with its picks until the thread records them", () => {
-    const chosen = { side: "white" as const, context: recorded };
+    const chosen = { side: "white" as const, context: recorded, timeControl: BLITZ };
     expect(gameOf({}, chosen)).toEqual(chosen);
-    expect(gameOf({ setup: DEFAULT_CONTEXT }, chosen)).toEqual({
+    expect(gameOf({ setup: DEFAULT_CONTEXT, time_control: RAPID }, chosen)).toEqual({
       side: "white",
       context: DEFAULT_CONTEXT,
+      timeControl: RAPID,
     });
+    // A game recorded before clocks is untimed, whatever this browser picked.
+    expect(gameOf({ setup: DEFAULT_CONTEXT }, chosen)?.timeControl).toBeNull();
   });
 
   it("knows no game for a thread without a readable setup", () => {

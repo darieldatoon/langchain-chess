@@ -5,7 +5,7 @@ import { AFTER_E4, ply, turn } from "@langchain-chess/chess-ui/testing";
 import type { GameRecord } from "../src/setup";
 import { useGame, writeThreadToUrl } from "../src/useGame";
 
-const WHITE: GameRecord = { side: "white", context: DEFAULT_CONTEXT };
+const WHITE: GameRecord = { side: "white", context: DEFAULT_CONTEXT, timeControl: null };
 
 // The real SDK, over a stubbed fetch: how it settles a thread load is what `restore` reads.
 function serve(
@@ -61,7 +61,7 @@ describe("useGame on the real SDK", () => {
     writeThreadToUrl("abc");
     const { result } = renderHook(() => useGame("", null));
     await waitFor(() => expect(result.current.restore).toBe("ready"));
-    expect(result.current.record).toEqual({ side: "black", context: setup });
+    expect(result.current.record).toEqual({ side: "black", context: setup, timeControl: null });
     expect(window.localStorage.length).toBe(0);
   });
 

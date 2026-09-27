@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  clockText,
   costText,
   isAtBottom,
   lastMoveStyles,
@@ -11,6 +12,7 @@ import {
   seconds,
   sourceClass,
   sourceLabel,
+  timeControlText,
   type MoveEntry,
 } from "../src/format";
 import { AFTER_E4 } from "../src/testing";
@@ -83,6 +85,26 @@ describe("outcomeLine", () => {
     expect(outcomeLine({ kind: "resignation", winner: "black", reason: "illegal_moves" })).toBe(
       "White resigns after repeated illegal moves. 0-1",
     );
+    expect(outcomeLine({ kind: "timeout", winner: "black" })).toBe("White runs out of time. 0-1");
+    expect(outcomeLine({ kind: "draw", reason: "timeout_vs_insufficient_material" })).toBe(
+      "Draw by timeout vs insufficient material. 1/2-1/2",
+    );
+  });
+});
+
+describe("clocks", () => {
+  it("shows mm:ss, tenths under ten seconds, rounded down and never below zero", () => {
+    expect(clockText(3_600_000)).toBe("60:00");
+    expect(clockText(900_000)).toBe("15:00");
+    expect(clockText(65_999)).toBe("01:05");
+    expect(clockText(10_000)).toBe("00:10");
+    expect(clockText(9_999)).toBe("00:09.9");
+    expect(clockText(50)).toBe("00:00.0");
+    expect(clockText(-300)).toBe("00:00.0");
+  });
+
+  it("names a time control in minutes plus seconds", () => {
+    expect(timeControlText({ base_ms: 900_000, increment_ms: 10_000 })).toBe("15+10");
   });
 });
 

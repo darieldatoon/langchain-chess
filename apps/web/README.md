@@ -19,7 +19,7 @@ That starts `langgraph dev` on `:2024` and this app on `:5173`, then prints the 
 ## Play a game
 
 1. **New game.** The dialog opens by itself when the URL has no game. Pick White, Random or
-   Black, a System 1 (SemIf, Jev, or none) and an LLM (a preset, a custom `init_chat_model`
+   Black, a time control (untimed, or a preset such as 15+10), a System 1 (SemIf, Jev, or none) and an LLM (a preset, a custom `init_chat_model`
    spec, or none). Advanced holds the rest: the system prompt, what each turn shows, memory,
    model arguments (JSON), reasoning effort, how confident System 1 must be to play alone and
    how many candidates the LLM sees. Every setting has an info icon that says what it does and
@@ -43,6 +43,12 @@ That starts `langgraph dev` on `:2024` and this app on `:5173`, then prints the 
   the same link continues the game in any browser, and changing the setup later never changes
   it. Games from before threads recorded their setup are view-only.
 - **Retry.** If the provider fails mid-turn, Retry re-runs the pending turn.
+- **Clocks.** A timed game shows both clocks beside the board; the side to move's counts down,
+  from its first run (White's first move is free). The side whose clock reaches zero loses on
+  time, or draws if the other side can't mate. The browser keeps the clocks, like a UCI GUI:
+  each run sends them, the server records each mover's time on its ply, and the agent's clock
+  then reads what the server charged. A failed turn waiting for Retry pauses both; so does
+  closing the tab, and a reload restores them from the last plies.
 - **Theme.** The moon button toggles dark mode.
 
 ## Against a deployed server
@@ -89,8 +95,10 @@ sequenceDiagram
 
 - **The contract.** Moves are human chat messages whose content is the UCI move (`go` asks the
   agent to open), each with a stable id: resending a finished move is a no-op, and resending one
-  whose turn is still pending retries that turn. An empty submit retries a pending turn too. The
-  app reads only `start_fen`, `moves`, `plies`, `turns`, `outcome`, `error`, `setup` and
+  whose turn is still pending retries that turn. An empty submit retries a pending turn too. A
+  timed game adds `clock` to every run and flags with `{clock, flag}`; a flag over the agent's
+  run uses `multitaskStrategy: "interrupt"`, which keeps the run's checkpoints. The app reads
+  only `start_fen`, `moves`, `plies`, `turns`, `outcome`, `error`, `setup`, `time_control` and
   `messages`.
 - **Types.** [`packages/chess-ui/src/types.ts`](../../packages/chess-ui/src/types.ts) mirrors the
   Python state by hand. That package also holds the board, move list and move details this app

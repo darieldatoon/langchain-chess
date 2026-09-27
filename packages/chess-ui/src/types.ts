@@ -12,12 +12,27 @@ export type DrawReason =
   | "threefold"
   | "fivefold"
   | "fifty_moves"
-  | "seventyfive_moves";
+  | "seventyfive_moves"
+  /** The side that didn't flag can't mate. */
+  | "timeout_vs_insufficient_material";
 
 export type Outcome =
   | { kind: "checkmate"; winner: Side }
   | { kind: "draw"; reason: DrawReason }
-  | { kind: "resignation"; winner: Side; reason: "illegal_moves" };
+  | { kind: "resignation"; winner: Side; reason: "illegal_moves" }
+  | { kind: "timeout"; winner: Side };
+
+export interface TimeControl {
+  base_ms: number;
+  increment_ms: number;
+}
+
+/** A timed client's clocks as it sends a run, after its own move's increment. Integers. */
+export interface ClockInput {
+  control: TimeControl;
+  white_ms: number;
+  black_ms: number;
+}
 
 export interface Call {
   kind: "llm" | "systemone" | "summary";
@@ -62,6 +77,11 @@ export interface Ply {
   model: string | null;
   latency_ms: number;
   meta: Record<string, Record<string, unknown>>;
+  /**
+   * The mover's time left after the move, increment included, like PGN's `[%clk]`. Null
+   * untimed; absent on older games.
+   */
+  clock_ms?: number | null;
 }
 
 export interface StageResult {
@@ -163,6 +183,15 @@ export interface ChessValues {
    * read them with `loadRecorded`. Absent on older games.
    */
   setup?: unknown;
+  /** Set by the game's first run; null untimed, absent on older games. */
+  time_control?: TimeControl | null;
+}
+
+/** What a run sends. `clock` goes with every run of a timed game; `flag` only with `clock`. */
+export interface ChessInput {
+  messages?: Message[];
+  clock?: ClockInput;
+  flag?: Side;
 }
 
 export const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { MoveEntry } from "../../src/format";
@@ -297,6 +297,25 @@ describe("PlyDetails", () => {
     expect(screen.queryByRole("heading", { level: 2, name: "Plan" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Show reasoning" }));
     expect(await screen.findByRole("heading", { level: 2, name: "Plan" })).toBeInTheDocument();
+  });
+
+  it("has a Clock row only in a timed game, in every state, showing the mover's time", () => {
+    details(reply({ clock_ms: 8_450 }));
+    expect(screen.queryByText("Clock")).not.toBeInTheDocument();
+    cleanup();
+
+    const timed = (state: ReplyState) =>
+      renderWithProviders(
+        <PlyDetails reply={state} view={DEFAULT_PLY_VIEW} onViewChange={() => {}} timed />,
+      );
+    timed({ status: "played", reply: reply({ clock_ms: 8_450 }) });
+    expect(fact("Clock")).toBe("00:08.4");
+    cleanup();
+    timed({ status: "played", reply: reply({ clock_ms: null }) });
+    expect(fact("Clock")).toBe("—");
+    cleanup();
+    timed({ status: "thinking", reasoning: null });
+    expect(fact("Clock")).toBe("");
   });
 
   it("adds the played move below the top moves when it reached the final", () => {

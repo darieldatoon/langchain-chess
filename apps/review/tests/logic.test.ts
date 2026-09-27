@@ -131,6 +131,19 @@ describe("values", () => {
     expect(decodeValues(withS1({ played_move_result: null }))).not.toBeNull();
   });
 
+  it("decodes a timed game: its control, each ply's clock, and a loss on time", () => {
+    const timed = {
+      ...withPly({ clock_ms: 905_000 }),
+      time_control: { base_ms: 900_000, increment_ms: 10_000 },
+      outcome: { kind: "timeout", winner: "black" },
+    };
+    expect(decodeValues(timed)).toBe(timed);
+    const untimed = { ...withPly({ clock_ms: null }), time_control: null };
+    expect(decodeValues(untimed)).toBe(untimed);
+    const draw = { kind: "draw", reason: "timeout_vs_insufficient_material" };
+    expect(decodeValues({ moves: [], outcome: draw })).not.toBeNull();
+  });
+
   it("finds no game record in anything else", () => {
     const bad: unknown[] = [
       null,
@@ -144,13 +157,16 @@ describe("values", () => {
       { moves: [], outcome: { kind: "draw", reason: "boredom" } },
       { moves: [], outcome: { kind: "draw", reason: 1 } },
       { moves: [], outcome: { kind: "checkmate", winner: "nobody" } },
-      { moves: [], outcome: { kind: "timeout", winner: "white" } },
+      { moves: [], outcome: { kind: "timeout", winner: "nobody" } },
+      { moves: [], time_control: { base_ms: "15 min", increment_ms: 0 } },
+      { moves: [], time_control: 900 },
       { ...good, plies: {} },
       { ...good, plies: [null] },
       withPly({ uci: 1 }),
       withPly({ san: null }),
       withPly({ source: 2 }),
       withPly({ latency_ms: "fast" }),
+      withPly({ clock_ms: "1:00" }),
       withPly({ model: 3 }),
       withPly({ meta: null }),
       withS1({ status: "thinking" }),
@@ -197,6 +213,7 @@ describe("games", () => {
     expect(resultText(undefined)).toBe("In progress");
     expect(resultText({ kind: "draw", reason: "stalemate" })).toBe("½-½");
     expect(resultText({ kind: "checkmate", winner: "white" })).toBe("1-0");
+    expect(resultText({ kind: "timeout", winner: "black" })).toBe("0-1");
     expect(resultText({ kind: "resignation", winner: "black", reason: "illegal_moves" })).toBe(
       "0-1",
     );

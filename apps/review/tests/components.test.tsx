@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { DEFAULT_PLY_VIEW } from "@langchain-chess/chess-ui";
 import { describe, expect, it, vi } from "vite-plus/test";
 import type { Analysis, LaunchState } from "../src/analysis";
@@ -337,6 +337,22 @@ describe("GameView", () => {
     });
     renderView(once);
     expect(screen.getAllByRole("button", { name: "Last move" }).at(-1)).toBeDisabled();
+  });
+
+  it("shows the mover's clock after each ply of a timed game, and none untimed", () => {
+    const timed = values({
+      time_control: { base_ms: 900_000, increment_ms: 10_000 },
+      outcome: { kind: "timeout", winner: "white" },
+      plies: values().plies!.map((p, i) => ({ ...p, clock_ms: 900_000 - i * 60_000 })),
+    });
+    renderView(game({ values: timed }));
+    expect(screen.getByText("Black runs out of time. 1-0")).toBeInTheDocument();
+    expect(screen.getByText("Clock").nextElementSibling).toHaveTextContent("09:00");
+    key("ArrowLeft");
+    expect(screen.getByText("Clock").nextElementSibling).toHaveTextContent("10:00");
+    cleanup();
+    renderView();
+    expect(screen.queryByText("Clock")).toBeNull();
   });
 
   it("steps through a game that starts with Black to move", () => {

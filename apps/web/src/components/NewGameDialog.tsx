@@ -19,6 +19,7 @@ import {
   LLM_NAMES,
   LLM_PRESETS,
   SYSTEM_ONE_PRESETS,
+  TIME_CONTROL_PRESETS,
   importedSetup,
   matchupLine,
   matchupOf,
@@ -30,7 +31,7 @@ import {
   type SideChoice,
   type Summarize,
 } from "../setup";
-import type { ChessContext } from "@langchain-chess/chess-ui";
+import { timeControlText, type ChessContext, type TimeControl } from "@langchain-chess/chess-ui";
 import { AdvancedSettings, Field, type DraftKnob, type SetKnob } from "./AdvancedSettings";
 
 interface Props {
@@ -90,6 +91,20 @@ function systemOneKey(setup: Setup): string {
   return isSystemOnePreset(setup.systemOne) ? setup.systemOne : OTHER_SYSTEM_ONE;
 }
 
+const UNTIMED = "untimed";
+
+const TIME_CONTROLS: SelectOption<string>[] = [
+  { value: UNTIMED, label: "Untimed", description: "No clock" },
+  ...TIME_CONTROL_PRESETS.map((control) => ({
+    value: timeControlText(control),
+    label: timeControlText(control),
+    description: `${control.base_ms / 60_000} minutes, plus ${control.increment_ms / 1000} s a move`,
+  })),
+];
+
+const timeControlKey = (control: TimeControl | null) =>
+  control ? timeControlText(control) : UNTIMED;
+
 const SUMMARIZE: Record<ModelLimit["kind"], Summarize> = {
   known: "yes",
   none: "no",
@@ -131,7 +146,7 @@ export function NewGameDialog({
   const fileInput = useRef<HTMLInputElement>(null);
   const importFile = async (file: File) => {
     const read = await readJson(file);
-    const result = read.ok ? importedSetup(read.value, setup.side) : read;
+    const result = read.ok ? importedSetup(read.value, setup) : read;
     if (!mounted.current) return;
     if (!result.ok) {
       setImportProblem(result.why);
@@ -149,6 +164,12 @@ export function NewGameDialog({
       const model = key === OTHER_SYSTEM_ONE ? otherSystemOne : key;
       return { ...s, systemOne: model, systemOneOff: false };
     });
+  const pickTimeControl = (key: string | undefined) =>
+    pick("timeControl")(
+      key === undefined
+        ? undefined
+        : (TIME_CONTROL_PRESETS.find((c) => timeControlText(c) === key) ?? null),
+    );
   const setKnob: SetKnob = (key, value) =>
     setSetup((s) => ({ ...s, knobs: withKnob(s.knobs, key, value) }));
   const model = modelOf(setup);
@@ -247,6 +268,17 @@ export function NewGameDialog({
               ))}
             </RadioGroup>
           </div>
+
+          <Field id="time-control" label="Time Control" hint="Base plus increment, per side.">
+            <Select
+              aria-label="Time Control"
+              size="md"
+              value={timeControlKey(setup.timeControl)}
+              options={TIME_CONTROLS}
+              hideSearch
+              onChange={pickTimeControl}
+            />
+          </Field>
 
           <Field id="system-one" label="System 1" hint="A fast move ranker.">
             <Select

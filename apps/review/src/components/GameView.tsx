@@ -194,6 +194,7 @@ export function GameView({
             }}
             view={view}
             onViewChange={onViewChange}
+            timed={values.time_control != null}
           />
         )}
       </aside>

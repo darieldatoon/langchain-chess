@@ -845,3 +845,188 @@ describe("the game screen", () => {
     expect(button("Start")).toBeInTheDocument();
   });
 });
+
+describe("a timed game", () => {
+  const CONTROL = { base_ms: 600_000, increment_ms: 5_000 };
+  let time = 0;
+  const now = () => time;
+  const clock = (name: "You" | "Opponent") => screen.getByRole("timer", { name: `${name} clock` });
+  /** Moves the injected clock and the timers it drives together. */
+  const advance = (ms: number) =>
+    act(async () => {
+      time += ms;
+      vi.advanceTimersByTime(ms);
+    });
+  const rerender = () => {
+    fireEvent.click(button("Settings"));
+    fireEvent.click(button("Cancel"));
+  };
+  /** Submits start a run that stays in flight, as the real stream's do. */
+  const runs = () => {
+    fake.submit = vi.fn(() => {
+      fake.isLoading = true;
+      return new Promise<void>(() => {});
+    });
+  };
+
+  beforeEach(() => {
+    time = 1_000;
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] });
+    return () => vi.useRealTimers();
+  });
+
+  it("is picked in the modal and remembered; untimed games show no clocks", async () => {
+    render(<App now={now} />);
+    expect(screen.getByLabelText("Time Control")).toHaveValue("untimed");
+    change("Time Control", "10+5");
+    await click("Play");
+    expect(loadSetup().timeControl).toEqual(CONTROL);
+    expect(screen.getAllByRole("timer").map((t) => t.getAttribute("aria-label"))).toEqual([
+      "Opponent clock",
+      "You clock",
+    ]);
+    expect(clock("You")).toHaveTextContent("10:00");
+    // The first move is free: nothing runs before it.
+    expect(clock("You")).toHaveAttribute("data-state", "stopped");
+
+    await click("drop e2e4");
+    expect(fake.submit.mock.lastCall?.[0]).toMatchObject({
+      clock: { control: CONTROL, white_ms: 605_000, black_ms: 600_000 },
+    });
+
+    await click("New game");
+    expect(screen.getByLabelText("Time Control")).toHaveValue("10+5");
+    change("Time Control", "untimed");
+    change("Time Control", "");
+    expect(screen.getByLabelText("Time Control")).toHaveValue("untimed");
+    await click("Play");
+    expect(screen.queryByRole("timer")).not.toBeInTheDocument();
+    await click("drop e2e4");
+    expect(fake.submit.mock.lastCall?.[0]).not.toHaveProperty("clock");
+  });
+
+  it("runs the human's clock on their turn, shows tenths when low, and flags at zero", async () => {
+    onThread("abc", {
+      ...E4_E5,
+      time_control: CONTROL,
+      plies: [
+        { ...E4_E5.plies[0], clock_ms: 12_000 },
+        { ...E4_E5.plies[1], clock_ms: 590_000 },
+      ],
+    });
+    render(<App now={now} />);
+    expect(clock("You")).toHaveAttribute("data-state", "running");
+    expect(clock("You")).toHaveTextContent("00:12");
+    expect(clock("Opponent")).toHaveTextContent("09:50");
+    expect(screen.getByText("Clock").nextElementSibling).toHaveTextContent("09:50");
+    await advance(2_500);
+    expect(clock("You")).toHaveTextContent("00:09.5");
+    await advance(9_500);
+    expect(fake.submit).toHaveBeenLastCalledWith(
+      { clock: { control: CONTROL, white_ms: 0, black_ms: 590_000 }, flag: "white" },
+      expect.objectContaining({ multitaskStrategy: "reject" }),
+    );
+    expect(clock("You")).toHaveTextContent("00:00.0");
+  });
+
+  it("flags the opponent over its run once the move it carries lands, and shows the loss", async () => {
+    onThread("abc", {
+      ...E4_AS_BLACK,
+      time_control: CONTROL,
+      plies: [{ ...E4_AS_BLACK.plies![0], clock_ms: 30_000 }],
+    });
+    runs();
+    render(<App now={now} />);
+    await click("drop e7e5");
+    expect(fake.submit.mock.lastCall?.[0]).toMatchObject({
+      clock: { control: CONTROL, white_ms: 30_000, black_ms: 605_000 },
+    });
+    expect(clock("Opponent")).toHaveAttribute("data-state", "running");
+    // Out of time before the human's move is recorded: an interrupt now could drop that move.
+    await advance(31_000);
+    expect(fake.submit).toHaveBeenCalledTimes(1);
+    fake.threads.abc = {
+      values: {
+        moves: ["e2e4", "e7e5"],
+        plies: [
+          ...E4_AS_BLACK.plies!,
+          ply({ ply: 1, side: "black", uci: "e7e5", san: "e5", clock_ms: 605_000 }),
+        ],
+        time_control: CONTROL,
+        setup: DEFAULT_CONTEXT,
+      },
+    };
+    rerender();
+    await advance(0);
+    expect(fake.submit).toHaveBeenLastCalledWith(
+      { clock: { control: CONTROL, white_ms: 0, black_ms: 605_000 }, flag: "white" },
+      expect.objectContaining({ multitaskStrategy: "interrupt" }),
+    );
+
+    fake.threads.abc = {
+      values: {
+        ...E4_AS_BLACK,
+        moves: ["e2e4", "e7e5"],
+        plies: [...E4_AS_BLACK.plies!, ply({ ply: 1, side: "black", uci: "e7e5", san: "e5" })],
+        time_control: CONTROL,
+        outcome: { kind: "timeout", winner: "black" },
+        setup: DEFAULT_CONTEXT,
+      },
+    };
+    fake.isLoading = false;
+    rerender();
+    const result = screen.getByLabelText("result");
+    expect(within(result).getByText("You won")).toBeInTheDocument();
+    expect(within(result).getByText("White runs out of time. 0-1")).toBeInTheDocument();
+    expect(clock("Opponent")).toHaveAttribute("data-state", "flagged");
+    expect(clock("Opponent")).toHaveTextContent("Opponent · out of time00:00.0");
+  });
+
+  it("offers Retry for a flag whose request failed, and sends it again", async () => {
+    onThread("abc", {
+      ...E4_AS_BLACK,
+      time_control: CONTROL,
+      plies: [{ ...E4_AS_BLACK.plies![0], clock_ms: 30_000 }],
+    });
+    fake.submit = vi.fn(() => {
+      fake.isLoading = true;
+      return Promise.resolve();
+    });
+    render(<App now={now} />);
+    await click("drop e7e5");
+    fake.threads.abc = {
+      values: {
+        moves: ["e2e4", "e7e5"],
+        plies: [
+          ...E4_AS_BLACK.plies!,
+          ply({ ply: 1, side: "black", uci: "e7e5", san: "e5", clock_ms: 605_000 }),
+        ],
+        turns: E4_AS_BLACK.turns,
+        time_control: CONTROL,
+        setup: DEFAULT_CONTEXT,
+      },
+    };
+    rerender();
+    fake.submit = vi.fn(() => {
+      fake.isLoading = false;
+      return Promise.reject(new Error("Failed to fetch"));
+    });
+    await advance(30_000);
+    expect(screen.getByRole("status")).toHaveTextContent("Failed to fetch");
+    expect(clock("Opponent")).toHaveTextContent("00:00.0");
+
+    fake.submit = vi.fn(() => Promise.resolve());
+    await click("Retry");
+    expect(fake.submit).toHaveBeenCalledWith(
+      { clock: { control: CONTROL, white_ms: 0, black_ms: 605_000 }, flag: "white" },
+      expect.objectContaining({ multitaskStrategy: "interrupt" }),
+    );
+  });
+
+  it("keeps its clock on a rematch", async () => {
+    onThread("abc", { ...E4_E5, time_control: CONTROL });
+    render(<App now={now} />);
+    await click("Rematch");
+    expect(clock("You")).toHaveTextContent("10:00");
+  });
+});

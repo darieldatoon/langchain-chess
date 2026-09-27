@@ -5,7 +5,14 @@ import { Spinner, SpinnerIcon } from "@langchain/macaw-components/Spinner";
 import { Text } from "@langchain/macaw-components/Text";
 import { Tooltip } from "@langchain/macaw-components/Tooltip";
 import type { ReactNode } from "react";
-import { costText, seconds, sourceClass, sourceLabel, type SourceClass } from "../format";
+import {
+  clockText,
+  costText,
+  seconds,
+  sourceClass,
+  sourceLabel,
+  type SourceClass,
+} from "../format";
 import { systemOneMeta, turnCost } from "../selectors";
 import type { PlyView, RankedMove, Reply, ReplyState } from "../types";
 import { Analysis } from "./Analysis";
@@ -25,13 +32,21 @@ interface Props {
   view: PlyView;
   onViewChange: (view: PlyView) => void;
   title?: string;
+  /** A timed game: every card has a Clock row, the mover's time after the move. */
+  timed?: boolean;
 }
 
 /**
  * Every section and fact row renders in every state, so the card keeps its shape between moves;
  * do not make one conditional on the ply.
  */
-export function PlyDetails({ reply, view, onViewChange, title = "Last Reply" }: Props) {
+export function PlyDetails({
+  reply,
+  view,
+  onViewChange,
+  title = "Last Reply",
+  timed = false,
+}: Props) {
   if (reply.status === "none") {
     return (
       <Card intent="neutral" className="flex flex-col gap-space-3">
@@ -71,7 +86,7 @@ export function PlyDetails({ reply, view, onViewChange, title = "Last Reply" }: 
           <Loading />
         )}
       </div>
-      <Facts reply={played} />
+      <Facts reply={played} timed={timed} />
       <Section
         label="top moves"
         open={view.topMoves}
@@ -141,7 +156,7 @@ function Section({
 }
 
 /** The fact rows, each a spinner until the move lands. */
-function Facts({ reply }: { reply: Reply | null }) {
+function Facts({ reply, timed }: { reply: Reply | null; timed: boolean }) {
   const turn = reply?.turn ?? null;
   const cost = costText(turn ? turnCost(turn.calls) : null);
   const value = (fact: (reply: Reply) => ReactNode) => (reply ? fact(reply) : <Loading />);
@@ -149,6 +164,14 @@ function Facts({ reply }: { reply: Reply | null }) {
     <dl className="grid grid-cols-[auto_1fr] gap-x-space-4 gap-y-space-1">
       <Fact label="Model" value={value(({ ply }) => ply.model ?? "—")} />
       <Fact label="Latency" value={value(({ ply }) => seconds(ply.latency_ms))} />
+      {timed && (
+        <Fact
+          label="Clock"
+          value={value(({ ply }) =>
+            typeof ply.clock_ms === "number" ? clockText(ply.clock_ms) : "—",
+          )}
+        />
+      )}
       <Fact
         label="Cost"
         value={value(() =>

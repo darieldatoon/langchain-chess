@@ -5,14 +5,14 @@ import { configurableOf } from "../src/settings";
 import type { GameRecord } from "../src/setup";
 import { fake, lastOptions, resetFake } from "./support/fakeStream";
 import { AFTER_E4, E4_E5, turn } from "@langchain-chess/chess-ui/testing";
-import { DEFAULT_CONTEXT, START_FEN } from "@langchain-chess/chess-ui";
+import { DEFAULT_CONTEXT, START_FEN, type ChessValues } from "@langchain-chess/chess-ui";
 import { threadFromUrl, useGame, writeThreadToUrl } from "../src/useGame";
 
 vi.mock("@langchain/react", async () => (await import("./support/fakeStream")).useStreamMock());
 
 const REJECT = { multitaskStrategy: "reject" };
-const WHITE: GameRecord = { side: "white", context: DEFAULT_CONTEXT };
-const BLACK: GameRecord = { side: "black", context: DEFAULT_CONTEXT };
+const WHITE: GameRecord = { side: "white", context: DEFAULT_CONTEXT, timeControl: null };
+const BLACK: GameRecord = { side: "black", context: DEFAULT_CONTEXT, timeControl: null };
 
 beforeEach(() => {
   resetFake();
@@ -48,7 +48,7 @@ describe("useGame", () => {
 
   it("submits a move as a human message with the context and a reject strategy", async () => {
     const context = { ...DEFAULT_CONTEXT, threshold: 0.4 };
-    const chosen: GameRecord = { side: "white", context };
+    const chosen: GameRecord = { ...WHITE, context };
     const { result } = renderHook(() => useGame("key", chosen));
     expect(lastOptions.current).toMatchObject({ apiKey: "key" });
     await act(() => result.current.play("e2e4", AFTER_E4));
@@ -140,7 +140,7 @@ describe("useGame", () => {
     const recorded = { ...DEFAULT_CONTEXT, policy: "llm" as const, k: 3 };
     resetFake({ ...E4_E5, setup: recorded });
     const { result } = renderHook(() => useGame("", BLACK));
-    expect(result.current.record).toEqual({ side: "white", context: recorded });
+    expect(result.current.record).toEqual({ ...WHITE, context: recorded });
     await act(() => result.current.play("g1f3", "X"));
     expect(fake.submit.mock.lastCall?.[1].config.configurable).toEqual(configurableOf(recorded));
   });
@@ -223,5 +223,280 @@ describe("useGame", () => {
     const { result } = renderHook(() => useGame("", WHITE));
     expect(result.current.isLoading).toBe(true);
     expect(result.current.isThinking).toBe(false);
+  });
+});
+
+describe("useGame on a clock", () => {
+  const CONTROL = { base_ms: 60_000, increment_ms: 2_000 };
+  const TIMED_WHITE: GameRecord = { ...WHITE, timeControl: CONTROL };
+  const TIMED_BLACK: GameRecord = { ...BLACK, timeControl: CONTROL };
+  let time = 0;
+  const now = () => time;
+  const clockSent = (white_ms: number, black_ms: number) => ({
+    clock: { control: CONTROL, white_ms, black_ms },
+  });
+  /** Submits start a run that stays in flight, as the real stream's do. */
+  const inFlight = () => {
+    fake.submit = vi.fn(() => {
+      fake.isLoading = true;
+      return Promise.resolve();
+    });
+  };
+  const timed = (values: ChessValues) => {
+    fake.values = { time_control: CONTROL, ...values };
+  };
+
+  beforeEach(() => {
+    time = 1_000;
+    inFlight();
+  });
+
+  it("has no clock untimed", () => {
+    const { result } = renderHook(() => useGame("", WHITE, now));
+    expect(result.current.clock).toBeNull();
+  });
+
+  it("sends the first move for free with its increment, then runs the agent's clock", async () => {
+    const { result } = renderHook(() => useGame("", TIMED_WHITE, now));
+    expect(result.current.clock?.running).toBeNull();
+    time = 9_000;
+    await act(() => result.current.play("e2e4", AFTER_E4));
+    expect(fake.submit).toHaveBeenLastCalledWith(
+      { messages: [expect.objectContaining({ content: "e2e4" })], ...clockSent(62_000, 60_000) },
+      expect.objectContaining(REJECT),
+    );
+    expect(result.current.clock?.running).toEqual({ side: "black", since: 9_000 });
+  });
+
+  it("adopts the agent's recorded time once its move lands, then runs the human's", async () => {
+    const { result, rerender } = renderHook(() => useGame("", TIMED_WHITE, now));
+    await act(() => result.current.play("e2e4", AFTER_E4));
+    timed({
+      ...E4_E5,
+      plies: [
+        { ...E4_E5.plies[0], clock_ms: 62_000 },
+        { ...E4_E5.plies[1], clock_ms: 55_000 },
+      ],
+    });
+    fake.isLoading = true;
+    rerender();
+    expect(result.current.clock?.left).toEqual({ white: 62_000, black: 55_000 });
+    expect(result.current.clock?.running).toBeNull();
+    time = 20_000;
+    fake.isLoading = false;
+    rerender();
+    expect(result.current.clock?.running).toEqual({ side: "white", since: 20_000 });
+  });
+
+  it("opens as Black with both clocks full, the agent's running", async () => {
+    const { result } = renderHook(() => useGame("", TIMED_BLACK, now));
+    await act(() => result.current.start());
+    expect(fake.submit).toHaveBeenLastCalledWith(
+      { messages: [expect.objectContaining({ content: "go" })], ...clockSent(60_000, 60_000) },
+      expect.objectContaining(REJECT),
+    );
+    expect(result.current.clock?.running?.side).toBe("white");
+  });
+
+  it("restores a game's clocks from its last plies, running the human's on their turn", () => {
+    timed({
+      ...E4_E5,
+      setup: DEFAULT_CONTEXT,
+      plies: [
+        { ...E4_E5.plies[0], clock_ms: 58_000 },
+        { ...E4_E5.plies[1], clock_ms: 41_000 },
+      ],
+    });
+    const { result } = renderHook(() => useGame("", null, now));
+    expect(result.current.record?.timeControl).toEqual(CONTROL);
+    expect(result.current.clock?.left).toEqual({ white: 58_000, black: 41_000 });
+    expect(result.current.clock?.running).toEqual({ side: "white", since: 1_000 });
+  });
+
+  it("pauses a failed turn with the agent charged, and runs it again on Retry", async () => {
+    const pending = { ...E4_E5.turns[0], id: "turn-2", status: "pending" as const, ply: null };
+    const { result, rerender } = renderHook(() => useGame("", TIMED_BLACK, now));
+    await act(() => result.current.start());
+    time = 6_000;
+    timed({ moves: [], plies: [], turns: [pending] });
+    fake.isLoading = false;
+    rerender();
+    expect(result.current.clock?.running).toBeNull();
+    expect(result.current.clock?.left.white).toBe(55_000);
+
+    time = 60_000;
+    await act(() => result.current.retry());
+    expect(fake.submit).toHaveBeenLastCalledWith(
+      clockSent(55_000, 60_000),
+      expect.objectContaining(REJECT),
+    );
+    expect(result.current.clock?.running).toEqual({ side: "white", since: 60_000 });
+  });
+
+  it("flags the agent over its run with an interrupt, once per position", async () => {
+    const { result, rerender } = renderHook(() => useGame("", TIMED_WHITE, now));
+    await act(() => result.current.play("e2e4", AFTER_E4));
+    timed({ moves: ["e2e4"], plies: [{ ...E4_E5.plies[0], clock_ms: 62_000 }] });
+    rerender();
+    time = 70_000;
+    await act(() => result.current.flag("black"));
+    expect(fake.submit).toHaveBeenLastCalledWith(
+      { ...clockSent(62_000, 0), flag: "black" },
+      expect.objectContaining({ multitaskStrategy: "interrupt" }),
+    );
+    expect(result.current.clock?.running).toBeNull();
+    await act(() => result.current.flag("black"));
+    expect(fake.submit).toHaveBeenCalledTimes(2);
+  });
+
+  describe("a move that never lands", () => {
+    const restored = () => {
+      timed({
+        ...E4_E5,
+        setup: DEFAULT_CONTEXT,
+        plies: [
+          { ...E4_E5.plies[0], clock_ms: 58_000 },
+          { ...E4_E5.plies[1], clock_ms: 41_000 },
+        ],
+      });
+      return renderHook(() => useGame("", null, now));
+    };
+
+    it("earns no increment and charges the agent nothing when the move is refused", async () => {
+      const { result, rerender } = restored();
+      time = 5_000;
+      await act(() => result.current.play("g1f3", "X"));
+      expect(fake.submit.mock.lastCall?.[0]).toMatchObject(clockSent(56_000, 41_000));
+      expect(result.current.clock?.left.white).toBe(54_000);
+      expect(result.current.clock?.running?.side).toBe("black");
+
+      time = 9_000;
+      fake.isLoading = false;
+      rerender();
+      expect(result.current.clock?.running).toEqual({ side: "white", since: 1_000 });
+      expect(result.current.clock?.left).toEqual({ white: 58_000, black: 41_000 });
+    });
+
+    it("goes back to the clock before it when the submit fails", async () => {
+      fake.submit = vi.fn(() => Promise.reject(new Error("Failed to fetch")));
+      const { result } = restored();
+      time = 5_000;
+      await act(async () => {
+        await expect(result.current.play("g1f3", "X")).rejects.toThrow("Failed to fetch");
+      });
+      expect(result.current.clock?.running).toEqual({ side: "white", since: 1_000 });
+      expect(result.current.clock?.left.black).toBe(41_000);
+    });
+  });
+
+  it("watches for a flag only once the record has the control and the move the run carries", async () => {
+    const { result, rerender } = renderHook(() => useGame("", TIMED_WHITE, now));
+    expect(result.current.flaggable).toBeNull();
+    await act(() => result.current.play("e2e4", AFTER_E4));
+    expect(result.current.clock?.running?.side).toBe("black");
+    expect(result.current.flaggable).toBeNull();
+    timed({ moves: ["e2e4"], plies: [{ ...E4_E5.plies[0], clock_ms: 62_000 }] });
+    rerender();
+    expect(result.current.flaggable).toBe(result.current.clock);
+    fake.values = { ...fake.values, outcome: { kind: "timeout", winner: "white" } };
+    rerender();
+    expect(result.current.flaggable).toBeNull();
+  });
+
+  it("resends a flag whose request failed on Retry, past the once-per-position guard", async () => {
+    const { result, rerender } = renderHook(() => useGame("", TIMED_WHITE, now));
+    await act(() => result.current.play("e2e4", AFTER_E4));
+    timed({ moves: ["e2e4"], plies: [{ ...E4_E5.plies[0], clock_ms: 62_000 }] });
+    rerender();
+    expect(result.current.fallen).toBeNull();
+    fake.submit = vi.fn(() => {
+      fake.isLoading = false;
+      return Promise.reject(new Error("Failed to fetch"));
+    });
+    time = 70_000;
+    await act(async () => {
+      await expect(result.current.flag("black")).rejects.toThrow("Failed to fetch");
+    });
+    expect(result.current.fallen).toBe("black");
+
+    fake.submit = vi.fn(() => Promise.resolve());
+    await act(() => result.current.retry());
+    expect(fake.submit).toHaveBeenCalledWith(
+      { ...clockSent(62_000, 0), flag: "black" },
+      expect.objectContaining({ multitaskStrategy: "interrupt" }),
+    );
+  });
+
+  it("keeps the human's clock stopped at zero after a failed flag, so Retry can resend it", async () => {
+    timed({ ...E4_E5, setup: DEFAULT_CONTEXT });
+    const { result } = renderHook(() => useGame("", null, now));
+    fake.submit = vi.fn(() => Promise.reject(new Error("Failed to fetch")));
+    time = 61_000;
+    await act(async () => {
+      await expect(result.current.flag("white")).rejects.toThrow("Failed to fetch");
+    });
+    expect(result.current.clock?.running).toBeNull();
+    expect(result.current.fallen).toBe("white");
+
+    fake.submit = vi.fn(() => Promise.resolve());
+    await act(() => result.current.retry());
+    expect(fake.submit).toHaveBeenCalledWith(
+      { ...clockSent(0, 60_000), flag: "white" },
+      expect.objectContaining(REJECT),
+    );
+  });
+
+  it("offers no Retry while an interrupting flag still runs, though loading dropped", async () => {
+    const { result, rerender } = renderHook(() => useGame("", TIMED_WHITE, now));
+    await act(() => result.current.play("e2e4", AFTER_E4));
+    timed({ moves: ["e2e4"], plies: [{ ...E4_E5.plies[0], clock_ms: 62_000 }] });
+    rerender();
+    let finish = () => {};
+    fake.submit = vi.fn(() => {
+      fake.isLoading = false;
+      return new Promise<void>((resolve) => (finish = resolve));
+    });
+    time = 70_000;
+    let flagged: Promise<void> = Promise.resolve();
+    act(() => {
+      flagged = result.current.flag("black");
+    });
+    rerender();
+    expect(result.current.fallen).toBeNull();
+    await act(async () => {
+      finish();
+      await flagged;
+    });
+    expect(result.current.fallen).toBe("black");
+  });
+
+  it("flags the human with no run to interrupt", async () => {
+    timed({ ...E4_E5, setup: DEFAULT_CONTEXT });
+    const { result } = renderHook(() => useGame("", null, now));
+    time = 61_000;
+    await act(() => result.current.flag("white"));
+    expect(fake.submit).toHaveBeenLastCalledWith(
+      { ...clockSent(0, 60_000), flag: "white" },
+      expect.objectContaining(REJECT),
+    );
+  });
+
+  it("flags instead of moving once the human's time is gone", async () => {
+    timed({ ...E4_E5, setup: DEFAULT_CONTEXT });
+    const { result } = renderHook(() => useGame("", null, now));
+    time = 61_001;
+    await act(() => result.current.play("g1f3", AFTER_E4));
+    expect(fake.submit).toHaveBeenCalledTimes(1);
+    expect(fake.submit).toHaveBeenLastCalledWith(
+      { ...clockSent(0, 60_000), flag: "white" },
+      expect.objectContaining(REJECT),
+    );
+    expect(result.current.pendingMove).toBeNull();
+  });
+
+  it("sends no flag untimed", async () => {
+    const { result } = renderHook(() => useGame("", WHITE, now));
+    await act(() => result.current.flag("black"));
+    expect(fake.submit).not.toHaveBeenCalled();
   });
 });

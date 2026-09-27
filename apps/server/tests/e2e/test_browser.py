@@ -101,3 +101,24 @@ def test_a_setup_s_settings_reach_the_agent(server: str, page: Page):
     shortlist_meta = values["plies"][0]["meta"]["SystemOneMiddleware"]["shortlist"]
     assert len(shortlist_meta) == 2
     expect(page.get_by_text("Your move.")).to_be_visible()
+
+
+def clock_face(ms: int) -> str:
+    seconds = ms // 1000
+    return f"{seconds // 60:02d}:{seconds % 60:02d}"
+
+
+def test_a_timed_game_records_the_agent_s_clock_and_shows_it(server: str, page: Page):
+    page.goto(f"{server}/ui/")
+    page.get_by_text("Black", exact=True).click()
+    pick(page, "Time Control", "10+5 10 minutes, plus 5 s a move")
+    page.get_by_role("button", name="Play", exact=True).click()
+
+    values = game_state(server, page)
+    assert values["time_control"] == {"base_ms": 600_000, "increment_ms": 5_000}
+    agent_ms = values["plies"][0]["clock_ms"]
+    assert 0 < agent_ms <= 605_000
+    expect(page.get_by_text("Your move.")).to_be_visible()
+    # The agent's clock reads what the server charged it.
+    expect(page.get_by_role("timer", name="Opponent clock")).to_contain_text(clock_face(agent_ms))
+    expect(page.get_by_role("timer", name="You clock")).to_have_attribute("data-state", "running")
