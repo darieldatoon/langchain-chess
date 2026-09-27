@@ -2,10 +2,18 @@ import chess
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
+from langchain_chess.contract import PositionView
 from langchain_chess.models import canonical_model, model_identity
 from langchain_chess.parse import parse_move, text_of
 from langchain_chess.position import movetext
-from langchain_chess.prompt import delta_text, feedback_text, model_view, render_position
+from langchain_chess.prompt import (
+    PositionSection,
+    delta_text,
+    feedback_text,
+    model_view,
+    position_renderer,
+    render_position,
+)
 
 BLACK_TO_MOVE = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
 
@@ -81,19 +89,33 @@ def test_model_identity_prefers_the_gateway_prefix():
     assert canonical_model("semif-qwen3.5-4b") == "unknown:semif-qwen3.5-4b"
 
 
-def test_render_position_lists_legal_moves_or_only_the_permitted_ones():
-    board = chess.Board()
+def view(allowed=None, candidates=None, *, start_fen=chess.STARTING_FEN, moves=()):
+    board = chess.Board(start_fen)
+    for uci in moves:
+        board.push_uci(uci)
     legal = [m.uci() for m in board.legal_moves]
-    text = render_position(chess.STARTING_FEN, [], board, legal, None, move_list="both")
+    return PositionView(
+        start_fen=start_fen,
+        moves=tuple(moves),
+        allowed=tuple(allowed if allowed is not None else legal),
+        initial_allowed=tuple(legal),
+        candidates=tuple(candidates) if candidates is not None else None,
+        turn_id="t",
+    )
+
+
+def render(v, sans=(), **display):
+    return render_position(v, list(sans), position_renderer(**display))
+
+
+def test_render_position_lists_legal_moves_or_only_the_permitted_ones():
+    text = render(view())
     assert text.startswith("Moves so far: (none, this is the first move)\nFEN: ")
     assert "White to move." in text
     assert "Legal moves: Nh3, Nf3" in text
     assert text.endswith("Reply with your analysis, then the final line `MOVE: <move>`.")
-    hidden = render_position(chess.STARTING_FEN, [], board, legal, None, move_list="candidates")
-    assert "Legal moves" not in hidden
-    narrowed = render_position(
-        chess.STARTING_FEN, [], board, ["e2e4", "d2d4"], ["g1f3", "d2d4"], move_list="both"
-    )
+    assert "Legal moves" not in render(view(), move_list="candidates")
+    narrowed = render(view(["e2e4", "d2d4"], ["d2d4"]))
     assert "Suggested candidates: d4. These are suggested candidates" in narrowed
     assert "Only these moves are permitted: e4, d4." in narrowed
     assert "Legal moves" not in narrowed
@@ -109,24 +131,61 @@ def test_render_position_lists_legal_moves_or_only_the_permitted_ones():
     ],
 )
 def test_move_list_picks_the_lists_a_turn_shows(move_list, candidates, legal):
-    board = chess.Board()
-    allowed = [m.uci() for m in board.legal_moves]
-    text = render_position(chess.STARTING_FEN, [], board, allowed, ["e2e4"], move_list=move_list)
+    text = render(view(candidates=["e2e4"]), move_list=move_list)
     assert ("Suggested candidates: e4." in text) is candidates
     assert ("Legal moves:" in text) is legal
-    restricted = render_position(
-        chess.STARTING_FEN, [], board, ["e2e4", "d2d4"], ["e2e4"], move_list=move_list
-    )
+    restricted = render(view(["e2e4", "d2d4"], ["e2e4"]), move_list=move_list)
     assert "Only these moves are permitted: e4, d4." in restricted
     assert ("Suggested candidates: e4." in restricted) is candidates
 
 
-def test_render_position_in_check():
+def test_the_fen_and_the_board_can_be_left_out():
+    both = render(view(moves=["e2e4"]), ["e4"])
+    assert "FEN: " in both
+    assert "Board (ranks 8 to 1" in both
+    bare = render(view(moves=["e2e4"]), ["e4"], show_fen=False, show_board=False)
+    assert bare.splitlines() == [
+        "Moves so far: 1. e4",
+        "Black to move.",
+        "Legal moves: " + bare.split("Legal moves: ")[1].splitlines()[0],
+        "Reply with your analysis, then the final line `MOVE: <move>`.",
+    ]
+
+
+def test_the_bundled_renderer_keeps_version_1_s_order():
+    text = render(view(candidates=["e7e5"], moves=["e2e4"]), ["e4"])
+    starts = [line.split(":")[0].split(" ")[0] for line in text.splitlines() if line]
+    heads = [s for s in starts if s in ("Moves", "FEN", "Board", "Black", "Suggested", "Legal")]
+    assert heads == ["Moves", "FEN", "Board", "Black", "Suggested", "Legal"]
+
+
+def test_a_renderer_may_return_both_parts():
+    section = PositionSection(position="POSITION", moves="MOVES")
+    lines = render_position(view(), [], lambda v: section).splitlines()
+    assert lines[1:4] == ["POSITION", "White to move.", "MOVES"]
+
+
+def test_a_custom_start_always_shows_its_fen():
+    fen = "4k3/8/8/8/8/8/8/4K2R w K - 0 1"
+    text = render(view(start_fen=fen), show_fen=False, show_board=False, move_list="none")
+    assert f"Starting position (FEN): {fen}" in text
+    assert "Starting position" not in render(view())
+
+
+def test_a_custom_renderer_cannot_drop_what_every_turn_says():
     board = chess.Board("4k3/8/8/8/8/8/4q3/4K3 w - - 0 1")
-    legal = [m.uci() for m in board.legal_moves]
-    text = render_position(board.fen(), [], board, legal, [], move_list="both")
-    assert "You are in check." in text
-    assert "Suggested" not in text
+    restricted = view(["e1f1"], start_fen=board.fen())
+    text = render_position(restricted, [], lambda v: f"custom: {len(v.allowed)} allowed")
+    assert text.splitlines() == [
+        "Moves so far: (none, this is the first move)",
+        f"Starting position (FEN): {board.fen()}",
+        "custom: 1 allowed",
+        "White to move.",
+        "You are in check.",
+        "Only these moves are permitted: Kf1.",
+        "Reply with your analysis, then the final line `MOVE: <move>`.",
+    ]
+    assert "custom" not in render_position(view(), [], lambda v: "   ")
 
 
 def test_delta_and_feedback_text():

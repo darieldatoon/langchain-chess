@@ -5,14 +5,15 @@ The stock trigger and cutoff logic are kept; the summary's own calls are appende
 turn in the same update as the rewrite, so the summary and its cost are checkpointed together.
 """
 
+import contextvars
 import uuid
-from collections.abc import Mapping
-from typing import Any
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any, cast
 
 from langchain.agents.middleware import SummarizationMiddleware
 from langchain.agents.middleware.types import AgentMiddleware
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AnyMessage, BaseMessage, HumanMessage, SystemMessage
 
 from langchain_chess.errors import ChessContractError
 from langchain_chess.recorder import CallRecorder
@@ -27,7 +28,12 @@ Messages to summarize:
 {messages}"""
 
 DEFAULT_TRIGGER = ("fraction", 0.7)
-"""Of the model's input limit: room for the system prompt, the position and the output."""
+"""Of the model's input limit, counting the system prompt and the turn's message too."""
+
+type Overhead = Callable[[Mapping[str, Any]], Sequence[BaseMessage]]
+"""What the model reads besides the stored messages: the system prompt and the turn's message."""
+
+_OVERHEAD: contextvars.ContextVar[int] = contextvars.ContextVar("chess_overhead", default=0)
 DEFAULT_KEEP = ("messages", 20)
 
 
@@ -45,6 +51,7 @@ class ChessSummarization(SummarizationMiddleware):
         *,
         recorder: CallRecorder,
         max_retries: int,
+        overhead: Overhead | None = None,
         **settings: Any,
     ) -> None:
         settings.setdefault("trigger", DEFAULT_TRIGGER)
@@ -70,16 +77,48 @@ class ChessSummarization(SummarizationMiddleware):
             )
             raise ChessContractError(msg) from e
         self.recorder = recorder
+        self.overhead = overhead
+
+    def _should_summarize(self, messages: list[AnyMessage], total_tokens: int) -> bool:
+        # Only the trigger counts the rest of the request: trimming and the cutoff don't.
+        return super()._should_summarize(messages, total_tokens + _OVERHEAD.get())
+
+    def overhead_tokens(self, state: Mapping[str, Any]) -> int:
+        return self._count(list(self.overhead(state))) if self.overhead is not None else 0
+
+    def _count(self, messages: list[BaseMessage]) -> int:
+        return self.token_counter(cast("list[AnyMessage]", messages))
+
+    def check_room(self, system_prompt: str) -> None:
+        """A system prompt that fills the trigger alone would summarize before every call."""
+        tokens = self._count([SystemMessage(system_prompt)])
+        limit = (self.model.profile or {}).get("max_input_tokens")
+        for clause in self._trigger_clauses:
+            fraction = clause.get("fraction")
+            absolute = clause.get("tokens")
+            threshold = int(limit * fraction) if fraction is not None and limit else absolute
+            if threshold is not None and tokens >= threshold:
+                msg = (
+                    f"the system prompt is {tokens} tokens, and memory summarizes at {threshold}: "
+                    "shorten it or turn memory off"
+                )
+                raise ChessContractError(msg)
 
     @classmethod
     def from_middleware(
-        cls, configured: SummarizationMiddleware, *, recorder: CallRecorder, max_retries: int
+        cls,
+        configured: SummarizationMiddleware,
+        *,
+        recorder: CallRecorder,
+        max_retries: int,
+        overhead: Overhead | None = None,
     ) -> "ChessSummarization":
         """Copy a configured `SummarizationMiddleware`'s public settings."""
         return cls(
             configured.model,
             recorder=recorder,
             max_retries=max_retries,
+            overhead=overhead,
             trigger=configured.trigger,
             keep=configured.keep,
             summary_prompt=configured.summary_prompt,
@@ -109,13 +148,21 @@ class ChessSummarization(SummarizationMiddleware):
         return {**update, "turns": turns, "consumed_message_ids": consumed}
 
     def before_model(self, state: Any, runtime: Any) -> dict[str, Any] | None:
-        with self.recorder.sink("summary") as calls:
-            update = super().before_model(state, runtime)
+        token = _OVERHEAD.set(self.overhead_tokens(state))
+        try:
+            with self.recorder.sink("summary") as calls:
+                update = super().before_model(state, runtime)
+        finally:
+            _OVERHEAD.reset(token)
         return self._account(state, update, calls)
 
     async def abefore_model(self, state: Any, runtime: Any) -> dict[str, Any] | None:
-        with self.recorder.sink("summary") as calls:
-            update = await super().abefore_model(state, runtime)
+        token = _OVERHEAD.set(self.overhead_tokens(state))
+        try:
+            with self.recorder.sink("summary") as calls:
+                update = await super().abefore_model(state, runtime)
+        finally:
+            _OVERHEAD.reset(token)
         return self._account(state, update, calls)
 
 

@@ -55,6 +55,14 @@ rest. Assistant context and `configurable` are each migrated from their settings
 merged with `configurable` winning; an explicit null resets a setting to its default, and unknown
 keys are ignored. Assistants saved before versions still run.
 
+`model_kwargs` from a run or an assistant is limited on the server to arguments that reach the
+gateway's request: `temperature`, `top_p`, `max_tokens` (or `max_output_tokens`,
+`max_completion_tokens`), `reasoning_effort`, `reasoning`, `verbosity` and `extra_body`. Inside
+`extra_body`, provider tools and the account's resources (`tools`, `tool_choice`,
+`previous_response_id`, `conversation`, `prompt`) are held back too: the gateway attaches the
+deployment's key to whatever the request asks for. Run metadata records the values sent, such as
+the effort `model_kwargs` set; `setup` keeps `model_kwargs` as given.
+
 Settings switch nodes off but never remove them: `policy="llm"` keeps a SystemOne node that does
 nothing, and `memory=False` a summarization node that does nothing. The server rebuilds the
 graph without the run's settings to read or update a thread and to describe the graph (Studio,

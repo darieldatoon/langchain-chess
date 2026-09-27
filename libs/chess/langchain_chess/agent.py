@@ -1,12 +1,13 @@
 """`create_chess_agent`: a chess agent on `create_agent(tools=[])`."""
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import SummarizationMiddleware
 from langchain.agents.middleware.types import AgentMiddleware
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatResult
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Checkpointer
@@ -16,8 +17,12 @@ from langchain_chess.errors import ChessContractError
 from langchain_chess.middleware.core import ChessCore
 from langchain_chess.middleware.forced_move import ForcedMoveMiddleware
 from langchain_chess.middleware.stall_retry import StallRetry
-from langchain_chess.middleware.summarization import ChessSummarization, NoSummarization
-from langchain_chess.prompt import SYSTEM_PROMPT
+from langchain_chess.middleware.summarization import (
+    ChessSummarization,
+    NoSummarization,
+    Overhead,
+)
+from langchain_chess.prompt import SYSTEM_PROMPT, PositionRenderer, position_renderer
 from langchain_chess.recorder import CallRecorder
 from langchain_chess.rules import DrawClaims
 from langchain_chess.settings import ListedMoves
@@ -47,15 +52,16 @@ def _summarizer(
     *,
     recorder: CallRecorder,
     max_retries: int,
+    overhead: Overhead,
 ) -> ChessSummarization:
     if model is None:
         msg = "memory needs a model"
         raise ChessContractError(msg)
     if summarization is not None:
         return ChessSummarization.from_middleware(
-            summarization, recorder=recorder, max_retries=max_retries
+            summarization, recorder=recorder, max_retries=max_retries, overhead=overhead
         )
-    return ChessSummarization(model, recorder=recorder, max_retries=max_retries)
+    return ChessSummarization(model, recorder=recorder, max_retries=max_retries, overhead=overhead)
 
 
 def create_chess_agent(
@@ -63,7 +69,10 @@ def create_chess_agent(
     *,
     middleware: Sequence[AgentMiddleware[Any, Any, Any]] = (),
     system_prompt: str | None = None,
+    show_fen: bool = True,
+    show_board: bool = True,
     move_list: ListedMoves = "both",
+    render_position: PositionRenderer | None = None,
     memory: bool = False,
     summarization: SummarizationMiddleware | None = None,
     max_retries: int = 3,
@@ -79,10 +88,20 @@ def create_chess_agent(
 
     `model=None` only works if middleware always proposes (a System-1-only agent). Without a
     checkpointer the agent is stateless and every run must carry a `position`.
+    `show_fen`, `show_board` and `move_list` shape the bundled position section of each
+    turn's message; `render_position` replaces it (they are then unused). With `memory=True`,
+    summarizing counts the system prompt and the turn's message too.
     `fixed_topology=True` keeps the summarization node with `memory=False`, so the graph's
     nodes don't depend on `memory`: the Agent Server reads state with a graph built without
     the run's settings.
     """
+    if system_prompt == "":
+        msg = "system_prompt must not be empty; pass None for the bundled prompt"
+        raise ChessContractError(msg)
+    prompt = system_prompt or SYSTEM_PROMPT
+    render = render_position or position_renderer(
+        show_fen=show_fen, show_board=show_board, move_list=move_list
+    )
     guarded = [guard(m, seed=seed) for m in middleware]
     declared: dict[str, str] = {}
     for proxy in guarded:
@@ -93,22 +112,29 @@ def create_chess_agent(
             declared[key] = proxy.name
 
     recorder = CallRecorder()
-    stack: list[AgentMiddleware[Any, Any, Any]] = [
-        ChessCore(
-            memory=memory,
-            max_retries=max_retries,
-            draw_claims=draw_claims,
-            move_list=move_list,
-            recorder=recorder,
-            extensions=guarded,
-        )
-    ]
+    core = ChessCore(
+        memory=memory,
+        max_retries=max_retries,
+        draw_claims=draw_claims,
+        render=render,
+        recorder=recorder,
+        extensions=guarded,
+    )
+    stack: list[AgentMiddleware[Any, Any, Any]] = [core]
     if forced_move:
         stack.append(ForcedMoveMiddleware())
     stack.extend(guarded)
     if memory:
+
+        def overhead(state: Mapping[str, Any]) -> list[BaseMessage]:
+            return [SystemMessage(prompt), HumanMessage(core.turn_message(state))]
+
+        summarizer = _summarizer(
+            model, summarization, recorder=recorder, max_retries=max_retries, overhead=overhead
+        )
+        summarizer.check_room(prompt)
         # Last, so it runs only right before an actual LLM call.
-        stack.append(_summarizer(model, summarization, recorder=recorder, max_retries=max_retries))
+        stack.append(summarizer)
     elif fixed_topology:
         stack.append(NoSummarization())
     stack.append(StallRetry())
@@ -116,7 +142,7 @@ def create_chess_agent(
     graph = create_agent(
         model or NoModel(),
         tools=[],
-        system_prompt=system_prompt or SYSTEM_PROMPT,
+        system_prompt=prompt,
         state_schema=ChessState,
         middleware=stack,
         context_schema=context_schema,

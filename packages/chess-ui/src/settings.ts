@@ -4,6 +4,7 @@
 import {
   DEFAULT_CONTEXT,
   LEGACY_KEYS,
+  MODEL_KWARGS_RULES,
   SETTING_SPECS,
   SETTINGS_VERSION,
   VERSION_DEFAULTS,
@@ -24,10 +25,19 @@ export function isRecord(value: unknown): value is Values {
 
 export const SETTING_KEYS = Object.keys(SETTING_SPECS) as SettingKey[];
 
+function isJson(value: unknown): boolean {
+  if (value === null || typeof value === "string" || typeof value === "boolean") return true;
+  if (typeof value === "number") return Number.isFinite(value);
+  if (Array.isArray(value)) return value.every(isJson);
+  return isRecord(value) && Object.values(value).every(isJson);
+}
+
 /** Whether `value` is a valid value of a setting with this spec. */
 export function checkSetting(spec: SettingSpec, value: unknown): boolean {
   if (value === null) return spec.nullable;
   switch (spec.type) {
+    case "object":
+      return isRecord(value) && isJson(value);
     case "enum":
       return typeof value === "string" && spec.values.includes(value);
     case "boolean":
@@ -47,7 +57,108 @@ export function checkSetting(spec: SettingSpec, value: unknown): boolean {
 }
 
 export function isSetting<K extends SettingKey>(key: K, value: unknown): value is ChessContext[K] {
-  return checkSetting(SETTING_SPECS[key], value);
+  if (!checkSetting(SETTING_SPECS[key], value)) return false;
+  return key !== "model_kwargs" || modelKwargsProblems(value as Values, "local").length === 0;
+}
+
+export type Surface = "local" | "server";
+
+const RULES = MODEL_KWARGS_RULES;
+const CONNECTION = new RegExp(RULES.connectionPattern);
+const has = (names: readonly string[], name: string) => names.includes(name);
+
+/** Why `model_kwargs` can't set `name`, or null. Mirrors model_arguments.py's `held_back`. */
+export function heldBack(name: string, surface: Surface, inExtraBody = false): string | null {
+  if (has(RULES.modelNames, name)) return "the model is the `model` setting";
+  if (has(RULES.agentOwned, name)) return "the agent sends it";
+  if (!inExtraBody && has(RULES.appOwned, name)) return "the app sets it";
+  // Inside `extra_body` too: a proxy may honor a body's own key or base URL.
+  if (!has(RULES.connectionExempt, name) && CONNECTION.test(name)) {
+    return "credentials and connections come from the environment";
+  }
+  if (surface === "server" && has(RULES.accountResources, name)) {
+    return "it reaches the deployment's own tools and resources";
+  }
+  if (surface === "server" && !inExtraBody && !has(RULES.serverAllowed, name)) {
+    return "the server doesn't send it";
+  }
+  return null;
+}
+
+/** JSON with sorted keys: equal values compare equal whatever their key order. */
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (isRecord(value)) {
+    const keys = Object.keys(value).toSorted();
+    return `{${keys.map((k) => `${JSON.stringify(k)}:${canonical(value[k])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function aliased(modelKwargs: Values, name: string): unknown {
+  const [head, tail] = name.split(".");
+  const value = modelKwargs[head];
+  if (tail === undefined) return value;
+  return isRecord(value) ? value[tail] : undefined;
+}
+
+/** The value the aliases share; undefined when none is set. */
+function oneOf(modelKwargs: Values, names: readonly string[]): unknown {
+  return names.map((name) => aliased(modelKwargs, name)).find((v) => v !== undefined && v !== null);
+}
+
+/** Everything wrong with `model_kwargs` on a surface. Mirrors model_arguments.py's `problems`. */
+export function modelKwargsProblems(modelKwargs: Values, surface: Surface): string[] {
+  const given = Object.fromEntries(Object.entries(modelKwargs).filter(([, v]) => v !== null));
+  const found: string[] = [];
+  for (const name of Object.keys(given)) {
+    const why = heldBack(name, surface);
+    if (why !== null) found.push(`\`${name}\`: ${why}`);
+  }
+  const extraBody = given.extra_body;
+  if (extraBody !== undefined && !isRecord(extraBody)) found.push("`extra_body` must be an object");
+  for (const name of isRecord(extraBody) ? Object.keys(extraBody) : []) {
+    const why = heldBack(name, surface, true);
+    if (why !== null) found.push(`\`extra_body.${name}\`: ${why}`);
+  }
+  if (given.reasoning !== undefined && !isRecord(given.reasoning)) {
+    found.push("`reasoning` must be an object");
+  }
+  for (const names of [RULES.effortNames, RULES.maxTokensNames]) {
+    const values = names
+      .map((name) => aliased(given, name))
+      .filter((v) => v !== undefined && v !== null)
+      .map(canonical);
+    if (values.some((v) => v !== values[0])) {
+      found.push(`${names.map((n) => `\`${n}\``).join(", ")} disagree: set one of them`);
+    }
+  }
+  const effort = oneOf(given, RULES.effortNames);
+  if (effort !== undefined && !(typeof effort === "string" && effort !== "")) {
+    found.push("the reasoning effort must be a non-empty string");
+  }
+  const limit = oneOf(given, RULES.maxTokensNames);
+  if (
+    limit !== undefined &&
+    !(typeof limit === "number" && Number.isInteger(limit) && limit >= 1)
+  ) {
+    found.push("the output limit must be a positive integer");
+  }
+  return found;
+}
+
+/** The reasoning effort a game's requests carry: `model_kwargs` over the setting, and
+ * `extra_body.reasoning` replacing the whole object. */
+export function sentEffort(context: Pick<ChessContext, "model_kwargs" | "reasoning_effort">) {
+  const kwargs = context.model_kwargs;
+  const extraBody = kwargs.extra_body;
+  if (isRecord(extraBody) && "reasoning" in extraBody) {
+    const replaced = extraBody.reasoning;
+    const effort = isRecord(replaced) ? replaced.effort : undefined;
+    return typeof effort === "string" ? effort : null;
+  }
+  const effort = oneOf(kwargs, RULES.effortNames);
+  return typeof effort === "string" ? effort : context.reasoning_effort;
 }
 
 /** The keys of a version, `version` itself excluded. */
@@ -94,13 +205,30 @@ export function fromLegacy(values: Values): Values {
   return { ...rest, move_list: shown ? "both" : "candidates" };
 }
 
-/** Version n's keys to version n + 1's. */
-const MIGRATIONS: Record<number, (values: Values) => Values> = { 0: fromLegacy };
+/** Version 2 only adds keys. Their defaults play as version 1 did (see settings.py). */
+function addsPromptAndModelOptions(values: Values, complete: boolean): Values {
+  if (!complete) return values;
+  const added = keysOf(2).filter((key) => !keysOf(1).includes(key));
+  return { ...Object.fromEntries(added.map((key) => [key, VERSION_DEFAULTS[2][key]])), ...values };
+}
+
+/**
+ * Version n's keys to version n + 1's. For partial settings (`complete` false) a step writes only
+ * what it must: an added key's default would override a source merged under this one.
+ */
+const MIGRATIONS: Record<number, (values: Values, complete: boolean) => Values> = {
+  0: (values) => fromLegacy(values),
+  1: addsPromptAndModelOptions,
+};
 
 /** The keys partial settings set, carried to the current version, `version` excluded. */
 export function migrateSettings(
   data: Values,
-  { legacy = false, unknown = "error" }: { legacy?: boolean; unknown?: "error" | "drop" } = {},
+  {
+    legacy = false,
+    unknown = "error",
+    complete = false,
+  }: { legacy?: boolean; unknown?: "error" | "drop"; complete?: boolean } = {},
 ): Values {
   const version = versionOf(data, legacy);
   const known = new Set(keysOf(version));
@@ -112,7 +240,8 @@ export function migrateSettings(
     );
   }
   let values: Values = Object.fromEntries(entries.filter(([key]) => known.has(key)));
-  for (let step = version; step < SETTINGS_VERSION; step += 1) values = MIGRATIONS[step](values);
+  for (let step = version; step < SETTINGS_VERSION; step += 1)
+    values = MIGRATIONS[step](values, complete);
   return values;
 }
 
@@ -150,5 +279,5 @@ export function loadRecorded(data: unknown): ChessContext {
   if (given.length !== expected.length || !expected.every((key) => key in data)) {
     throw new SettingsError("recorded settings are damaged");
   }
-  return validated(migrateSettings(data, { legacy: true }));
+  return validated(migrateSettings(data, { legacy: true, complete: true }));
 }

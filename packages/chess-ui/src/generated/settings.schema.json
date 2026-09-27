@@ -21,6 +21,37 @@
       ],
       "type": "string"
     },
+    "JSONValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/JSONValue"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/JSONValue"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "ListedMoves": {
       "enum": [
         "both",
@@ -48,11 +79,11 @@
     }
   },
   "additionalProperties": false,
-  "description": "A game's opponent. `move_list`, `memory` and `reasoning_effort` affect only the LLM.",
+  "description": "A game's opponent. The settings before `systemone_model` affect only the LLM.",
   "properties": {
     "version": {
-      "const": 1,
-      "default": 1,
+      "const": 2,
+      "default": 2,
       "description": "The settings file's version.",
       "title": "Version",
       "type": "integer"
@@ -76,6 +107,18 @@
       "title": "Model",
       "type": "string"
     },
+    "model_kwargs": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JSONValue"
+      },
+      "default": {},
+      "description": "Extra arguments for the model's constructor, as `init_chat_model` takes them: `temperature`, `max_tokens`, `extra_body` and so on. They win over every other setting. Credentials, connections, the model name and what the agent sends are held back. An output limit set only inside `extra_body` isn't seen, so memory may summarize too late.",
+      "langgraph_nodes": [
+        "model"
+      ],
+      "title": "Model Kwargs",
+      "type": "object"
+    },
     "reasoning_effort": {
       "anyOf": [
         {
@@ -90,6 +133,41 @@
       "langgraph_nodes": [
         "model"
       ]
+    },
+    "system_prompt": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Replaces the bundled system prompt. Null keeps it. Each turn's message still ends by asking for `MOVE: <move>`; a reply without one is retried.",
+      "langgraph_nodes": [
+        "model"
+      ],
+      "title": "System Prompt"
+    },
+    "show_fen": {
+      "default": true,
+      "description": "Show the position's FEN in each turn's message. The moves so far are always shown, and so is the starting FEN of a game from another position.",
+      "langgraph_nodes": [
+        "model"
+      ],
+      "title": "Show Fen",
+      "type": "boolean"
+    },
+    "show_board": {
+      "default": true,
+      "description": "Show the board as text in each turn's message.",
+      "langgraph_nodes": [
+        "model"
+      ],
+      "title": "Show Board",
+      "type": "boolean"
     },
     "move_list": {
       "$ref": "#/$defs/ListedMoves",
@@ -236,7 +314,11 @@
     "version",
     "policy",
     "model",
+    "model_kwargs",
     "reasoning_effort",
+    "system_prompt",
+    "show_fen",
+    "show_board",
     "move_list",
     "memory",
     "draw_claims",

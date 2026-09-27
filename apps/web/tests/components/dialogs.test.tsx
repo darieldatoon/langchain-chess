@@ -289,6 +289,10 @@ describe("NewGameDialog", () => {
     change("Draw Claims", "never");
     change("Move Descriptions", "terse");
     change("Seed", "7");
+    change("System Prompt", "Play the Caro-Kann.");
+    change("Model Kwargs", '{"temperature": 0.2}');
+    fireEvent.click(screen.getByRole("switch", { name: "Show the FEN" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Show the board" }));
     fireEvent.click(screen.getByRole("switch", { name: "Ask for a position Score" }));
     fireEvent.click(screen.getByRole("switch", { name: "Ask the Noul questions" }));
     await clickPlay();
@@ -296,6 +300,10 @@ describe("NewGameDialog", () => {
       ...DEFAULT_CONTEXT,
       memory: true,
       move_list: "none",
+      system_prompt: "Play the Caro-Kann.",
+      model_kwargs: { temperature: 0.2 },
+      show_fen: false,
+      show_board: false,
       reasoning_effort: "low",
       threshold: 0.5,
       tournament_threshold: 0.7,
@@ -308,6 +316,31 @@ describe("NewGameDialog", () => {
       with_eval: true,
       with_nouls: true,
     });
+  });
+
+  it("holds Play while the model kwargs can't be sent, and says why", async () => {
+    const { onPlay } = open();
+    advanced();
+    change("Model Kwargs", "{");
+    expect(screen.getByText("Not valid JSON.")).toBeInTheDocument();
+    expect(matchup()).toHaveTextContent("Fix the Advanced settings marked invalid.");
+    change("Model Kwargs", '{"reasoning_effort": "high"}');
+    expect(screen.getByText(/Model kwargs set the effort/)).toBeInTheDocument();
+    change("System Prompt", "   ");
+    await clickPlay();
+    expect(onPlay.mock.calls[0][1]).toMatchObject({
+      model_kwargs: { reasoning_effort: "high" },
+      system_prompt: null,
+    });
+    change("Model Kwargs", "");
+    await clickPlay();
+    expect(onPlay.mock.calls[1][1].model_kwargs).toEqual({});
+  });
+
+  it("shows stored model kwargs as JSON", () => {
+    open({ ...DEFAULT_SETUP, knobs: { ...DEFAULT_SETUP.knobs, model_kwargs: { top_p: 0.5 } } });
+    advanced();
+    expect(screen.getByLabelText("Model Kwargs")).toHaveValue('{\n  "top_p": 0.5\n}');
   });
 
   it("sends no effort with Model default, as models without reasoning need", async () => {

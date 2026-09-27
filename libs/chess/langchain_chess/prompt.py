@@ -4,13 +4,15 @@ Change the wording only deliberately, with rendered-prompt tests.
 """
 
 import copy
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 
 import chess
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage
 
+from langchain_chess.contract import PositionView
 from langchain_chess.position import ascii_board, movetext, san_list
-from langchain_chess.rules import legal_ucis, side
+from langchain_chess.rules import root_board, side
 from langchain_chess.settings import ListedMoves
 from langchain_chess.state import TurnRecord
 
@@ -24,38 +26,75 @@ SYSTEM_PROMPT = (
 _REASONING_BLOCKS = frozenset({"reasoning", "thinking", "redacted_thinking"})
 
 
-def render_position(
-    start_fen: str,
-    sans: Sequence[str],
-    board: chess.Board,
-    allowed: Sequence[str],
-    candidates: Sequence[str] | None,
-    *,
-    move_list: ListedMoves,
-) -> str:
-    """The trailing human message appended to every move request. Never stored."""
-    lines = [
-        f"Moves so far: {movetext(start_fen, sans) or '(none, this is the first move)'}",
-        f"FEN: {board.fen()}",
-        "Board (ranks 8 to 1, uppercase is White):",
-        f"```\n{ascii_board(board)}\n```",
-        f"{side(board.turn).capitalize()} to move.",
-    ]
+@dataclass(frozen=True, slots=True)
+class PositionSection:
+    """A renderer's part of a turn's message, in two places around the side to move."""
+
+    position: str = ""
+    """After the moves so far: the position itself."""
+    moves: str = ""
+    """After the side to move and check: move lists."""
+
+
+type PositionRenderer = Callable[[PositionView], str | PositionSection]
+"""The position section of a turn's message, from the turn's view; a string is the position
+part. Pure. The core adds what every turn must say: the moves so far, a custom starting FEN, the
+side to move, check, the permitted moves on a restricted turn, and the request for
+`MOVE: <move>`."""
+
+
+def position_renderer(
+    *, show_fen: bool = True, show_board: bool = True, move_list: ListedMoves = "both"
+) -> PositionRenderer:
+    """The bundled renderer, shaped by the display settings."""
+
+    def render(view: PositionView) -> PositionSection:
+        board = view.board()
+        position: list[str] = []
+        if show_fen:
+            position.append(f"FEN: {board.fen()}")
+        if show_board:
+            position += [
+                "Board (ranks 8 to 1, uppercase is White):",
+                f"```\n{ascii_board(board)}\n```",
+            ]
+        lines: list[str] = []
+        if view.candidates and move_list in ("both", "candidates"):
+            lines.append(
+                "Suggested candidates: "
+                + ", ".join(san_list(board, view.candidates))
+                + ". These are suggested candidates; you may play any allowed move."
+            )
+        if not view.restricted and move_list in ("both", "legal"):
+            lines.append("Legal moves: " + ", ".join(san_list(board, view.allowed)))
+        return PositionSection("\n".join(position), "\n".join(lines))
+
+    return render
+
+
+def render_position(view: PositionView, sans: Sequence[str], render: PositionRenderer) -> str:
+    """The trailing human message appended to every move request. Never stored.
+
+    `view.candidates` must already be narrowed to the allowed moves.
+    """
+    board = view.board()
+    lines = [f"Moves so far: {movetext(view.start_fen, sans) or '(none, this is the first move)'}"]
+    root = root_board(view.start_fen).fen()
+    if root != chess.STARTING_FEN:
+        lines.append(f"Starting position (FEN): {root}")
+    rendered = render(view)
+    section = rendered if isinstance(rendered, PositionSection) else PositionSection(rendered)
+    if position := section.position.strip():
+        lines.append(position)
+    lines.append(f"{side(board.turn).capitalize()} to move.")
     if board.is_check():
         lines.append("You are in check.")
-    # Effective candidates are computed here, so a later hard restriction never leaves stale ones.
-    shown = candidates if move_list in ("both", "candidates") else None
-    effective = [uci for uci in shown or () if uci in allowed]
-    if effective:
+    if moves := section.moves.strip():
+        lines.append(moves)
+    if view.restricted:
         lines.append(
-            "Suggested candidates: "
-            + ", ".join(san_list(board, effective))
-            + ". These are suggested candidates; you may play any allowed move."
+            "Only these moves are permitted: " + ", ".join(san_list(board, view.allowed)) + "."
         )
-    if set(allowed) != set(legal_ucis(board)):
-        lines.append("Only these moves are permitted: " + ", ".join(san_list(board, allowed)) + ".")
-    elif move_list in ("both", "legal"):
-        lines.append("Legal moves: " + ", ".join(san_list(board, allowed)))
     lines.append("Reply with your analysis, then the final line `MOVE: <move>`.")
     return "\n".join(lines)
 

@@ -3,20 +3,31 @@ import { Select, type SelectOption } from "@langchain/macaw-components/Select";
 import { Slider } from "@langchain/macaw-components/Slider";
 import { Switch } from "@langchain/macaw-components/Switch";
 import { Text } from "@langchain/macaw-components/Text";
+import { Textarea } from "@langchain/macaw-components/Textarea";
 import { useEffect, useState } from "react";
 import { parseKnob, parseNullableKnob, sliderValue } from "../format";
 import { CONTEXT_CHECKS } from "../settings";
-import { memoryOf, type Knobs, type Sections, type Summarize } from "../setup";
-import type {
-  DescriptionStyle,
-  DrawClaims,
-  GateSignal,
-  ListedMoves,
-  ReasoningEffort,
+import {
+  effortOverridden,
+  memoryOf,
+  parseKwargs,
+  type Kwargs,
+  type Knobs,
+  type Sections,
+  type Summarize,
+} from "../setup";
+import {
+  type DescriptionStyle,
+  type DrawClaims,
+  type GateSignal,
+  type ListedMoves,
+  type ReasoningEffort,
 } from "@langchain-chess/chess-ui";
 
 export type SetKnob = <K extends keyof Knobs>(key: K, value: Knobs[K] | undefined) => void;
 export type NumberKnob = "k" | "seed" | "tournament_threshold" | "top_p";
+/** The knobs typed as text, which can hold text that isn't a valid value yet. */
+export type DraftKnob = NumberKnob | "model_kwargs";
 
 interface Props {
   knobs: Knobs;
@@ -24,7 +35,7 @@ interface Props {
   summarize: Summarize;
   onKnob: SetKnob;
   /** Must be stable: each number field reports whether its text is a valid value. */
-  onValidity: (knob: NumberKnob, valid: boolean) => void;
+  onValidity: (knob: DraftKnob, valid: boolean) => void;
 }
 
 /** Select values are strings; `default` stands for null, which sends no effort. */
@@ -88,7 +99,24 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
     <div className="flex flex-col gap-space-5">
       {sections.llm && (
         <Section title="LLM">
-          <Field id="effort" label="Reasoning Effort">
+          <Textarea
+            id="system-prompt"
+            label="System Prompt"
+            value={knobs.system_prompt ?? ""}
+            placeholder="The bundled prompt"
+            rows={3}
+            hintText="Replaces the bundled prompt. Each turn still asks for MOVE: <move>."
+            onChange={(v) => set("system_prompt", v.trim() === "" ? null : v)}
+          />
+          <Field
+            id="effort"
+            label="Reasoning Effort"
+            hint={
+              effortOverridden(knobs)
+                ? "Model kwargs set the effort, so this is ignored."
+                : undefined
+            }
+          >
             <Select
               aria-label="Reasoning Effort"
               size="md"
@@ -98,6 +126,16 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
               onChange={(v) => set("reasoning_effort", v === "default" ? null : v)}
             />
           </Field>
+          <Switch
+            label="Show the FEN"
+            checked={knobs.show_fen}
+            onChange={(v) => set("show_fen", v)}
+          />
+          <Switch
+            label="Show the board"
+            checked={knobs.show_board}
+            onChange={(v) => set("show_board", v)}
+          />
           <Field id="move-list" label="Moves Listed">
             <Select
               aria-label="Moves Listed"
@@ -128,6 +166,11 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
               onChange={(v) => v && set("memory", v === "on")}
             />
           </Field>
+          <ModelKwargsField
+            value={knobs.model_kwargs}
+            onChange={(v) => set("model_kwargs", v)}
+            onValidity={onValidity}
+          />
         </Section>
       )}
 
@@ -276,6 +319,45 @@ export function Field({
         </Text>
       )}
     </div>
+  );
+}
+
+const kwargsText = (value: Kwargs) =>
+  Object.keys(value).length === 0 ? "" : JSON.stringify(value, null, 2);
+
+/** Like NumberField: its own text, and only valid objects reach the knob. */
+function ModelKwargsField({
+  value,
+  onChange,
+  onValidity,
+}: {
+  value: Kwargs;
+  onChange: (value: Kwargs) => void;
+  onValidity: (knob: DraftKnob, valid: boolean) => void;
+}) {
+  const [draft, setDraft] = useState(() => kwargsText(value));
+  const parsed = parseKwargs(draft);
+  useEffect(() => {
+    onValidity("model_kwargs", parsed.ok);
+    return () => onValidity("model_kwargs", true);
+  }, [parsed.ok, onValidity]);
+  return (
+    <Textarea
+      id="model-kwargs"
+      label="Model Kwargs"
+      value={draft}
+      rows={3}
+      placeholder='{"temperature": 0.2}'
+      isError={!parsed.ok}
+      hintText={
+        parsed.ok ? "Extra model arguments as JSON; they win over the settings above." : parsed.why
+      }
+      onChange={(v) => {
+        setDraft(v);
+        const next = parseKwargs(v);
+        if (next.ok) onChange(next.value);
+      }}
+    />
   );
 }
 

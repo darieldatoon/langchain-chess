@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import chess
 import pytest
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import ValidationError
@@ -75,7 +76,7 @@ def test_the_first_turn_records_the_setup_and_later_runs_keep_it(env):
     agent = build_agent(first, "MOVE: e5", checkpointer=saver)
     out = agent.invoke(position(["e2e4"]), config)
     assert out["setup"] == dump(first)
-    assert out["setup"]["version"] == 1
+    assert out["setup"]["version"] == 2
 
     later = ChessContext(policy="llm", model="langsmith:openai/gpt-6-luna")
     again = build_agent(later, "MOVE: Nc6", checkpointer=saver)
@@ -256,3 +257,33 @@ def test_a_small_window_splits_between_input_and_output(env):
     assert gpt4.profile == {"max_input_tokens": 8192 - 8192 // 2}
     model_limit.cache_clear()
     assert model_limit("langsmith:openai/gpt-4") == 8192 - 8192 // 2
+
+
+def test_the_server_builds_models_with_only_the_arguments_it_allows(env):
+    model = graph_module.server_model(ChessContext(model_kwargs={"temperature": 0.3}))
+    assert model.temperature == 0.3
+    for held in ({"tools": [{"type": "web_search"}]}, {"extra_body": {"prompt": {"id": "p"}}}):
+        with pytest.raises(ValueError, match="deployment's own tools"):
+            graph_module.server_model(ChessContext(model_kwargs=held))
+    with pytest.raises(ValueError, match="the server doesn't send it"):
+        graph_module.server_model(ChessContext(model_kwargs={"seed": 3}))
+
+
+class Metadata(BaseCallbackHandler):
+    def __init__(self):
+        self.seen = []
+
+    def on_chain_start(self, serialized, inputs, *, metadata=None, **kwargs):
+        self.seen.append(metadata or {})
+
+
+def test_runs_record_the_values_sent_and_the_setup_keeps_model_kwargs_as_given(env):
+    kwargs = {"reasoning_effort": "high", "max_output_tokens": 900}
+    settings = ChessContext(policy="llm", reasoning_effort="low", model_kwargs=kwargs)
+    agent = build_agent(settings, "MOVE: e5", checkpointer=InMemorySaver())
+    handler = Metadata()
+    config = {"configurable": {"thread_id": "t", "reasoning_effort": "low"}, "callbacks": [handler]}
+    out = agent.invoke(position(["e2e4"]), config)
+    assert handler.seen[0]["reasoning_effort"] == "high"
+    assert handler.seen[0]["max_tokens"] == 900
+    assert out["setup"]["model_kwargs"] == kwargs

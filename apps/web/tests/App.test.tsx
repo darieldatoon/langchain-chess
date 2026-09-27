@@ -13,7 +13,7 @@ import {
   VIEW_KEY,
 } from "../src/storage";
 import { fake, lastOptions, optionsLog, resetFake } from "./support/fakeStream";
-import { AFTER_E4, E4_E5, ply, turn } from "@langchain-chess/chess-ui/testing";
+import { AFTER_E4, E4_E5, legacyOf, ply, turn } from "@langchain-chess/chess-ui/testing";
 import { WEB_TRACE } from "../src/useGame";
 import { renderWithProviders as render } from "./support/renderApp";
 import {
@@ -520,7 +520,7 @@ describe("after the game", () => {
   });
 
   it("rematches a game from before versions, custom System 1 and all", async () => {
-    const { version: _, move_list: __, ...legacy } = DEFAULT_CONTEXT;
+    const legacy = legacyOf(DEFAULT_CONTEXT);
     const recorded = {
       ...legacy,
       memory: "none",

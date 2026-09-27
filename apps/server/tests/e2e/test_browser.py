@@ -78,13 +78,24 @@ def test_a_setup_s_settings_reach_the_agent(server: str, page: Page):
     page.get_by_role("button", name="Advanced").click()
     pick(page, "Moves Listed", "Candidates System 1's, when it has any")
     pick(page, "Draw Claims", "Never Only forced draws end the game")
+    page.get_by_role("switch", name="Show the board").click()
+    page.get_by_label("System Prompt").fill("Play fast.")
     shortlist = page.get_by_label("Shortlist Size")
     shortlist.fill("2")
     page.get_by_role("button", name="Play").click()
 
     values = game_state(server, page)
-    assert values["setup"] == dump(ChessContext(move_list="candidates", draw_claims="never", k=2))
+    expected = ChessContext(
+        move_list="candidates",
+        draw_claims="never",
+        k=2,
+        show_board=False,
+        system_prompt="Play fast.",
+    )
+    assert values["setup"] == dump(expected)
     shown = values["plies"][0]["analysis"]
+    assert "Board (ranks" not in shown
+    assert "FEN: " in shown
     assert "Suggested candidates: " in shown
     assert "Legal moves" not in shown
     shortlist_meta = values["plies"][0]["meta"]["SystemOneMiddleware"]["shortlist"]

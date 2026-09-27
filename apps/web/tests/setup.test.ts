@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   changedKnobs,
   DEFAULT_SETUP,
+  effortOverridden,
   gameOf,
   knobText,
   knobsOf,
@@ -9,6 +10,7 @@ import {
   matchupOf,
   modelName,
   opponentLabel,
+  parseKwargs,
   resolveSide,
   sanitizeSetup,
   sectionsOf,
@@ -18,7 +20,7 @@ import {
   type Setup,
 } from "../src/setup";
 import { DEFAULT_CONTEXT, type ChessContext } from "@langchain-chess/chess-ui";
-import { E4_E5, ply, turn } from "@langchain-chess/chess-ui/testing";
+import { E4_E5, legacyOf, ply, turn } from "@langchain-chess/chess-ui/testing";
 
 const setup = (overrides: Partial<Setup> = {}): Setup => ({ ...DEFAULT_SETUP, ...overrides });
 
@@ -57,6 +59,15 @@ describe("matchupOf", () => {
       policy: "hybrid",
       systemone_model: "none",
     });
+  });
+
+  it("holds a game whose model kwargs the server won't send", () => {
+    const knobs = { ...DEFAULT_SETUP.knobs, model_kwargs: { seed: 3 } };
+    expect(matchupOf(setup({ knobs }), "yes")).toEqual({
+      ok: false,
+      reason: "Model kwargs: `seed`: the server doesn't send it.",
+    });
+    expect(matchupOf(setup({ knobs, llm: "none" }), "yes")).toMatchObject({ ok: true });
   });
 
   it("refuses both None and an empty custom model", () => {
@@ -138,6 +149,40 @@ describe("matchup wording", () => {
       "someone/ranker + GLM-5.3 Flash",
     );
     expect(systemOneName("typesafe/jev-latest")).toBe("Jev");
+    const kwargs = { reasoning_effort: "high" };
+    expect(opponentLabel({ ...DEFAULT_CONTEXT, policy: "llm", model_kwargs: kwargs })).toBe(
+      "GLM-5.3 Flash · high",
+    );
+  });
+
+  it("knows when model kwargs set the effort", () => {
+    const of = (model_kwargs: Record<string, never> | object) =>
+      effortOverridden({ model_kwargs: model_kwargs as never });
+    expect(of({})).toBe(false);
+    expect(of({ reasoning_effort: null, reasoning: { summary: "auto" } })).toBe(false);
+    expect(of({ reasoning_effort: "low" })).toBe(true);
+    expect(of({ reasoning: { effort: "low" } })).toBe(true);
+    expect(of({ extra_body: { reasoning: {} } })).toBe(true);
+  });
+
+  it("parses model kwargs text", () => {
+    expect(parseKwargs("  ")).toEqual({ ok: true, value: {} });
+    expect(parseKwargs('{"temperature": 0.2}')).toEqual({ ok: true, value: { temperature: 0.2 } });
+    expect(parseKwargs("{")).toEqual({ ok: false, why: "Not valid JSON." });
+    expect(parseKwargs("[1]")).toEqual({ ok: false, why: "Use a JSON object." });
+    expect(parseKwargs('{"temperature": 1e999}')).toEqual({
+      ok: false,
+      why: "Use finite numbers.",
+    });
+    expect(parseKwargs('{"name": "x"}')).toEqual({ ok: false, why: "`name`: the app sets it" });
+    expect(parseKwargs('{"seed": 1}')).toEqual({
+      ok: false,
+      why: "`seed`: the server doesn't send it",
+    });
+    expect(parseKwargs('{"base_url": "x"}')).toEqual({
+      ok: false,
+      why: "`base_url`: credentials and connections come from the environment",
+    });
   });
 
   it("words a knob's value", () => {
@@ -160,6 +205,12 @@ describe("matchup wording", () => {
       draw_claims: "never",
       reasoning_effort: "high",
     };
+    expect(
+      changedKnobs({ ...tuned, system_prompt: "Be bold.", model_kwargs: { temperature: 0 } }),
+    ).toContain("custom system prompt");
+    expect(changedKnobs({ ...tuned, model_kwargs: { temperature: 0 } })).toContain(
+      'model kwargs {"temperature":0}',
+    );
     expect(changedKnobs(tuned)).toEqual([
       "move list none",
       "memory on",
@@ -335,7 +386,7 @@ describe("games", () => {
   });
 
   it("reads a setup recorded before versions, custom System 1 names included", () => {
-    const { version: _, move_list: __, ...rest } = recorded;
+    const rest = legacyOf(recorded);
     const legacy = {
       ...rest,
       memory: "summarize",

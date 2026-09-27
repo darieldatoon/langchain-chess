@@ -75,3 +75,36 @@ def test_help_documents_flags_with_their_settings():
     assert "The most candidates suggested to the LLM." in output
     assert "langsmith:baseten/zai-org/GLM-5.3-Flash" in output
     assert "--memory" in output
+
+
+def test_model_kwargs_and_the_prompt_are_flags(monkeypatch):
+    built = []
+    monkeypatch.setattr(main, "build_agent", lambda settings, **kw: built.append(settings))
+
+    class FakeEngine:
+        def __init__(self, factory, settings, out):
+            factory(settings, None)
+
+    async def fake_run(engine):
+        return None
+
+    import langchain_chess_cli.uci.engine as engine_module
+
+    monkeypatch.setattr(engine_module, "Engine", FakeEngine)
+    monkeypatch.setattr(engine_module, "run", fake_run)
+    args = [
+        "uci",
+        "--model-kwargs",
+        '{"temperature": 0.2}',
+        "--system-prompt",
+        "Hi.",
+        "--no-show-fen",
+    ]
+    assert CliRunner().invoke(app, args).exit_code == 0
+    assert (built[0].model_kwargs, built[0].system_prompt, built[0].show_fen) == (
+        {"temperature": 0.2},
+        "Hi.",
+        False,
+    )
+    for bad in ("{not json", '{"base_url": "https://x"}'):
+        assert CliRunner().invoke(app, ["uci", "--model-kwargs", bad]).exit_code == 2

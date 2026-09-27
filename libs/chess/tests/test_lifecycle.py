@@ -394,3 +394,29 @@ async def test_the_move_list_follows_the_position_block(make_agent, run, cfg):
     await run(make_agent(model, move_list="candidates"), position(), cfg)
     assert "Legal moves" not in model.requests[0][-1].content
     assert str(model.requests[0][0].content).startswith("You are a strong chess player.")
+
+
+async def test_the_system_prompt_and_display_settings_reach_the_model(make_agent, run, cfg):
+    model = ScriptedModel(script=["MOVE: e5"])
+    agent = make_agent(
+        model, system_prompt="You play the Caro-Kann.", show_fen=False, show_board=False
+    )
+    await run(agent, position(["e2e4"]), cfg)
+    system, *_, turn = model.requests[0]
+    assert system.content == "You play the Caro-Kann."
+    assert "FEN:" not in turn.content
+    assert "Board (ranks" not in turn.content
+    assert turn.content.startswith("Moves so far: 1. e4")
+
+
+async def test_a_custom_renderer_replaces_the_position_section(make_agent, run, cfg):
+    model = ScriptedModel(script=["MOVE: e5"])
+    seen = []
+
+    def render(view):
+        seen.append(view)
+        return f"{len(view.allowed)} moves to choose from"
+
+    await run(make_agent(model, render_position=render), position(["e2e4"]), cfg)
+    assert "20 moves to choose from" in model.requests[0][-1].content
+    assert seen[0].moves == ("e2e4",)

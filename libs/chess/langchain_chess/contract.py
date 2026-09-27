@@ -20,7 +20,7 @@ from langchain.agents.middleware.types import (
 from langgraph.types import Command
 
 from langchain_chess.errors import ChessContractError
-from langchain_chess.rules import root_board
+from langchain_chess.rules import legal_ucis, root_board
 from langchain_chess.state import CHESS_KEYS, Call, ChessState, JSONValue, Proposal
 
 NODE_HOOKS = ("before_agent", "before_model", "after_model", "after_agent")
@@ -45,6 +45,11 @@ class PositionView:
         for uci in self.moves:
             board.push_uci(uci)
         return board
+
+    @property
+    def restricted(self) -> bool:
+        """Whether the allowed moves are narrower than the legal ones."""
+        return set(self.allowed) != set(legal_ucis(self.board()))
 
 
 class ChessMiddleware(AgentMiddleware[ChessState, Any, Any]):

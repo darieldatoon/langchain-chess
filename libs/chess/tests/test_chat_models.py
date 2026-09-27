@@ -1,6 +1,7 @@
 import pytest
 
 from langchain_chess.chat_models import MAX_TOKENS, chat_model, output_budget
+from langchain_chess.model_arguments import model_arguments
 
 
 @pytest.fixture
@@ -37,7 +38,9 @@ def test_gateway_models_get_an_input_limit_that_fits_their_window(gateway):
     gpt4 = chat_model("langsmith:openai/gpt-4")
     assert gpt4.max_tokens == 4096
     assert gpt4.profile == {"max_input_tokens": 8192 - 4096}
-    opus = chat_model("langsmith:anthropic/claude-opus-5-5", "low")
+    opus = chat_model(
+        "langsmith:anthropic/claude-opus-5-5", model_arguments({}, reasoning_effort="low")
+    )
     assert opus.profile == {"max_input_tokens": 1_000_000 - MAX_TOKENS}
     assert opus.reasoning_effort == "low"
     assert opus.get_name() == "claude-opus-5-5"

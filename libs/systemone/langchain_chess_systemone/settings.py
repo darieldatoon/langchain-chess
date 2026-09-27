@@ -19,7 +19,7 @@ from langchain_chess_systemone.types import Gate
 
 type Policy = Literal["llm", "systemone", "hybrid"]
 
-VERSION = 1
+VERSION = 2
 MAX_SEED = 2**53 - 1
 """The largest integer a browser's JSON keeps exactly."""
 
@@ -115,7 +115,7 @@ class SystemOneSettings(Settings):
 
 
 class _Head(Settings):
-    version: Annotated[Literal[1], Field(description="The settings file's version.")] = VERSION
+    version: Annotated[Literal[2], Field(description="The settings file's version.")] = VERSION
     policy: Annotated[
         Policy,
         setting(
@@ -128,7 +128,7 @@ class _Head(Settings):
 
 
 class ChessContext(SystemOneSettings, CoreSettings, _Head):
-    """A game's opponent. `move_list`, `memory` and `reasoning_effort` affect only the LLM."""
+    """A game's opponent. The settings before `systemone_model` affect only the LLM."""
 
 
 class SettingsError(ValueError):
@@ -143,6 +143,31 @@ DEFAULTS: Mapping[int, Mapping[str, JSONValue]] = MappingProxyType(
                 "policy": "hybrid",
                 "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
                 "reasoning_effort": None,
+                "move_list": "both",
+                "memory": False,
+                "draw_claims": "auto",
+                "systemone_model": "semif-qwen3.5-4b",
+                "style": "rich",
+                "with_eval": False,
+                "with_nouls": False,
+                "gate": "margin",
+                "threshold": 0.9,
+                "tournament_threshold": None,
+                "k": 5,
+                "top_p": None,
+                "seed": 0,
+            }
+        ),
+        2: MappingProxyType(
+            {
+                "version": 2,
+                "policy": "hybrid",
+                "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
+                "model_kwargs": {},
+                "reasoning_effort": None,
+                "system_prompt": None,
+                "show_fen": True,
+                "show_board": True,
                 "move_list": "both",
                 "memory": False,
                 "draw_claims": "auto",
@@ -207,11 +232,21 @@ def from_legacy(values: dict[str, Any]) -> dict[str, Any]:
     return {**values, "move_list": _LEGACY_LEGAL_MOVES[shown]}
 
 
-MIGRATIONS: Mapping[int, Callable[[dict[str, Any]], dict[str, Any]]] = MappingProxyType(
-    {0: from_legacy}
+def _adds_prompt_and_model_options(values: dict[str, Any], complete: bool) -> dict[str, Any]:
+    """Version 2 only adds keys. Their defaults play as version 1 did, except that a game from
+    another starting position now also shows its starting FEN."""
+    if not complete:
+        return values
+    added = {k: DEFAULTS[2][k] for k in keys(2) - keys(1)}
+    return {**added, **values}
+
+
+MIGRATIONS: Mapping[int, Callable[[dict[str, Any], bool], dict[str, Any]]] = MappingProxyType(
+    {0: lambda values, complete: from_legacy(values), 1: _adds_prompt_and_model_options}
 )
-"""Version n's keys to version n + 1's, for partial settings too: a step that changes a default
-must write the old default into a partial that omits the key."""
+"""Version n's keys to version n + 1's. For partial settings (`complete` false) a step writes
+only what it must: an added key's default would override a source merged under this one, while
+a step that changes a default must write the old default into a partial that omits the key."""
 
 
 def keys(version: int) -> frozenset[str]:
@@ -237,7 +272,11 @@ def version_of(data: Mapping[str, Any], *, legacy: bool) -> int:
 
 
 def migrate(
-    data: Mapping[str, Any], *, legacy: bool = False, unknown: Literal["error", "drop"] = "error"
+    data: Mapping[str, Any],
+    *,
+    legacy: bool = False,
+    unknown: Literal["error", "drop"] = "error",
+    complete: bool = False,
 ) -> dict[str, Any]:
     """The keys partial settings set, carried to the current version, `version` excluded.
 
@@ -253,7 +292,7 @@ def migrate(
             raise SettingsError(msg)
         values = {k: v for k, v in values.items() if k in known}
     for step in range(version, VERSION):
-        values = MIGRATIONS[step](values)
+        values = MIGRATIONS[step](values, complete)
     return values
 
 
@@ -283,7 +322,7 @@ def load_recorded(data: object) -> ChessContext:
         missing, extra = keys(version) - given, given - keys(version)
         msg = f"recorded settings are damaged: missing {sorted(missing)}, unknown {sorted(extra)}"
         raise SettingsError(msg)
-    migrated = migrate(values, legacy=True)
+    migrated = migrate(values, legacy=True, complete=True)
     if set(migrated) != keys(VERSION):
         msg = f"recorded settings are damaged: {sorted(keys(VERSION) - set(migrated))} missing"
         raise SettingsError(msg)

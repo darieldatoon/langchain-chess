@@ -21,10 +21,16 @@ from langchain.agents.middleware.types import (
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, RemoveMessage
 from langgraph.types import Command
 
-from langchain_chess.contract import ply_meta_of, turn_calls_of, turn_latency_of
+from langchain_chess.contract import PositionView, ply_meta_of, turn_calls_of, turn_latency_of
 from langchain_chess.errors import ChessContractError, ContextBudgetError
 from langchain_chess.parse import EMPTY_REPLY, parse_move, text_of
-from langchain_chess.prompt import delta_text, feedback_text, model_view, render_position
+from langchain_chess.prompt import (
+    PositionRenderer,
+    delta_text,
+    feedback_text,
+    model_view,
+    render_position,
+)
 from langchain_chess.recorder import CallRecorder
 from langchain_chess.rules import (
     CommandError,
@@ -39,7 +45,6 @@ from langchain_chess.rules import (
     root_board,
     side,
 )
-from langchain_chess.settings import ListedMoves
 from langchain_chess.state import (
     Call,
     ChessState,
@@ -126,14 +131,14 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         memory: bool,
         max_retries: int,
         draw_claims: DrawClaims,
-        move_list: ListedMoves,
+        render: PositionRenderer,
         recorder: CallRecorder,
         extensions: Sequence[AgentMiddleware] = (),
     ) -> None:
         self.memory = memory
         self.max_retries = max_retries
         self.draw_claims: DrawClaims = draw_claims
-        self.move_list: ListedMoves = move_list
+        self.render = render
         self.recorder = recorder
         self.extensions = list(extensions)
         # In memory only: after_model raises the original error in the run that failed. Absent
@@ -373,19 +378,28 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
 
     # ---- the model call -----------------------------------------------------------------------
 
+    def turn_message(self, state: Mapping[str, Any]) -> str:
+        """The trailing position message the model reads this turn."""
+        allowed = tuple(state["allowed_moves"])
+        # Effective candidates: a later hard restriction never leaves stale ones.
+        candidates = state.get("candidates")
+        turn = state["turns"][-1]
+        view = PositionView(
+            start_fen=state["start_fen"],
+            moves=tuple(state["moves"]),
+            allowed=allowed,
+            initial_allowed=tuple(turn["initial_allowed"]),
+            candidates=None
+            if candidates is None
+            else tuple(uci for uci in candidates if uci in allowed),
+            turn_id=turn["id"],
+        )
+        return render_position(view, [p["san"] for p in state["plies"]], self.render)
+
     def _prepare(self, request: ModelRequest) -> ModelRequest:
         state: Any = request.state
-        board = self._board(state)
         view = model_view(state["messages"], state["turns"], memory=self.memory)
-        block = render_position(
-            state["start_fen"],
-            [p["san"] for p in state["plies"]],
-            board,
-            state["allowed_moves"],
-            state.get("candidates"),
-            move_list=self.move_list,
-        )
-        return request.override(messages=[*view, HumanMessage(block)])
+        return request.override(messages=[*view, HumanMessage(self.turn_message(state))])
 
     @staticmethod
     def _with_calls(request: ModelRequest, calls: list[Call], started: float) -> list[TurnRecord]:
