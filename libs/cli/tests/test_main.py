@@ -1,5 +1,3 @@
-import re
-
 import pytest
 from typer.testing import CliRunner
 
@@ -69,9 +67,7 @@ def test_the_uci_factory_builds_real_agents(monkeypatch):
 
 
 def test_help_documents_flags_with_their_settings():
-    result = CliRunner().invoke(app, ["play", "--help"], env={"COLUMNS": "200"})
-    # CI forces colour, and its codes split the flag names.
-    output = re.sub(r"\x1b\[[0-9;]*m", "", result.output)
+    output = CliRunner().invoke(app, ["play", "--help"]).output
     assert "The most candidates suggested to the LLM." in output
     assert "langsmith:baseten/zai-org/GLM-5.3-Flash" in output
     assert "--memory" in output

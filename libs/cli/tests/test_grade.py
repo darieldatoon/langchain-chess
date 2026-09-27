@@ -5,7 +5,6 @@ from types import SimpleNamespace
 from typing import ClassVar
 
 import chess
-import click
 import pytest
 from typer.testing import CliRunner
 
@@ -604,7 +603,7 @@ def test_grade_command_as_a_sandbox_job(monkeypatch, tmp_path):
 
     result = CliRunner().invoke(app, [*args, "--sandbox-job"])
     assert result.exit_code == 2
-    assert "grades the games" in click.unstyle(result.output)
+    assert "grades the games" in result.output
 
 
 class FakeSandboxes:

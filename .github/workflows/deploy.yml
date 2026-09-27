@@ -71,6 +71,9 @@ jobs:
   agent:
     needs: [tip, ci]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -94,6 +97,7 @@ jobs:
       # Re-running only this job reuses the earlier tip and CI. Main may have moved since; that
       # is fine unless it changed the agent, whose newer run then deploys instead.
       - name: Check no newer commit changes the agent
+        id: guard
         env:
           GH_TOKEN: ${{ github.token }}
           TESTED: ${{ needs.tip.outputs.sha }}
@@ -103,12 +107,22 @@ jobs:
           git -c "http.extraheader=AUTHORIZATION: basic $auth" fetch --quiet --depth 1 origin "$main"
           changed=$(bash scripts/superseded.sh .github/workflows/deploy.yml "$TESTED" "$main")
           if [[ -n "$changed" ]]; then
-            echo "::error::main moved from $TESTED to $main and changed the agent (${changed//$'\n'/, }); re-run all jobs, not just this one."
+            summary="main moved from $TESTED to $main and changed the agent (${changed//$'\n'/, })"
+            # Skip only when a newer run exists: a push that triggers none (e.g. [skip ci]) must stay red.
+            newer=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/deploy.yml/runs?branch=main" \
+              --jq "[.workflow_runs[] | select(.run_number > $GITHUB_RUN_NUMBER and .conclusion != \"cancelled\")] | length")
+            if (( newer > 0 )); then
+              echo "::notice::$summary; a newer run deploys it, so this one skips."
+              echo "superseded=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "::error::$summary; re-run all jobs, not just this one."
             exit 1
           fi
 
       # Builds the web UI into the server package, then the image, then deploys.
       - name: Build and deploy to LangSmith
+        if: steps.guard.outputs.superseded != 'true'
         env:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
         run: mise run deploy -- --no-input
