@@ -64,6 +64,9 @@ jobs:
   review:
     needs: [tip, ci]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -78,6 +81,7 @@ jobs:
       # Re-running only this job reuses the earlier tip and CI. Main may have moved since; that
       # is fine unless it changed the review app, whose newer run then deploys instead.
       - name: Check no newer commit changes the review app
+        id: guard
         env:
           GH_TOKEN: ${{ github.token }}
           TESTED: ${{ needs.tip.outputs.sha }}
@@ -87,11 +91,21 @@ jobs:
           git -c "http.extraheader=AUTHORIZATION: basic $auth" fetch --quiet --depth 1 origin "$main"
           changed=$(bash scripts/superseded.sh .github/workflows/deploy-review.yml "$TESTED" "$main")
           if [[ -n "$changed" ]]; then
-            echo "::error::main moved from $TESTED to $main and changed the review app (${changed//$'\n'/, }); re-run all jobs, not just this one."
+            summary="main moved from $TESTED to $main and changed the review app (${changed//$'\n'/, })"
+            # Skip only when a newer run exists: a push that triggers none (e.g. [skip ci]) must stay red.
+            newer=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-review.yml/runs?branch=main" \
+              --jq "[.workflow_runs[] | select(.run_number > $GITHUB_RUN_NUMBER and .conclusion != \"cancelled\")] | length")
+            if (( newer > 0 )); then
+              echo "::notice::$summary; a newer run publishes it, so this one skips."
+              echo "superseded=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "::error::$summary; re-run all jobs, not just this one."
             exit 1
           fi
 
       - name: Publish the review app
+        if: steps.guard.outputs.superseded != 'true'
         working-directory: apps/review
         env:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}

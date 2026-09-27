@@ -118,8 +118,8 @@ depends = ["check:python", "check:web"]
 [tasks."check:python"]
 description = "Ruff format check, ruff lint and ty"
 run = [
-  "uv run --all-packages ruff format --check libs apps evals",
-  "uv run --all-packages ruff check libs apps evals",
+  "uv run --all-packages ruff format --check .",
+  "uv run --all-packages ruff check .",
   "uv run --all-packages ty check",
 ]
 

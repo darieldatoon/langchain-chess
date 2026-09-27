@@ -3,6 +3,8 @@
 Open the SVGs under `__snapshots__/` and look at them before accepting an update.
 """
 
+from types import SimpleNamespace
+
 import chess
 import pytest
 from textual.app import App, ComposeResult
@@ -80,7 +82,11 @@ def test_the_promotion_dialog(snap_compare):
     assert snap_compare(app, terminal_size=(100, 34), run_before=promote)
 
 
-def test_the_game_screen(snap_compare):
+def test_the_game_screen(snap_compare, monkeypatch):
+    # The screen prints the reply's measured latency; a slow runner turns "0.0 s" into "0.1 s".
+    monkeypatch.setattr(
+        "langchain_chess.middleware.core.time", SimpleNamespace(perf_counter=lambda: 0.0)
+    )
     model = ScriptedModel(script=["The Italian keeps options open.\nMOVE: e5"])
     app = ChessApp(
         lambda saver: create_chess_agent(model, checkpointer=saver),
