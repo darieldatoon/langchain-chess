@@ -4,7 +4,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langchain_chess import ChessContractError
 from langchain_chess.testing import ScriptedModel, position, topology
 from langchain_chess_systemone import GatewayRanker
-from langchain_chess_systemone.agent import build_agent, default_model, default_ranker
+from langchain_chess_systemone.agent import build_agent, default_model, default_ranker, sent
 from langchain_chess_systemone.settings import ChessContext
 from langchain_chess_systemone.testing import FakeRanker, distribution
 
@@ -111,3 +111,26 @@ def test_the_default_ranker_describes_moves_as_the_settings_say(gateway, monkeyp
     ranker = default_ranker(ChessContext(systemone_model="typesafe/jev-latest", style="terse"))
     assert isinstance(ranker, GatewayRanker)
     assert (ranker.model, ranker.style) == ("typesafe/jev-latest", "terse")
+
+
+def test_the_prompt_and_display_settings_reach_the_model():
+    model = ScriptedModel(script=["MOVE: e5"])
+    settings = ChessContext(policy="llm", system_prompt="Be bold.", show_board=False)
+    agent = build_agent(settings, model_factory=lambda s: model, checkpointer=InMemorySaver())
+    agent.invoke(position(["e2e4"]), {"configurable": {"thread_id": "t"}})
+    assert model.requests[0][0].content == "Be bold."
+    assert "Board (ranks" not in model.requests[0][-1].content
+    assert "FEN: " in model.requests[0][-1].content
+
+
+def test_sent_values_are_what_the_request_carries():
+    assert sent(ChessContext()) == {"reasoning_effort": None}
+    tuned = ChessContext(
+        reasoning_effort="low", model_kwargs={"reasoning": {"effort": "high"}, "max_tokens": 50}
+    )
+    assert sent(tuned) == {"reasoning_effort": "high", "max_tokens": 50}
+
+
+def test_the_default_model_takes_the_model_kwargs(gateway):
+    model = default_model(ChessContext(model_kwargs={"temperature": 0.4, "max_tokens": 3000}))
+    assert (model.temperature, model.max_tokens) == (0.4, 3000)

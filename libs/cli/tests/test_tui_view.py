@@ -113,3 +113,5 @@ def test_board_of_and_options():
         == "langsmith:baseten/zai-org/GLM-5.3-Flash (medium)"
     )
     assert describe_settings(ChessContext(policy="systemone")).startswith("System 1 alone")
+    kwargs = {"reasoning_effort": "high"}
+    assert describe_settings(ChessContext(policy="llm", model_kwargs=kwargs)).endswith("(high)")

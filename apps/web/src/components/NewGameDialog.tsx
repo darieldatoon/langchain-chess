@@ -29,7 +29,7 @@ import {
   type Summarize,
 } from "../setup";
 import type { ChessContext } from "@langchain-chess/chess-ui";
-import { AdvancedSettings, Field, type NumberKnob, type SetKnob } from "./AdvancedSettings";
+import { AdvancedSettings, Field, type DraftKnob, type SetKnob } from "./AdvancedSettings";
 
 interface Props {
   open: boolean;
@@ -139,9 +139,9 @@ export function NewGameDialog({
   const [attempt, setAttempt] = useState(0);
   const summarize: Summarize = limit?.model !== model ? "checking" : SUMMARIZE[limit.result.kind];
   // Number fields whose text isn't a valid value: Play would send a value they no longer show.
-  const [invalid, setInvalid] = useState<Partial<Record<NumberKnob, boolean>>>({});
+  const [invalid, setInvalid] = useState<Partial<Record<DraftKnob, boolean>>>({});
   const setValidity = useCallback(
-    (knob: NumberKnob, valid: boolean) =>
+    (knob: DraftKnob, valid: boolean) =>
       setInvalid((s) => ((s[knob] ?? false) === !valid ? s : { ...s, [knob]: !valid })),
     [],
   );

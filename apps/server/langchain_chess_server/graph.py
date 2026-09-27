@@ -7,6 +7,7 @@ schema, so a setting may switch a node off but never remove it.
 
 from functools import lru_cache
 
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.runnables import RunnableConfig
 from langchain_typesafe import TypeSafeClassifier
 from langgraph.graph.state import CompiledStateGraph
@@ -14,13 +15,21 @@ from langgraph.types import Checkpointer
 from langgraph_sdk.runtime import ServerRuntime
 
 from langchain_chess import create_chess_agent
+from langchain_chess.chat_models import chat_model
 from langchain_chess.middleware.summarization import input_limit
 from langchain_chess_server.clients import POOL
 from langchain_chess_server.context import resolve_context
 from langchain_chess_server.game_setup import GameSetupMiddleware
 from langchain_chess_server.settings import ServerSettings
 from langchain_chess_systemone import GatewayRanker, NoSystemOne, Ranker
-from langchain_chess_systemone.agent import ModelFactory, RankerFactory, build_agent, default_model
+from langchain_chess_systemone.agent import (
+    ModelFactory,
+    RankerFactory,
+    arguments,
+    build_agent,
+    default_model,
+    sent,
+)
 from langchain_chess_systemone.settings import ChessContext, ChessContextInput
 
 
@@ -44,6 +53,11 @@ def _classifier(model: str, api_key: str, base_url: str) -> TypeSafeClassifier:
     )
 
 
+def server_model(settings: ChessContext) -> BaseChatModel:
+    """The model with only the `model_kwargs` the server allows."""
+    return chat_model(settings.model, arguments(settings, "server"))
+
+
 def pooled_ranker(server: ServerSettings) -> RankerFactory:
     """System 1 on the process's shared connections, with the server's credentials."""
 
@@ -64,10 +78,11 @@ def build_graph(
     settings: ChessContext,
     *,
     ranker_factory: RankerFactory,
-    model_factory: ModelFactory = default_model,
+    model_factory: ModelFactory = server_model,
     checkpointer: Checkpointer | None = None,
 ) -> CompiledStateGraph:
-    return build_agent(
+    """Run metadata records the values sent, where `model_kwargs` changed them."""
+    graph = build_agent(
         settings,
         model_factory=model_factory,
         ranker_factory=ranker_factory,
@@ -76,6 +91,7 @@ def build_graph(
         fixed_topology=True,
         context_schema=ChessContextInput,
     )
+    return graph.with_config(metadata=sent(settings, "server"))
 
 
 def shape() -> CompiledStateGraph:

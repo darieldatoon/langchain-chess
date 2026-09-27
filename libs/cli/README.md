@@ -37,7 +37,9 @@ lcchess play --policy llm --model claude-opus-5-5
 ```
 
 Every command has `--help`, which documents each setting from `ChessContext`. A flag you leave
-out keeps the setting's default.
+out keeps the setting's default. `--model-kwargs '{"temperature": 0.2}'` passes extra model
+arguments; unlike the server, the CLI accepts provider tools too, and prices those calls as
+incomplete.
 
 ## Play in the terminal
 

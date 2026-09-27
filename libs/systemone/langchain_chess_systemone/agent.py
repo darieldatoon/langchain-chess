@@ -15,6 +15,7 @@ from langgraph.types import Checkpointer
 from langchain_chess import ChessContractError, create_chess_agent
 from langchain_chess.chat_models import chat_model
 from langchain_chess.middleware.summarization import input_limit
+from langchain_chess.model_arguments import ModelArguments, Surface, model_arguments
 from langchain_chess_systemone.middleware import NoSystemOne, SystemOneMiddleware
 from langchain_chess_systemone.ranker import GatewayRanker
 from langchain_chess_systemone.settings import ChessContext
@@ -24,8 +25,25 @@ type ModelFactory = Callable[[ChessContext], BaseChatModel]
 type RankerFactory = Callable[[ChessContext], Ranker]
 
 
+def arguments(settings: ChessContext, surface: Surface = "local") -> ModelArguments:
+    """What the model is built with and sends: `model_kwargs` over the settings."""
+    return model_arguments(
+        settings.model_kwargs, reasoning_effort=settings.reasoning_effort, surface=surface
+    )
+
+
+def sent(settings: ChessContext, surface: Surface = "local") -> dict[str, Any]:
+    """The settings as sent, for labels and run metadata; the recorded settings keep
+    `model_kwargs` as given."""
+    resolved = arguments(settings, surface)
+    values: dict[str, Any] = {"reasoning_effort": resolved.reasoning_effort}
+    if resolved.max_tokens is not None:
+        values["max_tokens"] = resolved.max_tokens
+    return values
+
+
 def default_model(settings: ChessContext) -> BaseChatModel:
-    return chat_model(settings.model, settings.reasoning_effort)
+    return chat_model(settings.model, arguments(settings))
 
 
 def default_ranker(settings: ChessContext) -> Ranker:
@@ -82,6 +100,9 @@ def build_agent(
     return create_chess_agent(
         model,
         middleware=stack,
+        system_prompt=settings.system_prompt,
+        show_fen=settings.show_fen,
+        show_board=settings.show_board,
         move_list=settings.move_list,
         memory=memory,
         draw_claims=settings.draw_claims,

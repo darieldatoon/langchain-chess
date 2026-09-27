@@ -99,7 +99,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langchain_chess_systemone.agent import build_agent
 from langchain_chess_systemone.settings import load
 
-settings = load({"version": 1, "policy": "hybrid", "k": 3, "move_list": "candidates"})
+settings = load({"version": 2, "policy": "hybrid", "k": 3, "model_kwargs": {"temperature": 0.2}})
 agent = build_agent(settings, checkpointer=InMemorySaver())
 ```
 

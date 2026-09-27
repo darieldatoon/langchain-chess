@@ -7,6 +7,7 @@ import chess
 
 from langchain_chess import turn_cost
 from langchain_chess.rules import result_text
+from langchain_chess_systemone.agent import sent
 from langchain_chess_systemone.settings import ChessContext
 
 SOURCES = {
@@ -118,7 +119,7 @@ def status_text(
 def describe_settings(settings: ChessContext) -> str:
     if settings.policy == "systemone":
         return f"System 1 alone ({settings.systemone_model})"
-    effort = settings.reasoning_effort
+    effort = sent(settings)["reasoning_effort"]
     llm = settings.model if effort is None else f"{settings.model} ({effort})"
     if settings.policy == "llm":
         return llm

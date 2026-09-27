@@ -3,12 +3,14 @@
 Credentials are the provider's own environment, or langchain-core's gateway resolution.
 """
 
+from collections.abc import Mapping
 from typing import Any
 
 from langchain.chat_models import init_chat_model
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.model_profile import ModelProfile
 
+from langchain_chess.model_arguments import ModelArguments, ModelArgumentsError
 from langchain_chess.models import GATEWAY_PREFIX, model_identity
 from langchain_chess.pricing import context_window
 
@@ -23,22 +25,40 @@ def output_budget(window: int | None, ceiling: int | None = None) -> int:
     return min([MAX_TOKENS, *(cap for cap in (window and window // 2, ceiling) if cap)])
 
 
-def chat_model(model: str, reasoning_effort: str | None = None) -> BaseChatModel:
+def chat_model(
+    model: str,
+    arguments: ModelArguments | None = None,
+    *,
+    connection: Mapping[str, Any] | None = None,
+) -> BaseChatModel:
+    """`connection` is trusted code's own, such as an HTTP client in tests; never settings'."""
+    arguments = arguments or ModelArguments()
+    connection = connection or {}
     window = context_window(model)
-    budget = output_budget(window)
+    _check_room(model, window, arguments.max_tokens)
+    budget = arguments.max_tokens or output_budget(window)
     if model.startswith(GATEWAY_PREFIX):
-        budget = output_budget(window, (_vendor_profile(model) or {}).get("max_output_tokens"))
-        # The gateway's ChatOpenAI has no profile, and summarize's fractional trigger needs one.
+        ceiling = (_vendor_profile(model) or {}).get("max_output_tokens")
+        budget = arguments.max_tokens or output_budget(window, ceiling)
+        # The gateway's ChatOpenAI has no profile, and memory's fractional trigger needs one.
         profile = ModelProfile(max_input_tokens=window - budget) if window else None
-        return _build(model, budget, reasoning_effort, profile)
-    native: ModelProfile = _build(model, budget, reasoning_effort, None).profile or {}
+        return _build(model, budget, arguments, profile, connection)
+    native: ModelProfile = _build(model, budget, arguments, None, connection).profile or {}
     # Only a native profile knows the output limit, and for a bare spec (`gpt-4`) the window.
     window = window or native.get("max_input_tokens")
-    budget = output_budget(window, native.get("max_output_tokens"))
-    # Summarize schedules against the input limit, which must leave room for the output budget.
+    _check_room(model, window, arguments.max_tokens)
+    budget = arguments.max_tokens or output_budget(window, native.get("max_output_tokens"))
+    # Memory schedules against the input limit, which must leave room for the output budget.
     if limits := [n for n in (native.get("max_input_tokens"), window and window - budget) if n]:
         native = {**native, "max_input_tokens": min(limits)}
-    return _build(model, budget, reasoning_effort, native)
+    return _build(model, budget, arguments, native, connection)
+
+
+def _check_room(model: str, window: int | None, max_tokens: int | None) -> None:
+    """An output limit that fills the window leaves no input, and memory would summarize always."""
+    if window and max_tokens is not None and max_tokens >= window:
+        msg = f"an output limit of {max_tokens} leaves no room in {model}'s {window}-token window"
+        raise ModelArgumentsError(msg)
 
 
 def _vendor_profile(model: str) -> ModelProfile | None:
@@ -54,16 +74,20 @@ def _vendor_profile(model: str) -> ModelProfile | None:
 
 
 def _build(
-    model: str, max_tokens: int, reasoning_effort: str | None, profile: ModelProfile | None
+    model: str,
+    max_tokens: int,
+    arguments: ModelArguments,
+    profile: ModelProfile | None,
+    connection: Mapping[str, Any],
 ) -> BaseChatModel:
+    # Models without reasoning reject the parameter outright, even as a default: an effort is
+    # in `arguments` only when one was set.
     kwargs: dict[str, Any] = {
         "max_tokens": max_tokens,
         # The trace span's name; through the gateway every vendor would read as `ChatOpenAI`.
         "name": model_identity(model)[1],
+        **({"profile": profile} if profile is not None else {}),
+        **arguments.kwargs,
+        **connection,
     }
-    # Models without reasoning reject the parameter outright, even as a default.
-    if reasoning_effort is not None:
-        kwargs["reasoning_effort"] = reasoning_effort
-    if profile is not None:
-        kwargs["profile"] = profile
     return init_chat_model(model, **kwargs)

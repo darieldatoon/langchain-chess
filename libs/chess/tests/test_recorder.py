@@ -6,7 +6,7 @@ from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 
 from langchain_chess import create_chess_agent
 from langchain_chess.recorder import CallRecorder
-from langchain_chess.testing import ScriptedModel, position
+from langchain_chess.testing import ScriptedModel, position, usage
 
 
 def _start(recorder, run_id, **metadata):
@@ -47,3 +47,24 @@ def test_forced_move_can_be_turned_off():
 def test_scripted_model_runs_out():
     with pytest.raises(AssertionError, match="script exhausted"):
         ScriptedModel(script=[]).invoke("hi")
+
+
+def test_a_call_with_hosted_tools_has_an_incomplete_cost():
+    recorder = CallRecorder()
+    run = uuid.uuid4()
+    with recorder.sink("llm") as calls:
+        recorder.on_chat_model_start(
+            {},
+            [[]],
+            run_id=run,
+            metadata={"ls_model_name": "claude-opus-5", "ls_provider": "anthropic"},
+            invocation_params={"extra_body": {"tools": [{"type": "web_search"}]}},
+        )
+        recorder.on_llm_end(
+            LLMResult(
+                generations=[[ChatGeneration(message=AIMessage("x", usage_metadata=usage()))]]
+            ),
+            run_id=run,
+        )
+    assert calls[0]["cost_usd"] is not None
+    assert calls[0]["cost_complete"] is False

@@ -6,10 +6,13 @@ import {
   SETTINGS_VERSION,
   fenOrStart,
   isSetting,
+  modelKwargsProblems,
   opposite,
+  sentEffort,
   sideToMove,
   type ChessContext,
   type ChessValues,
+  type JSONValue,
   type Side,
 } from "@langchain-chess/chess-ui";
 
@@ -115,6 +118,8 @@ export function matchupOf(setup: Setup, summarize: Summarize): Matchup {
     return { ok: false, reason: "Pick a System 1, an LLM, or both." };
   }
   if (model === "") return { ok: false, reason: "Enter a model spec for the custom LLM." };
+  const held = model === null ? [] : modelKwargsProblems(setup.knobs.model_kwargs, "server");
+  if (held.length > 0) return { ok: false, reason: `Model kwargs: ${held.join("; ")}.` };
   if (model !== null && setup.knobs.memory) {
     if (summarize === "checking") {
       return { ok: false, reason: `Checking whether ${modelName(model)} can summarize…` };
@@ -152,10 +157,20 @@ export function matchupLine(context: ChessContext): string {
   }
 }
 
+/** Whether `model_kwargs` sets the effort, so the Reasoning Effort setting doesn't apply. */
+export function effortOverridden(knobs: Pick<Knobs, "model_kwargs">): boolean {
+  const { reasoning, reasoning_effort: effort, extra_body: extraBody } = knobs.model_kwargs;
+  return (
+    (effort !== undefined && effort !== null) ||
+    (isRecord(reasoning) && reasoning.effort !== undefined && reasoning.effort !== null) ||
+    (isRecord(extraBody) && "reasoning" in extraBody)
+  );
+}
+
 /** The opponent on the game screen, e.g. "SemIf + GLM-5.3 · medium". */
 export function opponentLabel(context: ChessContext): string {
   const systemOne = systemOneName(context.systemone_model);
-  const effort = context.reasoning_effort;
+  const effort = sentEffort(context);
   const llm =
     effort === null ? modelName(context.model) : `${modelName(context.model)} · ${effort}`;
   switch (context.policy) {
@@ -190,14 +205,17 @@ function sectionsOfPolicy(policy: ChessContext["policy"]): Sections {
 }
 
 const KNOB_SECTIONS: Record<keyof Sections | "rules", readonly (keyof Knobs)[]> = {
-  llm: ["move_list", "memory"],
+  llm: ["system_prompt", "show_fen", "show_board", "move_list", "memory", "model_kwargs"],
   systemOne: ["style", "with_eval", "with_nouls"],
   gate: ["gate", "threshold", "tournament_threshold", "k", "top_p"],
   rules: ["draw_claims", "seed"],
 };
 
-export const knobText = (value: Knobs[keyof Knobs]) =>
-  typeof value === "boolean" ? (value ? "on" : "off") : String(value);
+export const knobText = (value: Knobs[keyof Knobs]) => {
+  if (typeof value === "boolean") return value ? "on" : "off";
+  if (typeof value === "object" && value !== null) return JSON.stringify(value);
+  return String(value);
+};
 
 /** Knobs the game's policy uses that differ from the defaults, e.g. ["threshold 0.5", "k 3"]. */
 export function changedKnobs(context: ChessContext): string[] {
@@ -209,8 +227,12 @@ export function changedKnobs(context: ChessContext): string[] {
     ...KNOB_SECTIONS.rules,
   ];
   return keys
-    .filter((key) => context[key] !== DEFAULT_CONTEXT[key])
-    .map((key) => `${key.replaceAll("_", " ")} ${knobText(context[key])}`);
+    .filter((key) => JSON.stringify(context[key]) !== JSON.stringify(DEFAULT_CONTEXT[key]))
+    .map((key) =>
+      key === "system_prompt"
+        ? "custom system prompt"
+        : `${key.replaceAll("_", " ")} ${knobText(context[key])}`,
+    );
 }
 
 /** Random is resolved once, when Play is pressed; the game keeps the colour it got. */
@@ -288,4 +310,28 @@ function humanSideOf(values: ChessValues, picked: Side | null): Side {
 export function gameOf(values: ChessValues, chosen: GameRecord | null): GameRecord | null {
   const context = recordedContext(values.setup) ?? chosen?.context;
   return context ? { side: humanSideOf(values, chosen?.side ?? null), context } : null;
+}
+
+export type Kwargs = { [key: string]: JSONValue };
+
+/** The object `text` holds, else why it can't be sent. Empty text is no kwargs. */
+export function parseKwargs(
+  text: string,
+): { ok: true; value: Kwargs } | { ok: false; why: string } {
+  if (text.trim() === "") return { ok: true, value: {} };
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return { ok: false, why: "Not valid JSON." };
+  }
+  if (!isRecord(value)) return { ok: false, why: "Use a JSON object." };
+  if (!isSetting("model_kwargs", value)) {
+    const local = modelKwargsProblems(value, "local");
+    return { ok: false, why: local.length > 0 ? local.join("; ") : "Use finite numbers." };
+  }
+  const problems = modelKwargsProblems(value, "server");
+  return problems.length > 0
+    ? { ok: false, why: problems.join("; ") }
+    : { ok: true, value: value as Kwargs };
 }

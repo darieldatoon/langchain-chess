@@ -9,12 +9,15 @@ import {
   loadRecorded,
   loadSettings,
   migrateSettings,
+  modelKwargsProblems,
+  sentEffort,
   resolveSettings,
   SETTING_KEYS,
   SETTINGS_VERSION,
   SettingsError,
   VERSION_DEFAULTS,
 } from "../src";
+import { legacyOf } from "../src/testing";
 
 interface Case {
   name: string;
@@ -102,5 +105,46 @@ describe("checkSetting", () => {
     const threshold = { ...DEFAULT_CONTEXT, threshold: Number.NaN };
     expect(() => loadRecorded(threshold)).toThrow("invalid settings: threshold");
     expect(checkSetting({ type: "boolean", nullable: true }, null)).toBe(true);
+  });
+});
+
+describe("model_kwargs", () => {
+  it("holds back more on the server", () => {
+    expect(modelKwargsProblems({ tools: [] }, "local")).toEqual([]);
+    expect(modelKwargsProblems({ tools: [], seed: 1 }, "server")).toEqual([
+      "`tools`: it reaches the deployment's own tools and resources",
+      "`seed`: the server doesn't send it",
+    ]);
+    expect(modelKwargsProblems({ extra_body: { prompt: {} } }, "server")).toEqual([
+      "`extra_body.prompt`: it reaches the deployment's own tools and resources",
+    ]);
+    expect(modelKwargsProblems({ temperature: 0, max_output_tokens: 10 }, "server")).toEqual([]);
+  });
+
+  it("compares aliases by value, whatever their key order", () => {
+    const kwargs = { max_tokens: { b: [1], a: 2 }, max_output_tokens: { a: 2, b: [1] } };
+    expect(modelKwargsProblems(kwargs, "local")).toEqual([
+      "the output limit must be a positive integer",
+    ]);
+  });
+
+  it("names the effort the requests carry", () => {
+    const context = { reasoning_effort: "low" as const, model_kwargs: {} };
+    expect(sentEffort(context)).toBe("low");
+    expect(sentEffort({ ...context, model_kwargs: { reasoning: { effort: "high" } } })).toBe(
+      "high",
+    );
+    expect(sentEffort({ ...context, model_kwargs: { extra_body: { reasoning: {} } } })).toBeNull();
+    const replaced = { extra_body: { reasoning: { effort: "medium" } } };
+    expect(sentEffort({ ...context, model_kwargs: replaced })).toBe("medium");
+    expect(sentEffort({ ...context, model_kwargs: { extra_body: { reasoning: "x" } } })).toBeNull();
+    expect(sentEffort({ ...context, model_kwargs: { reasoning_effort: 3 } })).toBe("low");
+  });
+});
+
+describe("legacyOf", () => {
+  it("rebuilds a game recorded before versions", () => {
+    const legacy = { ...legacyOf(DEFAULT_CONTEXT), memory: "none", show_legal_moves: true };
+    expect(loadRecorded(legacy)).toEqual(DEFAULT_CONTEXT);
   });
 });

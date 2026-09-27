@@ -5,9 +5,11 @@
 
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from langchain_chess.model_arguments import problems
 from langchain_chess.rules import DrawClaims
+from langchain_chess.state import JSONValue
 
 type ReasoningEffort = Literal["low", "medium", "high"]
 type ListedMoves = Literal["both", "legal", "candidates", "none"]
@@ -49,6 +51,17 @@ class CoreSettings(Settings):
             min_length=1,
         ),
     ] = DEFAULT_MODEL
+    model_kwargs: Annotated[
+        dict[str, JSONValue],
+        setting(
+            "Extra arguments for the model's constructor, as `init_chat_model` takes them: "
+            "`temperature`, `max_tokens`, `extra_body` and so on. They win over every other "
+            "setting. Credentials, connections, the model name and what the agent sends are "
+            "held back. An output limit set only inside `extra_body` isn't seen, so memory may "
+            "summarize too late.",
+            "model",
+        ),
+    ] = {}
     reasoning_effort: Annotated[
         ReasoningEffort | None,
         setting(
@@ -57,6 +70,26 @@ class CoreSettings(Settings):
             "model",
         ),
     ] = None
+    system_prompt: Annotated[
+        str | None,
+        setting(
+            "Replaces the bundled system prompt. Null keeps it. Each turn's message still "
+            "ends by asking for `MOVE: <move>`; a reply without one is retried.",
+            "model",
+            min_length=1,
+        ),
+    ] = None
+    show_fen: Annotated[
+        bool,
+        setting(
+            "Show the position's FEN in each turn's message. The moves so far are always "
+            "shown, and so is the starting FEN of a game from another position.",
+            "model",
+        ),
+    ] = True
+    show_board: Annotated[
+        bool, setting("Show the board as text in each turn's message.", "model")
+    ] = True
     move_list: Annotated[
         ListedMoves,
         setting(
@@ -82,3 +115,11 @@ class CoreSettings(Settings):
             "model",
         ),
     ] = "auto"
+
+    @field_validator("model_kwargs")
+    @classmethod
+    def _sendable(cls, value: dict[str, JSONValue]) -> dict[str, JSONValue]:
+        """What every surface holds back; the server holds back more when it builds the model."""
+        if found := problems({k: v for k, v in value.items() if v is not None}, surface="local"):
+            raise ValueError("; ".join(found))
+        return value

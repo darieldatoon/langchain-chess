@@ -96,14 +96,25 @@ they must be idempotent (see below).
 
 | Option | Default | What it does |
 |---|---|---|
-| `memory` | `False` | `True` keeps earlier turns and summarizes them at 70% of the model's `max_input_tokens`. Pass `summarization=` for another trigger. |
+| `memory` | `False` | `True` keeps earlier turns and summarizes them at 70% of the model's `max_input_tokens`, counting the system prompt and the turn's message too. A system prompt that fills the trigger alone is rejected. Pass `summarization=` for another trigger. |
+| `system_prompt` | the bundled prompt | Replaces it. An empty string is an error. |
+| `show_fen`, `show_board` | `True` | Show the FEN and the text board in each turn's message. |
 | `move_list` | `"both"` | The moves each turn lists: `"both"` (middleware's candidates and every legal move), `"legal"`, `"candidates"` or `"none"`. A restricted turn always lists the permitted moves. |
 | `max_retries` | `3` | Feedback rounds after an illegal reply. The side to move resigns on the next one (four illegal replies in all). |
 | `draw_claims` | `"auto"` | `"auto"` ends the game on an actual threefold repetition or the fifty-move rule. `"never"` leaves claimable draws to the caller. |
 | `forced_move` | `True` | When the turn starts with one allowed move (legal, and within `restrict`), play it without calling a model. |
 | `fixed_topology` | `False` | Keep the summarization node with `memory=False`, so agents with either memory setting share one graph. An Agent Server graph factory needs this: the server reads state with a graph built without the run's settings. |
+| `render_position` | | A pure function from a `PositionView` to the position section of each turn's message, replacing `show_fen`, `show_board` and `move_list`. The core still adds the moves so far, a custom starting FEN, the side to move, check, the permitted moves on a restricted turn and the `MOVE: <move>` request. |
 | `seed` | `0` | Seeds middleware that samples (such as SystemOne's tournament). |
-| `system_prompt`, `context_schema`, `name` | | Passed through to `create_agent`. |
+| `context_schema`, `name` | | Passed through to `create_agent`. |
+
+`chat_model(spec, model_arguments(model_kwargs, reasoning_effort=...))` builds a model with extra
+constructor arguments. `model_kwargs` wins over the settings; its names for the same thing
+(`reasoning_effort` and `reasoning.effort`; `max_tokens`, `max_output_tokens` and
+`max_completion_tokens`) are reduced to one value first. Credentials and connections, the model
+name and the fields the agent sends (`input`, `messages`, `instructions`, `stream`) are held back
+everywhere, top level or inside `extra_body`. A call with hosted `tools` has its cost marked
+incomplete.
 
 `model=None` works only when middleware always proposes, as in a System-1-only agent.
 

@@ -20,8 +20,9 @@ That starts `langgraph dev` on `:2024` and this app on `:5173`, then prints the 
 
 1. **New game.** The dialog opens by itself when the URL has no game. Pick White, Random or
    Black, a System 1 (SemIf, Jev, or none) and an LLM (a preset, a custom `init_chat_model`
-   spec, or none). Advanced holds the rest: threshold, shortlist size, the moves listed, memory,
-   reasoning effort. A game from elsewhere with another System 1 model keeps it, by name.
+   spec, or none). Advanced holds the rest: the system prompt, what each turn shows, memory,
+   model kwargs (JSON), reasoning effort, threshold and shortlist size. A game from elsewhere
+   with another System 1 model keeps it, by name.
 2. **Move.** Click a piece, then its target, or drag it. When you play Black, the agent opens.
 3. **Read the reply.** Last reply shows who chose the move (System 1, the LLM, or a forced move),
    the model, latency and cost, System 1's top moves, and the LLM's reasoning. While the

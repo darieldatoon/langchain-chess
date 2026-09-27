@@ -225,3 +225,64 @@ async def test_one_hour_cache_writes_are_priced_total_plus_subset(make_agent, ru
 
 def test_the_chess_summary_prompt_has_the_slot():
     assert "{messages}" in CHESS_SUMMARY_PROMPT
+
+
+def token_trigger(model, tokens):
+    return SummarizationMiddleware(
+        model,
+        trigger=("tokens", tokens),
+        keep=("messages", 8),
+        summary_prompt=CHESS_SUMMARY_PROMPT,
+        token_counter=lambda messages: sum(len(str(m.content)) for m in messages),
+    )
+
+
+async def test_summarizing_counts_the_system_prompt_and_the_turns_message(make_agent, run, cfg):
+    # Stored messages alone stay far below 500; the prompt and the position block push past it.
+    responder = Responder(REPLIES)
+    model = model_for(responder)
+    agent = make_agent(
+        model, memory=True, system_prompt="p" * 200, summarization=token_trigger(model, 500)
+    )
+    await play_ruy_lopez(agent, run, cfg)
+    assert responder.summaries >= 1
+    quiet = Responder(REPLIES)
+    lean = model_for(quiet)
+    agent = make_agent(lean, memory=True, summarization=token_trigger(lean, 5000))
+    await play_ruy_lopez(agent, run, {"configurable": {"thread_id": "lean"}})
+    assert quiet.summaries == 0
+
+
+def test_a_system_prompt_that_leaves_no_room_is_rejected_up_front():
+    model = ScriptedModel(script=[], profile={"max_input_tokens": 1000})
+    with pytest.raises(ChessContractError, match="shorten it or turn memory off"):
+        create_chess_agent(model, memory=True, system_prompt="long " * 1000)
+    with pytest.raises(ChessContractError, match="summarizes at 50"):
+        create_chess_agent(
+            model, memory=True, system_prompt="x" * 400, summarization=token_trigger(model, 50)
+        )
+    assert create_chess_agent(model, memory=True, system_prompt="Play well.") is not None
+    assert create_chess_agent(model, memory=False, system_prompt="long " * 1000) is not None
+
+
+def test_an_empty_system_prompt_is_rejected():
+    with pytest.raises(ChessContractError, match="must not be empty"):
+        create_chess_agent(ScriptedModel(script=[]), system_prompt="")
+
+
+def test_the_overhead_moves_the_trigger_but_not_what_gets_summarized():
+    model = ScriptedModel(script=[], profile=PROFILE)
+    agent_summary = token_trigger(model, 10)
+    from langchain_chess.middleware.summarization import ChessSummarization
+    from langchain_chess.recorder import CallRecorder
+
+    summarizer = ChessSummarization.from_middleware(
+        agent_summary,
+        recorder=CallRecorder(),
+        max_retries=3,
+        overhead=lambda state: [HumanMessage("o" * 5000)],
+    )
+    messages = [HumanMessage("abc")]
+    assert summarizer.token_counter(messages) == 3
+    assert summarizer.overhead_tokens({}) == 5000
+    assert not summarizer._should_summarize(messages, 3)

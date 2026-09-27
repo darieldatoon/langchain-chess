@@ -1,6 +1,7 @@
 """The `lcchess` command line: `uci`, `play` and `grade`."""
 
 import asyncio
+import json
 import logging
 import os
 import sys
@@ -34,15 +35,9 @@ app = typer.Typer(
 def _setting(name: str, **extra: Any) -> Any:
     """A flag documented by its setting; left out, it keeps the setting's default."""
     default = ChessContext.model_fields[name].default
-    return typer.Option(
-        help=ChessContext.model_fields[name].description,
-        show_default=False
-        if default is None
-        else str(default).lower()
-        if isinstance(default, bool)
-        else str(default),
-        **extra,
-    )
+    shown = str(default).lower() if isinstance(default, bool) else str(default)
+    extra.setdefault("show_default", False if default is None else shown)
+    return typer.Option(help=ChessContext.model_fields[name].description, **extra)
 
 
 # Typer can't read PEP 695 aliases, so the choices are spelled out here.
@@ -64,10 +59,18 @@ EvalOption = Annotated[bool | None, _setting("with_eval")]
 NoulsOption = Annotated[bool | None, _setting("with_nouls")]
 MemoryOption = Annotated[bool | None, _setting("memory")]
 DrawClaimsOption = Annotated[Literal["auto", "never"] | None, _setting("draw_claims")]
+SystemPromptOption = Annotated[str | None, _setting("system_prompt")]
+FenOption = Annotated[bool | None, _setting("show_fen")]
+BoardOption = Annotated[bool | None, _setting("show_board")]
+ModelKwargsOption = Annotated[
+    str | None, _setting("model_kwargs", metavar="JSON", show_default=False)
+]
 
 
-def _settings(**flags: Any) -> ChessContext:
+def _settings(*, model_kwargs: str | None = None, **flags: Any) -> ChessContext:
     try:
+        if model_kwargs is not None:
+            flags["model_kwargs"] = json.loads(model_kwargs)
         return overlay(ChessContext(), flags)
     except ValueError as e:
         raise typer.BadParameter(str(e)) from e
@@ -90,6 +93,10 @@ def uci(
     with_eval: EvalOption = None,
     with_nouls: NoulsOption = None,
     memory: MemoryOption = None,
+    system_prompt: SystemPromptOption = None,
+    show_fen: FenOption = None,
+    show_board: BoardOption = None,
+    model_kwargs: ModelKwargsOption = None,
 ) -> None:
     """Run as a UCI engine on stdin/stdout. Only protocol output goes to stdout.
 
@@ -114,6 +121,10 @@ def uci(
         with_eval=with_eval,
         with_nouls=with_nouls,
         memory=memory,
+        system_prompt=system_prompt,
+        show_fen=show_fen,
+        show_board=show_board,
+        model_kwargs=model_kwargs,
     )
 
     def factory(agent_settings: ChessContext, checkpointer: Checkpointer) -> CompiledStateGraph:
@@ -148,6 +159,10 @@ def play(
     with_nouls: NoulsOption = None,
     memory: MemoryOption = None,
     draw_claims: DrawClaimsOption = None,
+    system_prompt: SystemPromptOption = None,
+    show_fen: FenOption = None,
+    show_board: BoardOption = None,
+    model_kwargs: ModelKwargsOption = None,
 ) -> None:
     """Play a game in the terminal (Textual)."""
     from langchain_chess_cli.tui.app import ChessApp
@@ -169,6 +184,10 @@ def play(
         with_nouls=with_nouls,
         memory=memory,
         draw_claims=draw_claims,
+        system_prompt=system_prompt,
+        show_fen=show_fen,
+        show_board=show_board,
+        model_kwargs=model_kwargs,
     )
 
     def factory(checkpointer: Checkpointer) -> CompiledStateGraph:

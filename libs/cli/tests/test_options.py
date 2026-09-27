@@ -22,9 +22,16 @@ def test_run_config_names_the_trace_by_surface_and_records_every_setting():
     assert metadata["surface"] == "tui"
     assert metadata["draw_claims"] == "auto"
     assert {k: metadata[k] for k in ("version", "policy", "model", "k", "seed")} == {
-        "version": 1,
+        "version": 2,
         "policy": "llm",
         "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
         "k": 7,
         "seed": 0,
     }
+
+
+def test_run_metadata_records_the_values_sent():
+    settings = ChessContext(reasoning_effort="low", model_kwargs={"reasoning_effort": "high"})
+    metadata = run_config("uci", "t", settings)["metadata"]
+    assert metadata["reasoning_effort"] == "high"
+    assert metadata["model_kwargs"] == {"reasoning_effort": "high"}

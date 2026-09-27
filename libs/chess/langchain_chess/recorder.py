@@ -35,6 +35,7 @@ class _Pending:
     model: str
     provider: str | None
     started: datetime
+    hosted_tools: bool
 
 
 _SINK: contextvars.ContextVar[_Sink | None] = contextvars.ContextVar(
@@ -46,6 +47,13 @@ def call_from_message(
     kind: CallKind, model: str, provider: str | None, message: AIMessage, at: datetime
 ) -> Call:
     return make_call(kind, model, tokens_from_usage(message.usage_metadata), at, provider)
+
+
+def _hosted_tools(kwargs: dict[str, Any]) -> bool:
+    """Whether the request carries tools: a chess agent binds none, so `model_kwargs` did."""
+    params = kwargs.get("invocation_params") or {}
+    extra_body = params.get("extra_body") or {}
+    return bool(params.get("tools") or (isinstance(extra_body, dict) and extra_body.get("tools")))
 
 
 class CallRecorder(BaseCallbackHandler):
@@ -81,8 +89,9 @@ class CallRecorder(BaseCallbackHandler):
         metadata = metadata or {}
         model = str(metadata.get("ls_model_name") or (serialized or {}).get("name") or "unknown")
         provider = metadata.get("ls_provider")
+        pending = _Pending(sink, model, provider, datetime.now(UTC), _hosted_tools(kwargs))
         with self._lock:
-            self._pending[run_id] = _Pending(sink, model, provider, datetime.now(UTC))
+            self._pending[run_id] = pending
 
     def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> None:
         with self._lock:
@@ -91,15 +100,17 @@ class CallRecorder(BaseCallbackHandler):
             return
         generation = response.generations[0][0] if response.generations else None
         if isinstance(generation, ChatGeneration) and isinstance(generation.message, AIMessage):
-            pending.sink.calls.append(
-                call_from_message(
-                    pending.sink.kind,
-                    pending.model,
-                    pending.provider,
-                    generation.message,
-                    pending.started,
-                )
+            call = call_from_message(
+                pending.sink.kind,
+                pending.model,
+                pending.provider,
+                generation.message,
+                pending.started,
             )
+            # Token prices don't cover a hosted tool's own charges.
+            if pending.hosted_tools:
+                call = Call(**{**call, "cost_complete": False})
+            pending.sink.calls.append(call)
 
     def on_llm_error(self, error: BaseException, *, run_id: UUID, **kwargs: Any) -> None:
         with self._lock:

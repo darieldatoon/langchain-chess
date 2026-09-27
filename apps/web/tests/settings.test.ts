@@ -8,10 +8,11 @@ import {
   withKnob,
 } from "../src/settings";
 import { DEFAULT_CONTEXT } from "@langchain-chess/chess-ui";
+import { legacyOf } from "@langchain-chess/chess-ui/testing";
 
 describe("sanitizeContext", () => {
   it("reads the removed full memory as summarize and drops the removed trigger", () => {
-    const { version: _, move_list: __, ...legacy } = DEFAULT_CONTEXT;
+    const legacy = legacyOf(DEFAULT_CONTEXT);
     const stored = { ...legacy, memory: "full", summary_trigger_tokens: 50000 };
     expect(sanitizeContext(stored)).toEqual({ ...DEFAULT_CONTEXT, memory: true });
     expect(sanitizeContext({ show_legal_moves: false })).toEqual({
@@ -104,7 +105,7 @@ describe("apiUrl", () => {
 describe("configurableOf and withKnob", () => {
   it("sends exactly the ChessContext keys, version included", () => {
     expect(configurableOf(DEFAULT_CONTEXT)).toEqual(DEFAULT_CONTEXT);
-    expect(configurableOf(DEFAULT_CONTEXT)).toHaveProperty("version", 1);
+    expect(configurableOf(DEFAULT_CONTEXT)).toHaveProperty("version", 2);
     expect(configurableOf(DEFAULT_CONTEXT)).not.toBe(DEFAULT_CONTEXT);
     const extra = { ...DEFAULT_CONTEXT, human_side: "black" } as typeof DEFAULT_CONTEXT;
     expect(configurableOf(extra)).not.toHaveProperty("human_side");
