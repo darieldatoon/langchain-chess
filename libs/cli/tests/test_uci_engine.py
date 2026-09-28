@@ -102,8 +102,7 @@ async def test_a_game_continues_on_the_same_thread():
 
 
 async def test_stop_before_commit_then_the_fallback_enters_as_an_external_move():
-    ranker = FakeRanker(lambda r: distribution(dict(zip(r.options[:2], (0.6, 0.4), strict=True))))
-    systemone = SystemOneMiddleware("fake", threshold=1.0, ranker=ranker)
+    ranker, systemone = _below_threshold()
     factory = Factory(["MOVE: e5", "MOVE: Nf3"], delay=5.0, systemone=systemone)
     h = Harness(factory)
     await h.send("position startpos moves e2e4", "go infinite")
@@ -120,42 +119,50 @@ async def test_stop_before_commit_then_the_fallback_enters_as_an_external_move()
     assert values["plies"][1]["uci"] == top
 
 
-async def test_the_deadline_plays_a_seeded_fallback():
-    factory = Factory(["MOVE: e5"], delay=5.0)
-    h = Harness(factory)
+async def test_the_deadline_forfeits_without_a_system_one_pick():
+    h = Harness(Factory(["MOVE: e5"], delay=5.0))
     await h.send("position startpos moves e2e4", "go movetime 200")
     await h.wait_for("bestmove")
-    (move,) = h.bestmoves()
-    assert move in {
-        "a7a6",
-        "a7a5",
-        "b7b6",
-        "b7b5",
-        "c7c6",
-        "c7c5",
-        "d7d6",
-        "d7d5",
-        "e7e6",
-        "e7e5",
-        "f7f6",
-        "f7f5",
-        "g7g6",
-        "g7g5",
-        "h7h6",
-        "h7h5",
-        "b8a6",
-        "b8c6",
-        "g8f6",
-        "g8h6",
-    }
+    assert h.infos() == ["forfeits: no move to play"]
+    assert h.bestmoves() == ["0000"]
+
+
+def _below_threshold():
+    ranker = FakeRanker(lambda r: distribution(dict(zip(r.options[:2], (0.6, 0.4), strict=True))))
+    return ranker, SystemOneMiddleware("fake", threshold=1.0, ranker=ranker)
+
+
+async def test_the_soft_deadline_plays_system_ones_pick():
+    ranker, systemone = _below_threshold()
+    h = Harness(Factory(["MOVE: e5"], delay=30.0, systemone=systemone))
+    # 60 s on the clock: about 2 s for the move, then System 1's pick.
+    await h.send("position startpos moves e2e4", "go wtime 60000 btime 60000")
+    await h.wait_for("bestmove", timeout=10.0)
+    assert h.bestmoves() == [ranker.requests[0].options[0]]
+
+
+async def test_without_a_pick_the_search_runs_past_the_soft_deadline():
+    h = Harness(Factory(["MOVE: e5"], delay=2.0))
+    await h.send("position startpos moves e2e4", "go wtime 20000 btime 20000")
+    await asyncio.sleep(1.0)  # past the 0.5 s soft deadline
+    assert h.bestmoves() == []
+    await h.wait_for("bestmove", timeout=15.0)
+    assert h.bestmoves() == ["e7e5"]
+
+
+async def test_the_hard_deadline_forfeits():
+    h = Harness(Factory(["MOVE: e5"], delay=5.0))
+    await h.send("position startpos moves e2e4", "go wtime 60000 btime 400")
+    await h.wait_for("bestmove")
+    assert h.bestmoves() == ["0000"]
 
 
 async def test_a_provider_failure_before_the_deadline():
     h = Harness(Factory([RuntimeError("provider down")]))
     await h.send("position startpos", "go movetime 5000")
     await h.wait_for("bestmove")
-    assert h.infos() == ["error: provider down"]
-    assert len(h.bestmoves()) == 1
+    assert h.infos() == ["error: provider down", "forfeits: no move to play"]
+    assert h.bestmoves() == ["0000"]
 
 
 async def test_insufficient_material_is_game_over():
@@ -423,9 +430,12 @@ async def test_a_multiline_error_cannot_forge_a_command():
     await h.send("position startpos", "go movetime 5000")
     await h.wait_for("bestmove")
     stdout = h.stdout()
-    assert stdout[:2] == ["info string error: upstream failed", "info string bestmove e2e5"]
-    assert [line for line in stdout if line.startswith("bestmove")] == stdout[2:]
-    assert len(stdout) == 3
+    assert stdout == [
+        "info string error: upstream failed",
+        "info string bestmove e2e5",
+        "info string forfeits: no move to play",
+        "bestmove 0000",
+    ]
 
 
 async def test_a_config_file_replaces_the_settings_and_later_options_patch_it(tmp_path):

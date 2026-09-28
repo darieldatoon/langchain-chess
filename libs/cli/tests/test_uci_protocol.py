@@ -1,6 +1,6 @@
 import pytest
 
-from langchain_chess_cli.uci.clock import MIN_MS, SAFETY_MS, deadline_ms
+from langchain_chess_cli.uci.clock import MIN_MS, SAFETY_MS, Deadlines, deadlines
 from langchain_chess_cli.uci.completion import SearchResult, complete, root_moves
 from langchain_chess_cli.uci.protocol import (
     STARTPOS,
@@ -58,15 +58,22 @@ def test_parse(line, command):
 
 
 def test_deadlines():
-    assert deadline_ms(Go(infinite=True), white_to_move=True) is None
-    assert deadline_ms(Go(ponder=True, wtime=1000), white_to_move=True) is None
-    assert deadline_ms(Go(), white_to_move=True) is None
-    assert deadline_ms(Go(movetime=1000), white_to_move=True) == 1000 - SAFETY_MS
-    assert deadline_ms(Go(movetime=10), white_to_move=True) == MIN_MS
-    assert deadline_ms(Go(wtime=30000, winc=500), white_to_move=True) == 1000 + 500 - SAFETY_MS
-    assert deadline_ms(Go(btime=10000, movestogo=2), white_to_move=False) == 5000 - SAFETY_MS
-    assert deadline_ms(Go(wtime=100, winc=5000), white_to_move=True) == MIN_MS
-    assert deadline_ms(Go(wtime=30000), white_to_move=False) is None
+    def at(go, white=True):
+        return deadlines(go, white_to_move=white)
+
+    assert at(Go(infinite=True)) is None
+    assert at(Go(ponder=True, wtime=1000)) is None
+    assert at(Go()) is None
+    assert at(Go(movetime=1000)) == Deadlines(1000 - SAFETY_MS, 1000 - SAFETY_MS)
+    assert at(Go(movetime=10)) == Deadlines(10, 10)
+    assert at(Go(movetime=0)) == Deadlines(0, 0)
+    assert at(Go(wtime=60000)) == Deadlines(2000 - SAFETY_MS, 60000 - SAFETY_MS)
+    assert at(Go(wtime=30000, winc=500)) == Deadlines(1000 + 500 - SAFETY_MS, 30000 - SAFETY_MS)
+    assert at(Go(btime=10000, movestogo=2), white=False) == Deadlines(5000 - SAFETY_MS, 9850)
+    assert at(Go(wtime=100, winc=5000)) == Deadlines(MIN_MS, MIN_MS)
+    assert at(Go(wtime=40, btime=60000)) == Deadlines(40, 40)
+    assert at(Go(wtime=-5)) == Deadlines(0, 0)
+    assert at(Go(wtime=30000), white=False) is None
 
 
 def test_root_moves():
@@ -77,7 +84,7 @@ def test_root_moves():
 
 
 def result(status="finished", pool=("e2e4", "d2d4"), error=None):
-    return SearchResult(request="r", status=status, error=error, pool=pool, seed="s")
+    return SearchResult(request="r", status=status, error=error, pool=pool)
 
 
 def turn(status, request="r", ply=None, attempts=0):
@@ -105,9 +112,11 @@ def test_completion_rows():
         "info string error: boom",
         "bestmove d2d4",
     ]
+    forfeit = ["info string forfeits: no move to play", "bestmove 0000"]
+    assert complete({"turns": [turn("pending")]}, result("cancelled")) == forfeit
+    assert complete({}, result("failed", error="boom")) == ["info string error: boom", *forfeit]
     stale = {"turns": [turn("pending", request="other")], "fallback_move": "d2d4"}
-    (line,) = complete(stale, result("cancelled"))
-    assert line in {"bestmove e2e4", "bestmove d2d4"}
-    assert complete({}, result("cancelled", pool=())) == ["bestmove 0000"]
+    assert complete(stale, result("cancelled")) == forfeit
+    assert complete({}, result("cancelled", pool=())) == forfeit
     outside = {"turns": [turn("pending")], "fallback_move": "g1f3"}
-    assert complete(outside, result("cancelled", pool=("e2e4",))) == ["bestmove e2e4"]
+    assert complete(outside, result("cancelled", pool=("e2e4",))) == forfeit
