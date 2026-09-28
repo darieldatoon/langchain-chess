@@ -1,9 +1,10 @@
 """The UCI engine: an in-process adapter around a chess agent.
 
 State machine: idle → searching → idle, with at most one search. Each search has an id, an
-immutable root position, a deadline, and exactly one completion path, so `bestmove` is printed
-once per `go`. Lifecycle changes are serialized: option rebuilds wait for the active search to
-settle, and a new `go`, `ucinewgame` or `quit` settles the old search first.
+immutable root position, soft and hard deadlines, and exactly one completion path, so
+`bestmove` is printed once per `go`. Lifecycle changes are serialized: option rebuilds wait
+for the active search to settle, and a new `go`, `ucinewgame` or `quit` settles the old search
+first.
 """
 
 import asyncio
@@ -27,12 +28,13 @@ from langgraph.types import Checkpointer
 from langchain_chess.parse import text_of
 from langchain_chess.rules import DrawClaims, fingerprint
 from langchain_chess_cli.options import run_config
-from langchain_chess_cli.uci.clock import deadline_ms
+from langchain_chess_cli.uci.clock import Deadlines, deadlines
 from langchain_chess_cli.uci.completion import (
     RunStatus,
     SearchResult,
     complete,
     info_lines,
+    kept_move,
     root_moves,
 )
 from langchain_chess_cli.uci.protocol import (
@@ -191,7 +193,7 @@ class Search:
     """`go infinite` / `go ponder`: the result waits for `stop` or `ponderhit`."""
     task: asyncio.Task[None] | None = None
     runner: asyncio.Task[None] | None = None
-    timer: asyncio.TimerHandle | None = None
+    clock: asyncio.Task[None] | None = None
     status: RunStatus = "finished"
     error: str | None = None
     done: bool = False
@@ -357,11 +359,17 @@ class Engine:
 
     def _arm(self, search: Search) -> None:
         white = _white_to_move(search.position)
-        if (limit := deadline_ms(search.go, white_to_move=white)) is not None:
-            loop = asyncio.get_running_loop()
-            search.timer = loop.call_later(limit / 1000, self._expire, search)
+        if (limits := deadlines(search.go, white_to_move=white)) is not None:
+            search.clock = asyncio.create_task(self._clock(search, limits))
 
-    def _expire(self, search: Search) -> None:
+    async def _clock(self, search: Search, limits: Deadlines) -> None:
+        """Cancel at the soft deadline if System 1 left a pick, else at the hard one."""
+        loop = asyncio.get_running_loop()
+        start = loop.time()
+        await asyncio.sleep(limits.soft / 1000)
+        values = (await self._agent.aget_state(self._config())).values
+        if kept_move(values, search.request, search.pool) is None:
+            await asyncio.sleep(max(0.0, start + limits.hard / 1000 - loop.time()))
         assert search.task is not None
         search.task.cancel()  # a no-op once the task has finished
 
@@ -396,8 +404,8 @@ class Engine:
         except Exception as e:  # every failure still owes a bestmove
             search.status, search.error = "failed", str(e) or type(e).__name__
         search.done = True
-        if search.timer is not None:
-            search.timer.cancel()
+        if search.clock is not None:
+            search.clock.cancel()
         if not search.held:
             await self._settle(search)
 
@@ -412,7 +420,6 @@ class Engine:
                 status=search.status,
                 error=search.error,
                 pool=search.pool,
-                seed=f"{self._settings.seed}:{search.request}",
             )
             for line in complete(values, result):
                 self._out(line)

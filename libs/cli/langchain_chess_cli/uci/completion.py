@@ -1,10 +1,10 @@
 """How a finished, cancelled or failed search becomes `bestmove`. Pure.
 
 The rows are checked in order: a committed ply, a resignation, any other game end, a rejected
-position, then the fallback move (after a cancellation or an execution failure).
+position, then System 1's pick (after a cancellation or an execution failure), else a forfeit.
+Never a random move: it would be worse than a loss on time.
 """
 
-import random
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -27,7 +27,6 @@ class SearchResult:
     error: str | None
     pool: tuple[str, ...]
     """Legal moves at the root, within `searchmoves`: what a fallback may play."""
-    seed: str
 
 
 def info_lines(text: str) -> list[str]:
@@ -46,24 +45,25 @@ def root_moves(start_fen: str, moves: Sequence[str]) -> list[str]:
     return [move.uci() for move in board.legal_moves]
 
 
-def _fallback(values: Mapping[str, Any], result: SearchResult, ours: bool) -> str:
-    kept = values.get("fallback_move") if ours else None
-    if kept in result.pool:
-        return str(kept)
-    if not result.pool:
-        return NULL_MOVE
-    return random.Random(result.seed).choice(result.pool)
+def _turn(values: Mapping[str, Any], request: str) -> Mapping[str, Any] | None:
+    """The latest turn, if it belongs to this search."""
+    turns = values.get("turns") or []
+    return turns[-1] if turns and turns[-1]["request"] == request else None
+
+
+def kept_move(values: Mapping[str, Any], request: str, pool: Sequence[str]) -> str | None:
+    """System 1's pick for this search, if it left one."""
+    kept = values.get("fallback_move") if _turn(values, request) is not None else None
+    return str(kept) if kept in pool else None
 
 
 def complete(values: Mapping[str, Any], result: SearchResult) -> list[str]:
     """The `info string` lines, then `bestmove`, for one search."""
-    turns = values.get("turns") or []
-    turn = turns[-1] if turns else None
-    ours = turn is not None and turn["request"] == result.request
-    if ours and turn["status"] == "committed":
+    turn = _turn(values, result.request)
+    if turn is not None and turn["status"] == "committed":
         return [f"bestmove {values['plies'][turn['ply']]['uci']}"]
     outcome = values.get("outcome")
-    if ours and turn["status"] == "terminal" and outcome is not None:
+    if turn is not None and turn["status"] == "terminal" and outcome is not None:
         if outcome["kind"] == "resignation":
             attempts = turn["illegal_attempts"]
             return [
@@ -75,4 +75,6 @@ def complete(values: Mapping[str, Any], result: SearchResult) -> list[str]:
     if result.status == "finished" and invocation.get("action") == "reject":
         return [*info_lines(str(values.get("error"))), f"bestmove {NULL_MOVE}"]
     lines = info_lines(f"error: {result.error}") if result.status == "failed" else []
-    return [*lines, f"bestmove {_fallback(values, result, ours)}"]
+    if (kept := kept_move(values, result.request, result.pool)) is not None:
+        return [*lines, f"bestmove {kept}"]
+    return [*lines, *info_lines("forfeits: no move to play"), f"bestmove {NULL_MOVE}"]

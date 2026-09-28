@@ -104,9 +104,12 @@ repo root:
 - **Config** names an opponent settings file. It replaces every setting; the options after it
   patch it, so a tournament varies one option over a shared file. The engine never claims draws,
   whatever the file says. A file that fails to load changes nothing.
-- **Time controls.** LLM moves take seconds, so short time controls mean fallback moves: this
-  turn's System 1 top move when it ranked, else a seeded random legal move. GLM-5.3 Flash
-  can take 30–60 seconds a move. Analysis streams as `info string` lines.
+- **Time controls.** LLM moves take seconds. Each move gets a budget (the time left ÷ 30 plus
+  the increment); past it, the engine plays this turn's System 1 top move if it ranked. Without
+  one, the search runs until the clock is nearly out, then forfeits with `bestmove 0000`. It
+  never plays a random move. `movetime` is a single deadline. A failed run also plays System 1's
+  move or forfeits. GLM-5.3 Flash can take 30–60 seconds a move. Analysis streams as
+  `info string` lines.
 - **Endings.** A resignation (after four illegal replies), a finished game and a rejected
   position answer `bestmove 0000` with an `info string` reason. That's a null move, which
   fastchess scores as an illegal-move loss for the engine that played it: the intended forfeit.
