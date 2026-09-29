@@ -24,6 +24,7 @@ import {
 import { ArrowSquareOutIcon } from "@phosphor-icons/react/dist/ssr/ArrowSquareOut";
 import { useMemo, useState } from "react";
 import type { Analysis, LaunchState } from "../analysis";
+import type { TraceTarget } from "../api";
 import type { Game } from "../games";
 import { AnalysisBanner } from "./AnalysisBanner";
 import { EvalBar } from "./EvalBar";
@@ -35,7 +36,7 @@ interface Props {
   values: ChessValues;
   view: PlyView;
   onViewChange: (view: PlyView) => void;
-  onOpenRun: (runId: string) => void;
+  onOpenTrace: (target: TraceTarget) => void;
   analysis: Analysis | null;
   launch: LaunchState | undefined;
   onAnalyze: () => void;
@@ -48,7 +49,7 @@ export function GameView({
   values,
   view,
   onViewChange,
-  onOpenRun,
+  onOpenTrace,
   analysis,
   launch,
   onAnalyze,
@@ -78,6 +79,13 @@ export function GameView({
 
   const ply = index > 0 ? plies[index - 1] : undefined;
   const grade = index > 0 ? review?.plies[index - 1] : undefined;
+  // The move's run, or the last one; only the last one's start time is loaded.
+  const runId = grade?.run_id ?? game.lastRunId;
+  const trace: TraceTarget = {
+    threadId: game.threadId,
+    runId,
+    runStartTime: runId === game.lastRunId ? game.lastRunStartTime : null,
+  };
   const played = moves[index - 1] ?? null;
   const arrows = [];
   if (played) {
@@ -141,7 +149,7 @@ export function GameView({
               color="secondary"
               size="sm"
               rightDecorator={ArrowSquareOutIcon}
-              onClick={() => onOpenRun(grade?.run_id ?? game.lastRunId)}
+              onClick={() => onOpenTrace(trace)}
             >
               Open trace
             </Button>

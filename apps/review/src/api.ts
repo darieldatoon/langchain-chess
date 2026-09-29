@@ -60,10 +60,40 @@ export async function firstPages(
   return loaded;
 }
 
+/** A run of a game's thread, to open in LangSmith; the start time only speeds up the lookup. */
+export type TraceTarget = Pick<Target, "threadId" | "runId" | "runStartTime">;
+
+/**
+ * The thread view's UI parameters: its Trace tab, scrolled to the run's output. LangSmith's UI
+ * reads them; they aren't a documented API.
+ */
+const THREAD_VIEW = { conversationTab: "trace", scroll_to: "output" };
+
+/** The `/o/<org>/projects/p/<project>` a run link starts with, after any base path. */
+const RUN_LINK = /^(.*\/o\/[^/]+\/projects\/p\/[^/]+)\/trace\//;
+
+/** The thread link that shares `runUrl`'s host and project, or `runUrl` itself if it isn't one. */
+export function threadUrl(runUrl: string, target: TraceTarget): string {
+  let url: URL;
+  try {
+    url = new URL(runUrl);
+  } catch {
+    return runUrl;
+  }
+  const project = RUN_LINK.exec(url.pathname)?.[1];
+  if (!project) return runUrl;
+  const params = new URLSearchParams({
+    run_id: target.runId,
+    ...THREAD_VIEW,
+    ...(target.runStartTime && { start_time: target.runStartTime }),
+  });
+  return `${url.origin}${project}/t/${encodeURIComponent(target.threadId)}?${params}`;
+}
+
 export interface Api {
   projects(): Promise<Project[]>;
   games(projectId: string, since: string, cursor?: string | null): Promise<GamesPage>;
-  runUrl(projectId: string, runId: string): Promise<string>;
+  traceUrl(projectId: string, target: TraceTarget): Promise<string>;
   analyze(target: Target, launch: Launch): Promise<void>;
 }
 
@@ -123,12 +153,15 @@ export function createApi(call: Call): Api {
       };
     },
 
-    /** Resolved server-side, so the host and workspace are right on any deployment. */
-    async runUrl(projectId, runId) {
-      const { url } = (await call(`GET /api/v2/runs/${runId}/url`, {
-        params: { project_id: projectId, trace_id: runId },
+    /**
+     * The game's thread at the run. The run's link is resolved server-side, so the host and
+     * workspace are right on any deployment; the endpoint has no form for a thread.
+     */
+    async traceUrl(projectId, target) {
+      const { url } = (await call(`GET /api/v2/runs/${target.runId}/url`, {
+        params: { project_id: projectId, trace_id: target.runId },
       })) as { url: string };
-      return url;
+      return threadUrl(url, target);
     },
 
     analyze: (target, launch) => analyze(call, target, launch),
