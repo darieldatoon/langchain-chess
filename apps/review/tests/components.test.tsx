@@ -21,7 +21,7 @@ interface ViewExtras {
   onAnalyze?: () => void;
 }
 
-const renderView = (g = game(), onOpenRun = vi.fn(), extras: ViewExtras = {}) =>
+const renderView = (g = game(), onOpenTrace = vi.fn(), extras: ViewExtras = {}) =>
   render(
     <HostTheme mode="light">
       <GameView
@@ -29,7 +29,7 @@ const renderView = (g = game(), onOpenRun = vi.fn(), extras: ViewExtras = {}) =>
         values={g.values!}
         view={DEFAULT_PLY_VIEW}
         onViewChange={() => {}}
-        onOpenRun={onOpenRun}
+        onOpenTrace={onOpenTrace}
         analysis={extras.analysis ?? null}
         launch={extras.launch}
         onAnalyze={extras.onAnalyze ?? (() => {})}
@@ -226,17 +226,22 @@ describe("GameView", () => {
   });
 
   it("flips the board and opens the move's trace", () => {
-    const onOpenRun = vi.fn();
-    renderView(game(), onOpenRun);
+    const onOpenTrace = vi.fn();
+    renderView(game(), onOpenTrace);
     fireEvent.click(screen.getByRole("button", { name: "Flip board" }));
     expect(board.options?.boardOrientation).toBe("black");
     fireEvent.click(screen.getByRole("button", { name: "Flip board" }));
     expect(board.options?.boardOrientation).toBe("white");
+    const last = { threadId: "thread-1", runId: "run-3", runStartTime: "2026-09-25T12:30:00Z" };
     fireEvent.click(screen.getByRole("button", { name: /Open trace/ }));
-    expect(onOpenRun).toHaveBeenLastCalledWith("run-3");
+    expect(onOpenTrace).toHaveBeenLastCalledWith(last);
+    // An earlier move's run, whose start time wasn't loaded.
+    fireEvent.click(screen.getByRole("button", { name: "Nc6" }));
+    fireEvent.click(screen.getByRole("button", { name: /Open trace/ }));
+    expect(onOpenTrace).toHaveBeenLastCalledWith({ ...last, runId: "run-2", runStartTime: null });
     key("Home");
     fireEvent.click(screen.getByRole("button", { name: /Open trace/ }));
-    expect(onOpenRun).toHaveBeenLastCalledWith("run-3");
+    expect(onOpenTrace).toHaveBeenLastCalledWith(last);
   });
 
   it("offers to analyze an ungraded game, which shows no engine output", () => {
@@ -276,7 +281,7 @@ describe("GameView", () => {
           values={values()}
           view={DEFAULT_PLY_VIEW}
           onViewChange={() => {}}
-          onOpenRun={() => {}}
+          onOpenTrace={() => {}}
           analysis={null}
           launch={{ status: "starting" }}
           onAnalyze={onAnalyze}

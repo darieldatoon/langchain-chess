@@ -29,7 +29,7 @@ function fakeApi(overrides: Partial<Api> = {}): Api & { games: ReturnType<typeof
     games: vi.fn(
       async (_p: string, _s: string, cursor?: string | null) => pages[cursor ?? "first"],
     ),
-    runUrl: vi.fn().mockResolvedValue("https://smith/trace"),
+    traceUrl: vi.fn().mockResolvedValue("https://smith/trace"),
     analyze: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   } as Api & { games: ReturnType<typeof vi.fn> };
@@ -48,8 +48,8 @@ describe("App", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("loads the deployment's games from the last 7 days and replays one", async () => {
-    const runUrl = vi.fn().mockResolvedValue("https://smith/trace");
-    const api = fakeApi({ runUrl });
+    const traceUrl = vi.fn().mockResolvedValue("https://smith/trace");
+    const api = fakeApi({ traceUrl });
     const openUrl = show(api);
     await screen.findAllByText("claude-opus-5-5 + semif-qwen3.5-4b");
     expect(api.games).toHaveBeenCalledWith("p-app", "2026-09-18T12:00:00.000Z");
@@ -58,7 +58,11 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Qxf7#" })).toHaveAttribute("aria-current", "step");
     fireEvent.click(screen.getByRole("button", { name: /Open trace/ }));
     await waitFor(() => expect(openUrl).toHaveBeenCalledWith("https://smith/trace"));
-    expect(runUrl).toHaveBeenCalledWith("p-app", "run-3");
+    expect(traceUrl).toHaveBeenCalledWith("p-app", {
+      threadId: "thread-1",
+      runId: "run-3",
+      runStartTime: "2026-09-25T12:30:00Z",
+    });
   });
 
   it("keeps the reply card's toggles from game to game", async () => {
@@ -201,7 +205,7 @@ describe("App", () => {
   });
 
   it("shows a failed game load until the query changes, and a failed trace link", async () => {
-    const api = fakeApi({ runUrl: vi.fn().mockRejectedValue("no url") });
+    const api = fakeApi({ traceUrl: vi.fn().mockRejectedValue("no url") });
     api.games.mockRejectedValueOnce(new Error("timed out"));
     show(api);
     expect(await screen.findByText("timed out")).toBeInTheDocument();

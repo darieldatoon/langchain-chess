@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vite-plus/test";
-import { appended, createApi, defaultProject, firstPages } from "../src/api";
+import { appended, createApi, defaultProject, firstPages, threadUrl } from "../src/api";
 import { matchup, modelName, resultText, toGame, type ThreadItem } from "../src/games";
 import { evalText, parseReview, reviewsByRun, whiteCp, whiteWinPercent } from "../src/review";
 import { decodeValues } from "../src/values";
@@ -338,11 +338,50 @@ describe("api", () => {
     expect(call.mock.calls.at(-1)?.[1]).toMatchObject({ body: { cursor: "next" } });
   });
 
-  it("resolves a run's URL on the server", async () => {
-    const call = vi.fn().mockResolvedValue({ url: "https://smith/o/w/trace" });
-    expect(await createApi(call).runUrl("p1", "r1")).toBe("https://smith/o/w/trace");
+  it("links the game's thread from the run's URL, resolved on the server", async () => {
+    const call = vi
+      .fn()
+      .mockResolvedValue({ url: "https://smith/o/org/projects/p/p1/trace/r1/run/r1" });
+    const target = { threadId: "t1", runId: "r1", runStartTime: null };
+    expect(await createApi(call).traceUrl("p1", target)).toBe(
+      "https://smith/o/org/projects/p/p1/t/t1?run_id=r1&conversationTab=trace&scroll_to=output",
+    );
     expect(call).toHaveBeenCalledWith("GET /api/v2/runs/r1/url", {
       params: { project_id: "p1", trace_id: "r1" },
     });
+  });
+});
+
+describe("threadUrl", () => {
+  const target = { threadId: "t1", runId: "r1", runStartTime: "2026-09-29T03:48:21.418426Z" };
+
+  it("opens the thread's Trace tab at the run's output, from its start time", () => {
+    expect(
+      threadUrl("https://smith.langchain.com/o/org/projects/p/p1/trace/r1/run/r1", target),
+    ).toBe(
+      "https://smith.langchain.com/o/org/projects/p/p1/t/t1?run_id=r1&conversationTab=trace" +
+        "&scroll_to=output&start_time=2026-09-29T03%3A48%3A21.418426Z",
+    );
+  });
+
+  it("keeps a self-hosted deployment's base path and drops the run link's query", () => {
+    expect(
+      threadUrl("https://ls.corp/app/o/org/projects/p/p1/trace/r1/run/r1?start_time=x", {
+        ...target,
+        threadId: "a b",
+        runStartTime: null,
+      }),
+    ).toBe(
+      "https://ls.corp/app/o/org/projects/p/p1/t/a%20b?run_id=r1&conversationTab=trace&scroll_to=output",
+    );
+  });
+
+  it("falls back to the run's link when it isn't in the expected form", () => {
+    for (const url of [
+      "https://smith/public/abc/r",
+      "https://smith/o/org/projects/p/p1",
+      "/relative",
+    ])
+      expect(threadUrl(url, target)).toBe(url);
   });
 });

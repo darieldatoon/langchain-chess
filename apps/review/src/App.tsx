@@ -5,7 +5,15 @@ import { Text } from "@langchain/macaw-components/Text";
 import { DEFAULT_PLY_VIEW, type PlyView } from "@langchain-chess/chess-ui";
 import { useEffect, useState } from "react";
 import { analysisOf, type LaunchState } from "./analysis";
-import { appended, defaultProject, firstPages, type Api, type Pages, type Project } from "./api";
+import {
+  appended,
+  defaultProject,
+  firstPages,
+  type Api,
+  type Pages,
+  type Project,
+  type TraceTarget,
+} from "./api";
 import type { Game } from "./games";
 import { GameList } from "./components/GameList";
 import { GameView } from "./components/GameView";
@@ -153,8 +161,8 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
       );
   };
 
-  const openRun = (project: string, runId: string) => {
-    api.runUrl(project, runId).then(openUrl, (e: unknown) => setError(message(e)));
+  const openTrace = (project: string, target: TraceTarget) => {
+    api.traceUrl(project, target).then(openUrl, (e: unknown) => setError(message(e)));
   };
 
   const page = loaded?.key === key ? loaded : null;
@@ -213,7 +221,7 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
             values={game.values}
             view={view}
             onViewChange={setView}
-            onOpenRun={(runId) => openRun(project.id, runId)}
+            onOpenTrace={(target) => openTrace(project.id, target)}
             analysis={analysisOf(game.mark, now())}
             launch={launches[game.threadId]}
             onAnalyze={() => analyze(game, project)}
