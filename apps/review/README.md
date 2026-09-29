@@ -3,7 +3,7 @@
 A [LangSmith custom app](https://docs.langchain.com/langsmith/custom-apps) that replays graded
 games as an analysis board: an eval bar and graph, a quality mark on every move, arrows for the
 move played and the engine's best move, who played each move (System 1, the LLM, a forced move,
-or you) with its reasoning, and a link to the move's trace.
+or you) with its reasoning, and a link to the move in the game's thread on LangSmith.
 
 ![The review app on a System 1 blunder](../../docs/images/review-blunder.png)
 
