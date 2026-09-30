@@ -5,6 +5,7 @@ import { CaretDoubleRightIcon } from "@phosphor-icons/react/dist/ssr/CaretDouble
 import { CaretLeftIcon } from "@phosphor-icons/react/dist/ssr/CaretLeft";
 import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr/CaretRight";
 import type { ReactNode } from "react";
+import { TOUCH_TARGET } from "../touch";
 
 interface Props {
   /** The position shown: 0 is the start, `last` the latest. */
@@ -17,7 +18,12 @@ interface Props {
 }
 
 export function BoardControls({ index, last, onGo, onFlip, children }: Props) {
-  const step = { size: "sm", variant: "outlined", color: "secondary" } as const;
+  const step = {
+    size: "sm",
+    variant: "outlined",
+    color: "secondary",
+    className: TOUCH_TARGET,
+  } as const;
   return (
     <div className="flex items-center justify-between gap-space-2">
       <div className="flex items-center gap-space-1">
@@ -57,6 +63,7 @@ export function BoardControls({ index, last, onGo, onFlip, children }: Props) {
         size="sm"
         variant="plain"
         color="secondary"
+        className={TOUCH_TARGET}
         onClick={onFlip}
       />
     </div>

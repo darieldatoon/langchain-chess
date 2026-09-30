@@ -13,7 +13,7 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 from langgraph_sdk import get_sync_client
 from langgraph_sdk.errors import NotFoundError
-from playwright.sync_api import Page, expect, sync_playwright
+from playwright.sync_api import Locator, Page, expect, sync_playwright
 
 from langchain_chess_server.app import STATIC_DIR
 from langchain_chess_systemone.settings import ChessContext, dump
@@ -41,14 +41,73 @@ def server(
         yield url
 
 
+# Desktop, then a phone held upright and on its side.
+CONTEXTS: dict[str, dict[str, Any]] = {
+    "desktop": {"viewport": {"width": 1280, "height": 800}},
+    "portrait": {
+        "viewport": {"width": 390, "height": 844},
+        "has_touch": True,
+        "is_mobile": True,
+        "device_scale_factor": 3,
+    },
+    "landscape": {
+        "viewport": {"width": 844, "height": 390},
+        "has_touch": True,
+        "is_mobile": True,
+        "device_scale_factor": 3,
+    },
+}
+TOUCH = ["portrait", "landscape"]
+MIN_TAP = 44
+
+
 @pytest.fixture
-def page() -> Iterator[Page]:
+def page(request: pytest.FixtureRequest) -> Iterator[Page]:
+    """Desktop unless a test parametrizes it (`indirect=True`) with a `CONTEXTS` key."""
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch()
         try:
-            yield browser.new_page()
+            yield browser.new_context(**CONTEXTS[getattr(request, "param", "desktop")]).new_page()
         finally:
             browser.close()
+
+
+def no_sideways_scroll(page: Page, selector: str | None = None) -> None:
+    """Neither the document nor `selector` is wider than the viewport."""
+    widths = page.evaluate(
+        """(selector) => {
+          const el = selector ? document.querySelector(selector) : null;
+          return {
+            inner: window.innerWidth,
+            doc: document.documentElement.scrollWidth,
+            el: el ? el.scrollWidth : 0,
+            elBox: el ? el.getBoundingClientRect().right : 0,
+          };
+        }""",
+        selector,
+    )
+    assert widths["doc"] <= widths["inner"], widths
+    assert widths["el"] <= widths["inner"], widths
+    assert widths["elBox"] <= widths["inner"], widths
+
+
+def inside_viewport(page: Page, locator: Locator) -> None:
+    """Fully on screen as the page stands, without scrolling it."""
+    box = locator.bounding_box()
+    viewport = page.viewport_size
+    assert box is not None
+    assert viewport is not None
+    assert box["x"] >= 0, box
+    assert box["y"] >= 0, box
+    assert box["x"] + box["width"] <= viewport["width"], (box, viewport)
+    assert box["y"] + box["height"] <= viewport["height"], (box, viewport)
+
+
+def at_least_a_tap(locator: Locator) -> None:
+    box = locator.bounding_box()
+    assert box is not None
+    assert box["width"] >= MIN_TAP, box
+    assert box["height"] >= MIN_TAP, box
 
 
 def pick(page: Page, label: str, option: str) -> None:
@@ -101,3 +160,46 @@ def test_a_setup_s_settings_reach_the_agent(server: str, page: Page):
     shortlist_meta = values["plies"][0]["meta"]["SystemOneMiddleware"]["shortlist"]
     assert len(shortlist_meta) == 2
     expect(page.get_by_text("Your move.")).to_be_visible()
+
+
+def open_a_game(server: str, page: Page) -> None:
+    """Plays the default setup as White, so a game is on screen and New game can be cancelled."""
+    page.goto(f"{server}/ui/")
+    page.get_by_role("button", name="Play", exact=True).tap()
+    expect(page.get_by_role("dialog")).to_have_count(0)
+
+
+@pytest.mark.parametrize("page", TOUCH, indirect=True)
+def test_new_game_fits_a_phone_with_advanced_open_and_a_key_problem(server: str, page: Page):
+    open_a_game(server, page)
+    # The server now refuses the key, so Play shows the key banner.
+    page.route("**/assistants/search", lambda route: route.fulfill(status=401, body="{}"))
+    page.get_by_role("button", name="New game").tap()
+    dialog = page.get_by_role("dialog", name="New game")
+    dialog.get_by_role("button", name="Advanced").tap()
+    dialog.get_by_role("button", name="Play", exact=True).tap()
+    expect(dialog.get_by_text("LangSmith API key needed")).to_be_visible()
+
+    no_sideways_scroll(page, "[role=dialog]")
+    inside_viewport(page, dialog.get_by_role("button", name="Play", exact=True))
+    for name in ("Close", "More", "Cancel", "Play"):
+        at_least_a_tap(dialog.get_by_role("button", name=name, exact=True))
+    help_icon = dialog.get_by_role("button", name="About Moves to list")
+    help_icon.scroll_into_view_if_needed()
+    help_icon.tap()
+    expect(page.get_by_role("dialog").get_by_text("Which moves every turn")).to_be_visible()
+
+
+@pytest.mark.parametrize("page", TOUCH, indirect=True)
+def test_settings_open_from_new_game_and_fit_a_phone(server: str, page: Page):
+    page.goto(f"{server}/ui/")
+    page.get_by_role("button", name="More").tap()
+    page.get_by_role("menuitem", name="Settings").tap()
+    dialog = page.get_by_role("dialog", name="Settings")
+    expect(dialog).to_be_visible()
+    no_sideways_scroll(page, "[role=dialog]")
+    inside_viewport(page, dialog.get_by_role("button", name="Save"))
+    for name in ("Close", "Cancel", "Save"):
+        at_least_a_tap(dialog.get_by_role("button", name=name, exact=True))
+    dialog.get_by_role("button", name="Cancel").tap()
+    expect(page.get_by_role("dialog", name="New game")).to_be_visible()

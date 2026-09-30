@@ -76,6 +76,11 @@ const clickPlay = () =>
     fireEvent.click(play());
   });
 const matchup = () => screen.getByLabelText("matchup");
+/** Opens the footer's More menu and returns one of its items. */
+function moreItem(name: string) {
+  fireEvent.keyDown(screen.getByRole("button", { name: "More" }), { key: "Enter" });
+  return screen.getByRole("menuitem", { name });
+}
 const advanced = () => fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
 /** Lets the debounced model request answer. */
 const settled = () =>
@@ -96,7 +101,7 @@ describe("NewGameDialog", () => {
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     expect(onClose).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("radio", { name: "Black" }));
-    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    fireEvent.click(moreItem("Settings"));
     expect(onOpenSettings).toHaveBeenCalledWith({ ...DEFAULT_SETUP, side: "black" });
     fireEvent.click(screen.getByRole("radio", { name: "White" }));
     await clickPlay();
@@ -117,7 +122,7 @@ describe("NewGameDialog", () => {
 
   it("offers Settings even when there is a game to cancel back to", () => {
     const { onOpenSettings } = open(DEFAULT_SETUP, true);
-    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    fireEvent.click(moreItem("Settings"));
     expect(onOpenSettings).toHaveBeenCalledWith(DEFAULT_SETUP);
   });
 
@@ -382,7 +387,7 @@ describe("NewGameDialog", () => {
     const { onPlay } = open();
     fireEvent.click(screen.getByRole("radio", { name: "Black" }));
     const click = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => {});
-    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    fireEvent.click(moreItem("Import"));
     expect(click).toHaveBeenCalledOnce();
     advanced();
     const file = {
@@ -395,7 +400,7 @@ describe("NewGameDialog", () => {
     expect(screen.getByLabelText("System 1")).toHaveValue("other");
     expect(screen.getByLabelText("Candidates for the LLM")).toHaveValue(3);
     expect(screen.getByLabelText("Model arguments")).toHaveValue('{\n  "top_p": 1\n}');
-    fireEvent.click(screen.getByRole("button", { name: "Export" }));
+    fireEvent.click(moreItem("Export"));
     const exported = {
       ...DEFAULT_CONTEXT,
       systemone_model: "someone/ranker",
@@ -440,7 +445,7 @@ describe("NewGameDialog", () => {
     });
     change("LLM", "none");
     change("System 1", "none");
-    expect(screen.getByRole("button", { name: "Export" })).toBeDisabled();
+    expect(moreItem("Export")).toHaveAttribute("aria-disabled", "true");
   });
 
   it("holds a model that takes no effort at Model default, and says why", async () => {

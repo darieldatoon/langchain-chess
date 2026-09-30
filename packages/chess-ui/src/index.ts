@@ -10,4 +10,8 @@ export { MoveBar } from "./components/MoveBar";
 export { MoveList } from "./components/MoveList";
 export { PlyDetails } from "./components/PlyDetails";
 export { BoardControls } from "./components/BoardControls";
+export { Hint } from "./components/Hint";
+export { ResponsiveDialog } from "./components/ResponsiveDialog";
+export { DIALOG_CLASSES, REGION_CLASSES } from "./dialog";
+export { TOUCH_HIT_AREA, TOUCH_TARGET } from "./touch";
 export { usePlyCursor, type PlyCursor } from "./usePlyCursor";

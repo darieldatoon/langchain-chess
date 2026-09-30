@@ -157,7 +157,11 @@ function SelectableMove({
     <button
       ref={ref}
       type="button"
-      className={cn(className, "text-left", current && "ring-2 ring-inset ring-brand")}
+      className={cn(
+        className,
+        "text-left [@media(pointer:coarse)]:min-h-11",
+        current && "ring-2 ring-inset ring-brand",
+      )}
       aria-current={current ? "step" : undefined}
       onClick={onClick}
     >

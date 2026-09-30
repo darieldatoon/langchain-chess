@@ -16,6 +16,7 @@ import {
   PlyDetails,
   sideToMove,
   START_FEN,
+  TOUCH_TARGET,
   type ChessContext,
   type PlyView,
   type Side,
@@ -168,7 +169,7 @@ export default function App({
             </Text>
           </div>
           <div className="flex items-center gap-space-2">
-            <Button color="primary" size="md" onClick={openNewGame}>
+            <Button color="primary" size="md" className={TOUCH_TARGET} onClick={openNewGame}>
               New game
             </Button>
             <IconButton
@@ -177,6 +178,7 @@ export default function App({
               size="md"
               icon={GearSixIcon}
               label="Settings"
+              className={TOUCH_TARGET}
               onClick={openSettings}
             />
             <ThemeToggle />

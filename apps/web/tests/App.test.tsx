@@ -193,7 +193,8 @@ describe("new game", () => {
     expect(board()).toHaveAttribute("data-draggable", "false");
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
-    await click("Settings");
+    fireEvent.keyDown(button("More"), { key: "Enter" });
+    fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
     expect(screen.getByRole("dialog", { name: "Settings" })).toBeInTheDocument();
     await click("Cancel");
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
@@ -617,7 +618,8 @@ describe("key check on Play", () => {
     onThread("abc");
     render(<App />);
     await click("New game");
-    await click("Settings");
+    fireEvent.keyDown(button("More"), { key: "Enter" });
+    fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
     await click("Cancel");
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
     await click("Cancel");

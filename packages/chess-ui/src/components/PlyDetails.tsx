@@ -3,12 +3,14 @@ import { Button } from "@langchain/macaw-components/Button";
 import { Card } from "@langchain/macaw-components/Card";
 import { Spinner, SpinnerIcon } from "@langchain/macaw-components/Spinner";
 import { Text } from "@langchain/macaw-components/Text";
-import { Tooltip } from "@langchain/macaw-components/Tooltip";
 import type { ReactNode } from "react";
 import { costText, seconds, sourceClass, sourceLabel, type SourceClass } from "../format";
 import { systemOneMeta, turnCost } from "../selectors";
 import type { PlyView, RankedMove, Reply, ReplyState } from "../types";
+import { cn } from "@langchain/macaw-components/utils/cn";
+import { TOUCH_TARGET } from "../touch";
 import { Analysis } from "./Analysis";
+import { Hint } from "./Hint";
 import { MoveBar } from "./MoveBar";
 
 const BADGE_COLORS: Record<SourceClass, "primary" | "special" | "secondary" | "warning" | "plain"> =
@@ -128,7 +130,7 @@ function Section({
         variant="plain"
         color="secondary"
         size="sm"
-        className="self-start"
+        className={cn("self-start", TOUCH_TARGET)}
         aria-expanded={open}
         rightDecorator={loading && !open ? SpinnerIcon : undefined}
         onClick={onToggle}
@@ -153,9 +155,13 @@ function Facts({ reply }: { reply: Reply | null }) {
         label="Cost"
         value={value(() =>
           cost.incomplete ? (
-            <Tooltip title="Incomplete estimate: some calls were unpriced or approximated">
-              <span aria-label={`${cost.text} (incomplete estimate)`}>{cost.text}</span>
-            </Tooltip>
+            <Hint
+              label={`${cost.text} (incomplete estimate)`}
+              text="Incomplete estimate: some calls were unpriced or approximated"
+              className="font-mono text-primary"
+            >
+              {cost.text}
+            </Hint>
           ) : (
             cost.text
           ),

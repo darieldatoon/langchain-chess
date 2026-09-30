@@ -1,13 +1,20 @@
 import { Banner } from "@langchain/macaw-components/Banner";
 import { Button } from "@langchain/macaw-components/Button";
-import { Dialog, DialogContent } from "@langchain/macaw-components/Dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@langchain/macaw-components/DropdownMenu";
 import { Input } from "@langchain/macaw-components/Input";
 import { RadioCard } from "@langchain/macaw-components/RadioCard";
 import { RadioGroup } from "@langchain/macaw-components/RadioGroup";
 import { Select, type SelectOption } from "@langchain/macaw-components/Select";
 import { Text } from "@langchain/macaw-components/Text";
+import { cn } from "@langchain/macaw-components/utils/cn";
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr/CaretRight";
+import { DotsThreeIcon } from "@phosphor-icons/react/dist/ssr/DotsThree";
 import { CrownIcon } from "@phosphor-icons/react/dist/ssr/Crown";
 import { ShuffleIcon } from "@phosphor-icons/react/dist/ssr/Shuffle";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -31,7 +38,7 @@ import {
   type Summarize,
   type TakesEffort,
 } from "../setup";
-import type { ChessContext } from "@langchain-chess/chess-ui";
+import { ResponsiveDialog, TOUCH_TARGET, type ChessContext } from "@langchain-chess/chess-ui";
 import { AdvancedSettings, Field, type DraftKnob, type SetKnob } from "./AdvancedSettings";
 
 interface Props {
@@ -217,214 +224,228 @@ export function NewGameDialog({
   };
   const problem = keyProblem && keyCheckMessage(keyProblem);
 
-  return (
-    <Dialog open onOpenChange={() => canCancel && onClose()}>
-      <DialogContent
-        title="New game"
-        description="Choose your colour and the opponent."
-        showClose={canCancel}
-      >
-        <div className="flex flex-col gap-space-5">
-          <div className="flex flex-col gap-space-2">
-            <Text variant="sm" weight="medium" as="span" id="play-as">
-              Play As
-            </Text>
-            <RadioGroup
-              aria-labelledby="play-as"
-              value={setup.side}
-              // Only SIDES values reach here.
-              onValueChange={(v) => pick("side")(v as SideChoice)}
-              className="grid grid-cols-3 gap-space-3"
+  const footer = (
+    <div className="flex flex-wrap items-center justify-between gap-space-2">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="plain"
+            color="secondary"
+            size="md"
+            leftDecorator={DotsThreeIcon}
+            className={TOUCH_TARGET}
+          >
+            More
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem className={TOUCH_TARGET} onSelect={() => onOpenSettings(setup)}>
+            Settings
+          </DropdownMenuItem>
+          <DropdownMenuItem className={TOUCH_TARGET} onSelect={() => fileInput.current!.click()}>
+            Import
+          </DropdownMenuItem>
+          {ready.ok ? (
+            <DropdownMenuItem
+              className={TOUCH_TARGET}
+              onSelect={() => downloadJson("opponent.json", configurableOf(ready.context))}
             >
-              {SIDES.map((side) => (
-                <RadioCard
-                  key={side.value}
-                  value={side.value}
-                  aria-label={side.label}
-                  hideIndicator
-                >
-                  <span className="flex flex-col items-center gap-space-1">
-                    {side.icon}
-                    <Text variant="sm" weight="medium" as="span">
-                      {side.label}
-                    </Text>
-                  </span>
-                </RadioCard>
-              ))}
-            </RadioGroup>
-          </div>
+              Export
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem className={TOUCH_TARGET} disabled>
+              Export
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <input
+        ref={fileInput}
+        type="file"
+        accept="application/json,.json"
+        aria-label="Setup file"
+        hidden
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (file) void importFile(file);
+        }}
+      />
+      <div className="flex items-center gap-space-2">
+        {canCancel && (
+          <Button
+            variant="outlined"
+            color="secondary"
+            size="md"
+            className={TOUCH_TARGET}
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+        )}
+        {ready.ok ? (
+          <Button
+            color="primary"
+            size="md"
+            className={TOUCH_TARGET}
+            loading={checking}
+            disabled={checking}
+            onClick={() => void play(ready.context)}
+          >
+            Play
+          </Button>
+        ) : (
+          <Button color="primary" size="md" className={TOUCH_TARGET} disabled>
+            Play
+          </Button>
+        )}
+      </div>
+    </div>
+  );
 
-          <Field id="system-one" label="System 1" hint="A fast move ranker.">
+  return (
+    <ResponsiveDialog
+      title="New game"
+      description="Choose your colour and the opponent."
+      onClose={canCancel ? onClose : undefined}
+      footer={footer}
+    >
+      <div className="flex flex-col gap-space-5">
+        <div className="flex flex-col gap-space-2">
+          <Text variant="sm" weight="medium" as="span" id="play-as">
+            Play As
+          </Text>
+          <RadioGroup
+            aria-labelledby="play-as"
+            value={setup.side}
+            // Only SIDES values reach here.
+            onValueChange={(v) => pick("side")(v as SideChoice)}
+            className="grid grid-cols-3 gap-space-3"
+          >
+            {SIDES.map((side) => (
+              <RadioCard key={side.value} value={side.value} aria-label={side.label} hideIndicator>
+                <span className="flex flex-col items-center gap-space-1">
+                  {side.icon}
+                  <Text variant="sm" weight="medium" as="span">
+                    {side.label}
+                  </Text>
+                </span>
+              </RadioCard>
+            ))}
+          </RadioGroup>
+        </div>
+
+        <Field id="system-one" label="System 1" hint="A fast move ranker.">
+          <Select
+            aria-label="System 1"
+            size="md"
+            value={systemOneKey(setup)}
+            options={systemOnes(otherSystemOne)}
+            hideSearch
+            onChange={pickSystemOne}
+          />
+        </Field>
+
+        <div className="flex flex-col gap-space-3">
+          <Field id="llm" label="LLM" hint="A reasoning model that thinks the position through.">
             <Select
-              aria-label="System 1"
+              aria-label="LLM"
               size="md"
-              value={systemOneKey(setup)}
-              options={systemOnes(otherSystemOne)}
+              value={setup.llm}
+              options={LLMS}
               hideSearch
-              onChange={pickSystemOne}
+              onChange={pick("llm")}
             />
           </Field>
-
-          <div className="flex flex-col gap-space-3">
-            <Field id="llm" label="LLM" hint="A reasoning model that thinks the position through.">
-              <Select
-                aria-label="LLM"
-                size="md"
-                value={setup.llm}
-                options={LLMS}
-                hideSearch
-                onChange={pick("llm")}
-              />
-            </Field>
-            {setup.llm === "custom" && (
-              <Input
-                id="custom-model"
-                size="md"
-                label="Model Spec"
-                value={setup.customModel}
-                onChange={pick("customModel")}
-                placeholder="langsmith:baseten/moonshotai/Kimi-K3"
-                hintText="Use the format provider:model, e.g. langsmith:anthropic/claude-opus-5-5."
-                autoFocus
-              />
-            )}
-          </div>
-
-          <div
-            aria-label="matchup"
-            className="flex items-center justify-between gap-space-3 rounded-md bg-surface-level-2 px-space-4 py-space-3"
-            role="status"
-          >
-            <Text variant="sm" color={ready.ok ? "primary" : "error"}>
-              {ready.ok ? matchupLine(ready.context) : ready.reason}
-            </Text>
-            {!matchup.ok && summarize === "unknown" && (
-              <Button variant="plain" size="sm" color="primary" onClick={recheck}>
-                Retry
-              </Button>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-space-4">
-            <Button
-              variant="plain"
-              color="secondary"
-              size="sm"
-              className="self-start"
-              leftDecorator={advanced ? CaretDownIcon : CaretRightIcon}
-              aria-expanded={advanced}
-              aria-controls="advanced-settings"
-              onClick={() => setAdvanced((a) => !a)}
-            >
-              Advanced
-            </Button>
-            {advanced && (
-              <div id="advanced-settings">
-                <AdvancedSettings
-                  key={imported}
-                  knobs={setup.knobs}
-                  sections={sectionsOf(setup)}
-                  summarize={summarize}
-                  takesEffort={takesEffort}
-                  onKnob={setKnob}
-                  onValidity={setValidity}
-                />
-              </div>
-            )}
-          </div>
-
-          {importProblem && (
-            <Banner intent="warning" title="Couldn't import that setup">
-              {importProblem}
-            </Banner>
-          )}
-
-          {problem && (
-            <Banner
-              intent="warning"
-              title={problem.title}
-              action={
-                <Button
-                  variant="plain"
-                  size="sm"
-                  color="primary"
-                  onClick={() => onOpenSettings(setup)}
-                >
-                  Open settings
-                </Button>
-              }
-            >
-              {problem.body}
-            </Banner>
-          )}
-
-          <div className="flex justify-end gap-space-2 border-t border-subtle pt-space-4">
-            <Button
-              variant="plain"
-              color="secondary"
+          {setup.llm === "custom" && (
+            <Input
+              id="custom-model"
               size="md"
-              onClick={() => onOpenSettings(setup)}
-            >
-              Settings
-            </Button>
-            <Button
-              variant="plain"
-              color="secondary"
-              size="md"
-              onClick={() => fileInput.current!.click()}
-            >
-              Import
-            </Button>
-            <input
-              ref={fileInput}
-              type="file"
-              accept="application/json,.json"
-              aria-label="Setup file"
-              hidden
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                event.target.value = "";
-                if (file) void importFile(file);
-              }}
+              label="Model Spec"
+              value={setup.customModel}
+              onChange={pick("customModel")}
+              placeholder="langsmith:baseten/moonshotai/Kimi-K3"
+              hintText="Use the format provider:model, e.g. langsmith:anthropic/claude-opus-5-5."
+              autoFocus
             />
-            {ready.ok ? (
+          )}
+        </div>
+
+        <div
+          aria-label="matchup"
+          className="flex items-center justify-between gap-space-3 rounded-md bg-surface-level-2 px-space-4 py-space-3"
+          role="status"
+        >
+          <Text variant="sm" color={ready.ok ? "primary" : "error"}>
+            {ready.ok ? matchupLine(ready.context) : ready.reason}
+          </Text>
+          {!matchup.ok && summarize === "unknown" && (
+            <Button
+              variant="plain"
+              size="sm"
+              color="primary"
+              className={TOUCH_TARGET}
+              onClick={recheck}
+            >
+              Retry
+            </Button>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-space-4">
+          <Button
+            variant="plain"
+            color="secondary"
+            size="sm"
+            className={cn("self-start", TOUCH_TARGET)}
+            leftDecorator={advanced ? CaretDownIcon : CaretRightIcon}
+            aria-expanded={advanced}
+            aria-controls="advanced-settings"
+            onClick={() => setAdvanced((a) => !a)}
+          >
+            Advanced
+          </Button>
+          {advanced && (
+            <div id="advanced-settings">
+              <AdvancedSettings
+                key={imported}
+                knobs={setup.knobs}
+                sections={sectionsOf(setup)}
+                summarize={summarize}
+                takesEffort={takesEffort}
+                onKnob={setKnob}
+                onValidity={setValidity}
+              />
+            </div>
+          )}
+        </div>
+
+        {importProblem && (
+          <Banner intent="warning" title="Couldn't import that setup">
+            {importProblem}
+          </Banner>
+        )}
+
+        {problem && (
+          <Banner
+            intent="warning"
+            title={problem.title}
+            action={
               <Button
                 variant="plain"
-                color="secondary"
-                size="md"
-                className="mr-auto"
-                onClick={() => downloadJson("opponent.json", configurableOf(ready.context))}
-              >
-                Export
-              </Button>
-            ) : (
-              <Button variant="plain" color="secondary" size="md" className="mr-auto" disabled>
-                Export
-              </Button>
-            )}
-            {canCancel && (
-              <Button variant="outlined" color="secondary" size="md" onClick={onClose}>
-                Cancel
-              </Button>
-            )}
-            {ready.ok ? (
-              <Button
+                size="sm"
                 color="primary"
-                size="md"
-                loading={checking}
-                disabled={checking}
-                onClick={() => void play(ready.context)}
+                className={TOUCH_TARGET}
+                onClick={() => onOpenSettings(setup)}
               >
-                Play
+                Open settings
               </Button>
-            ) : (
-              <Button color="primary" size="md" disabled>
-                Play
-              </Button>
-            )}
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+            }
+          >
+            {problem.body}
+          </Banner>
+        )}
+      </div>
+    </ResponsiveDialog>
   );
 }
