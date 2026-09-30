@@ -116,6 +116,17 @@ name and the fields the agent sends (`input`, `messages`, `instructions`, `strea
 everywhere, top level or inside `extra_body`. A call with hosted `tools` has its cost marked
 incomplete.
 
+Some models answer a reasoning effort with a 400, as Claude Haiku 4.5 does, so `chat_model` refuses
+the effort first. `takes_effort(spec)` answers from `efforts.json`, where `mise run probe:efforts`
+records a real call per spec at each offered effort. It is probed rather than read from a catalog
+because the route decides: the gateway sends Baseten Anthropic's `output_config.effort`, not the
+`reasoning_effort` Baseten documents. Every web preset is recorded, and `mise run probe:efforts --
+<spec>` adds another. A spec that wasn't probed may take an effort; if its provider rejects one, the
+turn fails with `ReasoningEffortError`, for a summary as for a move.
+
+A probe sees only whether the call fails, not whether the effort was used. The gateway drops the
+effort for GPT-4o and GPT-4.1 and answers, so a probe would record them as taking one.
+
 `model=None` works only when middleware always proposes, as in a System-1-only agent.
 
 ## Cost

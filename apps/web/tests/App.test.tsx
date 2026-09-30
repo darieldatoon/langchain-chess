@@ -3,7 +3,7 @@ import { act, fireEvent, screen, waitFor, within } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import App from "../src/App";
 import { checkApiKey, type KeyCheck } from "../src/auth";
-import { fetchModelLimit } from "../src/modelLimit";
+import { fetchModelFacts } from "../src/modelFacts";
 import { DEFAULT_SETUP } from "../src/setup";
 import {
   APP_KEY,
@@ -74,8 +74,10 @@ const downloads = vi.hoisted(() => [] as [string, unknown][]);
 vi.mock("../src/files", () => ({
   downloadJson: (name: string, value: unknown) => downloads.push([name, value]),
 }));
-vi.mock("../src/modelLimit", () => ({
-  fetchModelLimit: vi.fn(() => Promise.resolve({ kind: "known", tokens: 968000 })),
+vi.mock("../src/modelFacts", () => ({
+  fetchModelFacts: vi.fn(() =>
+    Promise.resolve({ kind: "known", maxInputTokens: 968000, takesEffort: true }),
+  ),
 }));
 vi.mock("@langchain/react", async () => (await import("./support/fakeStream")).useStreamMock());
 vi.mock("@langchain/macaw-components/Select", async () =>
@@ -167,11 +169,11 @@ describe("new game", () => {
     );
   });
 
-  it("asks the server for the model's input limit with the saved key", async () => {
+  it("asks the server about the model with the saved key", async () => {
     saveAppSettings({ apiKey: "lsv2_k" });
     render(<App />);
     await waitFor(() =>
-      expect(fetchModelLimit).toHaveBeenCalledWith(
+      expect(fetchModelFacts).toHaveBeenCalledWith(
         expect.any(String),
         "lsv2_k",
         DEFAULT_CONTEXT.model,

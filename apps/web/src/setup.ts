@@ -102,6 +102,12 @@ export type Matchup = { ok: true; context: ChessContext } | { ok: false; reason:
  */
 export type Summarize = "checking" | "yes" | "no" | "unknown";
 
+/**
+ * Whether the model takes a reasoning effort; the server is asked. False only for a model it
+ * knows to take none: one it doesn't know, or a server it couldn't ask, says nothing.
+ */
+export type TakesEffort = "checking" | boolean;
+
 export function modelOf(setup: Pick<Setup, "llm" | "customModel">): string | null {
   if (setup.llm === "none") return null;
   return setup.llm === "custom" ? setup.customModel.trim() : setup.llm;
@@ -112,7 +118,12 @@ export function memoryOf(knobs: Pick<Knobs, "memory">, summarize: Summarize): bo
   return summarize === "no" ? false : knobs.memory;
 }
 
-export function matchupOf(setup: Setup, summarize: Summarize): Matchup {
+/** The Reasoning Effort setting a game plays with: none for a model that takes none. */
+export function effortOf(knobs: Pick<Knobs, "reasoning_effort">, takes: TakesEffort) {
+  return takes === false ? null : knobs.reasoning_effort;
+}
+
+export function matchupOf(setup: Setup, summarize: Summarize, takes: TakesEffort): Matchup {
   const model = modelOf(setup);
   const systemOne = setup.systemOneOff ? null : setup.systemOne;
   if (model === null && systemOne === null) {
@@ -121,6 +132,23 @@ export function matchupOf(setup: Setup, summarize: Summarize): Matchup {
   if (model === "") return { ok: false, reason: "Enter a model spec for the custom LLM." };
   const held = model === null ? [] : modelKwargsProblems(setup.knobs.model_kwargs, "server");
   if (held.length > 0) return { ok: false, reason: `Model arguments: ${held.join("; ")}.` };
+  const effort = effortOf(setup.knobs, takes);
+  const sent = model === null ? null : sentEffort({ ...setup.knobs, reasoning_effort: effort });
+  if (model !== null && sent !== null) {
+    if (takes === "checking") {
+      return {
+        ok: false,
+        reason: `Checking whether ${modelName(model)} takes a reasoning effort…`,
+      };
+    }
+    // A model that takes none holds the setting at the default; `model_kwargs` can still set one.
+    if (!takes) {
+      return {
+        ok: false,
+        reason: `${modelName(model)} doesn't take a reasoning effort; remove it from Model arguments.`,
+      };
+    }
+  }
   if (model !== null && setup.knobs.memory) {
     if (summarize === "checking") {
       return { ok: false, reason: `Checking whether ${modelName(model)} can summarize…` };
@@ -135,6 +163,7 @@ export function matchupOf(setup: Setup, summarize: Summarize): Matchup {
     context: {
       ...setup.knobs,
       version: SETTINGS_VERSION,
+      reasoning_effort: effort,
       memory: memoryOf(setup.knobs, summarize),
       policy,
       // The server ignores the model a policy doesn't use, but the field is required.

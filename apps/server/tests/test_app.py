@@ -26,14 +26,18 @@ def test_routes_without_a_build():
     assert client.get("/ui/").status_code == 404
 
 
-def test_the_model_limit_route(env):
+def test_the_model_route(env):
     model_limit.cache_clear()
     client = TestClient(create_app(static_dir=None))
-    known = client.get("/ui/model-limit", params={"model": "langsmith:baseten/zai-org/GLM-5.3"})
-    assert known.json() == {"max_input_tokens": 1_048_000 - 64000}
-    unknown = client.get("/ui/model-limit", params={"model": "kimi-k3"})
-    assert unknown.json() == {"max_input_tokens": None}
-    assert client.get("/ui/model-limit").status_code == 422
+    known = client.get("/ui/model", params={"model": "langsmith:baseten/zai-org/GLM-5.3"})
+    assert known.json() == {"max_input_tokens": 1_048_000 - 64000, "takes_effort": True}
+    haiku = client.get(
+        "/ui/model", params={"model": "langsmith:anthropic/claude-haiku-4-5-20251001"}
+    )
+    assert haiku.json()["takes_effort"] is False
+    unknown = client.get("/ui/model", params={"model": "kimi-k3"})
+    assert unknown.json() == {"max_input_tokens": None, "takes_effort": True}
+    assert client.get("/ui/model").status_code == 422
 
 
 def test_static_build_is_served(tmp_path):

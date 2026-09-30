@@ -1,0 +1,8 @@
+{
+  "langsmith:anthropic/claude-haiku-4-5-20251001": false,
+  "langsmith:baseten/deepseek-ai/DeepSeek-V4-Flash-0731": true,
+  "langsmith:baseten/zai-org/GLM-5.3": true,
+  "langsmith:baseten/zai-org/GLM-5.3-Flash": true,
+  "langsmith:fireworks/accounts/fireworks/models/minimax-m3": true,
+  "langsmith:openai/gpt-6-luna": true
+}

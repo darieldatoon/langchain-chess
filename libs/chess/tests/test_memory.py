@@ -176,6 +176,28 @@ async def test_a_summary_then_a_failing_model_call(make_agent, run, cfg):
     assert [c["kind"] for c in values["turns"][-1]["calls"]] == ["summary"]
 
 
+class EffortRejectedError(Exception):
+    status_code = 400
+
+
+async def test_a_summary_whose_effort_is_rejected_is_a_reasoning_effort_error(make_agent, run, cfg):
+    from langchain_chess import ReasoningEffortError
+
+    responder = Responder(REPLIES)
+
+    def rejecting(messages: list[BaseMessage]) -> str:
+        if len(responder.move_requests) == len(REPLIES):
+            raise EffortRejectedError("This model does not support the effort parameter.")
+        return responder(messages)
+
+    model = model_for(rejecting)
+    agent = make_agent(model, memory=True, summarization=summarizer(model, trigger=10))
+    await play_ruy_lopez(agent, run, cfg)
+    with pytest.raises(ReasoningEffortError, match="from model arguments: This model"):
+        await run(agent, human("Re1"), cfg)
+    assert agent.get_state(cfg).values["turns"][-1]["status"] == "pending"
+
+
 async def test_concurrent_stateless_runs_record_their_own_summary():
     responder = Responder(["MOVE: Nf6", "MOVE: Nf6"])
     model = model_for(responder, delay=0.02)

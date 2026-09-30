@@ -367,6 +367,22 @@ async def test_prompt_too_long_is_a_context_budget_error(make_agent, run, cfg):
     assert agent.get_state(cfg).values["turns"][-1]["status"] == "pending"
 
 
+class ProviderError(Exception):
+    status_code = 400
+
+
+async def test_a_rejected_effort_is_a_reasoning_effort_error(make_agent, run, cfg):
+    from langchain_chess import ReasoningEffortError
+
+    model = ScriptedModel(
+        script=[ProviderError("This model does not support the effort parameter.")]
+    )
+    agent = make_agent(model)
+    with pytest.raises(ReasoningEffortError, match="from model arguments: This model"):
+        await run(agent, position(), cfg)
+    assert agent.get_state(cfg).values["turns"][-1]["status"] == "pending"
+
+
 async def test_chat_game_with_memory_none_sees_only_the_current_turn(make_agent, run, cfg):
     model = ScriptedModel(script=["MOVE: e5", "MOVE: Nc6"])
     agent = make_agent(model)

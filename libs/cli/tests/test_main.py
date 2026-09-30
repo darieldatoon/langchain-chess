@@ -28,6 +28,15 @@ def test_play_runs_the_tui(monkeypatch):
     assert ran == [("black", "systemone", True, "chess")]
 
 
+def test_play_refuses_an_effort_the_model_takes_none_of(monkeypatch):
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
+    haiku = "langsmith:anthropic/claude-haiku-4-5-20251001"
+    args = ["play", "--policy", "llm", "--model", haiku, "--reasoning-effort", "high"]
+    result = CliRunner().invoke(app, args)
+    assert result.exit_code == 2
+    assert "doesn't take a reasoning effort" in result.output
+
+
 def test_uci_speaks_the_protocol(monkeypatch):
     monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
     result = CliRunner().invoke(app, ["uci", "--policy", "systemone"], input="uci\nisready\nquit\n")

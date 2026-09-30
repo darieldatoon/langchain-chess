@@ -226,7 +226,11 @@ def play(
     def factory(checkpointer: Checkpointer) -> CompiledStateGraph:
         return build_agent(settings, checkpointer=checkpointer)
 
-    ChessApp(factory, settings, side=side).run()
+    try:
+        tui = ChessApp(factory, settings, side=side)
+    except ValueError as e:
+        raise typer.BadParameter(str(e)) from e
+    tui.run()
 
 
 PositiveOption = Annotated[int | None, typer.Option(min=1)]

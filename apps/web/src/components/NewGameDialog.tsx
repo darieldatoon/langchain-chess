@@ -13,7 +13,7 @@ import { ShuffleIcon } from "@phosphor-icons/react/dist/ssr/Shuffle";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { keyCheckMessage, type KeyCheck } from "../auth";
 import { downloadJson, readJson } from "../files";
-import type { ModelLimit } from "../modelLimit";
+import type { ModelFacts } from "../modelFacts";
 import { configurableOf, withKnob } from "../settings";
 import {
   LLM_NAMES,
@@ -29,6 +29,7 @@ import {
   type Setup,
   type SideChoice,
   type Summarize,
+  type TakesEffort,
 } from "../setup";
 import type { ChessContext } from "@langchain-chess/chess-ui";
 import { AdvancedSettings, Field, type DraftKnob, type SetKnob } from "./AdvancedSettings";
@@ -43,8 +44,9 @@ interface Props {
   onOpenSettings: (draft: Setup) => void;
   /** Runs on Play; the game starts only once the server accepts the key. */
   checkKey: () => Promise<KeyCheck>;
-  /** The model's input limit: `summarize` is offered only when it is known. */
-  modelLimit: (model: string) => Promise<ModelLimit>;
+  /** What the server knows about the model: `summarize` needs its input limit, and a model that
+   * takes no reasoning effort is sent none. */
+  modelFacts: (model: string) => Promise<ModelFacts>;
 }
 
 /** Waits out typing in the custom model field before asking the server. */
@@ -90,11 +92,10 @@ function systemOneKey(setup: Setup): string {
   return isSystemOnePreset(setup.systemOne) ? setup.systemOne : OTHER_SYSTEM_ONE;
 }
 
-const SUMMARIZE: Record<ModelLimit["kind"], Summarize> = {
-  known: "yes",
-  none: "no",
-  failed: "unknown",
-};
+function summarizeOf(facts: ModelFacts): Summarize {
+  if (facts.kind === "failed") return "unknown";
+  return facts.maxInputTokens === null ? "no" : "yes";
+}
 
 const INVALID_KNOBS: Matchup = { ok: false, reason: "Fix the Advanced settings marked invalid." };
 
@@ -111,7 +112,7 @@ export function NewGameDialog({
   onClose,
   onOpenSettings,
   checkKey,
-  modelLimit,
+  modelFacts,
 }: Props) {
   const [setup, setSetup] = useState(initial);
   const [advanced, setAdvanced] = useState(false);
@@ -152,9 +153,14 @@ export function NewGameDialog({
   const setKnob: SetKnob = (key, value) =>
     setSetup((s) => ({ ...s, knobs: withKnob(s.knobs, key, value) }));
   const model = modelOf(setup);
-  const [limit, setLimit] = useState<{ model: string; result: ModelLimit } | null>(null);
+  const [facts, setFacts] = useState<{ model: string; result: ModelFacts } | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const summarize: Summarize = limit?.model !== model ? "checking" : SUMMARIZE[limit.result.kind];
+  const answered = facts?.model === model ? facts.result : null;
+  const summarize: Summarize = answered ? summarizeOf(answered) : "checking";
+  // A failed request says nothing about the model, and the server checks the effort again.
+  const takesEffort: TakesEffort = answered
+    ? answered.kind === "failed" || answered.takesEffort
+    : "checking";
   // Number fields whose text isn't a valid value: Play would send a value they no longer show.
   const [invalid, setInvalid] = useState<Partial<Record<DraftKnob, boolean>>>({});
   const setValidity = useCallback(
@@ -162,7 +168,7 @@ export function NewGameDialog({
       setInvalid((s) => ((s[knob] ?? false) === !valid ? s : { ...s, [knob]: !valid })),
     [],
   );
-  const matchup = matchupOf(setup, summarize);
+  const matchup = matchupOf(setup, summarize, takesEffort);
   const ready = matchup.ok && Object.values(invalid).some(Boolean) ? INVALID_KNOBS : matchup;
   const mounted = useRef(true);
   // What is on screen now, for a key check that answers after the picks changed.
@@ -175,8 +181,8 @@ export function NewGameDialog({
     if (!model) return;
     let current = true;
     const timer = setTimeout(() => {
-      void modelLimit(model).then((result) => {
-        if (current) setLimit({ model, result });
+      void modelFacts(model).then((result) => {
+        if (current) setFacts({ model, result });
       });
     }, LIMIT_DELAY_MS);
     return () => {
@@ -184,10 +190,10 @@ export function NewGameDialog({
       clearTimeout(timer);
     };
     // `attempt` is read by nothing inside: a retry changes it to ask again.
-  }, [model, modelLimit, attempt]);
+  }, [model, modelFacts, attempt]);
 
   const recheck = () => {
-    setLimit(null);
+    setFacts(null);
     setAttempt((a) => a + 1);
   };
 
@@ -319,6 +325,7 @@ export function NewGameDialog({
                   knobs={setup.knobs}
                   sections={sectionsOf(setup)}
                   summarize={summarize}
+                  takesEffort={takesEffort}
                   onKnob={setKnob}
                   onValidity={setValidity}
                 />
