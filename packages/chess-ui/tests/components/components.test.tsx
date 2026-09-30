@@ -25,6 +25,29 @@ const nf3: MoveEntry = { ply: 2, san: "Nf3", source: "llm" };
 const nc6: MoveEntry = { ply: 3, san: "Nc6", source: "forced" };
 
 describe("MoveList", () => {
+  it("puts a control beside a move's button, not inside it, in the list and the strip", () => {
+    const aside = (ply: number) => (ply === 1 ? <button type="button">mark</button> : null);
+    const { rerender } = render(
+      <MoveList entries={[e4, e5]} startFen={START_FEN} onSelect={() => {}} aside={aside} />,
+    );
+    const mark = screen.getByRole("button", { name: "mark" });
+    expect(screen.getByRole("button", { name: "e5" })).not.toContainElement(mark);
+    rerender(<MoveList entries={[e4, e5]} startFen={START_FEN} aside={aside} />);
+    expect(screen.getByRole("button", { name: "mark" })).toBeInTheDocument();
+    rerender(
+      <MoveStrip
+        entries={[e4, e5]}
+        startFen={START_FEN}
+        selected={null}
+        onSelect={() => {}}
+        aside={aside}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "e5" })).not.toContainElement(
+      screen.getByRole("button", { name: "mark" }),
+    );
+  });
+
   it("renders an empty hint and rows coloured by source", () => {
     const { rerender } = render(<MoveList entries={[]} startFen={START_FEN} />);
     expect(screen.getByText("No moves yet.")).toBeInTheDocument();

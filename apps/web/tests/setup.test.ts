@@ -21,7 +21,7 @@ import {
   systemOneName,
   type Setup,
 } from "../src/setup";
-import { DEFAULT_CONTEXT, type ChessContext } from "@langchain-chess/chess-ui";
+import { DEFAULT_CONTEXT, START_FEN, type ChessContext } from "@langchain-chess/chess-ui";
 import efforts from "../../../libs/chess/langchain_chess/efforts.json";
 import { E4_E5, ply, turn } from "@langchain-chess/chess-ui/testing";
 
@@ -355,13 +355,14 @@ describe("games", () => {
     expect(gameOf({ ...E4_E5, setup: recorded }, null)).toEqual({
       side: "white",
       context: recorded,
+      startFen: START_FEN,
     });
     const black = {
       moves: ["e2e4", "e7e5"],
       plies: [E4_AS_BLACK.plies[0], ply({ ply: 1, side: "black", uci: "e7e5", san: "e5" })],
       setup: recorded,
     };
-    expect(gameOf(black, null)).toEqual({ side: "black", context: recorded });
+    expect(gameOf(black, null)).toEqual({ side: "black", context: recorded, startFen: START_FEN });
   });
 
   it("before the human's first move, gives them the side the opponent didn't open with", () => {
@@ -376,11 +377,12 @@ describe("games", () => {
   });
 
   it("plays a new game with its picks until the thread records them", () => {
-    const chosen = { side: "white" as const, context: recorded };
+    const chosen = { side: "white" as const, context: recorded, startFen: START_FEN };
     expect(gameOf({}, chosen)).toEqual(chosen);
     expect(gameOf({ setup: DEFAULT_CONTEXT }, chosen)).toEqual({
       side: "white",
       context: DEFAULT_CONTEXT,
+      startFen: START_FEN,
     });
   });
 

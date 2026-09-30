@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
-import { useTurnAlert } from "../src/title";
+import { pageTitle, useTurnAlert } from "../src/title";
 
 describe("useTurnAlert", () => {
   afterEach(() => vi.restoreAllMocks());
@@ -21,5 +21,21 @@ describe("useTurnAlert", () => {
       document.dispatchEvent(new Event("visibilitychange"));
     });
     expect(result.current).toBe(false);
+  });
+});
+describe("pageTitle", () => {
+  it("puts game over first, then your turn, then the opening", () => {
+    const none = { yourTurn: false, over: false, opening: null };
+    expect(pageTitle(none)).toBe("LangChain Chess");
+    expect(pageTitle({ ...none, yourTurn: true, over: true })).toBe("Game over · LangChain Chess");
+    expect(pageTitle({ ...none, yourTurn: true, opening: "Sicilian Defense" })).toBe(
+      "Your turn · LangChain Chess",
+    );
+    expect(pageTitle({ ...none, over: true, opening: "Sicilian Defense" })).toBe(
+      "Game over · LangChain Chess",
+    );
+    expect(pageTitle({ ...none, opening: "Sicilian Defense" })).toBe(
+      "Sicilian Defense · LangChain Chess",
+    );
   });
 });

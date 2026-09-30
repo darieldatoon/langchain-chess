@@ -7,17 +7,25 @@ import { IconButton } from "@langchain/macaw-components/IconButton";
 import { TabGroup, TabLabel, TabList, TabPanel, TabPanels } from "@langchain/macaw-components/Tabs";
 import { Text } from "@langchain/macaw-components/Text";
 import { ThinkingState } from "@langchain/macaw-components/ThinkingState";
+import { ArrowSquareOutIcon } from "@phosphor-icons/react/dist/ssr/ArrowSquareOut";
 import { ArrowsDownUpIcon } from "@phosphor-icons/react/dist/ssr/ArrowsDownUp";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   BackToLive,
   Board,
   BoardControls,
   BoardMenu,
+  copyText,
   DisplayMenu,
+  ExportMenu,
+  lichessUrl,
   GameShell,
   MoveList,
   MoveStrip,
+  OpeningHeading,
+  OpeningMark,
+  openingAt,
+  openingFamily,
   opposite,
   outcomeLine,
   PlayerStrip,
@@ -31,8 +39,10 @@ import {
   START_FEN,
   stripResult,
   TOUCH_TARGET,
+  toPgn,
   useCoarsePointer,
   useGameKeys,
+  useOpenings,
   usePlyCursor,
   type Allocation,
   type DisplayPrefs,
@@ -43,7 +53,9 @@ import {
   type Side,
   type SourceClass,
 } from "@langchain-chess/chess-ui";
-import { downloadJson } from "./files";
+import { downloadJson, downloadText } from "./files";
+import { pgnFileName, pgnOf, playerName } from "./export";
+import { ExportDialog } from "./components/ExportDialog";
 import { GameActions, GameOver, ResultHeadline } from "./components/GameActions";
 import { describeError, isAuthError, isBusyRejection } from "./format";
 import { configurableOf } from "./settings";
@@ -75,6 +87,8 @@ interface TableProps extends ViewProps {
   onRematch: (from: GameRecord) => void;
   onReload: (from: Seat) => void;
   onNewGame: () => void;
+  /** New game again, with this starting position filled in. */
+  onChangePosition: (startFen: string) => void;
   onOpenSettings: () => void;
 }
 
@@ -95,6 +109,7 @@ export function Table({
   onRematch,
   onReload,
   onNewGame,
+  onChangePosition,
   onOpenSettings,
   view,
   onViewChange,
@@ -118,8 +133,10 @@ export function Table({
   const playable = record !== null && game.restore === "ready";
   const idle = playable && !game.isLoading && game.pendingMove === null;
   // A pending turn means a run failed mid-turn: only an empty submit resumes it.
-  const canRetry = !over && idle && game.pendingTurn;
-  const canGo = !over && idle && !game.pendingTurn && opponentToMove;
+  // A first position packet with no answer is resent as it was, before any turn exists.
+  const canRetry =
+    (!over && idle && game.pendingTurn) || (playable && !over && game.firstUnanswered);
+  const canGo = !over && idle && !game.pendingTurn && opponentToMove && !game.firstUnanswered;
   // Follows the side, which a game opened from its link only knows once its thread loads.
   const [flipped, setFlipped] = useState(false);
   const flip = useCallback(() => setFlipped((f) => !f), []);
@@ -131,12 +148,31 @@ export function Table({
   const coarse = useCoarsePointer();
   const yourMove = playable && !over && !opponentToMove && game.pendingMove === null;
   const alert = useTurnAlert(yourMove, game.restore === "ready" && live);
-  useDocumentTitle(pageTitle({ yourTurn: alert && prefs.tabTitle, over }));
+  const openings = useOpenings(last > 0 || game.startFen !== START_FEN);
+  const latestOpening = useMemo(
+    () => (openings ? openingAt(game.fens, last, openings) : null),
+    [openings, game.fens, last],
+  );
+  const opening = useMemo(
+    () => (openings ? openingAt(game.fens, index, openings) : null),
+    [openings, game.fens, index],
+  );
+  useDocumentTitle(
+    pageTitle({
+      yourTurn: alert && prefs.tabTitle,
+      over,
+      opening: latestOpening && openingFamily(latestOpening),
+    }),
+  );
+  const [exported, setExported] = useState<{ title: string; text: string } | null>(null);
+  const [exportNote, setExportNote] = useState<string | null>(null);
   const boardFen = live ? (game.pendingMove?.fen ?? game.fen) : game.fens[index];
   const lastMove = live
     ? (game.pendingMove?.uci ?? game.moves.at(-1) ?? null)
     : (game.moves[index - 1] ?? null);
-  const notice = game.error && game.error !== dismissed ? game.error : null;
+  // A resent first packet can land after the game ended; that refusal is not the position's fault.
+  const stale = over && game.error === "the game is over";
+  const notice = game.error && game.error !== dismissed && !stale ? game.error : null;
   const failure = submitError ?? game.streamError;
   const failureText = describeError(failure);
 
@@ -160,8 +196,7 @@ export function Table({
   const reply = live ? game.reply : playedOrNone(replyAt(game.plies, game.turns, game.fens, index));
   const replyTitle = live ? "Last Reply" : `Reply before move ${index + 1}`;
 
-  const nameOf = (side: Side) =>
-    record ? (side === record.side ? "You" : opponentLabel(record.context)) : colourName(side);
+  const nameOf = (side: Side) => playerName(record, side);
   const statusOf = (side: Side): ReactNode => {
     if (game.outcome) {
       return (
@@ -219,11 +254,6 @@ export function Table({
   );
 
   const phone = allocation.layout === "phone";
-  const menu = (
-    <BoardMenu onFlip={flip} onHelp={openHelp} navigate={phone ? { onGo: go, last } : undefined}>
-      <DisplayMenu prefs={prefs} onChange={onPrefsChange} boardSize={!phone} app="web" />
-    </BoardMenu>
-  );
   const offers = game.drawOffers.filter((o) => o.ply === last && o.by === humanSide);
   const canResign = playable && !game.isLoading && !over && (last > 0 || game.rootAccepted);
   const canOfferDraw =
@@ -240,16 +270,65 @@ export function Table({
       onFlip={flip}
     />
   );
+  const pgn = () =>
+    ((p) => toPgn(p.game, p.meta))(pgnOf(game, latestOpening, window.location.origin));
+  const copy = async (title: string, text: string) => {
+    if (await copyText(text)) setExportNote(`Copied the ${title}.`);
+    else setExported({ title, text });
+  };
+  const analyze = () => {
+    const link = lichessUrl(pgn(), boardFen);
+    window.open(link.url, "_blank", "noopener");
+    setExportNote(link.fallback ? "Opened the position; the game was too long to send." : null);
+  };
+  const exportMenu = (
+    <ExportMenu
+      onCopyFen={() => void copy("FEN", boardFen)}
+      onCopyPgn={() => void copy("PGN", pgn())}
+      onDownloadPgn={() =>
+        downloadText(pgnFileName(game.threadId), pgn(), "application/x-chess-pgn")
+      }
+      onLichess={analyze}
+    />
+  );
   const gameOver = over && (
     <GameOver
       humanSide={record?.side ?? null}
       onRematch={() => onRematch(record!)}
       onNewGame={onNewGame}
-    />
+    >
+      <Button
+        variant="plain"
+        color="secondary"
+        size="sm"
+        rightDecorator={ArrowSquareOutIcon}
+        className={TOUCH_TARGET}
+        onClick={analyze}
+      >
+        Analyze on Lichess
+      </Button>
+    </GameOver>
+  );
+  const note = exportNote && (
+    <Text variant="sm" color="secondary" role="status" aria-label="export">
+      {exportNote}
+    </Text>
   );
   const headline = game.outcome && record && (
     <ResultHeadline outcome={game.outcome} humanSide={record.side} />
   );
+
+  const menu = (
+    <BoardMenu onFlip={flip} onHelp={openHelp} navigate={phone ? { onGo: go, last } : undefined}>
+      <DisplayMenu prefs={prefs} onChange={onPrefsChange} boardSize={!phone} app="web" />
+      {exportMenu}
+    </BoardMenu>
+  );
+  // At the root, the heading alone names it.
+  const openingMark = (ply: number) =>
+    opening && opening.reachedIndex > 0 && opening.reachedIndex === ply + 1 ? (
+      <OpeningMark opening={opening} />
+    ) : null;
 
   const replyCard = (
     <PlyDetails reply={reply} view={view} onViewChange={onViewChange} title={replyTitle} />
@@ -301,10 +380,13 @@ export function Table({
               onSelect={(ply) => go(ply + 1)}
               outcome={game.outcome}
               drawOffers={game.drawOffers}
+              heading={<OpeningHeading opening={opening} />}
+              aside={openingMark}
             />
             <BackToLive index={index} last={last} onGo={go} />
             <BoardControls index={index} last={last} onGo={go} menu={menu} />
             {gameOver || actions}
+            {note}
           </Card>
         )
       }
@@ -351,14 +433,17 @@ export function Table({
             selected={index - 1}
             onSelect={(ply) => go(ply + 1)}
             drawOffers={game.drawOffers}
+            aside={openingMark}
           />
           {game.outcome && <ResultLine outcome={game.outcome} />}
         </>
       }
       phoneReply={
         <>
+          <OpeningHeading opening={opening} />
           {headline}
           {gameOver}
+          {note}
           <ReplyLine
             reply={reply}
             onShow={() => {
@@ -443,6 +528,19 @@ export function Table({
           onDismiss={() => setDismissed(notice)}
         >
           {notice}
+          {game.startRejected && record && (
+            <div className="pt-space-2">
+              <Button
+                variant="outlined"
+                color="secondary"
+                size="sm"
+                className={TOUCH_TARGET}
+                onClick={() => onChangePosition(record.startFen)}
+              >
+                Change position
+              </Button>
+            </div>
+          )}
         </Banner>
       )}
       {failureText && (
@@ -452,6 +550,13 @@ export function Table({
       )}
       {shell}
       {help && <ShortcutDialog onClose={() => setHelp(false)} />}
+      {exported && (
+        <ExportDialog
+          title={exported.title}
+          text={exported.text}
+          onClose={() => setExported(null)}
+        />
+      )}
     </>
   );
 }

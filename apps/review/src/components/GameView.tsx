@@ -11,11 +11,17 @@ import {
   Board,
   BoardControls,
   BoardMenu,
+  copyText,
   DisplayMenu,
+  ExportMenu,
+  lichessUrl,
   EVAL_BAR,
   fenOrStart,
   GameShell,
   MoveList,
+  OpeningHeading,
+  OpeningMark,
+  openingAt,
   opposite,
   PlayerStrip,
   PlyDetails,
@@ -23,6 +29,7 @@ import {
   ShortcutDialog,
   stripResult,
   TOUCH_TARGET,
+  toPgn,
   turnOf,
   useGameKeys,
   useCoarsePointer,
@@ -33,6 +40,7 @@ import {
   type ChessValues,
   type DisplayPrefs,
   type MoveEntry,
+  type OpeningTable,
   type PlyView,
   type Side,
 } from "@langchain-chess/chess-ui";
@@ -40,6 +48,8 @@ import { ArrowSquareOutIcon } from "@phosphor-icons/react/dist/ssr/ArrowSquareOu
 import { useCallback, useMemo, useState } from "react";
 import type { Analysis, LaunchState } from "../analysis";
 import type { TraceTarget } from "../api";
+import type { OpenUrl } from "../App";
+import { reviewPgn } from "../export";
 import { sideLabel, type Game } from "../games";
 import { AnalysisBanner } from "./AnalysisBanner";
 import { EvalBar } from "./EvalBar";
@@ -60,6 +70,8 @@ interface Props {
   space: Space;
   prefs: DisplayPrefs;
   onPrefsChange: (prefs: DisplayPrefs) => void;
+  openings: OpeningTable | null;
+  openUrl: OpenUrl;
 }
 
 const NO_MOVES: string[] = [];
@@ -78,6 +90,8 @@ export function GameView({
   space,
   prefs,
   onPrefsChange,
+  openings,
+  openUrl,
 }: Props) {
   const startFen = fenOrStart(values.start_fen);
   const moves = values.moves ?? NO_MOVES;
@@ -114,6 +128,26 @@ export function GameView({
     source: plies[i]?.source ?? "external",
     quality: review?.plies[i]?.quality,
   }));
+
+  const opening = useMemo(
+    () => (openings ? openingAt(fens, index, openings) : null),
+    [openings, fens, index],
+  );
+  const [exportNote, setExportNote] = useState<string | null>(null);
+  const pgn = () => {
+    const latest = openings ? openingAt(fens, last, openings) : null;
+    const { game: pgnGame, meta } = reviewPgn(game, values, review, latest);
+    return toPgn(pgnGame, meta);
+  };
+  const copy = async (what: string, text: string) =>
+    setExportNote(
+      (await copyText(text)) ? `Copied the ${what}.` : "The browser didn't allow copying.",
+    );
+  const analyze = () => {
+    const link = lichessUrl(pgn(), fens[index]);
+    openUrl(link.url, { newTab: true });
+    setExportNote(link.fallback ? "Opened the position; the game was too long to send." : null);
+  };
 
   const ply = index > 0 ? plies[index - 1] : undefined;
   const grade = index > 0 ? review?.plies[index - 1] : undefined;
@@ -228,8 +262,19 @@ export function GameView({
           onSelect={(p) => go(p + 1)}
           outcome={values.outcome ?? null}
           drawOffers={values.draw_offers}
+          heading={<OpeningHeading opening={opening} />}
+          aside={(p) =>
+            opening && opening.reachedIndex > 0 && opening.reachedIndex === p + 1 ? (
+              <OpeningMark opening={opening} />
+            ) : null
+          }
         />
         <BackToLive index={index} last={last} onGo={go} />
+        {exportNote && (
+          <Text variant="sm" color="secondary" role="status" aria-label="export">
+            {exportNote}
+          </Text>
+        )}
         <BoardControls
           index={index}
           last={last}
@@ -241,6 +286,11 @@ export function GameView({
                 onChange={onPrefsChange}
                 boardSize={layout !== "phone"}
                 app="review"
+              />
+              <ExportMenu
+                onCopyFen={() => void copy("FEN", fens[index])}
+                onCopyPgn={() => void copy("PGN", pgn())}
+                onLichess={analyze}
               />
             </BoardMenu>
           }

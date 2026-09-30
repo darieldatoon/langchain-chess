@@ -3,6 +3,7 @@ import { appended, createApi, defaultProject, firstPages, threadUrl } from "../s
 import { matchup, modelName, resultText, sideLabel, toGame, type ThreadItem } from "../src/games";
 import { evalText, parseReview, reviewsByRun, whiteCp, whiteWinPercent } from "../src/review";
 import { decodeValues } from "../src/values";
+import { reviewPgn } from "../src/export";
 import { call as llmCall, ply as plyOf, systemOne, turn } from "@langchain-chess/chess-ui/testing";
 import { game, graded, MOVES, review, reviewFeedback, values } from "./support/fixtures";
 
@@ -416,5 +417,15 @@ describe("sideLabel", () => {
     expect(sideLabel({ matchup: "m", surface: "web" }, external, other)).toBe("Human");
     expect(sideLabel({ matchup: "m", surface: "tui" }, external, "white")).toBe("White");
     expect(sideLabel({ matchup: "m", surface: null }, [], "black")).toBe("Black");
+  });
+});
+
+describe("reviewPgn", () => {
+  it("writes an ungraded game with no plies from its moves alone", () => {
+    const { game: pgn, meta } = reviewPgn(game(), { moves: ["e2e4"] }, null, null);
+    expect(pgn).toMatchObject({ moves: ["e2e4"], sans: [], outcome: null, grades: undefined });
+    expect(meta).toMatchObject({ site: "LangSmith", white: "Human", black: "Human" });
+    expect(meta.comment).toBe("claude-opus-5-5 + semif-qwen3.5-4b · Thread thread-1");
+    expect(reviewPgn(game(), {}, null, null).game.moves).toEqual([]);
   });
 });

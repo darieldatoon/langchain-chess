@@ -129,6 +129,9 @@ export const SYSTEMONE_META_KEY = "SystemOneMiddleware";
 /** A graded move's class. Mirrors `Quality` in libs/chess/langchain_chess/grading.py. */
 export type Quality = "best" | "good" | "inaccuracy" | "mistake" | "blunder";
 
+/** An engine evaluation from White's side, as the grader stores it. `mate: 0` is a mated position. */
+export type Eval = { cp: number } | { mate: number; winner: Side };
+
 /** The latest opponent ply with its turn and the position it was chosen from. */
 export interface Reply {
   ply: Ply;
@@ -155,6 +158,13 @@ export interface Message {
   readonly type: string;
   readonly id?: string;
   readonly content: unknown;
+}
+
+/** A position command: a root and the moves from it. Mirrors `PositionInput` in state.py. */
+export interface PositionInput {
+  start_fen?: string;
+  moves?: string[];
+  restrict?: string[];
 }
 
 /** The thread values a UI may read. The state API also returns private channels; never read them. */

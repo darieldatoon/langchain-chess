@@ -10,6 +10,7 @@ import {
   GAP,
   layoutFor,
   opposite,
+  sideToMove,
   PHONE_PADDING,
   TOUCH_TARGET,
   useCoarsePointer,
@@ -46,19 +47,28 @@ import { threadFromUrl, writeThreadToUrl } from "./useGame";
 /** The main region's padding, top and bottom, off phones. */
 const PAD_TOP = 8;
 
-/** Settings opened from New game go back to it; `draft` holds the picks not yet played. */
+/**
+ * Settings opened from New game go back to it; `draft` holds the picks not yet played, and
+ * `startFen` the starting position typed (empty for the standard one), which is never stored.
+ */
 type Overlay =
-  | { kind: "new-game"; draft: Setup | null }
+  | { kind: "new-game"; draft: Setup | null; startFen: string }
   | { kind: "settings"; back: Overlay }
   | null;
 
-const NEW_GAME: Overlay = { kind: "new-game", draft: null };
+const NEW_GAME: Overlay = { kind: "new-game", draft: null, startFen: "" };
 
-function nextSeat(previous: Seat | null, side: Side, context: ChessContext): Seat {
+function nextSeat(
+  previous: Seat | null,
+  side: Side,
+  context: ChessContext,
+  startFen: string,
+): Seat {
   return {
     number: (previous?.number ?? 0) + 1,
-    chosen: { side, context },
-    autoStart: side === "black",
+    chosen: { side, context, startFen },
+    // The opponent opens when it is to move in the starting position.
+    autoStart: sideToMove(startFen) !== side,
   };
 }
 
@@ -101,7 +111,12 @@ export default function App({
   const openNewGame = useCallback(() => setOverlay(NEW_GAME), []);
   const openSettings = useCallback(() => setOverlay({ kind: "settings", back: null }), []);
   const openSettingsFromNewGame = useCallback(
-    (draft: Setup) => setOverlay({ kind: "settings", back: { kind: "new-game", draft } }),
+    (draft: Setup, startFen: string) =>
+      setOverlay({ kind: "settings", back: { kind: "new-game", draft, startFen } }),
+    [],
+  );
+  const changePosition = useCallback(
+    (startFen: string) => setOverlay({ kind: "new-game", draft: null, startFen }),
     [],
   );
 
@@ -137,12 +152,12 @@ export default function App({
   );
 
   const play = useCallback(
-    (next: Setup, context: ChessContext) => {
+    (next: Setup, context: ChessContext, startFen: string) => {
       noteSaved(saveSetup(next));
       setSetup(next);
       writeThreadToUrl(null);
       const side = resolveSide(next.side, random);
-      setSeat((s) => nextSeat(s, side, context));
+      setSeat((s) => nextSeat(s, side, context, startFen));
       setOverlay(null);
     },
     [random, noteSaved],
@@ -150,7 +165,7 @@ export default function App({
 
   const rematch = useCallback((from: GameRecord) => {
     writeThreadToUrl(null);
-    setSeat((s) => nextSeat(s, opposite(from.side), from.context));
+    setSeat((s) => nextSeat(s, opposite(from.side), from.context, from.startFen));
   }, []);
 
   // The same thread, on a fresh stream: the URL still names it.
@@ -233,6 +248,7 @@ export default function App({
             onRematch={rematch}
             onReload={reload}
             onNewGame={openNewGame}
+            onChangePosition={changePosition}
             onOpenSettings={openSettings}
             view={view}
             onViewChange={onViewChange}
@@ -254,6 +270,7 @@ export default function App({
       {overlay?.kind === "new-game" && (
         <NewGameDialog
           initial={overlay.draft ?? setup}
+          initialStartFen={overlay.startFen}
           canCancel={seat !== null}
           onPlay={play}
           onClose={closeNewGame}

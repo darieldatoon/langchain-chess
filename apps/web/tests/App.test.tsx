@@ -79,6 +79,7 @@ vi.mock("../src/auth", async (importOriginal) => ({
 const downloads = vi.hoisted(() => [] as [string, unknown][]);
 vi.mock("../src/files", () => ({
   downloadJson: (name: string, value: unknown) => downloads.push([name, value]),
+  downloadText: (name: string, text: string) => downloads.push([name, text]),
 }));
 vi.mock("../src/modelFacts", () => ({
   fetchModelFacts: vi.fn(() =>
@@ -1110,28 +1111,35 @@ describe("resign and draw offers", () => {
     ).toBeInTheDocument();
   });
 
-  it("never resends a control command: both stay off while one is in flight", async () => {
-    onThread("abc", E4_E5);
-    let settle = () => {};
-    fake.submit = vi.fn(
-      () =>
-        new Promise<void>((resolve) => {
-          settle = resolve;
-        }),
-    );
-    render(<App />);
-    fireEvent.click(resign());
-    fireEvent.click(button("Confirm resignation"));
-    fake.isLoading = true;
-    fireEvent.keyDown(window, { key: "f" });
-    expect(resign()).toBeDisabled();
-    expect(draw()).toBeDisabled();
-    fireEvent.click(resign());
-    fireEvent.click(draw());
-    expect(submitted()).toEqual(["resign white"]);
-    fake.isLoading = false;
-    await act(async () => settle());
-  });
+  it.each(["resign", "draw"])(
+    "never resends a control command: both stay off while a %s is in flight",
+    async (kind) => {
+      onThread("abc", E4_E5);
+      let settle = () => {};
+      fake.submit = vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            settle = resolve;
+          }),
+      );
+      render(<App />);
+      if (kind === "resign") {
+        fireEvent.click(resign());
+        fireEvent.click(button("Confirm resignation"));
+      } else {
+        fireEvent.click(draw());
+      }
+      fake.isLoading = true;
+      fireEvent.keyDown(window, { key: "f" });
+      expect(resign()).toBeDisabled();
+      expect(draw()).toBeDisabled();
+      fireEvent.click(resign());
+      fireEvent.click(draw());
+      expect(submitted()).toEqual([`${kind} white`]);
+      fake.isLoading = false;
+      await act(async () => settle());
+    },
+  );
 
   it("titles a hidden tab Game over once the game ends, even after a turn alert", () => {
     const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(true);
@@ -1218,5 +1226,242 @@ describe("resign and draw offers", () => {
     ).toBeNull();
     expect(strip("black")).toHaveTextContent("Resigned");
     vi.restoreAllMocks();
+  });
+});
+
+describe("starting from a FEN", () => {
+  const WHITE_TO_MOVE = "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1";
+  const BLACK_TO_MOVE = "4k3/4p3/8/8/8/8/8/4K3 b - - 0 1";
+  const AFTER_E4_CUSTOM = "4k3/8/8/8/4P3/8/8/4K3 b - - 0 1";
+  const CONFIG = {
+    config: { configurable: DEFAULT_CONTEXT, ...WEB_TRACE },
+    metadata: { surface: "web" },
+    multitaskStrategy: "reject",
+  };
+  const inputs = () => fake.submit.mock.calls.map(([input]) => input);
+
+  async function playFrom(fen: string, side: "White" | "Black" | "Random", random?: () => number) {
+    render(<App random={random} />);
+    fireEvent.click(screen.getByRole("radio", { name: side }));
+    change("Starting position", fen);
+    await click("Play");
+  }
+
+  it.each<[string, string, "White" | "Black", boolean]>([
+    ["White to move, playing White", WHITE_TO_MOVE, "White", false],
+    ["White to move, playing Black", WHITE_TO_MOVE, "Black", true],
+    ["Black to move, playing White", BLACK_TO_MOVE, "White", true],
+    ["Black to move, playing Black", BLACK_TO_MOVE, "Black", false],
+  ])("%s: the opponent opens only when it is to move", async (_, fen, side, opens) => {
+    await playFrom(fen, side);
+    expect(board()).toHaveAttribute("data-position", fen);
+    expect(inputs()).toEqual(opens ? [{ position: { start_fen: fen } }] : []);
+    if (opens) expect(fake.submit).toHaveBeenCalledWith({ position: { start_fen: fen } }, CONFIG);
+  });
+
+  it.each<["White" | "Black", boolean]>([
+    ["White", true],
+    ["Black", false],
+  ])("reads a position typed with extra whitespace, playing %s", async (side, opens) => {
+    const clean = "4k3/4p3/8/8/8/8/8/4K3 b - - 0 12";
+    await playFrom(`  ${clean.replaceAll(" ", " \t ")} `, side);
+    expect(board()).toHaveAttribute("data-position", clean);
+    expect(inputs()).toEqual(opens ? [{ position: { start_fen: clean } }] : []);
+  });
+
+  it.each<[number, boolean]>([
+    [0.3, true],
+    [0.7, false],
+  ])("resolves Random (%s) before deciding who opens", async (roll, opens) => {
+    await playFrom(BLACK_TO_MOVE, "Random", () => roll);
+    expect(inputs()).toEqual(opens ? [{ position: { start_fen: BLACK_TO_MOVE } }] : []);
+  });
+
+  it("sends the human's first move as a position, never as a message", async () => {
+    await playFrom(WHITE_TO_MOVE, "White");
+    await click("drop e2e4");
+    expect(inputs()).toEqual([{ position: { start_fen: WHITE_TO_MOVE, moves: ["e2e4"] } }]);
+  });
+
+  it("keeps a first move whose answer was lost on the board, and Retry resends it as it was", async () => {
+    fake.submit = vi.fn(() => Promise.reject(new Error("Failed to fetch")));
+    await playFrom(WHITE_TO_MOVE, "White");
+    await click("drop e2e4");
+    expect(board()).toHaveAttribute("data-position", AFTER_E4_CUSTOM);
+    expect(screen.getByRole("status")).toHaveTextContent("Failed to fetch");
+    fake.submit = vi.fn(() => Promise.resolve());
+    await click("Retry");
+    expect(inputs()).toEqual([{ position: { start_fen: WHITE_TO_MOVE, moves: ["e2e4"] } }]);
+  });
+
+  it("goes back to chat commands once the server has taken the root", async () => {
+    await playFrom(WHITE_TO_MOVE, "White");
+    await click("drop e2e4");
+    fake.values = {
+      start_fen: WHITE_TO_MOVE,
+      moves: ["e2e4", "e8d7"],
+      plies: [ply(), ply({ ply: 1, side: "black", uci: "e8d7", san: "Kd7", source: "llm" })],
+      turns: [turn({ ply: 1 })],
+      setup: DEFAULT_CONTEXT,
+    };
+    fireEvent.keyDown(window, { key: "f" });
+    fireEvent.keyDown(window, { key: "f" });
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    expect(board()).toHaveAttribute("data-position", "8/3k4/8/8/4P3/8/8/4K3 w - - 1 2");
+  });
+
+  it("takes a rejected root back off the board and offers another position", async () => {
+    await playFrom(WHITE_TO_MOVE, "White");
+    await click("drop e2e4");
+    // A rejection writes the standard start: it must not replace the chosen board.
+    fake.values = {
+      start_fen: START_FEN,
+      moves: [],
+      plies: [],
+      turns: [],
+      error: "invalid position",
+    };
+    fireEvent.keyDown(window, { key: "f" });
+    expect(board()).toHaveAttribute("data-position", WHITE_TO_MOVE);
+    expect(screen.getByText("invalid position")).toBeInTheDocument();
+    await click("Change position");
+    expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Starting position")).toHaveValue(WHITE_TO_MOVE);
+  });
+
+  it("ignores a resend refused because the game is already over", async () => {
+    await playFrom(WHITE_TO_MOVE, "White");
+    await click("drop e2e4");
+    fake.values = {
+      start_fen: WHITE_TO_MOVE,
+      moves: ["e2e4"],
+      plies: [ply()],
+      turns: [turn({ status: "terminal", ply: null })],
+      outcome: { kind: "resignation", winner: "white", reason: "illegal_moves" },
+      error: "the game is over",
+      setup: DEFAULT_CONTEXT,
+    };
+    fireEvent.keyDown(window, { key: "f" });
+    expect(screen.queryByText("Move rejected")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+  });
+
+  it("plays a thread from its recorded root, and rematches from the same one", async () => {
+    onThread("custom", {
+      start_fen: WHITE_TO_MOVE,
+      moves: ["e2e4"],
+      plies: [ply()],
+      turns: [turn({ status: "terminal", ply: null })],
+      outcome: { kind: "resignation", winner: "white", reason: "resigned" },
+    });
+    render(<App />);
+    expect(board()).toHaveAttribute("data-position", AFTER_E4_CUSTOM);
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByLabelText("game over")).getByRole("button", { name: "Rematch" }),
+      );
+    });
+    expect(board()).toHaveAttribute("data-position", WHITE_TO_MOVE);
+    // The human was White, so the rematch plays Black, and the opponent opens.
+    expect(inputs()).toEqual([{ position: { start_fen: WHITE_TO_MOVE } }]);
+  });
+});
+
+describe("exports and openings", () => {
+  const menuItem = async (name: string) => {
+    await openMenu("Board menu");
+    fireEvent.click(screen.getByRole("menuitem", { name }));
+  };
+
+  it("copies the position on the board and the whole game", async () => {
+    const writeText = vi.fn<(text: string) => Promise<void>>(() => Promise.resolve());
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    onThread("abc", E4_E5);
+    render(<App />);
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    await menuItem("Copy FEN");
+    expect(writeText).toHaveBeenLastCalledWith(AFTER_E4);
+    expect(await screen.findByText("Copied the FEN.")).toBeInTheDocument();
+    await menuItem("Copy PGN");
+    const pgn = writeText.mock.lastCall![0];
+    expect(pgn).toContain('[White "You"]');
+    expect(pgn).toContain("1. e4 e5 {C20 King's Pawn Game} *");
+    expect(pgn).toContain("Thread abc");
+  });
+
+  it("shows the text to copy by hand when the browser refuses", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: () => Promise.reject(new Error("denied")) },
+      configurable: true,
+    });
+    onThread("abc", E4_E5);
+    render(<App />);
+    await menuItem("Copy FEN");
+    const dialog = await screen.findByRole("dialog", { name: "FEN" });
+    expect(within(dialog).getByRole("textbox")).toHaveValue(
+      "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Done" }));
+    expect(dialog).not.toBeInTheDocument();
+  });
+
+  it("downloads the PGN and opens the game on Lichess", async () => {
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    onThread("abc", { ...E4_E5, outcome: { kind: "checkmate", winner: "white" } });
+    render(<App />);
+    await menuItem("Download PGN");
+    expect(downloads.at(-1)).toEqual(["langchain-chess-abc.pgn", expect.stringContaining("1-0")]);
+    fireEvent.click(
+      within(screen.getByLabelText("game over")).getByRole("button", {
+        name: /Analyze on Lichess/,
+      }),
+    );
+    expect(open).toHaveBeenCalledWith(
+      expect.stringContaining("lichess.org/analysis/pgn/"),
+      "_blank",
+      "noopener",
+    );
+    open.mockRestore();
+  });
+
+  // 1,600 plies, the heaviest render in the suite: a CI runner needs more than 5s.
+  it("opens only the position when the game is too long for a link", async () => {
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    const moves = Array.from({ length: 1600 }, (_, i) => ["g1f3", "g8f6", "f3g1", "f6g8"][i % 4]);
+    onThread("abc", { moves, plies: [], turns: [] });
+    render(<App />);
+    await menuItem("Analyze on Lichess");
+    expect(open).toHaveBeenCalledWith(
+      expect.stringMatching(/lichess\.org\/analysis\/rnbqkbnr/),
+      "_blank",
+      "noopener",
+    );
+    expect(
+      screen.getByText("Opened the position; the game was too long to send."),
+    ).toBeInTheDocument();
+    open.mockRestore();
+  }, 20_000);
+
+  it("names the opening over the moves and in the tab's title", async () => {
+    onThread("abc", E4_E5);
+    render(<App />);
+    expect(await screen.findByText("C20 · King's Pawn Game")).toBeInTheDocument();
+    expect(document.title).toBe("King's Pawn Game · LangChain Chess");
+  });
+
+  it("marks the opening's move in a phone's move strip, and names it on a tap", async () => {
+    const spies = [
+      vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(390),
+      vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(780),
+    ];
+    onThread("abc", E4_E5);
+    render(<App />);
+    const strip = screen.getAllByLabelText("move list").at(-1)!;
+    const mark = await within(strip).findByRole("button", {
+      name: "Opening: C20 · King's Pawn Game",
+    });
+    await userEvent.click(mark);
+    expect(screen.getByRole("dialog")).toHaveTextContent("C20 · King's Pawn Game");
+    for (const spy of spies) spy.mockRestore();
   });
 });

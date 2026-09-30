@@ -6,13 +6,16 @@ export interface TitleInput {
   /** It became the reader's move while the tab was hidden. */
   yourTurn: boolean;
   over: boolean;
+  /** The opening's family, "Sicilian Defense", once the game has reached one. */
+  opening: string | null;
 }
 
 /** The tab's title. Pure. */
-export function pageTitle({ yourTurn, over }: TitleInput): string {
+export function pageTitle({ yourTurn, over, opening }: TitleInput): string {
   // An alert raised before the game ended must not outlive it.
   if (over) return `Game over · ${APP_TITLE}`;
-  return yourTurn ? `Your turn · ${APP_TITLE}` : APP_TITLE;
+  if (yourTurn) return `Your turn · ${APP_TITLE}`;
+  return opening ? `${opening} · ${APP_TITLE}` : APP_TITLE;
 }
 
 /**

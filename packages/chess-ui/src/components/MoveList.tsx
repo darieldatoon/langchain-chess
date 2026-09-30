@@ -24,8 +24,10 @@ interface Props {
   outcome?: Outcome | null;
   /** A line above the moves, such as the opening. */
   heading?: ReactNode;
-  /** Shown after a move's SAN, keyed by ply. */
+  /** Shown after a move's SAN, inside its button, keyed by ply. */
   after?: (ply: number) => ReactNode;
+  /** Beside a move's button, for a control of its own such as the opening's hint. */
+  aside?: (ply: number) => ReactNode;
   /** A full-width row under a move's row, keyed by ply. */
   note?: (ply: number) => ReactNode;
   /** `½?` after the move each was offered after. */
@@ -91,6 +93,7 @@ export function MoveList({
   outcome = null,
   heading,
   after,
+  aside,
   note,
   drawOffers,
 }: Props) {
@@ -132,6 +135,7 @@ export function MoveList({
             selected={selected}
             onSelect={onSelect}
             after={mark}
+            aside={aside}
             note={note}
           />
         ))}
@@ -157,6 +161,7 @@ interface Selection {
   selected: number | null;
   onSelect: ((ply: number) => void) | undefined;
   after: ((ply: number) => ReactNode) | undefined;
+  aside: ((ply: number) => ReactNode) | undefined;
 }
 
 function MoveRow({
@@ -207,32 +212,36 @@ function MoveText({ entry, after }: { entry: MoveEntry; after: Selection["after"
   );
 }
 
-function Move({ entry, selected, onSelect, after }: Selection & { entry: MoveEntry }) {
-  const className = cn(
-    "flex min-w-0 items-center gap-space-1 px-space-2 py-space-1",
-    SOURCE_CLASSES[sourceClass(entry.source)],
-  );
+function Move({ entry, selected, onSelect, after, aside }: Selection & { entry: MoveEntry }) {
+  const source = SOURCE_CLASSES[sourceClass(entry.source)];
+  const cell = "flex min-w-0 items-center gap-space-1 px-space-2 py-space-1";
+  const side = aside?.(entry.ply);
   if (!onSelect) {
     return (
-      <span className={className}>
+      <span className={cn(cell, source)}>
         <MoveText entry={entry} after={after} />
+        {side}
       </span>
     );
   }
   const current = entry.ply === selected;
+  // A control beside the move sits outside its button: buttons can't nest.
   return (
-    <button
-      type="button"
-      className={cn(
-        className,
-        "text-left hover:bg-surface-level-2-hover [@media(pointer:coarse)]:min-h-11",
-        current && ACTIVE_MOVE,
-      )}
-      aria-current={current ? "step" : undefined}
-      onClick={() => onSelect(entry.ply)}
-    >
-      <MoveText entry={entry} after={after} />
-    </button>
+    <span className={cn("flex min-w-0 items-center", source)}>
+      <button
+        type="button"
+        className={cn(
+          cell,
+          "min-w-0 flex-1 text-left hover:bg-surface-level-2-hover [@media(pointer:coarse)]:min-h-11",
+          current && ACTIVE_MOVE,
+        )}
+        aria-current={current ? "step" : undefined}
+        onClick={() => onSelect(entry.ply)}
+      >
+        <MoveText entry={entry} after={after} />
+      </button>
+      {side && <span className="flex shrink-0 items-center px-space-1">{side}</span>}
+    </span>
   );
 }
 
@@ -243,12 +252,15 @@ export function MoveStrip({
   selected,
   onSelect,
   drawOffers,
+  aside,
 }: {
   entries: MoveEntry[];
   startFen: string;
   selected: number | null;
   onSelect: (ply: number) => void;
   drawOffers?: readonly DrawOffer[];
+  /** Beside a move's button, as in the move list. */
+  aside?: (ply: number) => ReactNode;
 }) {
   const marks = drawMarks(drawOffers);
   const mark = (ply: number) => marks.has(ply) && <DrawMark />;
@@ -273,19 +285,21 @@ export function MoveStrip({
           {[white, black].map(
             (entry) =>
               entry && (
-                <button
-                  key={entry.ply}
-                  type="button"
-                  aria-current={entry.ply === selected ? "step" : undefined}
-                  onClick={() => onSelect(entry.ply)}
-                  className={cn(
-                    "flex h-11 min-w-11 items-center justify-center rounded-xs px-space-2",
-                    SOURCE_CLASSES[sourceClass(entry.source)],
-                    entry.ply === selected && ACTIVE_MOVE,
-                  )}
-                >
-                  <MoveText entry={entry} after={mark} />
-                </button>
+                <span key={entry.ply} className="flex shrink-0 items-center">
+                  <button
+                    type="button"
+                    aria-current={entry.ply === selected ? "step" : undefined}
+                    onClick={() => onSelect(entry.ply)}
+                    className={cn(
+                      "flex h-11 min-w-11 items-center justify-center rounded-xs px-space-2",
+                      SOURCE_CLASSES[sourceClass(entry.source)],
+                      entry.ply === selected && ACTIVE_MOVE,
+                    )}
+                  >
+                    <MoveText entry={entry} after={mark} />
+                  </button>
+                  {aside?.(entry.ply)}
+                </span>
               ),
           )}
         </span>

@@ -3,6 +3,10 @@ import {
   DEFAULT_DISPLAY_PREFS,
   DEFAULT_PLY_VIEW,
   type DisplayPrefs,
+  type OpeningTable,
+  positionKey,
+  replay,
+  START_FEN,
   withAlpha,
 } from "@langchain-chess/chess-ui";
 import {
@@ -10,6 +14,9 @@ import {
   useChartColorResolver,
 } from "@langchain/macaw-components/utils/chartColors";
 import { describe, expect, it, vi } from "vite-plus/test";
+import userEvent from "@testing-library/user-event";
+import { openMenu } from "./support/menus";
+import type { OpenUrl } from "../src/App";
 import type { Analysis, LaunchState } from "../src/analysis";
 import { EvalBar } from "../src/components/EvalBar";
 import { GameList } from "../src/components/GameList";
@@ -33,6 +40,8 @@ vi.mock("@langchain/macaw-components/LineChart", async () =>
 );
 
 interface ViewExtras {
+  openings?: OpeningTable | null;
+  openUrl?: OpenUrl;
   prefs?: DisplayPrefs;
   onPrefsChange?: (prefs: DisplayPrefs) => void;
   analysis?: Analysis | null;
@@ -56,6 +65,8 @@ const renderView = (g = game(), onOpenTrace = vi.fn(), extras: ViewExtras = {}) 
         space={{ width: 1000, height: 800 }}
         prefs={extras.prefs ?? DEFAULT_DISPLAY_PREFS}
         onPrefsChange={extras.onPrefsChange ?? (() => {})}
+        openings={extras.openings ?? null}
+        openUrl={extras.openUrl ?? (() => {})}
       />
     </HostTheme>,
   );
@@ -121,6 +132,17 @@ describe("GradeCard", () => {
   });
 });
 
+const GAME_LIST = {
+  selected: null,
+  loading: false,
+  onSelect: () => {},
+  onMore: null,
+  onRefresh: () => {},
+  refreshing: false,
+  now: new Date("2026-09-25T12:00:00Z"),
+  openings: null,
+};
+
 describe("GameList", () => {
   const base = {
     selected: null,
@@ -130,6 +152,7 @@ describe("GameList", () => {
     onRefresh: vi.fn(),
     refreshing: false,
     now: new Date("2026-09-25T12:00:00Z"),
+    openings: null,
   };
 
   it("lists games with their result, plies and accuracy", () => {
@@ -343,6 +366,8 @@ describe("GameView", () => {
           space={{ width: 1000, height: 800 }}
           prefs={DEFAULT_DISPLAY_PREFS}
           onPrefsChange={() => {}}
+          openings={null}
+          openUrl={() => {}}
         />
       </HostTheme>,
     );
@@ -421,5 +446,91 @@ describe("GameView", () => {
     expect(screen.queryByLabelText("result")).not.toBeInTheDocument();
     key("ArrowLeft");
     expect(current()).toBe("e5");
+  });
+});
+
+describe("openings and export in the review", () => {
+  const TABLE: OpeningTable = {
+    [positionKey(replay(START_FEN, ["e2e4", "e7e5"]).fen)]: ["C20", "King's Pawn Game"],
+  };
+
+  it("puts the opening in a copied PGN", async () => {
+    const writeText = vi.fn<(text: string) => Promise<void>>(() => Promise.resolve());
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    renderView(game(), vi.fn(), { openings: TABLE });
+    await openMenu("Board menu");
+    await userEvent.click(screen.getByRole("menuitem", { name: "Copy PGN" }));
+    expect(writeText.mock.lastCall![0]).toMatch(/\{\[%eval [^\]]+\] C20 King's Pawn Game\}/);
+  });
+
+  it("names the opening over the moves, marks its move, and in the game list", () => {
+    renderView(game(), vi.fn(), { openings: TABLE });
+    expect(screen.getByLabelText("opening")).toHaveTextContent("C20 · King's Pawn Game");
+    expect(
+      screen.getByRole("button", { name: "Opening: C20 · King's Pawn Game" }),
+    ).toBeInTheDocument();
+    render(
+      <GameList
+        {...GAME_LIST}
+        games={[
+          game(),
+          game({ threadId: "t-bare", values: null }),
+          game({ threadId: "t-empty", values: {} }),
+        ]}
+        openings={TABLE}
+      />,
+    );
+    expect(within(screen.getByLabelText("games")).getAllByLabelText("opening")).toHaveLength(1);
+    expect(within(screen.getByLabelText("games")).getByLabelText("opening")).toHaveTextContent(
+      "C20 · King's Pawn Game",
+    );
+  });
+
+  it("copies the FEN and the graded PGN, and opens the game on Lichess in a new tab", async () => {
+    const writeText = vi.fn<(text: string) => Promise<void>>(() => Promise.resolve());
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    const openUrl = vi.fn();
+    renderView(game(), vi.fn(), { openUrl });
+    await openMenu("Board menu");
+    await userEvent.click(screen.getByRole("menuitem", { name: "Copy PGN" }));
+    const pgn = writeText.mock.lastCall![0];
+    expect(pgn).toContain('[Site "LangSmith"]');
+    expect(pgn).toContain("$4");
+    expect(pgn).toContain("[%eval");
+    expect(await screen.findByLabelText("export")).toHaveTextContent("Copied the PGN.");
+    await openMenu("Board menu");
+    await userEvent.click(screen.getByRole("menuitem", { name: "Copy FEN" }));
+    expect(writeText).toHaveBeenLastCalledWith(
+      values().start_fen ? expect.any(String) : expect.stringContaining(" w "),
+    );
+    await openMenu("Board menu");
+    await userEvent.click(screen.getByRole("menuitem", { name: "Analyze on Lichess" }));
+    expect(openUrl).toHaveBeenCalledWith(expect.stringContaining("lichess.org/analysis/pgn/"), {
+      newTab: true,
+    });
+    expect(screen.queryByLabelText("export")).not.toBeInTheDocument();
+  });
+
+  it("says when the browser refuses a copy, and when a game is too long for a link", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: () => Promise.reject(new Error("denied")) },
+      configurable: true,
+    });
+    const long = values({
+      moves: Array.from({ length: 1600 }, (_, i) => ["g1f3", "g8f6", "f3g1", "f6g8"][i % 4]),
+      plies: [],
+      outcome: null,
+    });
+    renderView(game({ values: long, grading: { status: "ungraded" } }), vi.fn());
+    await openMenu("Board menu");
+    await userEvent.click(screen.getByRole("menuitem", { name: "Copy FEN" }));
+    expect(await screen.findByLabelText("export")).toHaveTextContent(
+      "The browser didn't allow copying.",
+    );
+    await openMenu("Board menu");
+    await userEvent.click(screen.getByRole("menuitem", { name: "Analyze on Lichess" }));
+    expect(screen.getByLabelText("export")).toHaveTextContent(
+      "Opened the position; the game was too long to send.",
+    );
   });
 });

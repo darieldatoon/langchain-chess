@@ -249,3 +249,12 @@ def test_a_resigned_game_is_scored_by_the_engine():
         {"kind": "resignation", "winner": "white", "reason": "resigned"},
     )
     assert game[-1].settled is None
+
+
+async def test_a_first_position_replayed_after_the_game_ended_is_rejected(make_agent, run, cfg):
+    # A lost response to a new game's first packet, resent after the game was already over.
+    agent = make_agent(ScriptedModel(script=[]))
+    await run(agent, position(MATE), cfg)
+    out = await run(agent, position(MATE), cfg)
+    assert out["error"] == "the game is over"
+    assert out["outcome"]["kind"] == "checkmate"

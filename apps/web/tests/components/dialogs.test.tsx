@@ -9,6 +9,7 @@ import {
   SETTING_HELP,
   SETTING_KEYS,
   SETTING_LABELS,
+  START_FEN,
   type SettingKey,
 } from "@langchain-chess/chess-ui";
 import userEvent from "@testing-library/user-event";
@@ -88,6 +89,77 @@ const settled = () =>
   });
 
 describe("NewGameDialog", () => {
+  it("starts from a typed position once it is valid, and previews it", async () => {
+    const fen = "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1";
+    const { onPlay, onOpenSettings } = open();
+    expect(screen.getByLabelText("Starting position")).toHaveValue("");
+    change("Starting position", "4k3/8/8/8/8/8/8/r3K3 b - - 0 1");
+    expect(screen.getByText("The side not to move is in check.")).toBeInTheDocument();
+    expect(play()).toBeDisabled();
+    expect(screen.queryByLabelText("starting position preview")).not.toBeInTheDocument();
+    change("Starting position", fen);
+    expect(screen.getByLabelText("starting position preview")).toBeInTheDocument();
+    fireEvent.click(moreItem("Settings"));
+    expect(onOpenSettings).toHaveBeenCalledWith(DEFAULT_SETUP, fen);
+    await clickPlay();
+    expect(onPlay).toHaveBeenCalledWith(DEFAULT_SETUP, DEFAULT_CONTEXT, fen);
+  });
+
+  it("opens with a position filled in, and previews it from Black's side", () => {
+    render(
+      <NewGameDialog
+        initial={{ ...DEFAULT_SETUP, side: "black" }}
+        initialStartFen="4k3/8/8/8/8/8/4P3/4K3 w - - 0 1"
+        canCancel
+        onPlay={() => {}}
+        onClose={() => {}}
+        onOpenSettings={() => {}}
+        checkKey={() => Promise.resolve({ kind: "ok" })}
+        modelFacts={() => Promise.resolve(KNOWN)}
+      />,
+    );
+    expect(screen.getByLabelText("Starting position")).toHaveValue(
+      "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1",
+    );
+    expect(screen.getByLabelText("starting position preview")).toBeInTheDocument();
+  });
+
+  it("sums up Advanced while it is collapsed", async () => {
+    open({ ...DEFAULT_SETUP, knobs: { ...DEFAULT_SETUP.knobs, k: 3, threshold: 0.5 } });
+    await settled();
+    expect(screen.getByLabelText("advanced summary")).toHaveTextContent(
+      "White · SemIf + GLM-5.3 Flash · 2 settings changed",
+    );
+    change("LLM", "none");
+    change("System 1", "none");
+    expect(screen.getByLabelText("advanced summary")).toHaveTextContent(/^White$/);
+    change("System 1", "semif-qwen3.5-4b");
+    expect(screen.getByLabelText("advanced summary")).toHaveTextContent("White · SemIf");
+    advanced();
+    expect(screen.queryByLabelText("advanced summary")).not.toBeInTheDocument();
+  });
+
+  it("doesn't start a game whose position changed during the key check", async () => {
+    let answer: (check: KeyCheck) => void = () => {};
+    const checkKey = vi.fn(() => new Promise<KeyCheck>((resolve) => (answer = resolve)));
+    const onPlay = vi.fn();
+    render(
+      <NewGameDialog
+        initial={DEFAULT_SETUP}
+        canCancel={false}
+        onPlay={onPlay}
+        onClose={() => {}}
+        onOpenSettings={() => {}}
+        checkKey={checkKey}
+        modelFacts={() => Promise.resolve(KNOWN)}
+      />,
+    );
+    await clickPlay();
+    change("Starting position", "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1");
+    await act(async () => answer({ kind: "ok" }));
+    expect(onPlay).not.toHaveBeenCalled();
+  });
+
   it("plays the default matchup as White, with no way to cancel without a game", async () => {
     const { onPlay, onClose, onOpenSettings } = open();
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
@@ -101,10 +173,10 @@ describe("NewGameDialog", () => {
     expect(onClose).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("radio", { name: "Black" }));
     fireEvent.click(moreItem("Settings"));
-    expect(onOpenSettings).toHaveBeenCalledWith({ ...DEFAULT_SETUP, side: "black" });
+    expect(onOpenSettings).toHaveBeenCalledWith({ ...DEFAULT_SETUP, side: "black" }, "");
     fireEvent.click(screen.getByRole("radio", { name: "White" }));
     await clickPlay();
-    expect(onPlay).toHaveBeenCalledWith(DEFAULT_SETUP, DEFAULT_CONTEXT);
+    expect(onPlay).toHaveBeenCalledWith(DEFAULT_SETUP, DEFAULT_CONTEXT, START_FEN);
   });
 
   it("picks a side, and cancels back to the game on screen", async () => {
@@ -122,7 +194,7 @@ describe("NewGameDialog", () => {
   it("offers Settings even when there is a game to cancel back to", () => {
     const { onOpenSettings } = open(DEFAULT_SETUP, true);
     fireEvent.click(moreItem("Settings"));
-    expect(onOpenSettings).toHaveBeenCalledWith(DEFAULT_SETUP);
+    expect(onOpenSettings).toHaveBeenCalledWith(DEFAULT_SETUP, "");
   });
 
   it.each<[KeyCheck, string]>([
@@ -136,7 +208,7 @@ describe("NewGameDialog", () => {
     expect(onPlay).not.toHaveBeenCalled();
     expect(screen.getByText(text)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Open settings" }));
-    expect(onOpenSettings).toHaveBeenCalledWith(DEFAULT_SETUP);
+    expect(onOpenSettings).toHaveBeenCalledWith(DEFAULT_SETUP, "");
   });
 
   it("does not start a game when closed before the key check answers", async () => {
@@ -265,6 +337,7 @@ describe("NewGameDialog", () => {
     expect(onPlay).toHaveBeenCalledWith(
       expect.objectContaining({ llm: "custom", customModel: "openai:gpt-5.6-sol" }),
       expect.objectContaining({ policy: "hybrid", model: "openai:gpt-5.6-sol" }),
+      START_FEN,
     );
   });
 

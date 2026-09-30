@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { createApi, type Api } from "./api";
-import { App } from "./App";
+import { App, type OpenUrl } from "./App";
 import { HostTheme, type Mode } from "./HostTheme";
 import css from "./index.css?inline";
 
@@ -11,7 +11,7 @@ export interface RenderMetadata {
 
 let root: Root | null = null;
 let styled = false;
-let deps: { api: Api; openUrl: (url: string) => void } | null = null;
+let deps: { api: Api; openUrl: OpenUrl } | null = null;
 
 // The sandbox evaluates one CommonJS file and calls this on every host update, so the root, the
 // stylesheet and the app's dependencies are created once and the app re-renders in place. A new

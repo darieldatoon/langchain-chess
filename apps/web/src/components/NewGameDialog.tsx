@@ -25,6 +25,8 @@ import { configurableOf, withKnob } from "../settings";
 import {
   LLM_NAMES,
   LLM_PRESETS,
+  changedKnobs,
+  opponentLabel,
   SYSTEM_ONE_PRESETS,
   importedSetup,
   matchupLine,
@@ -38,17 +40,28 @@ import {
   type Summarize,
   type TakesEffort,
 } from "../setup";
-import { ResponsiveDialog, TOUCH_TARGET, type ChessContext } from "@langchain-chess/chess-ui";
+import {
+  Board,
+  DEFAULT_DISPLAY_PREFS,
+  normalizeFen,
+  ResponsiveDialog,
+  START_FEN,
+  TOUCH_TARGET,
+  validateStart,
+  type ChessContext,
+} from "@langchain-chess/chess-ui";
 import { AdvancedSettings, Field, type DraftKnob, type SetKnob } from "./AdvancedSettings";
 
 interface Props {
   initial: Setup;
   /** Only a game on screen can be gone back to; otherwise there is nothing to cancel to. */
   canCancel: boolean;
-  onPlay: (setup: Setup, context: ChessContext) => void;
+  /** The starting position typed, empty for the standard one; never stored with the setup. */
+  initialStartFen?: string;
+  onPlay: (setup: Setup, context: ChessContext, startFen: string) => void;
   onClose: () => void;
   /** Hands over the unsaved picks so they survive the trip to settings and back. */
-  onOpenSettings: (draft: Setup) => void;
+  onOpenSettings: (draft: Setup, startFen: string) => void;
   /** Runs on Play; the game starts only once the server accepts the key. */
   checkKey: () => Promise<KeyCheck>;
   /** What the server knows about the model: `summarize` needs its input limit, and a model that
@@ -105,6 +118,9 @@ function summarizeOf(facts: ModelFacts): Summarize {
 }
 
 const INVALID_KNOBS: Matchup = { ok: false, reason: "Fix the Advanced settings marked invalid." };
+/** Too small for coordinates. */
+const PREVIEW = { ...DEFAULT_DISPLAY_PREFS, coordinates: false };
+const BAD_START: Matchup = { ok: false, reason: "Fix the starting position." };
 
 const LLMS: SelectOption<LlmChoice>[] = [
   ...LLM_PRESETS.map((value) => ({ value, label: LLM_NAMES[value] })),
@@ -112,8 +128,21 @@ const LLMS: SelectOption<LlmChoice>[] = [
   { value: "custom", label: "Custom model…", description: "Any model spec" },
 ];
 
+const SIDE_NAMES: Record<SideChoice, string> = { white: "White", black: "Black", random: "Random" };
+
+/** What Advanced holds while it's collapsed: "White · SemIf + GLM-5.3 Flash · 3 settings changed". */
+function advancedSummary(side: SideChoice, ready: Matchup): string {
+  if (!ready.ok) return SIDE_NAMES[side];
+  const changed = changedKnobs(ready.context).length;
+  const settings = changed === 1 ? "1 setting changed" : `${changed} settings changed`;
+  return [SIDE_NAMES[side], opponentLabel(ready.context), ...(changed ? [settings] : [])].join(
+    " · ",
+  );
+}
+
 export function NewGameDialog({
   initial,
+  initialStartFen = "",
   canCancel,
   onPlay,
   onClose,
@@ -123,6 +152,9 @@ export function NewGameDialog({
 }: Props) {
   const [setup, setSetup] = useState(initial);
   const [advanced, setAdvanced] = useState(false);
+  const [startText, setStartText] = useState(initialStartFen);
+  const startProblem = startText.trim() ? validateStart(startText.trim()) : null;
+  const startFen = startText.trim() ? normalizeFen(startText) : START_FEN;
   const [checking, setChecking] = useState(false);
   const [keyProblem, setKeyProblem] = useState<Exclude<KeyCheck, { kind: "ok" }> | null>(null);
   const pick =
@@ -177,11 +209,12 @@ export function NewGameDialog({
   );
   const matchup = matchupOf(setup, summarize, takesEffort);
   const ready = matchup.ok && Object.values(invalid).some(Boolean) ? INVALID_KNOBS : matchup;
+  const playable = startProblem ? BAD_START : ready;
   const mounted = useRef(true);
   // What is on screen now, for a key check that answers after the picks changed.
-  const onScreen = useRef({ setup, ready });
+  const onScreen = useRef({ setup, playable, startFen });
   useEffect(() => {
-    onScreen.current = { setup, ready };
+    onScreen.current = { setup, playable, startFen };
   });
 
   useEffect(() => {
@@ -220,7 +253,12 @@ export function NewGameDialog({
     setChecking(false);
     if (check.kind !== "ok") setKeyProblem(check);
     // Edited mid-check: that Play was for picks no longer on screen, so Play asks again.
-    else if (onScreen.current.setup === setup && onScreen.current.ready.ok) onPlay(setup, context);
+    else if (
+      onScreen.current.setup === setup &&
+      onScreen.current.startFen === startFen &&
+      onScreen.current.playable.ok
+    )
+      onPlay(setup, context, startFen);
   };
   const problem = keyProblem && keyCheckMessage(keyProblem);
 
@@ -239,7 +277,10 @@ export function NewGameDialog({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          <DropdownMenuItem className={TOUCH_TARGET} onSelect={() => onOpenSettings(setup)}>
+          <DropdownMenuItem
+            className={TOUCH_TARGET}
+            onSelect={() => onOpenSettings(setup, startText)}
+          >
             Settings
           </DropdownMenuItem>
           <DropdownMenuItem className={TOUCH_TARGET} onSelect={() => fileInput.current!.click()}>
@@ -283,14 +324,14 @@ export function NewGameDialog({
             Cancel
           </Button>
         )}
-        {ready.ok ? (
+        {playable.ok ? (
           <Button
             color="primary"
             size="md"
             className={TOUCH_TARGET}
             loading={checking}
             disabled={checking}
-            onClick={() => void play(ready.context)}
+            onClick={() => void play(playable.context)}
           >
             Play
           </Button>
@@ -333,6 +374,31 @@ export function NewGameDialog({
               </RadioCard>
             ))}
           </RadioGroup>
+        </div>
+
+        <div className="flex flex-col gap-space-2">
+          <Input
+            id="start-fen"
+            size="md"
+            label="Starting position"
+            value={startText}
+            onChange={setStartText}
+            placeholder="The standard position"
+            hintText={startProblem ?? "A FEN to start from, or empty for the standard position."}
+            isError={startProblem !== null}
+          />
+          {startText.trim() && !startProblem && (
+            <div className="w-40" aria-label="starting position preview">
+              <Board
+                fen={startFen}
+                orientation={setup.side === "black" ? "black" : "white"}
+                humanSide={setup.side === "black" ? "black" : "white"}
+                lastMove={null}
+                locked
+                prefs={PREVIEW}
+              />
+            </div>
+          )}
         </div>
 
         <Field id="system-one" label="System 1" hint="A fast move ranker.">
@@ -405,6 +471,11 @@ export function NewGameDialog({
           >
             Advanced
           </Button>
+          {!advanced && (
+            <Text variant="xs" color="tertiary" aria-label="advanced summary">
+              {advancedSummary(setup.side, ready)}
+            </Text>
+          )}
           {advanced && (
             <div id="advanced-settings">
               <AdvancedSettings
@@ -436,7 +507,7 @@ export function NewGameDialog({
                 size="sm"
                 color="primary"
                 className={TOUCH_TARGET}
-                onClick={() => onOpenSettings(setup)}
+                onClick={() => onOpenSettings(setup, startText)}
               >
                 Open settings
               </Button>

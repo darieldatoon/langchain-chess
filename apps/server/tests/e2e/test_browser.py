@@ -2,6 +2,7 @@
 reach the agent. Needs the built UI (`mise run build`) and Chromium; run with `mise run test:e2e`.
 """
 
+import json
 import os
 import time
 from collections.abc import Callable, Iterator
@@ -14,7 +15,7 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 from langgraph_sdk import get_sync_client
 from langgraph_sdk.errors import NotFoundError
-from playwright.sync_api import Locator, Page, expect, sync_playwright
+from playwright.sync_api import Locator, Page, Request, Route, expect, sync_playwright
 
 from langchain_chess_server.app import STATIC_DIR
 from langchain_chess_systemone.settings import ChessContext, dump
@@ -345,3 +346,54 @@ def test_desktop_resigns_after_one_move(server: str, page: Page):
     thread = parse_qs(urlparse(page.url).query)["thread"][0]
     outcome = get_sync_client(url=server).threads.get_state(thread)["values"]["outcome"]
     assert outcome == {"kind": "resignation", "winner": "black", "reason": "resigned"}
+
+
+def test_a_game_from_a_fen_where_the_agent_is_to_move_starts_itself(server: str, page: Page):
+    fen = "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1"
+    page.goto(f"{server}/ui/")
+    page.get_by_role("radiogroup", name="Play As").get_by_text("Black", exact=True).click()
+    page.get_by_label("Starting position").fill(fen)
+    expect(page.get_by_label("starting position preview")).to_be_visible()
+    page.get_by_role("button", name="Play", exact=True).click()
+    moves_of(server, page, 1)
+    thread = parse_qs(urlparse(page.url).query)["thread"][0]
+    values = get_sync_client(url=server).threads.get_state(thread)["values"]
+    assert values["start_fen"] == fen
+    expect(page.get_by_label("black player").get_by_text("Your turn")).to_be_visible()
+
+
+def test_a_first_move_the_server_took_but_never_heard_back_from_is_played_once(
+    server: str, page: Page
+):
+    fen = "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1"
+    starts: list[Any] = []
+
+    def record(request: Request) -> None:
+        body = json.loads(request.post_data or "{}")
+        if request.url.endswith("/commands") and body.get("method") == "run.start":
+            starts.append(body["params"]["input"])
+
+    def drop_the_answer(route: Route) -> None:
+        # The server runs the packet; the page never hears back.
+        route.fetch()
+        route.abort()
+
+    page.on("request", record)
+    page.route("**/commands", drop_the_answer, times=1)
+    page.goto(f"{server}/ui/")
+    page.get_by_label("Starting position").fill(fen)
+    page.get_by_role("button", name="Play", exact=True).click()
+    expect(page.get_by_role("dialog")).to_have_count(0)
+    square(page, "e2").click()
+    square(page, "e4").click()
+    moves_of(server, page, 2)
+    expect(page.get_by_label("white player").get_by_text("Your turn")).to_be_visible()
+    # Whoever resent it, the SDK or Retry, sent the same packet, and the server played it once.
+    first = {"position": {"start_fen": fen, "moves": ["e2e4"]}}
+    assert len(starts) >= 2
+    assert all(start == first for start in starts)
+    thread = parse_qs(urlparse(page.url).query)["thread"][0]
+    values = get_sync_client(url=server).threads.get_state(thread)["values"]
+    assert len(values["moves"]) == 2
+    assert len(values["turns"]) == 1
+    assert values["start_fen"] == fen

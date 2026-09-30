@@ -13,6 +13,7 @@ import {
   REVIEW_LEFT,
   TOUCH_TARGET,
   useContainerLayout,
+  useOpenings,
   type DisplayPrefs,
   type PlyView,
 } from "@langchain-chess/chess-ui";
@@ -32,9 +33,12 @@ import type { Game } from "./games";
 import { GameList } from "./components/GameList";
 import { GameView } from "./components/GameView";
 
+/** `window.langsmith.openUrl`: the sandbox's only way to open a page. */
+export type OpenUrl = (url: string, options?: { newTab?: boolean }) => void;
+
 interface Props {
   api: Api;
-  openUrl: (url: string) => void;
+  openUrl: OpenUrl;
   now?: () => Date;
 }
 
@@ -177,7 +181,10 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
   };
 
   const openTrace = (project: string, target: TraceTarget) => {
-    api.traceUrl(project, target).then(openUrl, (e: unknown) => setError(message(e)));
+    api.traceUrl(project, target).then(
+      (url) => openUrl(url),
+      (e: unknown) => setError(message(e)),
+    );
   };
 
   const page = loaded?.key === key ? loaded : null;
@@ -190,6 +197,7 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
   const space = useContainerLayout(mainRef);
   const layout = layoutFor({ ...space, left: REVIEW_LEFT.min, evalBar: EVAL_BAR.wide });
   const [listOpen, setListOpen] = useState(true);
+  const openings = useOpenings(true);
   const select = (threadId: string) => {
     setSelected(threadId);
     if (layout !== "full") setListOpen(false);
@@ -204,6 +212,7 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
       onRefresh={refresh}
       refreshing={refreshing}
       now={now()}
+      openings={openings}
     />
   );
   const gameSpace = {
@@ -302,6 +311,8 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
               space={gameSpace}
               prefs={prefs}
               onPrefsChange={setPrefs}
+              openings={openings}
+              openUrl={openUrl}
             />
           ) : (
             <EmptyState

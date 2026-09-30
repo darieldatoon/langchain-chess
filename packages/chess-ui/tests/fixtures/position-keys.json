@@ -1,0 +1,102 @@
+[
+  {
+    "name": "start",
+    "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "key": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
+  },
+  {
+    "name": "after 1. e4: no capture, so no en passant square",
+    "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",
+    "key": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -"
+  },
+  {
+    "name": "after 1. e4 d5",
+    "fen": "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2",
+    "key": "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -"
+  },
+  {
+    "name": "Sicilian after 1. e4 c5 2. Nf3 d6 3. d4",
+    "fen": "rnbqkbnr/pp2pppp/3p4/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq d3 0 3",
+    "key": "rnbqkbnr/pp2pppp/3p4/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq -"
+  },
+  {
+    "name": "en passant capture legal",
+    "fen": "rnbqkbnr/ppp1pppp/8/8/3pP3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 3",
+    "key": "rnbqkbnr/ppp1pppp/8/8/3pP3/8/PPPP1PPP/RNBQKBNR b KQkq e3"
+  },
+  {
+    "name": "en passant claimed but no pawn can take",
+    "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",
+    "key": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -"
+  },
+  {
+    "name": "en passant pawn pinned to its king",
+    "fen": "8/8/8/8/k2pP2R/8/8/4K3 b - e3 0 1",
+    "key": "8/8/8/8/k2pP2R/8/8/4K3 b - -"
+  },
+  {
+    "name": "white en passant legal",
+    "fen": "rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3",
+    "key": "rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6"
+  },
+  {
+    "name": "castling claimed without the rook",
+    "fen": "4k3/8/8/8/8/8/8/4K3 w - - 0 1",
+    "key": "4k3/8/8/8/8/8/8/4K3 w - -"
+  },
+  {
+    "name": "only kingside castling left",
+    "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kk - 0 1",
+    "key": "r3k2r/8/8/8/8/8/8/R3K2R w Kk -"
+  },
+  {
+    "name": "all castling rights",
+    "fen": "r3k2r/8/8/8/8/8/8/R3K2R b KQkq - 5 20",
+    "key": "r3k2r/8/8/8/8/8/8/R3K2R b KQkq -"
+  },
+  {
+    "name": "king moved off e1",
+    "fen": "r3k2r/8/8/8/8/8/8/R4K1R w kq - 0 1",
+    "key": "r3k2r/8/8/8/8/8/8/R4K1R w kq -"
+  },
+  {
+    "name": "custom root, Black to move, fullmove 12",
+    "fen": "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 3 12",
+    "key": "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -"
+  },
+  {
+    "name": "after 1. d4 Nf6 2. c4 e6 3. Nc3 Bb4",
+    "fen": "rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 2 4",
+    "key": "rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N5/PP2PPPP/R1BQKBNR w KQkq -"
+  },
+  {
+    "name": "Ruy Lopez",
+    "fen": "r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3",
+    "key": "r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq -"
+  },
+  {
+    "name": "Italian",
+    "fen": "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3",
+    "key": "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq -"
+  },
+  {
+    "name": "French advance",
+    "fen": "rnbqkbnr/ppp2ppp/4p3/3pP3/3P4/8/PPP2PPP/RNBQKBNR b KQkq - 0 3",
+    "key": "rnbqkbnr/ppp2ppp/4p3/3pP3/3P4/8/PPP2PPP/RNBQKBNR b KQkq -"
+  },
+  {
+    "name": "French advance, then c5: en passant not possible",
+    "fen": "rnbqkbnr/pp3ppp/4p3/2ppP3/3P4/8/PPP2PPP/RNBQKBNR w KQkq c6 0 4",
+    "key": "rnbqkbnr/pp3ppp/4p3/2ppP3/3P4/8/PPP2PPP/RNBQKBNR w KQkq -"
+  },
+  {
+    "name": "halfmove and fullmove counters differ",
+    "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 7 30",
+    "key": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -"
+  },
+  {
+    "name": "bare kings",
+    "fen": "8/8/4k3/8/8/4K3/8/8 w - - 0 1",
+    "key": "8/8/4k3/8/8/4K3/8/8 w - -"
+  }
+]
