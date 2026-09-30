@@ -4,7 +4,9 @@ import {
   isPending,
   lastPolicyPly,
   liveAnalysis,
+  drawMarks,
   replyAt,
+  rootAccepted,
   systemOneMeta,
   textOf,
   turnCost,
@@ -133,5 +135,22 @@ describe("replyAt", () => {
   it("is null at the start and before any agent move", () => {
     expect(replyAt(plies, turns, fens, 0)).toBeNull();
     expect(replyAt(plies, turns, fens, 1)).toBeNull();
+  });
+});
+
+describe("rootAccepted and drawMarks", () => {
+  it("takes the root as accepted once any turn exists", () => {
+    expect(rootAccepted({})).toBe(false);
+    expect(rootAccepted({ turns: [] })).toBe(false);
+    expect(rootAccepted({ turns: [turn()] })).toBe(true);
+  });
+
+  it("marks each offer after the move before it, and before the first move at ply 0", () => {
+    expect(drawMarks(undefined).size).toBe(0);
+    const offers = [
+      { ply: 0, by: "white" as const, answer: "declined" as const },
+      { ply: 3, by: "black" as const, answer: "declined" as const },
+    ];
+    expect([...drawMarks(offers)]).toEqual([-1, 2]);
   });
 });

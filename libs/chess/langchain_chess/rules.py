@@ -6,12 +6,13 @@ move stack and never sees a threefold.
 
 import hashlib
 import json
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from typing import Literal
 
 import chess
 
-from langchain_chess.state import Draw, DrawReason, Outcome, Side
+from langchain_chess.state import Draw, DrawAnswer, DrawReason, Outcome, Side
 
 type DrawClaims = Literal["auto", "never"]
 
@@ -90,20 +91,72 @@ def legal_ucis(board: chess.Board) -> list[str]:
     return [move.uci() for move in board.legal_moves]
 
 
-def parse_chat(board: chess.Board, text: str) -> chess.Move | None:
-    """`go` gives None; exactly one legal move (SAN or UCI) gives the move; anything else raises."""
+@dataclass(frozen=True, slots=True)
+class Go:
+    """Asks the agent to move."""
+
+
+@dataclass(frozen=True, slots=True)
+class Play:
+    move: chess.Move
+
+
+@dataclass(frozen=True, slots=True)
+class Resign:
+    side: Side
+
+
+@dataclass(frozen=True, slots=True)
+class OfferDraw:
+    side: Side
+
+
+type ChatCommand = Go | Play | Resign | OfferDraw
+type Control = Resign | OfferDraw
+
+_CONTROLS: dict[str, Callable[[Side], Control]] = {"resign": Resign, "draw": OfferDraw}
+_SIDES: dict[str, Side] = {"white": "white", "black": "black"}
+
+
+def control_command(text: str) -> Control | None:
+    """`resign <side>` or `draw <side>`, case-insensitive, single-spaced; else None.
+
+    The side is named because the server doesn't know which side is human; it isn't
+    authenticated.
+    """
+    words = text.strip().lower().split(" ")
+    if len(words) != 2 or words[0] not in _CONTROLS:
+        return None
+    if words[1] not in _SIDES:
+        msg = f"`{text.strip()}`: name the side, `{words[0]} white` or `{words[0]} black`"
+        raise CommandError(msg)
+    return _CONTROLS[words[0]](_SIDES[words[1]])
+
+
+def parse_chat(board: chess.Board, text: str) -> ChatCommand:
+    """`go`, exactly one legal move (SAN or UCI), `resign <side>` or `draw <side>`."""
     token = text.strip()
     if token.lower() == "go":
-        return None
+        return Go()
+    if (control := control_command(token)) is not None:
+        return control
     for parse in (board.parse_san, board.parse_uci):
         try:
             move = parse(token)
         except ValueError:
             continue
         if move in board.legal_moves:
-            return move
+            return Play(move)
     msg = f"`{token}` is neither `go` nor a legal move"
     raise CommandError(msg)
+
+
+type DrawPolicy = Callable[[chess.Board, Side], DrawAnswer]
+"""How the agent answers a draw offer made by a side in a position."""
+
+
+def decline_all(board: chess.Board, by: Side) -> DrawAnswer:
+    return "declined"
 
 
 def fingerprint(start_fen: str, moves: Sequence[str], restrict: Sequence[str] | None) -> str:
@@ -116,7 +169,13 @@ def describe_outcome(outcome: Outcome) -> str:
         return f"draw by {outcome['reason'].replace('_', ' ')}"
     if outcome["kind"] == "checkmate":
         return f"checkmate, {outcome['winner']} wins"
-    return f"{outcome['winner']} wins by resignation"
+    if outcome["reason"] == "resigned":
+        return f"{outcome['winner']} wins, {_loser(outcome['winner'])} resigned"
+    return f"{outcome['winner']} wins by forfeit"
+
+
+def _loser(winner: Side) -> Side:
+    return "black" if winner == "white" else "white"
 
 
 def score(outcome: Outcome) -> str:
@@ -125,10 +184,29 @@ def score(outcome: Outcome) -> str:
     return "1-0" if outcome["winner"] == "white" else "0-1"
 
 
-def result_text(outcome: Outcome) -> str:
+_DRAW_REASONS: dict[DrawReason, str] = {
+    "stalemate": "stalemate",
+    "insufficient_material": "insufficient material",
+    "threefold": "threefold repetition",
+    "fivefold": "fivefold repetition",
+    "fifty_moves": "the fifty-move rule",
+    "seventyfive_moves": "the seventy-five-move rule",
+}
+
+
+def outcome_line(outcome: Outcome) -> str:
+    """The result in words; mirrors `outcomeLine` in packages/chess-ui/src/format.ts."""
     if outcome["kind"] == "draw":
-        return f"Draw by {outcome['reason'].replace('_', ' ')}. {score(outcome)}"
+        return f"Draw by {_DRAW_REASONS[outcome['reason']]}"
+    winner = outcome["winner"].capitalize()
     if outcome["kind"] == "checkmate":
-        return f"Checkmate, {outcome['winner']} wins. {score(outcome)}"
-    loser = "black" if outcome["winner"] == "white" else "white"
-    return f"{loser.capitalize()} resigns after repeated illegal moves. {score(outcome)}"
+        return f"Checkmate · {winner} wins"
+    loser = _loser(outcome["winner"]).capitalize()
+    if outcome["reason"] == "resigned":
+        return f"{loser} resigned · {winner} wins"
+    return f"{loser} forfeited after repeated illegal moves · {winner} wins"
+
+
+def result_text(outcome: Outcome) -> str:
+    """`outcome_line` with the score after it."""
+    return f"{outcome_line(outcome)}. {score(outcome)}"

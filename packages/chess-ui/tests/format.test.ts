@@ -83,6 +83,9 @@ describe("outcomeLine", () => {
     expect(outcomeLine({ kind: "resignation", winner: "black", reason: "illegal_moves" })).toBe(
       "White forfeited after repeated illegal moves · Black wins",
     );
+    expect(outcomeLine({ kind: "resignation", winner: "white", reason: "resigned" })).toBe(
+      "Black resigned · White wins",
+    );
   });
 });
 
@@ -94,6 +97,8 @@ describe("scoreText and stripResult", () => {
     expect([scoreText(mate), scoreText(forfeit), scoreText(draw)]).toEqual(["0-1", "1-0", "½-½"]);
     expect([stripResult(mate, "black"), stripResult(mate, "white")]).toEqual(["Won", "Checkmated"]);
     expect(stripResult(forfeit, "black")).toBe("Forfeited");
+    const resigned: Outcome = { kind: "resignation", winner: "white", reason: "resigned" };
+    expect(stripResult(resigned, "black")).toBe("Resigned");
     expect([stripResult(draw, "white"), stripResult(draw, "black")]).toEqual(["Draw", "Draw"]);
   });
 });

@@ -227,6 +227,7 @@ export function GameView({
           selected={index - 1}
           onSelect={(p) => go(p + 1)}
           outcome={values.outcome ?? null}
+          drawOffers={values.draw_offers}
         />
         <BackToLive index={index} last={last} onGo={go} />
         <BoardControls

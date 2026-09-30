@@ -11,7 +11,8 @@ import {
   type MoveEntry,
 } from "../format";
 import { ACTIVE_MOVE, QUALITY_CLASSES, SOURCE_CLASSES } from "../moveClasses";
-import type { Outcome } from "../types";
+import { drawMarks } from "../selectors";
+import type { DrawOffer, Outcome } from "../types";
 
 interface Props {
   entries: MoveEntry[];
@@ -27,6 +28,17 @@ interface Props {
   after?: (ply: number) => ReactNode;
   /** A full-width row under a move's row, keyed by ply. */
   note?: (ply: number) => ReactNode;
+  /** `½?` after the move each was offered after. */
+  drawOffers?: readonly DrawOffer[];
+}
+
+/** A draw offered here and declined. */
+export function DrawMark() {
+  return (
+    <span className="text-xs text-tertiary" title="Draw offered" aria-label="draw offered">
+      ½?
+    </span>
+  );
 }
 
 /**
@@ -80,9 +92,17 @@ export function MoveList({
   heading,
   after,
   note,
+  drawOffers,
 }: Props) {
   const rows = pairs(entries, startFen);
   const { list: listRef, onScroll } = useScrollToMove(selected, entries.length, "y");
+  const marks = drawMarks(drawOffers);
+  const mark = (ply: number) => (
+    <>
+      {after?.(ply)}
+      {marks.has(ply) && <DrawMark />}
+    </>
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -93,6 +113,11 @@ export function MoveList({
         ref={listRef}
         onScroll={(e) => onScroll(e.currentTarget)}
       >
+        {marks.has(-1) && (
+          <span className="col-span-3 px-space-2 py-space-1">
+            <DrawMark />
+          </span>
+        )}
         {rows.length === 0 && (
           <Text variant="sm" color="tertiary" className="col-span-3 p-space-2">
             No moves yet.
@@ -106,7 +131,7 @@ export function MoveList({
             black={black}
             selected={selected}
             onSelect={onSelect}
-            after={after}
+            after={mark}
             note={note}
           />
         ))}
@@ -217,12 +242,16 @@ export function MoveStrip({
   startFen,
   selected,
   onSelect,
+  drawOffers,
 }: {
   entries: MoveEntry[];
   startFen: string;
   selected: number | null;
   onSelect: (ply: number) => void;
+  drawOffers?: readonly DrawOffer[];
 }) {
+  const marks = drawMarks(drawOffers);
+  const mark = (ply: number) => marks.has(ply) && <DrawMark />;
   const { list: listRef, onScroll } = useScrollToMove(selected, entries.length, "x");
   const rows = pairs(entries, startFen);
   return (
@@ -232,6 +261,7 @@ export function MoveStrip({
       className="flex h-11 shrink-0 items-center overflow-x-auto font-mono text-sm"
       onScroll={(e) => onScroll(e.currentTarget)}
     >
+      {marks.has(-1) && <DrawMark />}
       {rows.length === 0 && (
         <Text variant="sm" color="tertiary" className="px-space-2">
           No moves yet.
@@ -254,7 +284,7 @@ export function MoveStrip({
                     entry.ply === selected && ACTIVE_MOVE,
                   )}
                 >
-                  <MoveText entry={entry} after={undefined} />
+                  <MoveText entry={entry} after={mark} />
                 </button>
               ),
           )}

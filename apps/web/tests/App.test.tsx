@@ -361,7 +361,11 @@ describe("a game's own setup", () => {
     render(<App />);
     expect(screen.getByLabelText("result")).toHaveTextContent("1-0Checkmate · White wins");
     expect(strip("white")).toHaveTextContent("Won");
-    expect(screen.queryByLabelText("game over")).not.toBeInTheDocument();
+    // A new game, but no rematch: this browser can't say which side was whose.
+    const over = screen.getByLabelText("game over");
+    expect(within(over).queryByRole("button", { name: "Rematch" })).not.toBeInTheDocument();
+    expect(within(over).getByRole("button", { name: "New game" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("headline")).not.toBeInTheDocument();
   });
 
   it("locks a game whose thread failed to load, and reloads it", async () => {
@@ -515,15 +519,19 @@ describe("after the game", () => {
   it("shows the result, locks the board, and rematches with colours swapped", async () => {
     onThread("t-1", MATE, LLM_HIGH);
     render(<App />);
-    const result = screen.getByLabelText("game over");
-    expect(within(result).getByText("You won")).toBeInTheDocument();
-    expect(within(result).getByText("Checkmate · White wins")).toBeInTheDocument();
+    expect(screen.getByLabelText("headline")).toHaveTextContent("You won · Checkmate · White wins");
+    expect(document.title).toBe("Game over · LangChain Chess");
+    expect(screen.queryByRole("button", { name: "Resign" })).not.toBeInTheDocument();
     expect(strip("white")).toHaveTextContent("Won");
     expect(strip("black")).toHaveTextContent("Checkmated");
     expect(board()).toHaveAttribute("data-draggable", "false");
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
 
-    await click("Rematch");
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByLabelText("game over")).getByRole("button", { name: "Rematch" }),
+      );
+    });
     expect(window.location.search).toBe("");
     expect(board()).toHaveAttribute("data-orientation", "black");
     expect(board()).toHaveAttribute("data-position", START_FEN);
@@ -539,8 +547,12 @@ describe("after the game", () => {
       outcome: { kind: "checkmate", winner: "white" },
     });
     render(<App />);
-    expect(screen.getByText("You lost")).toBeInTheDocument();
-    await click("Rematch");
+    expect(screen.getByLabelText("headline")).toHaveTextContent("You lost");
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByLabelText("game over")).getByRole("button", { name: "Rematch" }),
+      );
+    });
     expect(board()).toHaveAttribute("data-orientation", "white");
     expect(fake.submit).not.toHaveBeenCalled();
   });
@@ -549,7 +561,9 @@ describe("after the game", () => {
     saveSetup({ ...DEFAULT_SETUP, llm: "langsmith:baseten/zai-org/GLM-5.3" });
     onThread("t-1", { ...E4_E5, outcome: { kind: "draw", reason: "threefold" } });
     render(<App />);
-    expect(within(screen.getByLabelText("game over")).getByText("Draw")).toBeInTheDocument();
+    expect(screen.getByLabelText("headline")).toHaveTextContent(
+      "Draw · Draw by threefold repetition",
+    );
     await act(async () => {
       fireEvent.click(
         within(screen.getByLabelText("game over")).getByRole("button", { name: "New game" }),
@@ -1059,5 +1073,150 @@ describe("display preferences and the tab title", () => {
     fireEvent.keyDown(window, { key: "?" });
     expect(document.title).toBe("LangChain Chess");
     hidden.mockRestore();
+  });
+});
+
+describe("resign and draw offers", () => {
+  const resign = () => screen.getByRole("button", { name: "Resign" });
+  const draw = () => screen.getByRole("button", { name: "Offer draw" });
+
+  it("resigns once confirmed, for the human's side", async () => {
+    onThread("abc", E4_E5);
+    render(<App />);
+    fireEvent.click(resign());
+    await click("Confirm resignation");
+    expect(submitted()).toEqual(["resign white"]);
+  });
+
+  it("offers a draw on the human's move, then shows the answer until the next move", async () => {
+    onThread("abc", E4_E5);
+    render(<App />);
+    await act(async () => {
+      fireEvent.click(draw());
+    });
+    expect(submitted()).toEqual(["draw white"]);
+    fake.threads.abc = {
+      values: {
+        ...E4_E5,
+        draw_offers: [{ ply: 2, by: "white", answer: "declined" }],
+        setup: DEFAULT_CONTEXT,
+      },
+    };
+    fireEvent.keyDown(window, { key: "f" });
+    expect(screen.getByText("Draw declined.")).toBeInTheDocument();
+    expect(draw()).toBeDisabled();
+    expect(
+      within(screen.getByLabelText("move list")).getByLabelText("draw offered"),
+    ).toBeInTheDocument();
+  });
+
+  it("never resends a control command: both stay off while one is in flight", async () => {
+    onThread("abc", E4_E5);
+    let settle = () => {};
+    fake.submit = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          settle = resolve;
+        }),
+    );
+    render(<App />);
+    fireEvent.click(resign());
+    fireEvent.click(button("Confirm resignation"));
+    fake.isLoading = true;
+    fireEvent.keyDown(window, { key: "f" });
+    expect(resign()).toBeDisabled();
+    expect(draw()).toBeDisabled();
+    fireEvent.click(resign());
+    fireEvent.click(draw());
+    expect(submitted()).toEqual(["resign white"]);
+    fake.isLoading = false;
+    await act(async () => settle());
+  });
+
+  it("titles a hidden tab Game over once the game ends, even after a turn alert", () => {
+    const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+    onThread("abc", E4_AS_WHITE);
+    render(<App />);
+    fake.threads.abc = { values: { ...E4_E5, setup: DEFAULT_CONTEXT } };
+    fireEvent.keyDown(window, { key: "f" });
+    expect(document.title).toBe("Your turn · LangChain Chess");
+    fake.threads.abc = {
+      values: { ...E4_E5, outcome: { kind: "checkmate", winner: "black" }, setup: DEFAULT_CONTEXT },
+    };
+    fireEvent.keyDown(window, { key: "f" });
+    expect(document.title).toBe("Game over · LangChain Chess");
+    hidden.mockRestore();
+  });
+
+  it("disables both while a command is in flight, and says a draw is on its way", async () => {
+    onThread("abc", E4_E5);
+    let settle = () => {};
+    fake.submit = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          settle = resolve;
+        }),
+    );
+    render(<App />);
+    fireEvent.click(draw());
+    expect(screen.getByText("Offering a draw…")).toBeInTheDocument();
+    fake.isLoading = true;
+    fireEvent.keyDown(window, { key: "f" });
+    expect(resign()).toBeDisabled();
+    fake.isLoading = false;
+    await act(async () => settle());
+    expect(screen.queryByText("Offering a draw…")).not.toBeInTheDocument();
+  });
+
+  it("keeps both off until the game has a move or an accepted root, and draws off the opponent's move", () => {
+    onThread("abc", { moves: [], plies: [], turns: [] });
+    const view = render(<App />);
+    expect(resign()).toBeDisabled();
+    expect(draw()).toBeDisabled();
+    view.unmount();
+    onThread("abc", E4_AS_WHITE);
+    render(<App />);
+    expect(resign()).toBeEnabled();
+    expect(draw()).toBeDisabled();
+  });
+
+  it("marks an offer made before the first move", () => {
+    onThread("abc", {
+      moves: [],
+      plies: [],
+      turns: [],
+      draw_offers: [{ ply: 0, by: "white", answer: "declined" }],
+    });
+    render(<App />);
+    expect(
+      within(screen.getByLabelText("move list")).getByLabelText("draw offered"),
+    ).toBeInTheDocument();
+  });
+
+  it("puts resign and draw in a phone's bar", () => {
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(390);
+    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(780);
+    onThread("abc", E4_E5);
+    render(<App />);
+    const bar = screen.getByLabelText("actions");
+    expect(within(bar).getByRole("button", { name: "Resign" })).toBeEnabled();
+    expect(within(bar).getByRole("button", { name: "Offer draw" })).toBeEnabled();
+    vi.restoreAllMocks();
+  });
+
+  it("shows a phone the result and the next steps once the game is over", () => {
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(390);
+    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(780);
+    onThread("abc", {
+      ...E4_E5,
+      outcome: { kind: "resignation", winner: "white", reason: "resigned" },
+    });
+    render(<App />);
+    expect(screen.getByLabelText("headline")).toHaveTextContent("You won · Black resigned");
+    expect(
+      within(screen.getByLabelText("actions")).queryByRole("button", { name: "Resign" }),
+    ).toBeNull();
+    expect(strip("black")).toHaveTextContent("Resigned");
+    vi.restoreAllMocks();
   });
 });

@@ -129,6 +129,12 @@ describe("values", () => {
     expect(decodeValues(withPly({ analysis: undefined, meta: { [S1]: {} } }))).not.toBeNull();
     expect(decodeValues(withS1({ top: undefined, error: "timeout" }))).not.toBeNull();
     expect(decodeValues(withS1({ played_move_result: null }))).not.toBeNull();
+    for (const reason of ["illegal_moves", "resigned"]) {
+      const resigned = { kind: "resignation", winner: "white", reason };
+      expect(decodeValues({ moves: [], outcome: resigned })).not.toBeNull();
+    }
+    const offers = [{ ply: 0, by: "white", answer: "declined" }];
+    expect(decodeValues({ moves: [], draw_offers: offers })).not.toBeNull();
   });
 
   it("finds no game record in anything else", () => {
@@ -145,6 +151,13 @@ describe("values", () => {
       { moves: [], outcome: { kind: "draw", reason: 1 } },
       { moves: [], outcome: { kind: "checkmate", winner: "nobody" } },
       { moves: [], outcome: { kind: "timeout", winner: "white" } },
+      { moves: [], outcome: { kind: "resignation", winner: "white", reason: "bored" } },
+      { moves: [], outcome: { kind: "resignation", winner: "red", reason: "resigned" } },
+      { moves: [], draw_offers: {} },
+      { moves: [], draw_offers: [{ ply: 1.5, by: "white", answer: "declined" }] },
+      { moves: [], draw_offers: [{ ply: 1, by: "red", answer: "declined" }] },
+      { moves: [], draw_offers: [{ ply: 1, by: "white", answer: "accepted" }] },
+      { moves: [], draw_offers: [null] },
       { ...good, plies: {} },
       { ...good, plies: [null] },
       withPly({ uci: 1 }),

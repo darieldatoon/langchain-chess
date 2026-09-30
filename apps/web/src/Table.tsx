@@ -44,7 +44,7 @@ import {
   type SourceClass,
 } from "@langchain-chess/chess-ui";
 import { downloadJson } from "./files";
-import { ResultCard } from "./components/ResultCard";
+import { GameActions, GameOver, ResultHeadline } from "./components/GameActions";
 import { describeError, isAuthError, isBusyRejection } from "./format";
 import { configurableOf } from "./settings";
 import { changedKnobs, opponentLabel, type GameRecord } from "./setup";
@@ -131,7 +131,7 @@ export function Table({
   const coarse = useCoarsePointer();
   const yourMove = playable && !over && !opponentToMove && game.pendingMove === null;
   const alert = useTurnAlert(yourMove, game.restore === "ready" && live);
-  useDocumentTitle(pageTitle({ yourTurn: alert && prefs.tabTitle }));
+  useDocumentTitle(pageTitle({ yourTurn: alert && prefs.tabTitle, over }));
   const boardFen = live ? (game.pendingMove?.fen ?? game.fen) : game.fens[index];
   const lastMove = live
     ? (game.pendingMove?.uci ?? game.moves.at(-1) ?? null)
@@ -224,26 +224,31 @@ export function Table({
       <DisplayMenu prefs={prefs} onChange={onPrefsChange} boardSize={!phone} app="web" />
     </BoardMenu>
   );
-  const result =
-    game.outcome && record ? (
-      <ResultCard
-        outcome={game.outcome}
-        humanSide={record.side}
-        onRematch={() => onRematch(record)}
-        onNewGame={onNewGame}
-      />
-    ) : null;
-  const flipButton = (
-    <Button
-      variant="plain"
-      color="secondary"
-      size="sm"
-      leftDecorator={ArrowsDownUpIcon}
-      className={TOUCH_TARGET}
-      onClick={flip}
-    >
-      Flip
-    </Button>
+  const offers = game.drawOffers.filter((o) => o.ply === last && o.by === humanSide);
+  const canResign = playable && !game.isLoading && !over && (last > 0 || game.rootAccepted);
+  const canOfferDraw =
+    canResign && !opponentToMove && live && !game.pendingTurn && offers.length === 0;
+  const actions = (
+    <GameActions
+      compact={phone}
+      canResign={canResign}
+      canOfferDraw={canOfferDraw}
+      offering={game.sending === "draw"}
+      answer={offers.length > 0 ? "Draw declined." : null}
+      onResign={() => issue(() => game.resign(humanSide))}
+      onOfferDraw={() => issue(() => game.offerDraw(humanSide))}
+      onFlip={flip}
+    />
+  );
+  const gameOver = over && (
+    <GameOver
+      humanSide={record?.side ?? null}
+      onRematch={() => onRematch(record!)}
+      onNewGame={onNewGame}
+    />
+  );
+  const headline = game.outcome && record && (
+    <ResultHeadline outcome={game.outcome} humanSide={record.side} />
   );
 
   const replyCard = (
@@ -288,16 +293,18 @@ export function Table({
       table={
         phone ? undefined : (
           <Card intent="neutral" className="flex h-full min-h-0 flex-col gap-space-2 p-space-2">
+            {headline}
             <MoveList
               entries={game.entries}
               startFen={game.startFen}
               selected={index - 1}
               onSelect={(ply) => go(ply + 1)}
               outcome={game.outcome}
+              drawOffers={game.drawOffers}
             />
             <BackToLive index={index} last={last} onGo={go} />
             <BoardControls index={index} last={last} onGo={go} menu={menu} />
-            {result ?? <div className="flex items-center gap-space-2">{flipButton}</div>}
+            {gameOver || actions}
           </Card>
         )
       }
@@ -312,18 +319,25 @@ export function Table({
       phoneBar={
         <div className="flex flex-col gap-space-1">
           <BackToLive index={index} last={last} onGo={go} />
-          <div className="flex items-center justify-between gap-space-1" aria-label="actions">
+          <div
+            className="flex flex-wrap items-center justify-between gap-space-1"
+            aria-label="actions"
+          >
             <BoardControls index={index} last={last} onGo={go} compact />
-            <div className="flex items-center gap-space-1">
-              <IconButton
-                icon={ArrowsDownUpIcon}
-                label="Flip board"
-                size="md"
-                variant="outlined"
-                color="secondary"
-                className={TOUCH_TARGET}
-                onClick={flip}
-              />
+            <div className="flex flex-wrap items-center gap-space-1">
+              {over ? (
+                <IconButton
+                  icon={ArrowsDownUpIcon}
+                  label="Flip board"
+                  size="md"
+                  variant="outlined"
+                  color="secondary"
+                  className={TOUCH_TARGET}
+                  onClick={flip}
+                />
+              ) : (
+                actions
+              )}
               {menu}
             </div>
           </div>
@@ -336,13 +350,15 @@ export function Table({
             startFen={game.startFen}
             selected={index - 1}
             onSelect={(ply) => go(ply + 1)}
+            drawOffers={game.drawOffers}
           />
           {game.outcome && <ResultLine outcome={game.outcome} />}
         </>
       }
       phoneReply={
         <>
-          {result}
+          {headline}
+          {gameOver}
           <ReplyLine
             reply={reply}
             onShow={() => {

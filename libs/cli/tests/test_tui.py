@@ -144,7 +144,7 @@ async def test_the_game_over_blocks_input():
         await settle(app, pilot)
         await play(pilot, "Qh4")
         await settle(app, pilot)
-        assert "Checkmate, black wins. 0-1" in text(app, "status")
+        assert "Checkmate · Black wins. 0-1" in text(app, "status")
         await play(pilot, "a6")
         await settle(app, pilot)
         assert model.calls == 2

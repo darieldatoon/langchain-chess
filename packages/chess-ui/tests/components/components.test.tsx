@@ -125,6 +125,26 @@ describe("MoveList", () => {
     expect(screen.getByText("Heading")).toBeInTheDocument();
   });
 
+  it("marks draw offers, before the first move too", () => {
+    const offers = [
+      { ply: 0, by: "white" as const, answer: "declined" as const },
+      { ply: 2, by: "white" as const, answer: "declined" as const },
+    ];
+    render(<MoveList entries={[e4, e5]} startFen={START_FEN} drawOffers={offers} />);
+    expect(screen.getAllByLabelText("draw offered")).toHaveLength(2);
+    expect(screen.getByText("e5").parentElement).toHaveTextContent("e5½?");
+    render(
+      <MoveStrip
+        entries={[e4, e5]}
+        startFen={START_FEN}
+        selected={1}
+        onSelect={vi.fn()}
+        drawOffers={offers}
+      />,
+    );
+    expect(screen.getAllByLabelText("draw offered")).toHaveLength(4);
+  });
+
   it("adds markers after moves and full-width notes under their rows", () => {
     render(
       <MoveList

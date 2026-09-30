@@ -2,6 +2,8 @@
 import {
   SYSTEMONE_META_KEY,
   type Call,
+  type ChessValues,
+  type DrawOffer,
   type Message,
   type Ply,
   type Reply,
@@ -51,6 +53,19 @@ export function replyAt(
 export function systemOneMeta(ply: Ply): SystemOneMeta | null {
   const meta = ply.meta[SYSTEMONE_META_KEY];
   return meta && typeof meta.status === "string" ? (meta as unknown as SystemOneMeta) : null;
+}
+
+/**
+ * Whether the server has taken a game's root: any turn at all. `start_fen` proves nothing, as a
+ * rejected first command still writes the standard one.
+ */
+export function rootAccepted(values: Pick<ChessValues, "turns">): boolean {
+  return (values.turns?.length ?? 0) > 0;
+}
+
+/** The half-moves after which a draw was offered, as the move list marks them: `ply − 1`. */
+export function drawMarks(offers: readonly DrawOffer[] | undefined): Set<number> {
+  return new Set((offers ?? []).map((o) => o.ply - 1));
 }
 
 export function isPending(turns: readonly TurnRecord[]): boolean {

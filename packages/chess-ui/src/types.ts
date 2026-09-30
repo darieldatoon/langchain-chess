@@ -17,7 +17,15 @@ export type DrawReason =
 export type Outcome =
   | { kind: "checkmate"; winner: Side }
   | { kind: "draw"; reason: DrawReason }
-  | { kind: "resignation"; winner: Side; reason: "illegal_moves" };
+  /** `illegal_moves` is a forfeit: the agent ran out of attempts at a legal move. */
+  | { kind: "resignation"; winner: Side; reason: "illegal_moves" | "resigned" };
+
+/** A draw offered at `ply` (the completed half-moves, possibly 0), and how it was answered. */
+export interface DrawOffer {
+  ply: number;
+  by: Side;
+  answer: "declined";
+}
 
 export interface Call {
   kind: "llm" | "systemone" | "summary";
@@ -158,6 +166,8 @@ export interface ChessValues {
   turns?: TurnRecord[];
   outcome?: Outcome | null;
   error?: string | null;
+  /** Absent on games recorded before draw offers: read it as `[]`. */
+  draw_offers?: DrawOffer[];
   /**
    * The server's resolved settings on the game's first turn, as that version recorded them:
    * read them with `loadRecorded`. Absent on older games.

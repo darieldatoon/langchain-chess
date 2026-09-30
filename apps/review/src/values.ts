@@ -24,11 +24,17 @@ const optional = (v: unknown, check: (v: unknown) => boolean) => v === undefined
 const nullable = (v: unknown, check: (v: unknown) => boolean) => v === null || check(v);
 const isStringOrNull = (v: unknown) => optional(v, (x) => nullable(x, isString));
 
+const RESIGN_REASONS: readonly unknown[] = ["illegal_moves", "resigned"];
+
 function isOutcome(v: unknown): boolean {
   if (!isJson(v)) return false;
   if (v.kind === "draw") return isString(v.reason) && Object.hasOwn(DRAW_REASONS, v.reason);
-  return (v.kind === "checkmate" || v.kind === "resignation") && isSide(v.winner);
+  if (v.kind === "resignation") return isSide(v.winner) && RESIGN_REASONS.includes(v.reason);
+  return v.kind === "checkmate" && isSide(v.winner);
 }
+
+const isDrawOffer = (v: unknown) =>
+  isJson(v) && Number.isInteger(v.ply) && isSide(v.by) && v.answer === "declined";
 
 const isRanked = (v: unknown) => isJson(v) && isString(v.uci) && isNumber(v.probability);
 const isStage = (v: unknown) =>
@@ -74,7 +80,8 @@ function isValues(v: Json): boolean {
     optional(v.start_fen, (fen) => isString(fen) && (fen === "" || isFen(fen))) &&
     optional(v.plies, (plies) => isArrayOf(plies, isPly)) &&
     optional(v.turns, (turns) => isArrayOf(turns, isTurn)) &&
-    optional(v.outcome, (outcome) => nullable(outcome, isOutcome))
+    optional(v.outcome, (outcome) => nullable(outcome, isOutcome)) &&
+    optional(v.draw_offers, (offers) => isArrayOf(offers, isDrawOffer))
   );
 }
 

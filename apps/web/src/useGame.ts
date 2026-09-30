@@ -7,13 +7,16 @@ import {
   lastPolicyPly,
   liveAnalysis,
   replay,
+  rootAccepted,
   turnOf,
   type ChessValues,
+  type DrawOffer,
   type MoveEntry,
   type Outcome,
   type Ply,
   type Reply,
   type ReplyState,
+  type Side,
   type TurnRecord,
 } from "@langchain-chess/chess-ui";
 import { commandKey, createCommandIds } from "./commands";
@@ -42,6 +45,9 @@ export function writeThreadToUrl(threadId: string | null, history: History = win
  */
 export type Restore = "loading" | "missing" | "failed" | "ready";
 
+/** A resign or draw command in flight. */
+export type Control = "resign" | "draw";
+
 export interface PendingMove {
   uci: string;
   fen: string;
@@ -58,6 +64,9 @@ export interface Game {
   entries: MoveEntry[];
   outcome: Outcome | null;
   error: string | null;
+  drawOffers: readonly DrawOffer[];
+  /** The server took this game's root: its first command made a turn. */
+  rootAccepted: boolean;
   /** Null for a thread with no setup this app can read: it can only be shown. */
   record: GameRecord | null;
   /** Thinking for the whole run, so the card never falls back to the previous reply meanwhile. */
@@ -69,12 +78,17 @@ export interface Game {
   streamError: unknown;
   threadId: string | null;
   pendingMove: PendingMove | null;
+  sending: Control | null;
   play: (uci: string, fenAfter: string) => Promise<void>;
   start: () => Promise<void>;
   retry: () => Promise<void>;
+  /** For `side`, which the server can't know: it doesn't know which side is human. */
+  resign: (side: Side) => Promise<void>;
+  offerDraw: (side: Side) => Promise<void>;
 }
 
 const NO_MOVES: string[] = [];
+const NO_OFFERS: DrawOffer[] = [];
 
 /**
  * One `useStream` on the `chess` graph; one thread is one game, played with the setup its thread
@@ -83,6 +97,7 @@ const NO_MOVES: string[] = [];
 export function useGame(apiKey: string, chosen: GameRecord | null): Game {
   const [threadId, setThreadId] = useState(() => threadFromUrl());
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
+  const [sending, setSending] = useState<Control | null>(null);
   const [load, setLoad] = useState<{
     hydration: Promise<void>;
     restore: "missing" | "failed";
@@ -200,6 +215,20 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
   );
 
   const start = useCallback(() => command("go"), [command]);
+  // Never resent: a consumed id resent while a turn is pending would retry that turn.
+  const control = useCallback(
+    async (kind: Control, side: Side) => {
+      setSending(kind);
+      try {
+        await command(`${kind} ${side}`);
+      } finally {
+        setSending(null);
+      }
+    },
+    [command],
+  );
+  const resign = useCallback((side: Side) => control("resign", side), [control]);
+  const offerDraw = useCallback((side: Side) => control("draw", side), [control]);
   // Empty input resumes the pending turn; a fresh `go` would be rejected while one is pending.
   const retry = useCallback(() => send({}), [send]);
 
@@ -224,6 +253,8 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
     entries,
     outcome: values.outcome ?? null,
     error: values.error ?? null,
+    drawOffers: values.draw_offers ?? NO_OFFERS,
+    rootAccepted: rootAccepted(values),
     record,
     reply,
     pendingTurn: isPending(turns),
@@ -233,8 +264,11 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
     streamError: stream.error,
     threadId,
     pendingMove,
+    sending,
     play,
     start,
     retry,
+    resign,
+    offerDraw,
   };
 }

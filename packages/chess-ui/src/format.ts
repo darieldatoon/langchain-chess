@@ -113,7 +113,9 @@ export function outcomeLine(outcome: Outcome): string {
     case "draw":
       return `Draw by ${DRAW_REASONS[outcome.reason]}`;
     case "resignation":
-      return `${colour(opposite(outcome.winner))} forfeited after repeated illegal moves · ${colour(outcome.winner)} wins`;
+      return outcome.reason === "resigned"
+        ? `${colour(opposite(outcome.winner))} resigned · ${colour(outcome.winner)} wins`
+        : `${colour(opposite(outcome.winner))} forfeited after repeated illegal moves · ${colour(outcome.winner)} wins`;
   }
 }
 
@@ -126,7 +128,8 @@ export function scoreText(outcome: Outcome): string {
 export function stripResult(outcome: Outcome, side: Side): string {
   if (outcome.kind === "draw") return "Draw";
   if (outcome.winner === side) return "Won";
-  return outcome.kind === "checkmate" ? "Checkmated" : "Forfeited";
+  if (outcome.kind === "checkmate") return "Checkmated";
+  return outcome.reason === "resigned" ? "Resigned" : "Forfeited";
 }
 
 /** A move as a reader names it: `12. e4` for White, `12… e5` for Black. */

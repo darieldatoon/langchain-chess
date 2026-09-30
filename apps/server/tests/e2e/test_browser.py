@@ -330,3 +330,18 @@ def test_a_small_phone_s_promotion_choices_fit_the_board(server: str, page: Page
     for above, below in pairwise(boxes):
         top, bottom = sorted((above, below), key=lambda b: b["y"])
         assert top["y"] + top["height"] <= bottom["y"] + 0.5, (top, bottom)
+
+
+def test_desktop_resigns_after_one_move(server: str, page: Page):
+    page.goto(f"{server}/ui/")
+    page.get_by_role("button", name="Play", exact=True).click()
+    expect(page.get_by_role("dialog")).to_have_count(0)
+    drag(page, square(page, "e2"), square(page, "e4"))
+    moves_of(server, page, 2)
+    page.get_by_role("button", name="Resign").click()
+    page.get_by_role("button", name="Confirm resignation").click()
+    expect(page.get_by_label("white player").get_by_text("Resigned")).to_be_visible()
+    expect(page.get_by_label("black player").get_by_text("Won")).to_be_visible()
+    thread = parse_qs(urlparse(page.url).query)["thread"][0]
+    outcome = get_sync_client(url=server).threads.get_state(thread)["values"]["outcome"]
+    assert outcome == {"kind": "resignation", "winner": "black", "reason": "resigned"}

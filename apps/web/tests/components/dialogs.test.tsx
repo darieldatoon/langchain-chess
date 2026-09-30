@@ -29,7 +29,6 @@ async function importFile(content: string) {
 }
 import { AppSettingsDialog } from "../../src/components/AppSettingsDialog";
 import { LIMIT_DELAY_MS, NewGameDialog } from "../../src/components/NewGameDialog";
-import { ResultCard } from "../../src/components/ResultCard";
 
 vi.mock("@langchain/macaw-components/Select", async () =>
   (await import("../support/macawShims")).selectShim(),
@@ -643,26 +642,5 @@ describe("AppSettingsDialog", () => {
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(2);
     expect(screen.queryByLabelText("System 1")).not.toBeInTheDocument();
-  });
-});
-
-describe("ResultCard", () => {
-  it("shows the result and offers a rematch or a new game", () => {
-    const onRematch = vi.fn();
-    const onNewGame = vi.fn();
-    render(
-      <ResultCard
-        outcome={{ kind: "checkmate", winner: "black" }}
-        humanSide="black"
-        onRematch={onRematch}
-        onNewGame={onNewGame}
-      />,
-    );
-    expect(screen.getByText("You won")).toBeInTheDocument();
-    expect(screen.getByText("Checkmate · Black wins")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Rematch" }));
-    fireEvent.click(screen.getByRole("button", { name: "New game" }));
-    expect(onRematch).toHaveBeenCalledTimes(1);
-    expect(onNewGame).toHaveBeenCalledTimes(1);
   });
 });

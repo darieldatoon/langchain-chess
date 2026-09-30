@@ -5,10 +5,13 @@ export const APP_TITLE = "LangChain Chess";
 export interface TitleInput {
   /** It became the reader's move while the tab was hidden. */
   yourTurn: boolean;
+  over: boolean;
 }
 
 /** The tab's title. Pure. */
-export function pageTitle({ yourTurn }: TitleInput): string {
+export function pageTitle({ yourTurn, over }: TitleInput): string {
+  // An alert raised before the game ended must not outlive it.
+  if (over) return `Game over · ${APP_TITLE}`;
   return yourTurn ? `Your turn · ${APP_TITLE}` : APP_TITLE;
 }
 

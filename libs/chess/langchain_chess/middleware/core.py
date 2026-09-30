@@ -35,6 +35,12 @@ from langchain_chess.recorder import CallRecorder
 from langchain_chess.rules import (
     CommandError,
     DrawClaims,
+    DrawPolicy,
+    OfferDraw,
+    Play,
+    Resign,
+    control_command,
+    decline_all,
     ending,
     fingerprint,
     legal_member,
@@ -48,6 +54,7 @@ from langchain_chess.rules import (
 from langchain_chess.state import (
     Call,
     ChessState,
+    DrawOffer,
     FailedCall,
     Invocation,
     Ply,
@@ -120,6 +127,7 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         render: PositionRenderer,
         recorder: CallRecorder,
         extensions: Sequence[AgentMiddleware] = (),
+        draw_policy: DrawPolicy = decline_all,
     ) -> None:
         self.memory = memory
         self.max_retries = max_retries
@@ -127,6 +135,7 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         self.render = render
         self.recorder = recorder
         self.extensions = list(extensions)
+        self.draw_policy = draw_policy
         # In memory only: after_model raises the original error in the run that failed. Absent
         # on a resume, which tries the model call again instead of re-raising forever.
         self._failures: dict[str, Exception] = {}
@@ -161,6 +170,7 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
             "outcome": None,
             "error": None,
             "consumed_message_ids": [],
+            "draw_offers": [],
         }
 
     def _reject(
@@ -227,6 +237,16 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
             return self._retry(state) if pending else self._noop(state)
         if turn is not None and request == turn["request"]:
             return self._retry(state) if pending else self._noop(state)
+        if new_human is not None:
+            # Before the pending-turn rejection: a resignation may end a turn that is stuck.
+            try:
+                control = control_command(text_of(new_human))
+            except CommandError as e:
+                return self._reject(state, str(e), new_human)
+            if isinstance(control, Resign):
+                return self._resign(state, new_human, control)
+            if isinstance(control, OfferDraw):
+                return self._offer_draw(state, new_human, control, pending=pending)
         if pending and new_human is not None:
             return self._reject(state, "finish or retry the pending turn first", new_human)
 
@@ -288,12 +308,75 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
             update["messages"] = new_messages
         return update
 
+    def _resign(
+        self, state: Mapping[str, Any], message: AnyMessage, command: Resign
+    ) -> dict[str, Any]:
+        """Either side may resign on either side's move; a pending turn is abandoned, and any
+        decision it saved is discarded, not played."""
+        turns: list[TurnRecord] = list(state.get("turns") or [])
+        if turns and turns[-1]["status"] == "pending":
+            turns[-1] = {**self._finalized(turns[-1], state), "status": "abandoned"}
+        message_id = str(message.id)
+        terminal: TurnRecord = {
+            "id": _new_id(),
+            "request": message_id,
+            "initial_allowed": [],
+            "status": "terminal",
+            "ply": None,
+            "calls": [],
+            "rejected_message_ids": [],
+            "feedback_message_ids": [],
+            "opened_message_id": message_id,
+            "illegal_attempts": 0,
+            "latency_ms": 0.0,
+        }
+        outcome: Resignation = {
+            "kind": "resignation",
+            "winner": "black" if command.side == "white" else "white",
+            "reason": "resigned",
+        }
+        return self._noop(state) | {
+            **_DECISION_RESET,
+            "turns": [*turns, terminal],
+            "outcome": outcome,
+            "allowed_moves": [],
+            "consumed_message_ids": [*(state.get("consumed_message_ids") or []), message_id],
+            "messages": [AIMessage(result_text(outcome), id=_new_id())],
+            "invocation": _invocation("noop", terminal["id"]),
+        }
+
+    def _offer_draw(
+        self, state: Mapping[str, Any], message: AnyMessage, command: OfferDraw, *, pending: bool
+    ) -> dict[str, Any]:
+        """Answered by the draw policy; no turn opens and no model is called."""
+        if pending:
+            return self._reject(state, "finish or retry the pending turn first", message)
+        base = self._first_run(state) | dict(state)
+        board = self._board(base)
+        if side(board.turn) != command.side:
+            return self._reject(state, "offer a draw on your own move", message)
+        offers: list[DrawOffer] = list(base.get("draw_offers") or [])
+        ply = len(base["moves"])
+        if any(o["ply"] == ply and o["by"] == command.side for o in offers):
+            return self._reject(state, "you already offered a draw in this position", message)
+        offer: DrawOffer = {
+            "ply": ply,
+            "by": command.side,
+            "answer": self.draw_policy(board, command.side),
+        }
+        return self._noop(state) | {
+            "draw_offers": [*offers, offer],
+            "consumed_message_ids": [*(state.get("consumed_message_ids") or []), str(message.id)],
+            "messages": [AIMessage("Draw declined.", id=_new_id())],
+        }
+
     def _sync_chat(self, state: Mapping[str, Any], message: AnyMessage) -> _Synced:
         board = self._board(state)
-        move = parse_chat(board, text_of(message))
+        command = parse_chat(board, text_of(message))
         plies = list(state["plies"])
         moves = list(state["moves"])
-        if move is not None:
+        if isinstance(command, Play):
+            move = command.move
             plies.append(_external_ply(len(plies), board, move))
             moves.append(move.uci())
             board.push(move)
