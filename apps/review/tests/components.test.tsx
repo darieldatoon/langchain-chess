@@ -1,5 +1,14 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { DEFAULT_PLY_VIEW } from "@langchain-chess/chess-ui";
+import { fireEvent, render, renderHook, screen, within } from "@testing-library/react";
+import {
+  DEFAULT_DISPLAY_PREFS,
+  DEFAULT_PLY_VIEW,
+  type DisplayPrefs,
+  withAlpha,
+} from "@langchain-chess/chess-ui";
+import {
+  CHART_STATUS_COLORS,
+  useChartColorResolver,
+} from "@langchain/macaw-components/utils/chartColors";
 import { describe, expect, it, vi } from "vite-plus/test";
 import type { Analysis, LaunchState } from "../src/analysis";
 import { EvalBar } from "../src/components/EvalBar";
@@ -10,12 +19,22 @@ import { HostTheme } from "../src/HostTheme";
 import { game, graded, review, UNGRADED, values } from "./support/fixtures";
 import { board } from "./support/mocks";
 
+/** What the board's colour resolver gives for a colour in the light theme. */
+function resolved(colour: string): string {
+  const { result } = renderHook(() => useChartColorResolver(), {
+    wrapper: ({ children }) => <HostTheme mode="light">{children}</HostTheme>,
+  });
+  return result.current(colour);
+}
+
 vi.mock("react-chessboard", async () => (await import("./support/mocks")).chessboardMock());
 vi.mock("@langchain/macaw-components/LineChart", async () =>
   (await import("./support/mocks")).lineChartMock(),
 );
 
 interface ViewExtras {
+  prefs?: DisplayPrefs;
+  onPrefsChange?: (prefs: DisplayPrefs) => void;
   analysis?: Analysis | null;
   launch?: LaunchState;
   onAnalyze?: () => void;
@@ -35,6 +54,8 @@ const renderView = (g = game(), onOpenTrace = vi.fn(), extras: ViewExtras = {}) 
         onAnalyze={extras.onAnalyze ?? (() => {})}
         layout="wide"
         space={{ width: 1000, height: 800 }}
+        prefs={extras.prefs ?? DEFAULT_DISPLAY_PREFS}
+        onPrefsChange={extras.onPrefsChange ?? (() => {})}
       />
     </HostTheme>,
   );
@@ -218,6 +239,21 @@ describe("GameView", () => {
     expect(current()).toBe("Nc6");
   });
 
+  it("steps on the wheel when asked to, and fades the arrows by grade", () => {
+    renderView(game(), vi.fn(), { prefs: { ...DEFAULT_DISPLAY_PREFS, wheelSteps: true } });
+    fireEvent.wheel(screen.getByTestId("board"), { deltaY: -100 });
+    expect(current()).toBe("Nf6??");
+    const [played, best] = board.options!.arrows as { color: string }[];
+    // A blunder's arrow is the error colour and the best move's the success colour, both pale.
+    expect(played.color).toBe(withAlpha(resolved(CHART_STATUS_COLORS.negative), 0.5));
+    expect(best.color).toBe(withAlpha(resolved(CHART_STATUS_COLORS.positive), 0.5));
+    key("ArrowLeft");
+    const [good] = board.options!.arrows as { color: string }[];
+    expect(good.color).toBe(withAlpha(resolved("var(--bg-brand)"), 0.5));
+    fireEvent.wheel(screen.getByTestId("board"), { deltaY: 100 });
+    expect(current()).toBe("Nf6??");
+  });
+
   it("ignores keys typed into a field", () => {
     renderView();
     const input = document.createElement("input");
@@ -305,6 +341,8 @@ describe("GameView", () => {
           onAnalyze={onAnalyze}
           layout="wide"
           space={{ width: 1000, height: 800 }}
+          prefs={DEFAULT_DISPLAY_PREFS}
+          onPrefsChange={() => {}}
         />
       </HostTheme>,
     );

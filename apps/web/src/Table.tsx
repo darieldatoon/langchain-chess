@@ -14,6 +14,7 @@ import {
   Board,
   BoardControls,
   BoardMenu,
+  DisplayMenu,
   GameShell,
   MoveList,
   MoveStrip,
@@ -30,9 +31,11 @@ import {
   START_FEN,
   stripResult,
   TOUCH_TARGET,
+  useCoarsePointer,
   useGameKeys,
   usePlyCursor,
   type Allocation,
+  type DisplayPrefs,
   type Outcome,
   type PlyView,
   type Reply,
@@ -45,6 +48,7 @@ import { ResultCard } from "./components/ResultCard";
 import { describeError, isAuthError, isBusyRejection } from "./format";
 import { configurableOf } from "./settings";
 import { changedKnobs, opponentLabel, type GameRecord } from "./setup";
+import { pageTitle, useDocumentTitle, useTurnAlert } from "./title";
 import { useGame, type Game } from "./useGame";
 
 /** One game on screen. */
@@ -60,6 +64,8 @@ export interface Seat {
 export interface ViewProps {
   view: PlyView;
   onViewChange: (view: PlyView) => void;
+  prefs: DisplayPrefs;
+  onPrefsChange: (prefs: DisplayPrefs) => void;
   allocation: Allocation;
 }
 
@@ -92,6 +98,8 @@ export function Table({
   onOpenSettings,
   view,
   onViewChange,
+  prefs,
+  onPrefsChange,
   allocation,
 }: TableProps) {
   const game = useGame(apiKey, seat.chosen);
@@ -120,6 +128,10 @@ export function Table({
   const { index, live, go } = usePlyCursor(last);
   const openHelp = useCallback(() => setHelp(true), []);
   useGameKeys({ index, last, onGo: go, onFlip: flip, onHelp: openHelp });
+  const coarse = useCoarsePointer();
+  const yourMove = playable && !over && !opponentToMove && game.pendingMove === null;
+  const alert = useTurnAlert(yourMove, game.restore === "ready" && live);
+  useDocumentTitle(pageTitle({ yourTurn: alert && prefs.tabTitle }));
   const boardFen = live ? (game.pendingMove?.fen ?? game.fen) : game.fens[index];
   const lastMove = live
     ? (game.pendingMove?.uci ?? game.moves.at(-1) ?? null)
@@ -160,7 +172,7 @@ export function Table({
     }
     if (!record) return null;
     if (side === record.side) {
-      return playable && live && !opponentToMove && game.pendingMove === null ? (
+      return yourMove && live ? (
         <Text variant="sm" color="secondary" as="span">
           Your turn
         </Text>
@@ -201,14 +213,16 @@ export function Table({
       side={side}
       name={nameOf(side)}
       fen={boardFen}
-      showMaterial
+      showMaterial={prefs.showMaterial}
       status={statusOf(side)}
     />
   );
 
   const phone = allocation.layout === "phone";
   const menu = (
-    <BoardMenu onFlip={flip} onHelp={openHelp} navigate={phone ? { onGo: go, last } : undefined} />
+    <BoardMenu onFlip={flip} onHelp={openHelp} navigate={phone ? { onGo: go, last } : undefined}>
+      <DisplayMenu prefs={prefs} onChange={onPrefsChange} boardSize={!phone} app="web" />
+    </BoardMenu>
   );
   const result =
     game.outcome && record ? (
@@ -248,6 +262,12 @@ export function Table({
           orientation={orientation}
           humanSide={humanSide}
           lastMove={lastMove}
+          prefs={prefs}
+          onWheelStep={
+            prefs.wheelSteps && !coarse
+              ? (step) => go(Math.max(0, Math.min(last, index + step)))
+              : undefined
+          }
           locked={
             !playable ||
             !live ||
@@ -540,7 +560,7 @@ function ReplyLine({ reply, onShow }: { reply: ReplyState; onShow: () => void })
 }
 
 /** The board before the first game, behind the New game dialog. */
-export function EmptyTable({ view, onViewChange, allocation }: ViewProps) {
+export function EmptyTable({ view, onViewChange, prefs, allocation }: ViewProps) {
   const strip = (side: Side) => (
     <PlayerStrip side={side} name={colourName(side)} fen={START_FEN} showMaterial={false} />
   );
@@ -550,7 +570,16 @@ export function EmptyTable({ view, onViewChange, allocation }: ViewProps) {
       allocation={allocation}
       topStrip={strip("black")}
       bottomStrip={strip("white")}
-      board={<Board fen={START_FEN} orientation="white" humanSide="white" lastMove={null} locked />}
+      board={
+        <Board
+          fen={START_FEN}
+          orientation="white"
+          humanSide="white"
+          lastMove={null}
+          locked
+          prefs={prefs}
+        />
+      }
       left={reply}
       table={
         allocation.layout === "phone" ? undefined : (

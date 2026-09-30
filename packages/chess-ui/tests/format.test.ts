@@ -2,7 +2,6 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   costText,
   isAtBottom,
-  lastMoveStyles,
   money,
   moveLabel,
   outcomeLine,
@@ -119,12 +118,6 @@ describe("qualitySymbol", () => {
 });
 
 describe("ui helpers", () => {
-  it("highlights the last move squares", () => {
-    expect(lastMoveStyles(null)).toEqual({});
-    expect(lastMoveStyles("e2")).toEqual({});
-    expect(Object.keys(lastMoveStyles("e2e4"))).toEqual(["e2", "e4"]);
-  });
-
   it("detects the bottom within tolerance", () => {
     expect(isAtBottom({ scrollTop: 92, scrollHeight: 200, clientHeight: 100 })).toBe(true);
     expect(isAtBottom({ scrollTop: 40, scrollHeight: 200, clientHeight: 100 })).toBe(false);

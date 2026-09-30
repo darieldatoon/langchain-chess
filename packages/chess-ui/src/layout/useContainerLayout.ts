@@ -27,16 +27,23 @@ export function useContainerLayout(ref: RefObject<HTMLElement | null>): Space {
   return space;
 }
 
-const COARSE = "(pointer: coarse)";
+/** Whether a media query matches, kept current. */
+export function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const list = window.matchMedia(query);
+    const onChange = () => setMatches(list.matches);
+    list.addEventListener("change", onChange);
+    return () => list.removeEventListener("change", onChange);
+  }, [query]);
+  return matches;
+}
 
 /** Whether the primary pointer is a finger, so controls and strips take their touch sizes. */
 export function useCoarsePointer(): boolean {
-  const [coarse, setCoarse] = useState(() => window.matchMedia(COARSE).matches);
-  useEffect(() => {
-    const query = window.matchMedia(COARSE);
-    const onChange = () => setCoarse(query.matches);
-    query.addEventListener("change", onChange);
-    return () => query.removeEventListener("change", onChange);
-  }, []);
-  return coarse;
+  return useMediaQuery("(pointer: coarse)");
+}
+
+export function useReducedMotion(): boolean {
+  return useMediaQuery("(prefers-reduced-motion: reduce)");
 }

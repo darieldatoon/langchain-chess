@@ -16,6 +16,7 @@ import {
   useContainerLayout,
   WEB_LEFT,
   type ChessContext,
+  type DisplayPrefs,
   type PlyView,
   type Side,
 } from "@langchain-chess/chess-ui";
@@ -30,9 +31,11 @@ import { resolveSide, type GameRecord, type Setup } from "./setup";
 import {
   browserStorage,
   loadAppSettings,
+  loadDisplayPrefs,
   loadPlyView,
   loadSetup,
   saveAppSettings,
+  saveDisplayPrefs,
   savePlyView,
   saveSetup,
   type AppSettings,
@@ -79,6 +82,7 @@ export default function App({
   const [app, setApp] = useState<AppSettings>(() => loadAppSettings());
   const [setup, setSetup] = useState<Setup>(() => loadSetup());
   const [view, setView] = useState<PlyView>(() => loadPlyView());
+  const [prefs, setPrefs] = useState<DisplayPrefs>(() => loadDisplayPrefs());
   const [seat, setSeat] = useState<Seat | null>(() => {
     const threadId = threadFromUrl();
     return threadId ? { number: 0, autoStart: false, chosen: null } : null;
@@ -124,6 +128,14 @@ export default function App({
     [noteSaved],
   );
 
+  const onPrefsChange = useCallback(
+    (next: DisplayPrefs) => {
+      noteSaved(saveDisplayPrefs(next));
+      setPrefs(next);
+    },
+    [noteSaved],
+  );
+
   const play = useCallback(
     (next: Setup, context: ChessContext) => {
       noteSaved(saveSetup(next));
@@ -161,7 +173,7 @@ export default function App({
     left: WEB_LEFT,
     evalBar: 0,
     coarse,
-    scale: 1,
+    scale: prefs.boardScale,
   });
 
   return (
@@ -224,10 +236,18 @@ export default function App({
             onOpenSettings={openSettings}
             view={view}
             onViewChange={onViewChange}
+            prefs={prefs}
+            onPrefsChange={onPrefsChange}
             allocation={allocation}
           />
         ) : (
-          <EmptyTable view={view} onViewChange={onViewChange} allocation={allocation} />
+          <EmptyTable
+            view={view}
+            onViewChange={onViewChange}
+            prefs={prefs}
+            onPrefsChange={onPrefsChange}
+            allocation={allocation}
+          />
         )}
       </main>
 

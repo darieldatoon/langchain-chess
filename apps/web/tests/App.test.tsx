@@ -7,7 +7,10 @@ import { fetchModelFacts } from "../src/modelFacts";
 import { DEFAULT_SETUP } from "../src/setup";
 import {
   APP_KEY,
+  DISPLAY_KEY,
+  loadDisplayPrefs,
   loadSetup,
+  saveDisplayPrefs,
   saveAppSettings,
   savePlyView,
   saveSetup,
@@ -16,6 +19,8 @@ import {
 import { fake, lastOptions, optionsLog, resetFake } from "./support/fakeStream";
 import { AFTER_E4, E4_E5, ply, turn } from "@langchain-chess/chess-ui/testing";
 import { WEB_TRACE } from "../src/useGame";
+import { openMenu } from "./support/menus";
+import userEvent from "@testing-library/user-event";
 import { renderWithProviders as render } from "./support/renderApp";
 import {
   DEFAULT_CONTEXT,
@@ -913,6 +918,21 @@ describe("layouts", () => {
     ...E4_E5_NF3,
     plies: E4_E5_NF3.plies!.map((p) => (p.ply === 1 ? { ...p, analysis: "Solid." } : p)),
   };
+  it("keeps first and last move in a phone's board menu, and settings in its app menu", async () => {
+    sized(390, 780);
+    onThread("abc", PHONE_GAME);
+    render(<App />);
+    await openMenu("Board menu");
+    fireEvent.click(screen.getByRole("menuitem", { name: "First move" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Viewing move 0");
+    await openMenu("Board menu");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Last move" }));
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    await openMenu("App menu");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
+    expect(screen.getByRole("dialog", { name: "Settings" })).toBeInTheDocument();
+  });
+
   it("stacks a phone: bar, move strip, reply line and tabs", async () => {
     sized(390, 780);
     onThread("abc", PHONE_GAME);
@@ -969,5 +989,75 @@ describe("layouts", () => {
     sized(1024, 768);
     render(<App />);
     expect(within(slot("under")).getByText("No reply yet.")).toBeInTheDocument();
+  });
+});
+
+describe("display preferences and the tab title", () => {
+  const toggle = (name: string) => fireEvent.click(screen.getByRole("menuitemcheckbox", { name }));
+
+  it("keeps display preferences across reloads", async () => {
+    onThread("abc", { ...E4_E5, moves: ["e2e4", "d7d5", "e4d5"], plies: [] });
+    const view = render(<App />);
+    expect(within(strip("white")).getByLabelText("material")).toHaveTextContent("+1");
+    await openMenu("Board menu");
+    toggle("Show material");
+    expect(within(strip("white")).queryByLabelText("material")).not.toBeInTheDocument();
+    view.unmount();
+    render(<App />);
+    expect(within(strip("white")).queryByLabelText("material")).not.toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(DISPLAY_KEY)!)).toMatchObject({
+      showMaterial: false,
+    });
+  });
+
+  it("steps through the moves with the wheel once it is turned on", async () => {
+    onThread("abc", E4_E5);
+    render(<App />);
+    fireEvent.wheel(board(), { deltaY: -100 });
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    await openMenu("Board menu");
+    toggle("Wheel steps through moves");
+    await userEvent.keyboard("{Escape}");
+    fireEvent.wheel(board(), { deltaY: -100 });
+    expect(screen.getByRole("status")).toHaveTextContent("Viewing move 1");
+    fireEvent.wheel(board(), { deltaY: 100 });
+    fireEvent.wheel(board(), { deltaY: 100 });
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("says it's your turn in a hidden tab's title, until the tab is shown", () => {
+    const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+    onThread("abc", E4_AS_WHITE);
+    render(<App />);
+    expect(document.title).toBe("LangChain Chess");
+    fake.threads.abc = { values: { ...E4_E5, setup: DEFAULT_CONTEXT } };
+    // Any render picks the new values up.
+    fireEvent.keyDown(window, { key: "?" });
+    expect(document.title).toBe("Your turn · LangChain Chess");
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect(document.title).toBe("Your turn · LangChain Chess");
+    hidden.mockReturnValue(false);
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect(document.title).toBe("LangChain Chess");
+    hidden.mockRestore();
+  });
+
+  it("leaves the title alone when it's turned off, and on a game that loads as your move", () => {
+    const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+    saveDisplayPrefs({ ...loadDisplayPrefs(), tabTitle: false });
+    onThread("abc", E4_AS_WHITE);
+    fake.isThreadLoading = true;
+    const view = render(<App />);
+    view.unmount();
+    fake.isThreadLoading = false;
+    render(<App />);
+    fake.threads.abc = { values: { ...E4_E5, setup: DEFAULT_CONTEXT } };
+    fireEvent.keyDown(window, { key: "?" });
+    expect(document.title).toBe("LangChain Chess");
+    hidden.mockRestore();
   });
 });

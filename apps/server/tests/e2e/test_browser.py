@@ -6,6 +6,7 @@ import os
 import time
 from collections.abc import Callable, Iterator
 from contextlib import AbstractContextManager, suppress
+from itertools import pairwise
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
@@ -49,6 +50,12 @@ CONTEXTS: dict[str, dict[str, Any]] = {
         "has_touch": True,
         "is_mobile": True,
         "device_scale_factor": 3,
+    },
+    "small": {
+        "viewport": {"width": 320, "height": 568},
+        "has_touch": True,
+        "is_mobile": True,
+        "device_scale_factor": 2,
     },
     "landscape": {
         "viewport": {"width": 844, "height": 390},
@@ -268,3 +275,58 @@ def test_a_phone_on_its_side_never_scrolls_sideways(server: str, page: Page):
     no_sideways_scroll(page)
     no_sideways_scroll(page, "[data-slot=table]")
     inside_viewport(page, square(page, "a1"))
+
+
+def seeded(server: str, fen: str) -> str:
+    """A thread from `fen`, Black to move: the agent answers, and the human plays White."""
+    client = get_sync_client(url=server)
+    thread = client.threads.create()["thread_id"]
+    client.runs.wait(thread, "chess", input={"position": {"start_fen": fen}})
+    return thread
+
+
+@pytest.mark.parametrize("page", ["portrait"], indirect=True)
+def test_a_phone_promotes_on_a_flipped_board_and_can_cancel(server: str, page: Page):
+    thread = seeded(server, "4k3/P6P/8/8/8/8/8/4K3 b - - 0 1")
+    page.goto(f"{server}/ui/?thread={thread}")
+    expect(page.get_by_label("white player").get_by_text("Your turn")).to_be_visible()
+    page.get_by_role("button", name="Flip board").tap()
+    square(page, "a7").tap()
+    square(page, "a8").tap()
+    page.get_by_role("button", name="Cancel promotion").tap()
+    expect(page.get_by_role("group", name="Promote to")).to_have_count(0)
+    square(page, "a7").tap()
+    square(page, "a8").tap()
+    knight = page.get_by_role("button", name="Promote to knight")
+    at_least_a_tap(knight)
+    knight.tap()
+    moves = moves_of(server, page, 3)
+    assert moves[1] == "a7a8n"
+
+
+@pytest.mark.parametrize("page", ["small"], indirect=True)
+@pytest.mark.parametrize("flip", [False, True])
+def test_a_small_phone_s_promotion_choices_fit_the_board(server: str, page: Page, flip: bool):
+    thread = seeded(server, "4k3/P6P/8/8/8/8/8/4K3 b - - 0 1")
+    page.goto(f"{server}/ui/?thread={thread}")
+    expect(page.get_by_label("white player").get_by_text("Your turn")).to_be_visible()
+    if flip:
+        page.get_by_role("button", name="Flip board").tap()
+    square(page, "a7").tap()
+    square(page, "a8").tap()
+    board = page.locator("[data-slot=board]").bounding_box()
+    assert board is not None
+    boxes = []
+    for piece in ("queen", "knight", "rook", "bishop"):
+        box = page.get_by_role("button", name=f"Promote to {piece}").bounding_box()
+        assert box is not None
+        assert box["width"] >= MIN_TAP, box
+        assert box["height"] >= MIN_TAP, box
+        assert box["x"] >= board["x"] - 0.5, (box, board)
+        assert box["x"] + box["width"] <= board["x"] + board["width"] + 0.5, (box, board)
+        assert box["y"] >= board["y"] - 0.5, (box, board)
+        assert box["y"] + box["height"] <= board["y"] + board["height"] + 0.5, (box, board)
+        boxes.append(box)
+    for above, below in pairwise(boxes):
+        top, bottom = sorted((above, below), key=lambda b: b["y"])
+        assert top["y"] + top["height"] <= bottom["y"] + 0.5, (top, bottom)

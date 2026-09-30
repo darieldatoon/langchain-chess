@@ -93,12 +93,6 @@ export function pairs(entries: readonly MoveEntry[], startFen: string): MoveRow[
   return rows;
 }
 
-export function lastMoveStyles(uci: string | null): Record<string, React.CSSProperties> {
-  if (!uci || uci.length < 4) return {};
-  const highlight = { backgroundColor: "var(--board-last-move)" };
-  return { [uci.slice(0, 2)]: highlight, [uci.slice(2, 4)]: highlight };
-}
-
 const DRAW_REASONS: Record<DrawReason, string> = {
   stalemate: "stalemate",
   insufficient_material: "insufficient material",

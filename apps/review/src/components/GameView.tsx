@@ -3,7 +3,6 @@ import { Card } from "@langchain/macaw-components/Card";
 import { Text } from "@langchain/macaw-components/Text";
 import {
   CHART_STATUS_COLORS,
-  getCategoricalLineChartColor,
   useChartColorResolver,
 } from "@langchain/macaw-components/utils/chartColors";
 import {
@@ -12,6 +11,7 @@ import {
   Board,
   BoardControls,
   BoardMenu,
+  DisplayMenu,
   EVAL_BAR,
   fenOrStart,
   GameShell,
@@ -26,10 +26,12 @@ import {
   turnOf,
   useGameKeys,
   useCoarsePointer,
+  withAlpha,
   usePlyCursor,
   type Layout,
   type Space,
   type ChessValues,
+  type DisplayPrefs,
   type MoveEntry,
   type PlyView,
   type Side,
@@ -56,9 +58,12 @@ interface Props {
   /** Chosen by the App for the whole page; the games column is already taken out of `space`. */
   layout: Layout;
   space: Space;
+  prefs: DisplayPrefs;
+  onPrefsChange: (prefs: DisplayPrefs) => void;
 }
 
 const NO_MOVES: string[] = [];
+const BRAND = "var(--bg-brand)";
 
 export function GameView({
   game,
@@ -71,6 +76,8 @@ export function GameView({
   onAnalyze,
   layout,
   space,
+  prefs,
+  onPrefsChange,
 }: Props) {
   const startFen = fenOrStart(values.start_fen);
   const moves = values.moves ?? NO_MOVES;
@@ -92,7 +99,7 @@ export function GameView({
     left: null,
     evalBar: review ? EVAL_BAR.wide : 0,
     coarse,
-    scale: 1,
+    scale: prefs.boardScale,
   });
 
   const fens = useMemo(() => replay(startFen, moves).fens, [startFen, moves]);
@@ -119,18 +126,20 @@ export function GameView({
   };
   const played = moves[index - 1] ?? null;
   const arrows = [];
+  // The move just played, on the board after it, as Lichess draws it (ui/analyse/src/autoShape.ts).
   if (played) {
+    const bad = grade?.quality === "mistake" || grade?.quality === "blunder";
     arrows.push({
       startSquare: played.slice(0, 2),
       endSquare: played.slice(2, 4),
-      color: resolve(getCategoricalLineChartColor(0)),
+      color: withAlpha(resolve(bad ? CHART_STATUS_COLORS.negative : BRAND), 0.5),
     });
   }
   if (grade?.best_move && grade.best_move !== played) {
     arrows.push({
       startSquare: grade.best_move.slice(0, 2),
       endSquare: grade.best_move.slice(2, 4),
-      color: resolve(CHART_STATUS_COLORS.positive),
+      color: withAlpha(resolve(CHART_STATUS_COLORS.positive), 0.5),
     });
   }
 
@@ -141,7 +150,7 @@ export function GameView({
         side={side}
         name={sideLabel(game, plies, side)}
         fen={fens[index]}
-        showMaterial
+        showMaterial={prefs.showMaterial}
         status={
           <>
             {typeof accuracy === "number" && (
@@ -224,7 +233,16 @@ export function GameView({
           index={index}
           last={last}
           onGo={go}
-          menu={<BoardMenu onFlip={flip} onHelp={openHelp} />}
+          menu={
+            <BoardMenu onFlip={flip} onHelp={openHelp}>
+              <DisplayMenu
+                prefs={prefs}
+                onChange={onPrefsChange}
+                boardSize={layout !== "phone"}
+                app="review"
+              />
+            </BoardMenu>
+          }
         />
       </Card>
       {ply ? (
@@ -268,6 +286,12 @@ export function GameView({
             lastMove={played}
             locked
             arrows={arrows}
+            prefs={prefs}
+            onWheelStep={
+              prefs.wheelSteps && !coarse
+                ? (step) => go(Math.max(0, Math.min(last, index + step)))
+                : undefined
+            }
           />
         }
         table={tools}

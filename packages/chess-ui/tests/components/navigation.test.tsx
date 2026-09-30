@@ -7,6 +7,7 @@ import { ShortcutDialog } from "../../src/components/ShortcutDialog";
 import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from "../../src/repeat";
 import { useGameKeys, type GameKeys } from "../../src/useGameKeys";
 import { usePlyCursor } from "../../src/usePlyCursor";
+import { openMenu } from "../support/menus";
 import { renderWithProviders } from "../support/renderApp";
 import { CaretLeftIcon } from "@phosphor-icons/react/dist/ssr/CaretLeft";
 
@@ -117,7 +118,7 @@ describe("BackToLive", () => {
 
 describe("BoardMenu", () => {
   const choose = async (name: string | RegExp) => {
-    await userEvent.click(button("Board menu"));
+    await openMenu("Board menu");
     await userEvent.click(screen.getByRole("menuitem", { name }));
   };
 
@@ -126,7 +127,7 @@ describe("BoardMenu", () => {
     const onHelp = vi.fn();
     const onGo = vi.fn();
     const { rerender } = renderWithProviders(<BoardMenu onFlip={onFlip} onHelp={onHelp} />);
-    await userEvent.click(button("Board menu"));
+    await openMenu("Board menu");
     expect(screen.queryByRole("menuitem", { name: "First move" })).not.toBeInTheDocument();
     await userEvent.keyboard("{Escape}");
     await choose(/Flip board/);
@@ -139,7 +140,7 @@ describe("BoardMenu", () => {
         <span>more groups</span>
       </BoardMenu>,
     );
-    await userEvent.click(button("Board menu"));
+    await openMenu("Board menu");
     expect(screen.getByText("more groups")).toBeInTheDocument();
     await userEvent.keyboard("{Escape}");
     await choose("First move");

@@ -5,6 +5,7 @@ import { EmptyState } from "@langchain/macaw-components/EmptyState";
 import { Select } from "@langchain/macaw-components/Select";
 import { Text } from "@langchain/macaw-components/Text";
 import {
+  DEFAULT_DISPLAY_PREFS,
   DEFAULT_PLY_VIEW,
   EVAL_BAR,
   GAP,
@@ -12,6 +13,7 @@ import {
   REVIEW_LEFT,
   TOUCH_TARGET,
   useContainerLayout,
+  type DisplayPrefs,
   type PlyView,
 } from "@langchain-chess/chess-ui";
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
@@ -65,6 +67,7 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
   const [error, setError] = useState<string | null>(null);
   // The sandbox has no localStorage and LangSmith no preferences API: this lasts the session.
   const [view, setView] = useState<PlyView>(DEFAULT_PLY_VIEW);
+  const [prefs, setPrefs] = useState<DisplayPrefs>(DEFAULT_DISPLAY_PREFS);
   // A refresh reloads the pages on screen in place, so the list and the open game stay up
   // meanwhile.
   const [reload, setReload] = useState({ count: 0, pages: 1, keep: null as string | null });
@@ -297,6 +300,8 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
               onAnalyze={() => analyze(game, project)}
               layout={layout}
               space={gameSpace}
+              prefs={prefs}
+              onPrefsChange={setPrefs}
             />
           ) : (
             <EmptyState

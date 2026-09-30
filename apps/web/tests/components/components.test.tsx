@@ -2,6 +2,7 @@ import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { AppMenu } from "../../src/components/AppMenu";
+import { openMenu } from "../support/menus";
 import { renderWithProviders } from "../support/renderApp";
 import { ThemeToggle } from "../../src/components/ThemeToggle";
 
@@ -17,7 +18,7 @@ describe("ThemeToggle", () => {
 
 describe("AppMenu", () => {
   const choose = async (item: string) => {
-    await userEvent.click(screen.getByRole("button", { name: "App menu" }));
+    await openMenu("App menu");
     await userEvent.click(screen.getByRole("menuitem", { name: item }));
   };
 

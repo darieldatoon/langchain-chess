@@ -8,6 +8,11 @@
   --board-notation-on-dark: var(--bg-surface-level-3);
   --board-last-move: var(--bg-warning-subtle);
   --board-drop: var(--border-focus);
+  --board-move-dot: color-mix(in srgb, var(--text-primary) 28%, transparent);
+  --board-move-ring: color-mix(in srgb, var(--text-primary) 28%, transparent);
+  --board-selected: color-mix(in srgb, var(--bg-brand) 35%, transparent);
+  --board-hover: color-mix(in srgb, var(--bg-brand) 30%, transparent);
+  --board-check: color-mix(in srgb, var(--bg-error-strong) 85%, transparent);
 }
 
 html.dark {
@@ -17,6 +22,11 @@ html.dark {
   --board-notation-on-dark: var(--border-strong);
   --board-last-move: color-mix(in srgb, var(--bg-warning-strong) 55%, var(--border-strong));
   --board-drop: var(--text-primary);
+  --board-move-dot: color-mix(in srgb, var(--bg-surface-level-1) 45%, transparent);
+  --board-move-ring: color-mix(in srgb, var(--bg-surface-level-1) 45%, transparent);
+  --board-selected: color-mix(in srgb, var(--bg-brand) 45%, transparent);
+  --board-hover: color-mix(in srgb, var(--bg-brand) 40%, transparent);
+  --board-check: color-mix(in srgb, var(--bg-error-strong) 90%, transparent);
 }
 
 /* Markdown rendered from the LLM reply; element selectors need CSS, so map them to tokens. */
