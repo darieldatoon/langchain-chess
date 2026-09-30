@@ -1,78 +1,29 @@
-import { fireEvent, render, renderHook, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import {
   DEFAULT_DISPLAY_PREFS,
-  DEFAULT_PLY_VIEW,
-  type DisplayPrefs,
   type OpeningTable,
   positionKey,
   replay,
   START_FEN,
   withAlpha,
 } from "@langchain-chess/chess-ui";
-import {
-  CHART_STATUS_COLORS,
-  useChartColorResolver,
-} from "@langchain/macaw-components/utils/chartColors";
+import { CHART_STATUS_COLORS } from "@langchain/macaw-components/utils/chartColors";
 import { describe, expect, it, vi } from "vite-plus/test";
 import userEvent from "@testing-library/user-event";
 import { openMenu } from "./support/menus";
-import type { OpenUrl } from "../src/App";
-import type { Analysis, LaunchState } from "../src/analysis";
 import { EvalBar } from "../src/components/EvalBar";
 import { GameList } from "../src/components/GameList";
-import { GameView } from "../src/components/GameView";
-import { GradeCard } from "../src/components/GradeCard";
-import { HostTheme } from "../src/HostTheme";
-import { game, graded, review, UNGRADED, values } from "./support/fixtures";
+import { game, graded, UNGRADED, values } from "./support/fixtures";
 import { board } from "./support/mocks";
-
-/** What the board's colour resolver gives for a colour in the light theme. */
-function resolved(colour: string): string {
-  const { result } = renderHook(() => useChartColorResolver(), {
-    wrapper: ({ children }) => <HostTheme mode="light">{children}</HostTheme>,
-  });
-  return result.current(colour);
-}
+import { current, key, renderView, resolved, viewElement, viewProps } from "./support/view";
 
 vi.mock("react-chessboard", async () => (await import("./support/mocks")).chessboardMock());
 vi.mock("@langchain/macaw-components/LineChart", async () =>
   (await import("./support/mocks")).lineChartMock(),
 );
-
-interface ViewExtras {
-  openings?: OpeningTable | null;
-  openUrl?: OpenUrl;
-  prefs?: DisplayPrefs;
-  onPrefsChange?: (prefs: DisplayPrefs) => void;
-  analysis?: Analysis | null;
-  launch?: LaunchState;
-  onAnalyze?: () => void;
-}
-
-const renderView = (g = game(), onOpenTrace = vi.fn(), extras: ViewExtras = {}) =>
-  render(
-    <HostTheme mode="light">
-      <GameView
-        game={g}
-        values={g.values!}
-        view={DEFAULT_PLY_VIEW}
-        onViewChange={() => {}}
-        onOpenTrace={onOpenTrace}
-        analysis={extras.analysis ?? null}
-        launch={extras.launch}
-        onAnalyze={extras.onAnalyze ?? (() => {})}
-        layout="wide"
-        space={{ width: 1000, height: 800 }}
-        prefs={extras.prefs ?? DEFAULT_DISPLAY_PREFS}
-        onPrefsChange={extras.onPrefsChange ?? (() => {})}
-        openings={extras.openings ?? null}
-        openUrl={extras.openUrl ?? (() => {})}
-      />
-    </HostTheme>,
-  );
-const key = (k: string) => fireEvent.keyDown(window, { key: k });
-/** The move the board shows, as the move list marks it. */
-const current = () => document.querySelector('[aria-current="step"]')?.textContent ?? "Start";
+vi.mock("@langchain/macaw-components/BarChart", async () =>
+  (await import("./support/mocks")).barChartMock(),
+);
 
 describe("EvalBar", () => {
   it("fills White's share from the bottom, or the top when flipped", () => {
@@ -82,53 +33,6 @@ describe("EvalBar", () => {
     rerender(<EvalBar value={{ mate: 2, winner: "black" }} flipped />);
     expect(screen.getByLabelText("evaluation -#2")).toBeInTheDocument();
     expect(container.firstChild?.firstChild).not.toHaveClass("flex-col-reverse");
-  });
-});
-
-describe("GradeCard", () => {
-  const blunder = review().plies[5];
-  const move = {
-    grade: blunder,
-    san: "Nf6",
-    fenBefore: "r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 3 3",
-    before: { cp: 30 },
-    after: { mate: 1, winner: "white" } as const,
-  };
-
-  it("shows the grade, the better move and the engine's lines, padded to the line count", () => {
-    render(<GradeCard move={move} engine="Stockfish 19" lineCount={2} />);
-    expect(screen.getByText("Blunder: Nf6")).toBeInTheDocument();
-    expect(screen.getByText("+0.3 → #1")).toBeInTheDocument();
-    expect(screen.getByText("38.4%")).toBeInTheDocument();
-    expect(screen.getByText("d5")).toBeInTheDocument();
-    const lines = screen.getByLabelText("engine lines");
-    expect(within(lines).getByText("d5 Bxd5")).toBeInTheDocument();
-    // The header plus two rows: the line and an empty one holding its place.
-    expect(lines.children).toHaveLength(3);
-  });
-
-  it("keeps its rows at the start and for a best move, with dashes for what's missing", () => {
-    const { rerender } = render(<GradeCard move={null} engine="Stockfish 19" lineCount={1} />);
-    expect(screen.getByText("Start position")).toBeInTheDocument();
-    expect(screen.getAllByText("—")).toHaveLength(5);
-    expect(screen.getByLabelText("engine lines").children).toHaveLength(2);
-    rerender(
-      <GradeCard
-        move={{ ...move, grade: { ...blunder, quality: "best", lines: [] } }}
-        engine="Stockfish 19"
-        lineCount={0}
-      />,
-    );
-    expect(screen.getAllByText("—")).toHaveLength(1);
-    expect(screen.queryByLabelText("engine lines")).toBeNull();
-    rerender(
-      <GradeCard
-        move={{ ...move, grade: { ...blunder, best_move: null } }}
-        engine="x"
-        lineCount={1}
-      />,
-    );
-    expect(screen.getAllByText("—")).toHaveLength(1);
   });
 });
 
@@ -222,7 +126,7 @@ describe("GameView", () => {
     renderView();
     expect(current()).toBe("Qxf7#");
     expect(screen.getByLabelText("result")).toHaveTextContent("1-0Checkmate · White wins");
-    expect(screen.getByLabelText("engine grade")).toBeInTheDocument();
+    expect(screen.getByLabelText("engine")).toBeInTheDocument();
     expect(screen.getByLabelText("who played it")).toHaveTextContent("Who Played It");
     expect(screen.getByLabelText("evaluation 1-0")).toBeInTheDocument();
     expect(board.options?.arrows).toHaveLength(1);
@@ -258,7 +162,7 @@ describe("GameView", () => {
     expect(graph).toHaveAttribute("data-y", "50%");
     fireEvent.click(graph);
     expect(current()).toBe("Qh5");
-    fireEvent.click(screen.getByRole("button", { name: "Nc6" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Nc6/ }));
     expect(current()).toBe("Nc6");
   });
 
@@ -313,7 +217,7 @@ describe("GameView", () => {
     fireEvent.click(screen.getByRole("button", { name: /Open trace/ }));
     expect(onOpenTrace).toHaveBeenLastCalledWith(last);
     // An earlier move's run, whose start time wasn't loaded.
-    fireEvent.click(screen.getByRole("button", { name: "Nc6" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Nc6/ }));
     fireEvent.click(screen.getByRole("button", { name: /Open trace/ }));
     expect(onOpenTrace).toHaveBeenLastCalledWith({ ...last, runId: "run-2", runStartTime: null });
     key("Home");
@@ -327,7 +231,7 @@ describe("GameView", () => {
     expect(screen.getByText("Not graded yet")).toBeInTheDocument();
     expect(screen.getByText("lcchess grade --thread thread-1")).toBeInTheDocument();
     expect(screen.queryByLabelText(/^evaluation/)).toBeNull();
-    expect(screen.queryByLabelText("engine grade")).toBeNull();
+    expect(screen.queryByLabelText("engine")).toBeNull();
     expect(screen.queryByRole("button", { name: "Re-analyze" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Analyze" }));
     expect(onAnalyze).toHaveBeenCalled();
@@ -352,24 +256,7 @@ describe("GameView", () => {
     expect(onAnalyze).toHaveBeenCalled();
     expect(screen.queryByRole("alert")).toBeNull();
     rerender(
-      <HostTheme mode="light">
-        <GameView
-          game={game()}
-          values={values()}
-          view={DEFAULT_PLY_VIEW}
-          onViewChange={() => {}}
-          onOpenTrace={() => {}}
-          analysis={null}
-          launch={{ status: "starting" }}
-          onAnalyze={onAnalyze}
-          layout="wide"
-          space={{ width: 1000, height: 800 }}
-          prefs={DEFAULT_DISPLAY_PREFS}
-          onPrefsChange={() => {}}
-          openings={null}
-          openUrl={() => {}}
-        />
-      </HostTheme>,
+      viewElement(viewProps(game(), vi.fn(), { onAnalyze, launch: { status: "starting" } })),
     );
     expect(screen.getByRole("button", { name: /Re-analyze/ })).toBeDisabled();
   });
@@ -378,7 +265,7 @@ describe("GameView", () => {
     renderView(game(), vi.fn(), { analysis: { status: "analyzing" } });
     expect(screen.getByText("Analyzing…")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /analyze/i })).toBeNull();
-    expect(screen.getByLabelText("engine grade")).toBeInTheDocument();
+    expect(screen.getByLabelText("engine")).toBeInTheDocument();
     renderView(game({ grading: UNGRADED }), vi.fn(), { launch: { status: "started" } });
     expect(screen.getAllByText("Analyzing…")).toHaveLength(2);
     expect(screen.queryByText("Not graded yet")).toBeNull();
@@ -414,11 +301,17 @@ describe("GameView", () => {
     const root = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 5";
     const bare = game({
       grading: UNGRADED,
-      values: values({ start_fen: root, moves: ["e7e5"], plies: undefined, turns: undefined }),
+      values: values({
+        start_fen: root,
+        moves: ["e7e5", "a1a8"],
+        plies: undefined,
+        turns: undefined,
+      }),
     });
     renderView(bare);
-    expect(current()).toBe("e7e5");
-    expect(screen.getByRole("button", { name: "e7e5" })).toBeInTheDocument();
+    // Without records, SAN is replayed; a move that doesn't replay shows as UCI.
+    expect(current()).toBe("a1a8");
+    expect(screen.getByRole("button", { name: "e5" })).toBeInTheDocument();
     const once = game({
       grading: UNGRADED,
       values: values({ start_fen: root, moves: undefined, outcome: null }),
@@ -511,6 +404,7 @@ describe("openings and export in the review", () => {
     expect(screen.queryByLabelText("export")).not.toBeInTheDocument();
   });
 
+  // 1,600 plies, the heaviest render in the suite: a loaded runner needs more than 5s.
   it("says when the browser refuses a copy, and when a game is too long for a link", async () => {
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText: () => Promise.reject(new Error("denied")) },
@@ -532,5 +426,5 @@ describe("openings and export in the review", () => {
     expect(screen.getByLabelText("export")).toHaveTextContent(
       "Opened the position; the game was too long to send.",
     );
-  });
+  }, 20_000);
 });

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 
-const STEPS: Record<string, (index: number, last: number) => number> = {
+/** Where each stepping key goes, from `index` of `0..last`. */
+export const STEP_KEYS: Readonly<Record<string, (index: number, last: number) => number>> = {
   ArrowLeft: (i) => i - 1,
   k: (i) => i - 1,
   ArrowRight: (i) => i + 1,
@@ -14,6 +15,14 @@ const STEPS: Record<string, (index: number, last: number) => number> = {
 /** Keys typed here belong to the control, not the game: fields, dialogs, menus, popovers. */
 const OWN_KEYS =
   "input, textarea, select, [contenteditable], [role=combobox], [role=dialog], [role=menu], [role=listbox], [data-radix-popper-content-wrapper]";
+
+/** A key the game shouldn't take: another control handled it or owns it, or it is a shortcut. */
+export function othersKey(event: KeyboardEvent): boolean {
+  const target = event.target;
+  // A control that handled the key (a menu trigger opening on ArrowDown) keeps it.
+  if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return true;
+  return target instanceof Element && target.closest(OWN_KEYS) !== null;
+}
 
 export interface GameKeys {
   index: number;
@@ -33,11 +42,8 @@ export function useGameKeys({ index, last, onGo, onFlip, onHelp, enabled = true 
   useEffect(() => {
     if (!enabled) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target;
-      // A control that handled the key (a menu trigger opening on ArrowDown) keeps it.
-      if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
-      if (target instanceof Element && target.closest(OWN_KEYS)) return;
-      const step = STEPS[event.key];
+      if (othersKey(event)) return;
+      const step = STEP_KEYS[event.key];
       if (step) {
         event.preventDefault();
         onGo(Math.max(0, Math.min(last, step(index, last))));

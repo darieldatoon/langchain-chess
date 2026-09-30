@@ -4,6 +4,7 @@ import { matchup, modelName, resultText, sideLabel, toGame, type ThreadItem } fr
 import { evalText, parseReview, reviewsByRun, whiteCp, whiteWinPercent } from "../src/review";
 import { decodeValues } from "../src/values";
 import { reviewPgn } from "../src/export";
+import { toPgn } from "@langchain-chess/chess-ui";
 import { call as llmCall, ply as plyOf, systemOne, turn } from "@langchain-chess/chess-ui/testing";
 import { game, graded, MOVES, review, reviewFeedback, values } from "./support/fixtures";
 
@@ -423,9 +424,27 @@ describe("sideLabel", () => {
 describe("reviewPgn", () => {
   it("writes an ungraded game with no plies from its moves alone", () => {
     const { game: pgn, meta } = reviewPgn(game(), { moves: ["e2e4"] }, null, null);
-    expect(pgn).toMatchObject({ moves: ["e2e4"], sans: [], outcome: null, grades: undefined });
+    expect(pgn).toMatchObject({
+      moves: ["e2e4"],
+      sans: [undefined],
+      outcome: null,
+      grades: undefined,
+    });
     expect(meta).toMatchObject({ site: "LangSmith", white: "Human", black: "Human" });
     expect(meta.comment).toBe("claude-opus-5-5 + semif-qwen3.5-4b · Thread thread-1");
     expect(reviewPgn(game(), {}, null, null).game.moves).toEqual([]);
+  });
+
+  it("places each record's SAN at its own ply, so missing ones are replayed", () => {
+    const sparse = values({ plies: values().plies!.filter((p) => p.ply !== 0 && p.ply !== 3) });
+    const { game: pgn, meta } = reviewPgn(game(), sparse, review(), null);
+    expect(pgn.sans).toEqual([undefined, "e5", "Qh5", undefined, "Bc4", "Nf6", "Qxf7#"]);
+    const movetext = toPgn(pgn, meta)
+      .split("\n\n")[1]
+      .replace(/\{[^}]*\}/g, " ");
+    const played = movetext
+      .split(/\s+/)
+      .filter((t) => t && !/^\d+\.+$/.test(t) && !t.startsWith("$") && t !== "1-0");
+    expect(played).toEqual(["e4", "e5", "Qh5", "Nc6", "Bc4", "Nf6", "Qxf7#"]);
   });
 });

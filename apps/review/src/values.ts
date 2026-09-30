@@ -5,6 +5,7 @@ import {
   SYSTEMONE_META_KEY,
   type ChessValues,
   type DrawReason,
+  type Ply,
 } from "@langchain-chess/chess-ui";
 import { isArrayOf, isJson, isNumber, isSide, isString, type Json } from "./json";
 
@@ -88,4 +89,13 @@ function isValues(v: Json): boolean {
 /** The game record in a run's outputs, or null when they hold none this app can draw. */
 export function decodeValues(outputs: unknown): ChessValues | null {
   return isJson(outputs) && isValues(outputs) ? (outputs as ChessValues) : null;
+}
+
+/**
+ * The records by their own `ply`, one slot per move, undefined where a record is missing. Never
+ * index `values.plies` by position: a missing record would shift every later one.
+ */
+export function recordsByPly(plies: readonly Ply[], count: number): (Ply | undefined)[] {
+  const byPly = new Map(plies.map((p) => [p.ply, p]));
+  return Array.from({ length: count }, (_, i) => byPly.get(i));
 }

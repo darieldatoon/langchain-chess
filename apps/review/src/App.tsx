@@ -30,6 +30,7 @@ import {
   type TraceTarget,
 } from "./api";
 import type { Game } from "./games";
+import type { ReviewTab } from "./tools";
 import { GameList } from "./components/GameList";
 import { GameView } from "./components/GameView";
 
@@ -72,6 +73,7 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
   // The sandbox has no localStorage and LangSmith no preferences API: this lasts the session.
   const [view, setView] = useState<PlyView>(DEFAULT_PLY_VIEW);
   const [prefs, setPrefs] = useState<DisplayPrefs>(DEFAULT_DISPLAY_PREFS);
+  const [tab, setTab] = useState<ReviewTab>("graph");
   // A refresh reloads the pages on screen in place, so the list and the open game stay up
   // meanwhile.
   const [reload, setReload] = useState({ count: 0, pages: 1, keep: null as string | null });
@@ -313,6 +315,8 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
               onPrefsChange={setPrefs}
               openings={openings}
               openUrl={openUrl}
+              tab={tab}
+              onTabChange={setTab}
             />
           ) : (
             <EmptyState

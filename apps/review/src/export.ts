@@ -8,6 +8,7 @@ import {
 } from "@langchain-chess/chess-ui";
 import { sideLabel, type Game } from "./games";
 import type { GameReview } from "./review";
+import { recordsByPly } from "./values";
 
 export function reviewPgn(
   game: Game,
@@ -16,11 +17,13 @@ export function reviewPgn(
   opening: Opening | null,
 ): { game: PgnGame; meta: PgnMeta } {
   const plies = values.plies ?? [];
+  const moves = values.moves ?? [];
   return {
     game: {
       startFen: fenOrStart(values.start_fen),
-      moves: values.moves ?? [],
-      sans: plies.map((p) => p.san),
+      moves,
+      // A missing record's SAN is replayed.
+      sans: recordsByPly(plies, moves.length).map((p) => p?.san),
       outcome: values.outcome ?? null,
       opening,
       // The evaluation after each move: evals are one per position, the start included.

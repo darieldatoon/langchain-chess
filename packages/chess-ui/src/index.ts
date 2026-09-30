@@ -24,7 +24,7 @@ export { DrawMark, MoveList, MoveStrip } from "./components/MoveList";
 export { OpeningHeading, OpeningMark } from "./components/Opening";
 export { useOpenings } from "./useOpenings";
 export { PlayerStrip } from "./components/PlayerStrip";
-export { PlyDetails } from "./components/PlyDetails";
+export { PlyDetails, type MovePreview } from "./components/PlyDetails";
 export { ResponsiveDialog } from "./components/ResponsiveDialog";
 export { ShortcutDialog } from "./components/ShortcutDialog";
 export { GameShell, type ShellSlots } from "./layout/GameShell";
@@ -37,5 +37,5 @@ export {
 } from "./layout/useContainerLayout";
 export { DIALOG_CLASSES, REGION_CLASSES } from "./dialog";
 export { TOUCH_HIT_AREA, TOUCH_TARGET } from "./touch";
-export { useGameKeys, type GameKeys } from "./useGameKeys";
+export { othersKey, STEP_KEYS, useGameKeys, type GameKeys } from "./useGameKeys";
 export { usePlyCursor, type PlyCursor } from "./usePlyCursor";

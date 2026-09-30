@@ -258,6 +258,34 @@ describe("MoveBar", () => {
     rerender(<MoveBar move={{ uci: "e2e4", probability: 0.42 }} fen={START_FEN} played />);
     expect(screen.getByLabelText("e4 (played) probability")).toBeInTheDocument();
   });
+
+  it("makes the SAN a preview button when asked, hovering only with a hover handler", () => {
+    const onPin = vi.fn();
+    const onHover = vi.fn();
+    const move = { uci: "e2e4", probability: 0.42 };
+    const { rerender } = render(
+      <MoveBar move={move} fen={START_FEN} onPin={onPin} onHover={onHover} pinned played />,
+    );
+    const e4 = screen.getByRole("button", { name: "Preview e4" });
+    expect(e4).toHaveAttribute("aria-pressed", "true");
+    expect(e4).toHaveClass("font-semibold");
+    fireEvent.mouseEnter(e4);
+    fireEvent.mouseLeave(e4);
+    expect(onHover.mock.calls).toEqual([[true], [false]]);
+    fireEvent.click(e4);
+    expect(onPin).toHaveBeenCalledTimes(1);
+    rerender(<MoveBar move={move} fen={START_FEN} onPin={onPin} />);
+    fireEvent.mouseEnter(screen.getByRole("button", { name: "Preview e4" }));
+    expect(onHover).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole("button", { name: "Preview e4" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    // A move that isn't legal here has nothing to preview.
+    rerender(<MoveBar move={{ uci: "a1a8", probability: 0.1 }} fen={START_FEN} onPin={onPin} />);
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.getByText("a1a8")).toBeInTheDocument();
+  });
 });
 
 describe("PlyDetails", () => {
@@ -410,6 +438,39 @@ describe("PlyDetails", () => {
     }
     expect(screen.queryByText("…")).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Nc6/)).not.toBeInTheDocument();
+  });
+
+  it("previews System 1's moves, by hover only when the app hovers", () => {
+    const onPin = vi.fn();
+    const onHover = vi.fn();
+    const top = [{ uci: "g8f6", probability: 0.6 }];
+    const state: ReplyState = { status: "played", reply: reply({}, systemOne({ top })) };
+    const view = { reasoning: false, topMoves: true };
+    const { rerender } = renderWithProviders(
+      <PlyDetails
+        reply={state}
+        view={view}
+        onViewChange={() => {}}
+        preview={{ onPin, onHover, pinned: "g8f6" }}
+      />,
+    );
+    const nf6 = screen.getByRole("button", { name: "Preview Nf6" });
+    expect(nf6).toHaveAttribute("aria-pressed", "true");
+    fireEvent.mouseEnter(nf6);
+    fireEvent.mouseLeave(nf6);
+    expect(onHover.mock.calls).toEqual([["g8f6"], [null]]);
+    fireEvent.click(nf6);
+    expect(onPin).toHaveBeenCalledWith("g8f6");
+    rerender(
+      <PlyDetails
+        reply={state}
+        view={view}
+        onViewChange={() => {}}
+        preview={{ onPin, pinned: null }}
+      />,
+    );
+    fireEvent.mouseEnter(screen.getByRole("button", { name: "Preview Nf6" }));
+    expect(onHover).toHaveBeenCalledTimes(2);
   });
 
   it("falls back to the shortlist for older games, and says so without either", () => {
