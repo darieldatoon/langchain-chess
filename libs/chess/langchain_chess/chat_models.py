@@ -10,6 +10,8 @@ from langchain.chat_models import init_chat_model
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.model_profile import ModelProfile
 
+from langchain_chess.efforts import takes_effort
+from langchain_chess.errors import EFFORT_ADVICE
 from langchain_chess.model_arguments import ModelArguments, ModelArgumentsError
 from langchain_chess.models import GATEWAY_PREFIX, model_identity
 from langchain_chess.pricing import context_window
@@ -34,6 +36,7 @@ def chat_model(
     """`connection` is trusted code's own, such as an HTTP client in tests; never settings'."""
     arguments = arguments or ModelArguments()
     connection = connection or {}
+    _check_effort(model, arguments.reasoning_effort)
     window = context_window(model)
     _check_room(model, window, arguments.max_tokens)
     budget = arguments.max_tokens or output_budget(window)
@@ -58,6 +61,13 @@ def _check_room(model: str, window: int | None, max_tokens: int | None) -> None:
     """An output limit that fills the window leaves no input, and memory would summarize always."""
     if window and max_tokens is not None and max_tokens >= window:
         msg = f"an output limit of {max_tokens} leaves no room in {model}'s {window}-token window"
+        raise ModelArgumentsError(msg)
+
+
+def _check_effort(model: str, effort: str | None) -> None:
+    """Fails before the first call, where the provider would answer the effort with a 400."""
+    if effort is not None and not takes_effort(model):
+        msg = f"{model} doesn't take a reasoning effort; {EFFORT_ADVICE}"
         raise ModelArgumentsError(msg)
 
 

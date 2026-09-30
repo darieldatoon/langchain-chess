@@ -171,6 +171,10 @@ run = "uv run --all-packages --env-file .env lcchess-evals systemone baseline"
 description = "Regenerate the settings' JSON Schemas and TypeScript in packages/chess-ui from ChessContext"
 run = "uv run --all-packages python -m langchain_chess_server.codegen packages/chess-ui/src/generated"
 
+[tasks."probe:efforts"]
+description = "Ask each recorded model, and any given after --, whether it takes a reasoning effort (real calls)"
+run = "uv run --all-packages --env-file .env python -m langchain_chess.efforts"
+
 [tasks.build]
 description = "Build the web UI into the server package so the image can serve it under /ui"
 run = "pnpm --dir apps/web exec vp build"

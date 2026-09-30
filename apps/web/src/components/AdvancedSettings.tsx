@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { parseKnob, parseNullableKnob, sliderValue } from "../format";
 import { CONTEXT_CHECKS } from "../settings";
 import {
+  effortOf,
   effortOverridden,
   memoryOf,
   parseKwargs,
@@ -17,6 +18,7 @@ import {
   type Knobs,
   type Sections,
   type Summarize,
+  type TakesEffort,
 } from "../setup";
 import {
   SETTING_HELP,
@@ -38,6 +40,8 @@ interface Props {
   knobs: Knobs;
   sections: Sections;
   summarize: Summarize;
+  /** False for an LLM that takes no reasoning effort, which holds the setting at the default. */
+  takesEffort: TakesEffort;
   onKnob: SetKnob;
   /** Must be stable: each number field reports whether its text is a valid value. */
   onValidity: (knob: DraftKnob, valid: boolean) => void;
@@ -90,7 +94,14 @@ const GATES: SelectOption<GateSignal>[] = [
 const L = SETTING_LABELS;
 
 /** The knobs behind the pickers; only the sections the chosen opponent uses are shown. */
-export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onValidity }: Props) {
+export function AdvancedSettings({
+  knobs,
+  sections,
+  summarize,
+  takesEffort,
+  onKnob: set,
+  onValidity,
+}: Props) {
   const number = (key: "k" | "seed") => ({
     knob: key,
     onValidity,
@@ -120,15 +131,18 @@ export function AdvancedSettings({ knobs, sections, summarize, onKnob: set, onVa
             id="effort"
             setting="reasoning_effort"
             hint={
-              effortOverridden(knobs)
-                ? "Model arguments set the effort, so this is ignored."
-                : undefined
+              takesEffort === false
+                ? "This model doesn't take a reasoning effort."
+                : effortOverridden(knobs)
+                  ? "Model arguments set the effort, so this is ignored."
+                  : undefined
             }
           >
             <Select
               aria-label={L.reasoning_effort}
               size="md"
-              value={knobs.reasoning_effort ?? "default"}
+              value={effortOf(knobs, takesEffort) ?? "default"}
+              disabled={takesEffort === false}
               options={EFFORTS}
               hideSearch
               onChange={(v) => set("reasoning_effort", v === "default" ? null : v)}

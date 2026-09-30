@@ -23,7 +23,7 @@ import {
 } from "@langchain-chess/chess-ui";
 import { checkApiKey, type KeyCheck } from "./auth";
 import { downloadJson } from "./files";
-import { fetchModelLimit, type ModelLimit } from "./modelLimit";
+import { fetchModelFacts, type ModelFacts } from "./modelFacts";
 import { AppSettingsDialog } from "./components/AppSettingsDialog";
 import { NewGameDialog } from "./components/NewGameDialog";
 import { ResultCard } from "./components/ResultCard";
@@ -74,17 +74,17 @@ interface Props {
   random?: () => number;
   /** Asks the server about a key before a game starts; injectable so tests need no server. */
   checkKey?: (apiKey: string) => Promise<KeyCheck>;
-  /** Asks the server for a model's input limit; injectable so tests need no server. */
-  modelLimit?: (apiKey: string, model: string) => Promise<ModelLimit>;
+  /** Asks the server what it knows about a model; injectable so tests need no server. */
+  modelFacts?: (apiKey: string, model: string) => Promise<ModelFacts>;
 }
 
 const serverCheck = (apiKey: string) => checkApiKey(apiUrl(), apiKey);
-const serverLimit = (apiKey: string, model: string) => fetchModelLimit(apiUrl(), apiKey, model);
+const serverFacts = (apiKey: string, model: string) => fetchModelFacts(apiUrl(), apiKey, model);
 
 export default function App({
   random = Math.random,
   checkKey = serverCheck,
-  modelLimit = serverLimit,
+  modelFacts = serverFacts,
 }: Props) {
   const [app, setApp] = useState<AppSettings>(() => loadAppSettings());
   const [setup, setSetup] = useState<Setup>(() => loadSetup());
@@ -112,9 +112,9 @@ export default function App({
   );
 
   // Stable per key: the dialog asks again whenever this changes.
-  const limitFor = useCallback(
-    (model: string) => modelLimit(app.apiKey, model),
-    [modelLimit, app.apiKey],
+  const factsFor = useCallback(
+    (model: string) => modelFacts(app.apiKey, model),
+    [modelFacts, app.apiKey],
   );
 
   const onSaveApp = useCallback(
@@ -215,7 +215,7 @@ export default function App({
           onClose={closeNewGame}
           onOpenSettings={openSettingsFromNewGame}
           checkKey={() => checkKey(app.apiKey)}
-          modelLimit={limitFor}
+          modelFacts={factsFor}
         />
       )}
       {overlay?.kind === "settings" && (

@@ -19,7 +19,7 @@ it. Check it is up with `curl http://127.0.0.1:2024/ok`.
 |---|---|
 | The Agent Server API | Threads, runs and assistants for the `chess` graph. Studio uses it too. |
 | `GET /ui/config` | The `ChessContext` JSON schema and its defaults |
-| `GET /ui/model-limit?model=<spec>` | `{"max_input_tokens": <int or null>}`: the web UI offers Summarize only with a limit |
+| `GET /ui/model?model=<spec>` | `{"max_input_tokens": <int or null>, "takes_effort": <bool>}`: the web UI offers Summarize only with a limit, and Reasoning Effort unless the model is known to take none |
 | `/ui/` | The built web UI. A 404 until `mise run build` has run; `mise run dev` serves it from Vite instead. |
 
 ## Call it

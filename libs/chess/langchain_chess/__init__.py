@@ -2,7 +2,7 @@
 
 from langchain_chess.agent import NoModel, create_chess_agent
 from langchain_chess.contract import ChessMiddleware, PositionView
-from langchain_chess.errors import ChessContractError, ContextBudgetError
+from langchain_chess.errors import ChessContractError, ContextBudgetError, ReasoningEffortError
 from langchain_chess.pricing import TurnCost, turn_cost
 from langchain_chess.prompt import (
     SYSTEM_PROMPT,
@@ -42,6 +42,7 @@ __all__ = [
     "PositionSection",
     "PositionView",
     "Proposal",
+    "ReasoningEffortError",
     "Resignation",
     "TurnCost",
     "TurnRecord",

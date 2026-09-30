@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from langchain_chess.efforts import takes_effort
 from langchain_chess_server.clients import POOL
 from langchain_chess_server.graph import model_limit
 from langchain_chess_systemone.settings import ChessContext, dump
@@ -54,10 +55,11 @@ def create_app(static_dir: Path | None = STATIC_DIR) -> FastAPI:
     def config() -> dict[str, Any]:
         return ui_config()
 
-    @app.get("/ui/model-limit")
-    def limit(model: str) -> dict[str, int | None]:
-        """The new-game dialog offers memory only for a model with a known input limit."""
-        return {"max_input_tokens": model_limit(model)}
+    @app.get("/ui/model")
+    def model_facts(model: str) -> dict[str, Any]:
+        """What the new-game dialog offers: memory for a known input limit, and a reasoning
+        effort unless the model is known to take none."""
+        return {"max_input_tokens": model_limit(model), "takes_effort": takes_effort(model)}
 
     @app.get("/ui", include_in_schema=False)
     def root() -> RedirectResponse:

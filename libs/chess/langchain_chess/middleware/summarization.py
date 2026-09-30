@@ -15,7 +15,7 @@ from langchain.agents.middleware.types import AgentMiddleware
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AnyMessage, BaseMessage, HumanMessage, SystemMessage
 
-from langchain_chess.errors import ChessContractError
+from langchain_chess.errors import ChessContractError, provider_errors
 from langchain_chess.recorder import CallRecorder
 from langchain_chess.state import Call, ChessState, TurnRecord
 
@@ -150,7 +150,7 @@ class ChessSummarization(SummarizationMiddleware):
     def before_model(self, state: Any, runtime: Any) -> dict[str, Any] | None:
         token = _OVERHEAD.set(self.overhead_tokens(state))
         try:
-            with self.recorder.sink("summary") as calls:
+            with self.recorder.sink("summary") as calls, provider_errors():
                 update = super().before_model(state, runtime)
         finally:
             _OVERHEAD.reset(token)
@@ -159,7 +159,7 @@ class ChessSummarization(SummarizationMiddleware):
     async def abefore_model(self, state: Any, runtime: Any) -> dict[str, Any] | None:
         token = _OVERHEAD.set(self.overhead_tokens(state))
         try:
-            with self.recorder.sink("summary") as calls:
+            with self.recorder.sink("summary") as calls, provider_errors():
                 update = await super().abefore_model(state, runtime)
         finally:
             _OVERHEAD.reset(token)

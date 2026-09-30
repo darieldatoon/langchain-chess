@@ -81,7 +81,7 @@ mise run build                           # into apps/server/langchain_chess_serv
 sequenceDiagram
   participant B as Browser
   participant S as Agent Server
-  B->>S: GET /ui/model-limit (when the dialog opens or the LLM changes)
+  B->>S: GET /ui/model (when the dialog opens or the LLM changes)
   B->>S: create thread, stream run: message "e2e4", context
   S-->>B: values: moves, plies, turns, outcome
   Note over B,S: every submit sends the thread's `setup` back as `configurable`

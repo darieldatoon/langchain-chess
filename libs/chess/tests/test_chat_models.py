@@ -1,7 +1,7 @@
 import pytest
 
 from langchain_chess.chat_models import MAX_TOKENS, chat_model, output_budget
-from langchain_chess.model_arguments import model_arguments
+from langchain_chess.model_arguments import ModelArgumentsError, model_arguments
 
 
 @pytest.fixture
@@ -82,3 +82,35 @@ def test_an_unknown_native_model_keeps_the_cap_and_no_input_limit(monkeypatch):
     model = chat_model("openai:no-such-model")
     assert model.max_tokens == MAX_TOKENS
     assert "max_input_tokens" not in (model.profile or {})
+
+
+def test_a_model_without_an_effort_is_refused_one_before_its_first_call(gateway):
+    spec = "langsmith:anthropic/claude-haiku-4-5-20251001"
+    with pytest.raises(ModelArgumentsError, match=f"^{spec} doesn't take a reasoning effort"):
+        chat_model(spec, model_arguments({}, reasoning_effort="high"))
+    # Clearing the setting alone wouldn't help: model arguments outrank it.
+    with pytest.raises(ModelArgumentsError, match=r"effort; remove it from .* model arguments$"):
+        chat_model(spec, model_arguments({"extra_body": {"reasoning": {"effort": "low"}}}))
+
+
+def test_a_model_without_an_effort_plays_at_its_default(gateway):
+    haiku = "langsmith:anthropic/claude-haiku-4-5-20251001"
+    assert chat_model(haiku).reasoning_effort is None
+    # `extra_body.reasoning` without an effort replaces the effort: none is sent.
+    replaced = model_arguments({"extra_body": {"reasoning": {}}}, reasoning_effort="high")
+    assert replaced.reasoning_effort is None
+    assert chat_model(haiku, replaced).extra_body
+
+
+def test_any_effort_goes_to_a_model_that_takes_one(gateway):
+    glm = "langsmith:baseten/zai-org/GLM-5.3-Flash"
+    medium = model_arguments({}, reasoning_effort="medium")
+    assert chat_model(glm, medium).reasoning_effort == "medium"
+
+
+def test_a_model_the_catalog_doesnt_know_takes_any_effort(gateway):
+    nope = chat_model(
+        "langsmith:fireworks/accounts/fireworks/models/nope",
+        model_arguments({}, reasoning_effort="max"),
+    )
+    assert nope.reasoning_effort == "max"

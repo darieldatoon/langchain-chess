@@ -22,7 +22,7 @@ from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, RemoveM
 from langgraph.types import Command
 
 from langchain_chess.contract import PositionView, ply_meta_of, turn_calls_of, turn_latency_of
-from langchain_chess.errors import ChessContractError, ContextBudgetError
+from langchain_chess.errors import ChessContractError, provider_errors
 from langchain_chess.parse import EMPTY_REPLY, parse_move, text_of
 from langchain_chess.prompt import (
     PositionRenderer,
@@ -57,15 +57,6 @@ from langchain_chess.state import (
     TurnRecord,
 )
 
-_OVERFLOW_HINTS = (
-    "prompt is too long",
-    "context length",
-    "context_length",
-    "maximum context",
-    "too many tokens",
-    "input is too long",
-)
-
 # Cleared whenever a turn opens, retries from scratch, or finalizes.
 _DECISION_RESET: dict[str, Any] = {
     "proposal": None,
@@ -85,11 +76,6 @@ def _invocation(
     action: Literal["execute", "reject", "noop"], opened_turn: str | None = None
 ) -> Invocation:
     return {"id": _new_id(), "action": action, "opened_turn": opened_turn}
-
-
-def looks_like_overflow(error: BaseException) -> bool:
-    text = str(error).lower()
-    return any(hint in text for hint in _OVERFLOW_HINTS)
 
 
 def _external_ply(index: int, board: chess.Board, move: chess.Move) -> Ply:
@@ -452,12 +438,8 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         started = time.perf_counter()
         with self.recorder.sink("llm") as calls:
             try:
-                try:
+                with provider_errors():
                     response = handler(self._prepare(request))
-                except Exception as e:
-                    if looks_like_overflow(e):
-                        raise ContextBudgetError(str(e)) from e
-                    raise
             except Exception as error:
                 if not calls:
                     raise
@@ -470,12 +452,8 @@ class ChessCore(AgentMiddleware[ChessState, Any, Any]):
         started = time.perf_counter()
         with self.recorder.sink("llm") as calls:
             try:
-                try:
+                with provider_errors():
                     response = await handler(self._prepare(request))
-                except Exception as e:
-                    if looks_like_overflow(e):
-                        raise ContextBudgetError(str(e)) from e
-                    raise
             except Exception as error:
                 if not calls:
                     raise

@@ -2,10 +2,12 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   changedKnobs,
   DEFAULT_SETUP,
+  effortOf,
   effortOverridden,
   gameOf,
   importedSetup,
   knobText,
+  LLM_PRESETS,
   knobsOf,
   matchupLine,
   matchupOf,
@@ -20,12 +22,13 @@ import {
   type Setup,
 } from "../src/setup";
 import { DEFAULT_CONTEXT, type ChessContext } from "@langchain-chess/chess-ui";
+import efforts from "../../../libs/chess/langchain_chess/efforts.json";
 import { E4_E5, ply, turn } from "@langchain-chess/chess-ui/testing";
 
 const setup = (overrides: Partial<Setup> = {}): Setup => ({ ...DEFAULT_SETUP, ...overrides });
 
 function contextOf(s: Setup): ChessContext {
-  const matchup = matchupOf(s, "yes");
+  const matchup = matchupOf(s, "yes", true);
   if (!matchup.ok) throw new Error(matchup.reason);
   return matchup.context;
 }
@@ -63,19 +66,19 @@ describe("matchupOf", () => {
 
   it("holds a game whose model kwargs the server won't send", () => {
     const knobs = { ...DEFAULT_SETUP.knobs, model_kwargs: { seed: 3 } };
-    expect(matchupOf(setup({ knobs }), "yes")).toEqual({
+    expect(matchupOf(setup({ knobs }), "yes", true)).toEqual({
       ok: false,
       reason: "Model arguments: `seed`: the server doesn't send it.",
     });
-    expect(matchupOf(setup({ knobs, llm: "none" }), "yes")).toMatchObject({ ok: true });
+    expect(matchupOf(setup({ knobs, llm: "none" }), "yes", true)).toMatchObject({ ok: true });
   });
 
   it("refuses both None and an empty custom model", () => {
-    expect(matchupOf(setup({ systemOneOff: true, llm: "none" }), "yes")).toEqual({
+    expect(matchupOf(setup({ systemOneOff: true, llm: "none" }), "yes", true)).toEqual({
       ok: false,
       reason: "Pick a System 1, an LLM, or both.",
     });
-    expect(matchupOf(setup({ llm: "custom", customModel: "  " }), "yes")).toEqual({
+    expect(matchupOf(setup({ llm: "custom", customModel: "  " }), "yes", true)).toEqual({
       ok: false,
       reason: "Enter a model spec for the custom LLM.",
     });
@@ -83,20 +86,20 @@ describe("matchupOf", () => {
 
   it("summarizes only with a model that can, and waits for the answer", () => {
     const summarizing = setup({ knobs: { ...DEFAULT_SETUP.knobs, memory: true } });
-    expect(matchupOf(summarizing, "yes")).toMatchObject({ context: { memory: true } });
-    expect(matchupOf(summarizing, "no")).toMatchObject({ context: { memory: false } });
-    expect(matchupOf(summarizing, "checking")).toEqual({
+    expect(matchupOf(summarizing, "yes", true)).toMatchObject({ context: { memory: true } });
+    expect(matchupOf(summarizing, "no", true)).toMatchObject({ context: { memory: false } });
+    expect(matchupOf(summarizing, "checking", true)).toEqual({
       ok: false,
       reason: "Checking whether GLM-5.3 Flash can summarize…",
     });
-    expect(matchupOf(summarizing, "unknown")).toEqual({
+    expect(matchupOf(summarizing, "unknown", true)).toEqual({
       ok: false,
       reason: "Couldn't check whether GLM-5.3 Flash can summarize.",
     });
-    expect(matchupOf(setup(), "checking")).toMatchObject({ ok: true });
-    expect(matchupOf(setup(), "unknown")).toMatchObject({ ok: true });
+    expect(matchupOf(setup(), "checking", true)).toMatchObject({ ok: true });
+    expect(matchupOf(setup(), "unknown", true)).toMatchObject({ ok: true });
     const alone = { ...summarizing, llm: "none" as const };
-    expect(matchupOf(alone, "checking")).toMatchObject({ ok: true });
+    expect(matchupOf(alone, "checking", true)).toMatchObject({ ok: true });
   });
 
   it("sends a custom model trimmed, and carries the knobs", () => {
@@ -153,6 +156,26 @@ describe("matchup wording", () => {
     expect(opponentLabel({ ...DEFAULT_CONTEXT, policy: "llm", model_kwargs: kwargs })).toBe(
       "GLM-5.3 Flash · high",
     );
+  });
+
+  it("plays no effort for a model that takes none", () => {
+    const knobs = { ...DEFAULT_SETUP.knobs, reasoning_effort: "high" as const };
+    expect(effortOf(knobs, false)).toBeNull();
+    expect(effortOf(knobs, true)).toBe("high");
+    expect(effortOf(knobs, "checking")).toBe("high");
+    expect(matchupOf(setup({ knobs }), "yes", false)).toMatchObject({
+      context: { reasoning_effort: null },
+    });
+    expect(matchupOf(setup({ knobs }), "yes", true)).toMatchObject({
+      context: { reasoning_effort: "high" },
+    });
+    expect(matchupOf(setup({ knobs }), "yes", "checking")).toEqual({
+      ok: false,
+      reason: "Checking whether GLM-5.3 Flash takes a reasoning effort…",
+    });
+    // No effort is sent: nothing to check.
+    expect(matchupOf(setup(), "yes", "checking")).toMatchObject({ ok: true });
+    expect(matchupOf(setup({ knobs, llm: "none" }), "yes", false)).toMatchObject({ ok: true });
   });
 
   it("knows when model kwargs set the effort", () => {
@@ -371,5 +394,12 @@ describe("games", () => {
   it("splits a context into its knobs", () => {
     expect(knobsOf(DEFAULT_CONTEXT)).not.toHaveProperty("model");
     expect(knobsOf(DEFAULT_CONTEXT)).toHaveProperty("threshold", 0.9);
+  });
+});
+
+describe("LLM_PRESETS", () => {
+  // The server knows a model takes no effort only once `mise run probe:efforts` asked it.
+  it("has each preset's reasoning effort probed", () => {
+    expect(LLM_PRESETS.filter((model) => !(model in efforts))).toEqual([]);
   });
 });
