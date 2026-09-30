@@ -1,5 +1,5 @@
 // Games as the list shows them, built from thread summaries, root runs and reviews. Pure.
-import type { ChessValues, Outcome } from "@langchain-chess/chess-ui";
+import type { ChessValues, Outcome, Ply, Side } from "@langchain-chess/chess-ui";
 import type { Mark } from "./analysis";
 import type { Grading } from "./review";
 import { decodeValues } from "./values";
@@ -30,6 +30,8 @@ export interface Game {
   startedAt: string;
   turns: number;
   matchup: string;
+  /** Where the game was played (`web`, `tui`, ...), from the last root run's metadata. */
+  surface: string | null;
   /** Null when the last run carries no game record (it errored, or it isn't a chess run). */
   values: ChessValues | null;
   grading: Grading;
@@ -56,6 +58,20 @@ export function matchup(metadata: Record<string, unknown> | null): string {
     default:
       return "Unknown setup";
   }
+}
+
+/**
+ * A side's name on its strip: the matchup for a side the agent played, else "Human" for a game
+ * from the web app, else its colour. From the whole game, not the viewed ply.
+ */
+export function sideLabel(
+  game: Pick<Game, "matchup" | "surface">,
+  plies: readonly Ply[],
+  side: Side,
+): string {
+  if (plies.some((p) => p.side === side && p.source !== "external")) return game.matchup;
+  if (game.surface === "web") return "Human";
+  return side === "white" ? "White" : "Black";
 }
 
 export function resultText(outcome: Outcome | null | undefined): string {
@@ -91,6 +107,7 @@ export function toGame(
     startedAt: thread.min_start_time,
     turns: thread.count,
     matchup: matchup(run?.metadata ?? null),
+    surface: typeof run?.metadata?.surface === "string" ? run.metadata.surface : null,
     values,
     grading: against(values, grading),
     mark,

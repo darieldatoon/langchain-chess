@@ -4,6 +4,7 @@ import {
   isPending,
   lastPolicyPly,
   liveAnalysis,
+  replyAt,
   systemOneMeta,
   textOf,
   turnCost,
@@ -108,5 +109,29 @@ describe("liveAnalysis", () => {
     expect(liveAnalysis([], [], [])).toBeNull();
     const anonymous = [human, { type: "ai", content: "no id yet" }];
     expect(liveAnalysis(anonymous, [], [ply()])).toBe("no id yet");
+  });
+});
+
+describe("replyAt", () => {
+  const fens = ["f0", "f1", "f2", "f3"];
+  const plies = [
+    ply(),
+    ply({ ply: 1, side: "black", source: "systemone", turn_id: "turn-1" }),
+    ply({ ply: 2, san: "Nf3" }),
+  ];
+  const turns = [turn()];
+
+  it("is the latest agent reply before the position, with its turn and position before", () => {
+    expect(replyAt(plies, turns, fens, 3)).toEqual({
+      ply: plies[1],
+      turn: turns[0],
+      fenBefore: "f1",
+    });
+    expect(replyAt(plies, turns, fens, 2)?.ply).toBe(plies[1]);
+  });
+
+  it("is null at the start and before any agent move", () => {
+    expect(replyAt(plies, turns, fens, 0)).toBeNull();
+    expect(replyAt(plies, turns, fens, 1)).toBeNull();
   });
 });

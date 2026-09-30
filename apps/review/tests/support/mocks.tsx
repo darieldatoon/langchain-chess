@@ -4,8 +4,12 @@ import type { ReactNode } from "react";
 
 export const board: { options: Record<string, unknown> | null } = { options: null };
 
+/** Every piece as an empty glyph: the strips draw material with them. */
+export const pieces = new Proxy({} as Record<string, () => null>, { get: () => () => null });
+
 export function chessboardMock() {
   return {
+    defaultPieces: pieces,
     Chessboard: ({ options }: { options: Record<string, unknown> }) => {
       board.options = options;
       return <div data-testid="board" data-position={String(options.position)} />;

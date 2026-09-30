@@ -659,7 +659,7 @@ describe("ResultCard", () => {
       />,
     );
     expect(screen.getByText("You won")).toBeInTheDocument();
-    expect(screen.getByText("Checkmate, Black wins. 0-1")).toBeInTheDocument();
+    expect(screen.getByText("Checkmate · Black wins")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Rematch" }));
     fireEvent.click(screen.getByRole("button", { name: "New game" }));
     expect(onRematch).toHaveBeenCalledTimes(1);

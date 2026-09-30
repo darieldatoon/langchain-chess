@@ -111,15 +111,35 @@ const DRAW_REASONS: Record<DrawReason, string> = {
 const colour = (side: Side) => (side === "white" ? "White" : "Black");
 const score = (winner: Side) => (winner === "white" ? "1-0" : "0-1");
 
+/** The result in words; the score is shown apart from it (`scoreText`). */
 export function outcomeLine(outcome: Outcome): string {
   switch (outcome.kind) {
     case "checkmate":
-      return `Checkmate, ${colour(outcome.winner)} wins. ${score(outcome.winner)}`;
+      return `Checkmate · ${colour(outcome.winner)} wins`;
     case "draw":
-      return `Draw by ${DRAW_REASONS[outcome.reason]}. 1/2-1/2`;
+      return `Draw by ${DRAW_REASONS[outcome.reason]}`;
     case "resignation":
-      return `${colour(opposite(outcome.winner))} resigns after repeated illegal moves. ${score(outcome.winner)}`;
+      return `${colour(opposite(outcome.winner))} forfeited after repeated illegal moves · ${colour(outcome.winner)} wins`;
   }
+}
+
+/** The score on its own, shown apart from the wording. */
+export function scoreText(outcome: Outcome): string {
+  return outcome.kind === "draw" ? "½-½" : score(outcome.winner);
+}
+
+/** One word for a side's strip once the game is over. */
+export function stripResult(outcome: Outcome, side: Side): string {
+  if (outcome.kind === "draw") return "Draw";
+  if (outcome.winner === side) return "Won";
+  return outcome.kind === "checkmate" ? "Checkmated" : "Forfeited";
+}
+
+/** A move as a reader names it: `12. e4` for White, `12… e5` for Black. */
+export function moveLabel(startFen: string, ply: number, san: string): string {
+  const slot = ply + (sideToMove(startFen) === "black" ? 1 : 0);
+  const number = fullmoveNumber(startFen) + Math.floor(slot / 2);
+  return slot % 2 === 0 ? `${number}. ${san}` : `${number}\u2026 ${san}`;
 }
 
 const STICK_TOLERANCE_PX = 8;

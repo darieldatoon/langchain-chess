@@ -1,6 +1,6 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import App from "../src/App";
 import { checkApiKey, type KeyCheck } from "../src/auth";
 import { fetchModelFacts } from "../src/modelFacts";
@@ -36,6 +36,7 @@ interface BoardOptions {
 }
 
 vi.mock("react-chessboard", () => ({
+  defaultPieces: new Proxy({}, { get: () => () => null }),
   Chessboard: ({ options }: { options: BoardOptions }) => (
     <div
       data-testid="board"
@@ -95,6 +96,7 @@ const LLM_HIGH: ChessContext = {
 };
 
 const board = () => screen.getByTestId("board");
+const strip = (side: "white" | "black") => screen.getByLabelText(`${side} player`);
 const button = (name: string) => screen.getByRole("button", { name });
 const dialog = () => screen.queryByRole("dialog");
 const change = (label: string, value: string) =>
@@ -155,7 +157,9 @@ describe("new game", () => {
     await click("Play");
     expect(dialog()).not.toBeInTheDocument();
     expect(board()).toHaveAttribute("data-orientation", "white");
-    expect(screen.getByText("SemIf + GLM-5.3 Flash")).toBeInTheDocument();
+    expect(strip("black")).toHaveTextContent("SemIf + GLM-5.3 Flash");
+    expect(strip("white")).toHaveTextContent("You");
+    expect(strip("white")).toHaveTextContent("Your turn");
     expect(fake.submit).not.toHaveBeenCalled();
     expect(loadSetup()).toEqual(DEFAULT_SETUP);
     await click("drop e2e4");
@@ -291,8 +295,8 @@ describe("a game's own setup", () => {
     expect(board()).toHaveAttribute("data-orientation", "black");
     expect(board()).toHaveAttribute("data-draggable", "true");
     expect(screen.getByText("abc")).toBeInTheDocument();
-    expect(screen.getByText("GPT-6 Luna · high")).toBeInTheDocument();
-    expect(screen.getByText("Your move.")).toBeInTheDocument();
+    expect(strip("white")).toHaveTextContent("GPT-6 Luna · high");
+    expect(strip("black")).toHaveTextContent("Your turn");
     expect(optionsLog.at(-1)).toMatchObject({ threadId: "abc" });
     await click("drop e7e5");
     expect(submitted()).toEqual(["e7e5"]);
@@ -304,7 +308,7 @@ describe("a game's own setup", () => {
     render(<App />);
     expect(board()).toHaveAttribute("data-orientation", "white");
     expect(board()).toHaveAttribute("data-draggable", "true");
-    expect(screen.getByText("Your move.")).toBeInTheDocument();
+    expect(strip("white")).toHaveTextContent("Your turn");
   });
 
   it("notes advanced knobs that differ from the defaults", () => {
@@ -332,7 +336,9 @@ describe("a game's own setup", () => {
     expect(screen.getByText("View only")).toBeInTheDocument();
     expect(screen.getByText(/can't read this game's settings/)).toBeInTheDocument();
     expect(board()).toHaveAttribute("data-draggable", "false");
-    expect(screen.getByText("View only.")).toBeInTheDocument();
+    // No side is claimed: the strips are named by colour, with no status.
+    expect(strip("white")).toHaveTextContent(/^White$/);
+    expect(strip("black")).toHaveTextContent(/^Black$/);
     expect(screen.queryByRole("button", { name: "Ask opponent to move" })).not.toBeInTheDocument();
     expect(within(screen.getByLabelText("opponent")).getByText("Unknown")).toBeVisible();
     expect(fake.submit).not.toHaveBeenCalled();
@@ -348,8 +354,9 @@ describe("a game's own setup", () => {
   it("shows the result of an unrecorded game without claiming a side or offering a rematch", () => {
     onOldThread("old", { ...E4_E5, outcome: { kind: "checkmate", winner: "white" } });
     render(<App />);
-    expect(screen.getByText("Checkmate, White wins. 1-0")).toBeInTheDocument();
-    expect(screen.queryByLabelText("result")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("result")).toHaveTextContent("1-0Checkmate · White wins");
+    expect(strip("white")).toHaveTextContent("Won");
+    expect(screen.queryByLabelText("game over")).not.toBeInTheDocument();
   });
 
   it("locks a game whose thread failed to load, and reloads it", async () => {
@@ -458,7 +465,7 @@ describe("playing Black", () => {
     };
     fireEvent.click(button("Settings"));
     fireEvent.click(button("Cancel"));
-    expect(screen.getByText("Your move.")).toBeInTheDocument();
+    expect(strip("black")).toHaveTextContent("Your turn");
     expect(board()).toHaveAttribute("data-draggable", "true");
     await click("drop e7e5");
     expect(submitted()).toEqual(["go", "e7e5"]);
@@ -469,7 +476,7 @@ describe("playing Black", () => {
     fake.submit = vi.fn(() => Promise.reject(new Error("Failed to fetch")));
     await playFromModal();
     expect(screen.getByRole("status")).toHaveTextContent("Failed to fetch");
-    expect(screen.getByText(/Press Start/)).toBeInTheDocument();
+    expect(within(strip("white")).getByRole("button", { name: "Start" })).toBeInTheDocument();
     fake.submit = vi.fn(() => Promise.resolve());
     await click("Start");
     expect(submitted()).toEqual(["go"]);
@@ -482,7 +489,7 @@ describe("playing Black", () => {
     render(<App />);
     expect(board()).toHaveAttribute("data-orientation", "black");
     expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
-    expect(screen.getByText("Opponent to move.")).toBeInTheDocument();
+    expect(strip("black")).not.toHaveTextContent("Your turn");
     expect(screen.getByRole("status")).toHaveTextContent("provider 529");
     expect(screen.queryByText("LangSmith API key needed")).not.toBeInTheDocument();
     await click("Retry");
@@ -503,9 +510,11 @@ describe("after the game", () => {
   it("shows the result, locks the board, and rematches with colours swapped", async () => {
     onThread("t-1", MATE, LLM_HIGH);
     render(<App />);
-    const result = screen.getByLabelText("result");
+    const result = screen.getByLabelText("game over");
     expect(within(result).getByText("You won")).toBeInTheDocument();
-    expect(within(result).getByText("Checkmate, White wins. 1-0")).toBeInTheDocument();
+    expect(within(result).getByText("Checkmate · White wins")).toBeInTheDocument();
+    expect(strip("white")).toHaveTextContent("Won");
+    expect(strip("black")).toHaveTextContent("Checkmated");
     expect(board()).toHaveAttribute("data-draggable", "false");
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
 
@@ -535,10 +544,10 @@ describe("after the game", () => {
     saveSetup({ ...DEFAULT_SETUP, llm: "langsmith:baseten/zai-org/GLM-5.3" });
     onThread("t-1", { ...E4_E5, outcome: { kind: "draw", reason: "threefold" } });
     render(<App />);
-    expect(screen.getByText("Draw")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("game over")).getByText("Draw")).toBeInTheDocument();
     await act(async () => {
       fireEvent.click(
-        within(screen.getByLabelText("result")).getByRole("button", { name: "New game" }),
+        within(screen.getByLabelText("game over")).getByRole("button", { name: "New game" }),
       );
     });
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
@@ -636,8 +645,8 @@ describe("the game screen", () => {
       "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
     );
     expect(screen.getByText("System 1 played")).toBeInTheDocument();
-    expect(screen.getByLabelText("move list")).toHaveTextContent("1.e4e5");
-    expect(screen.getByText("Your move.")).toBeInTheDocument();
+    expect(screen.getByLabelText("move list")).toHaveTextContent("1e4e5");
+    expect(strip("white")).toHaveTextContent("Your turn");
     expect(screen.queryByRole("tab")).not.toBeInTheDocument();
   });
 
@@ -668,10 +677,12 @@ describe("the game screen", () => {
   it("flips the board without changing sides", async () => {
     onThread("abc", E4_E5);
     render(<App />);
-    await click("Flip board");
+    await click("Flip");
     expect(board()).toHaveAttribute("data-orientation", "black");
     expect(board()).toHaveAttribute("data-draggable", "true");
-    await click("Flip board");
+    // Top is always the side shown at the top of the board.
+    expect(document.querySelector("[data-slot=top-strip]")).toHaveTextContent("You");
+    fireEvent.keyDown(window, { key: "f" });
     expect(board()).toHaveAttribute("data-orientation", "white");
   });
 
@@ -742,7 +753,7 @@ describe("the game screen", () => {
     onThread("abc", { moves: ["e2e4"], plies: [ply()], turns: [turn({ status: "pending" })] });
     fake.isLoading = true;
     render(<App />);
-    expect(screen.getByText("Opponent is thinking")).toBeInTheDocument();
+    expect(screen.getByText("Thinking…")).toBeInTheDocument();
     const card = screen.getByLabelText("last reply");
     expect(card).toHaveAttribute("aria-busy", "true");
     // Plain text until the lazy Markdown renderer has loaded.
@@ -823,7 +834,7 @@ describe("the game screen", () => {
     };
     fireEvent.click(button("Settings"));
     fireEvent.click(button("Cancel"));
-    expect(screen.getByText("Opponent is thinking")).toBeInTheDocument();
+    expect(screen.getByText("Thinking…")).toBeInTheDocument();
     const old = optionsLog.at(-1) as { onThreadId: (id: string) => void };
 
     await click("New game");
@@ -842,10 +853,121 @@ describe("the game screen", () => {
     expect(window.location.search).toBe("");
     expect(board()).toHaveAttribute("data-position", START_FEN);
     expect(board()).toHaveAttribute("data-orientation", "black");
-    expect(screen.queryByText("Opponent is thinking")).not.toBeInTheDocument();
+    expect(screen.queryByText("Thinking…")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("last reply")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("result")).not.toBeInTheDocument();
     expect(screen.getByText("No moves yet.")).toBeInTheDocument();
     expect(button("Start")).toBeInTheDocument();
+  });
+});
+
+describe("layouts", () => {
+  /** The page as this size of screen: the app measures its main region. */
+  const spies: { mockRestore: () => void }[] = [];
+  function sized(width: number, height: number) {
+    spies.push(
+      vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(width),
+      vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(height),
+    );
+  }
+  const slot = (name: string) => document.querySelector<HTMLElement>(`[data-slot=${name}]`)!;
+  const E4_E5_NF3: ChessValues = {
+    ...E4_E5,
+    moves: [...E4_E5.moves, "g1f3"],
+    plies: [...E4_E5.plies, ply({ ply: 2, uci: "g1f3", san: "Nf3" })],
+  };
+
+  afterEach(() => {
+    for (const spy of spies.splice(0)) spy.mockRestore();
+  });
+
+  it("puts the cards under the board on wide screens, and the reply follows the browsed move", () => {
+    sized(1024, 768);
+    onThread("abc", E4_E5_NF3);
+    render(<App />);
+    expect(document.querySelector("[data-layout]")).toHaveAttribute("data-layout", "wide");
+    expect(within(slot("under")).getByLabelText("last reply")).toBeInTheDocument();
+    expect(within(slot("under")).getByLabelText("opponent")).toBeInTheDocument();
+    expect(screen.getByText("Last Reply")).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    expect(screen.getByText("Reply before move 3")).toBeInTheDocument();
+    expect(screen.getByText("System 1 played")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Viewing move 2");
+    fireEvent.keyDown(window, { key: "Home" });
+    expect(screen.getByText("Reply before move 1")).toBeInTheDocument();
+    expect(screen.getAllByText("No reply yet.").length).toBeGreaterThan(0);
+    fireEvent.click(button("Back to live"));
+    expect(screen.getByText("Last Reply")).toBeInTheDocument();
+  });
+
+  it("lists the keys on ?", async () => {
+    onThread("abc", E4_E5);
+    render(<App />);
+    fireEvent.keyDown(window, { key: "?" });
+    expect(screen.getByRole("dialog", { name: "Keyboard shortcuts" })).toBeInTheDocument();
+    fireEvent.click(button("Done"));
+    expect(dialog()).not.toBeInTheDocument();
+  });
+
+  const PHONE_GAME: ChessValues = {
+    ...E4_E5_NF3,
+    plies: E4_E5_NF3.plies!.map((p) => (p.ply === 1 ? { ...p, analysis: "Solid." } : p)),
+  };
+  it("stacks a phone: bar, move strip, reply line and tabs", async () => {
+    sized(390, 780);
+    onThread("abc", PHONE_GAME);
+    render(<App />);
+    expect(document.querySelector("[data-layout]")).toHaveAttribute("data-layout", "phone");
+    expect(screen.queryByText("LangChain Chess")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "First move" })).not.toBeInTheDocument();
+    // The move strip.
+    fireEvent.click(screen.getByRole("button", { name: "e4" }));
+    expect(board()).toHaveAttribute("data-position", AFTER_E4);
+    fireEvent.click(button("Flip board"));
+    expect(board()).toHaveAttribute("data-orientation", "black");
+    fireEvent.click(button("Back to live"));
+
+    const line = screen.getByLabelText("reply line");
+    expect(line).toHaveTextContent("System 1 playede5");
+    fireEvent.click(screen.getByRole("tab", { name: "Opponent" }));
+    expect(screen.getByRole("tab", { name: "Opponent" })).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(within(line).getByRole("button", { name: "Show reasoning" }));
+    expect(screen.getByRole("tab", { name: "Reply" })).toHaveAttribute("aria-selected", "true");
+    // Hidden reasoning is opened, not just its tab.
+    fireEvent.click(button("Hide reasoning"));
+    fireEvent.click(within(line).getByRole("button", { name: "Show reasoning" }));
+    expect(screen.getByText("Solid.")).toBeInTheDocument();
+  });
+
+  it("gives a phone the score and how the game ended, even for a game it can only show", () => {
+    sized(390, 780);
+    onOldThread("old", { ...E4_E5, outcome: { kind: "draw", reason: "stalemate" } });
+    render(<App />);
+    expect(screen.getByLabelText("result")).toHaveTextContent("½-½Draw by stalemate");
+  });
+
+  it("says a phone's opponent is thinking, or hasn't replied, in the reply line", () => {
+    sized(390, 780);
+    onThread("abc", { moves: ["e2e4"], plies: [ply()], turns: [] });
+    const view = render(<App />);
+    expect(
+      within(slot("board").parentElement!.parentElement!.parentElement!).getAllByText(
+        "No reply yet.",
+      ).length,
+    ).toBeGreaterThan(0);
+    view.unmount();
+    fake.isLoading = true;
+    render(<App />);
+    expect(screen.getAllByText("Thinking…").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("shows the empty board behind New game on a phone and a wide screen", () => {
+    sized(390, 780);
+    const phone = render(<App />);
+    expect(screen.getAllByText("Choose a side and an opponent to start.")).toHaveLength(1);
+    phone.unmount();
+    sized(1024, 768);
+    render(<App />);
+    expect(within(slot("under")).getByText("No reply yet.")).toBeInTheDocument();
   });
 });

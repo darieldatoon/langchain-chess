@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import { appended, createApi, defaultProject, firstPages, threadUrl } from "../src/api";
-import { matchup, modelName, resultText, toGame, type ThreadItem } from "../src/games";
+import { matchup, modelName, resultText, sideLabel, toGame, type ThreadItem } from "../src/games";
 import { evalText, parseReview, reviewsByRun, whiteCp, whiteWinPercent } from "../src/review";
 import { decodeValues } from "../src/values";
 import { call as llmCall, ply as plyOf, systemOne, turn } from "@langchain-chess/chess-ui/testing";
@@ -217,6 +217,9 @@ describe("games", () => {
     const bare = toGame(thread("t"), { ...run, outputs: { messages: [] } as never }, graded());
     expect(bare.values).toBeNull();
     expect(bare.grading.status).toBe("graded");
+    expect(full.surface).toBeNull();
+    const web = toGame(thread("t"), { ...run, metadata: { policy: "llm", surface: "web" } });
+    expect(web.surface).toBe("web");
     const none = toGame(thread("t"), undefined);
     expect(none.matchup).toBe("Unknown setup");
     expect(none.grading).toEqual({ status: "ungraded" });
@@ -383,5 +386,22 @@ describe("threadUrl", () => {
       "/relative",
     ])
       expect(threadUrl(url, target)).toBe(url);
+  });
+});
+
+describe("sideLabel", () => {
+  const plies = values().plies!;
+  const agent = plies.find((p) => p.source !== "external")!.side;
+  const other = agent === "white" ? "black" : "white";
+
+  it("names an agent side by the matchup, from the whole game", () => {
+    expect(sideLabel({ matchup: "m", surface: null }, plies, agent)).toBe("m");
+  });
+
+  it("names a side with only external moves Human for a web game, else by colour", () => {
+    const external = plies.map((p) => ({ ...p, source: "external" }));
+    expect(sideLabel({ matchup: "m", surface: "web" }, external, other)).toBe("Human");
+    expect(sideLabel({ matchup: "m", surface: "tui" }, external, "white")).toBe("White");
+    expect(sideLabel({ matchup: "m", surface: null }, [], "black")).toBe("Black");
   });
 });

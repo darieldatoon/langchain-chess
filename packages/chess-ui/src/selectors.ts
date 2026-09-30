@@ -4,6 +4,7 @@ import {
   type Call,
   type Message,
   type Ply,
+  type Reply,
   type SystemOneMeta,
   type TurnRecord,
 } from "./types";
@@ -31,6 +32,20 @@ export function turnOf(ply: Ply, turns: readonly TurnRecord[]): TurnRecord | nul
 
 export function lastPolicyPly(plies: readonly Ply[]): Ply | null {
   return plies.findLast((p) => p.source !== "external") ?? null;
+}
+
+/**
+ * The reply that led to position `index`: the latest agent ply before it, with its turn and the
+ * position it was chosen from. Null at the start or before any agent move.
+ */
+export function replyAt(
+  plies: readonly Ply[],
+  turns: readonly TurnRecord[],
+  fens: readonly string[],
+  index: number,
+): Reply | null {
+  const ply = plies.findLast((p) => p.ply < index && p.source !== "external");
+  return ply ? { ply, turn: turnOf(ply, turns), fenBefore: fens[ply.ply] } : null;
 }
 
 export function systemOneMeta(ply: Ply): SystemOneMeta | null {

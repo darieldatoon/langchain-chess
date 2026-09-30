@@ -11,8 +11,10 @@ import {
   type ChessValues,
   type MoveEntry,
   type Outcome,
+  type Ply,
   type Reply,
   type ReplyState,
+  type TurnRecord,
 } from "@langchain-chess/chess-ui";
 import { commandKey, createCommandIds } from "./commands";
 import { apiUrl, configurableOf } from "./settings";
@@ -51,6 +53,8 @@ export interface Game {
   /** The start and the position after each move. */
   fens: string[];
   moves: string[];
+  plies: readonly Ply[];
+  turns: readonly TurnRecord[];
   entries: MoveEntry[];
   outcome: Outcome | null;
   error: string | null;
@@ -215,6 +219,8 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
     fen: position.fen,
     fens: position.fens,
     moves,
+    plies,
+    turns,
     entries,
     outcome: values.outcome ?? null,
     error: values.error ?? null,

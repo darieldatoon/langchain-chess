@@ -27,13 +27,21 @@ interface Props {
   view: PlyView;
   onViewChange: (view: PlyView) => void;
   title?: string;
+  /** The card's accessible name. */
+  label?: string;
 }
 
 /**
  * Every section and fact row renders in every state, so the card keeps its shape between moves;
  * do not make one conditional on the ply.
  */
-export function PlyDetails({ reply, view, onViewChange, title = "Last Reply" }: Props) {
+export function PlyDetails({
+  reply,
+  view,
+  onViewChange,
+  title = "Last Reply",
+  label = "last reply",
+}: Props) {
   if (reply.status === "none") {
     return (
       <Card intent="neutral" className="flex flex-col gap-space-3">
@@ -41,7 +49,7 @@ export function PlyDetails({ reply, view, onViewChange, title = "Last Reply" }: 
           {title}
         </Text>
         <Text variant="sm" color="tertiary">
-          Make a move to see how the opponent decided.
+          No reply yet.
         </Text>
       </Card>
     );
@@ -53,7 +61,7 @@ export function PlyDetails({ reply, view, onViewChange, title = "Last Reply" }: 
     <Card
       intent="neutral"
       className="flex flex-col gap-space-3"
-      aria-label="last reply"
+      aria-label={label}
       aria-busy={thinking}
     >
       <Text variant="h4" as="h2" color="secondary">

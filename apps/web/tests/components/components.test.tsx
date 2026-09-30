@@ -1,5 +1,7 @@
 import { fireEvent, screen } from "@testing-library/react";
-import { describe, expect, it } from "vite-plus/test";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vite-plus/test";
+import { AppMenu } from "../../src/components/AppMenu";
 import { renderWithProviders } from "../support/renderApp";
 import { ThemeToggle } from "../../src/components/ThemeToggle";
 
@@ -10,5 +12,23 @@ describe("ThemeToggle", () => {
     expect(document.documentElement).toHaveClass("dark");
     fireEvent.click(screen.getByRole("button", { name: "Switch to light theme" }));
     expect(document.documentElement).not.toHaveClass("dark");
+  });
+});
+
+describe("AppMenu", () => {
+  const choose = async (item: string) => {
+    await userEvent.click(screen.getByRole("button", { name: "App menu" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: item }));
+  };
+
+  it("opens settings and switches the theme", async () => {
+    const onOpenSettings = vi.fn();
+    renderWithProviders(<AppMenu onOpenSettings={onOpenSettings} />);
+    await choose("Switch to dark theme");
+    expect(document.documentElement).toHaveClass("dark");
+    await choose("Switch to light theme");
+    expect(document.documentElement).not.toHaveClass("dark");
+    await choose("Settings");
+    expect(onOpenSettings).toHaveBeenCalledOnce();
   });
 });

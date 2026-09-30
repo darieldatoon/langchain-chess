@@ -4,17 +4,20 @@ import {
   isAtBottom,
   lastMoveStyles,
   money,
+  moveLabel,
   outcomeLine,
   pairs,
   qualitySymbol,
   percent,
+  scoreText,
   seconds,
   sourceClass,
   sourceLabel,
+  stripResult,
   type MoveEntry,
 } from "../src/format";
 import { AFTER_E4 } from "../src/testing";
-import { START_FEN } from "../src/types";
+import { START_FEN, type Outcome } from "../src/types";
 
 const entry = (ply: number, san: string, source = "external"): MoveEntry => ({ ply, san, source });
 
@@ -71,18 +74,38 @@ describe("pairs", () => {
 });
 
 describe("outcomeLine", () => {
-  it("describes every outcome", () => {
-    expect(outcomeLine({ kind: "checkmate", winner: "white" })).toBe("Checkmate, White wins. 1-0");
-    expect(outcomeLine({ kind: "checkmate", winner: "black" })).toBe("Checkmate, Black wins. 0-1");
-    expect(outcomeLine({ kind: "draw", reason: "threefold" })).toBe(
-      "Draw by threefold repetition. 1/2-1/2",
-    );
+  it("describes every outcome, without the score", () => {
+    expect(outcomeLine({ kind: "checkmate", winner: "white" })).toBe("Checkmate · White wins");
+    expect(outcomeLine({ kind: "checkmate", winner: "black" })).toBe("Checkmate · Black wins");
+    expect(outcomeLine({ kind: "draw", reason: "threefold" })).toBe("Draw by threefold repetition");
     expect(outcomeLine({ kind: "resignation", winner: "white", reason: "illegal_moves" })).toBe(
-      "Black resigns after repeated illegal moves. 1-0",
+      "Black forfeited after repeated illegal moves · White wins",
     );
     expect(outcomeLine({ kind: "resignation", winner: "black", reason: "illegal_moves" })).toBe(
-      "White resigns after repeated illegal moves. 0-1",
+      "White forfeited after repeated illegal moves · Black wins",
     );
+  });
+});
+
+describe("scoreText and stripResult", () => {
+  it("scores the game and names each side's result in a word", () => {
+    const mate: Outcome = { kind: "checkmate", winner: "black" };
+    const forfeit: Outcome = { kind: "resignation", winner: "white", reason: "illegal_moves" };
+    const draw: Outcome = { kind: "draw", reason: "stalemate" };
+    expect([scoreText(mate), scoreText(forfeit), scoreText(draw)]).toEqual(["0-1", "1-0", "½-½"]);
+    expect([stripResult(mate, "black"), stripResult(mate, "white")]).toEqual(["Won", "Checkmated"]);
+    expect(stripResult(forfeit, "black")).toBe("Forfeited");
+    expect([stripResult(draw, "white"), stripResult(draw, "black")]).toEqual(["Draw", "Draw"]);
+  });
+});
+
+describe("moveLabel", () => {
+  it("numbers a move from the root, with an ellipsis for Black", () => {
+    expect(moveLabel(START_FEN, 0, "e4")).toBe("1. e4");
+    expect(moveLabel(START_FEN, 3, "Nc6")).toBe("2\u2026 Nc6");
+    const black12 = "8/8/8/8/8/8/8/K1k5 b - - 0 12";
+    expect(moveLabel(black12, 0, "Kc2")).toBe("12\u2026 Kc2");
+    expect(moveLabel(black12, 1, "Ka2")).toBe("13. Ka2");
   });
 });
 

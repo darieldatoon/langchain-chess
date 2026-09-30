@@ -33,6 +33,8 @@ const renderView = (g = game(), onOpenTrace = vi.fn(), extras: ViewExtras = {}) 
         analysis={extras.analysis ?? null}
         launch={extras.launch}
         onAnalyze={extras.onAnalyze ?? (() => {})}
+        layout="wide"
+        space={{ width: 1000, height: 800 }}
       />
     </HostTheme>,
   );
@@ -175,9 +177,9 @@ describe("GameView", () => {
   it("opens on the final position with its grade, result and who played it", () => {
     renderView();
     expect(current()).toBe("Qxf7#");
-    expect(screen.getByText("Checkmate, White wins. 1-0")).toBeInTheDocument();
+    expect(screen.getByLabelText("result")).toHaveTextContent("1-0Checkmate · White wins");
     expect(screen.getByLabelText("engine grade")).toBeInTheDocument();
-    expect(screen.getByText("Who Played It")).toBeInTheDocument();
+    expect(screen.getByLabelText("who played it")).toHaveTextContent("Who Played It");
     expect(screen.getByLabelText("evaluation 1-0")).toBeInTheDocument();
     expect(board.options?.arrows).toHaveLength(1);
   });
@@ -188,8 +190,8 @@ describe("GameView", () => {
     expect(current()).toBe("Nf6??");
     // The blunder: the move played and the better one.
     expect(board.options?.arrows).toHaveLength(2);
-    // The result stays put on every move, so nothing below it shifts.
-    expect(screen.getByText("Checkmate, White wins. 1-0")).toBeInTheDocument();
+    // The result stays at the end of the list on every move.
+    expect(screen.getByLabelText("result")).toBeInTheDocument();
     key("Home");
     expect(current()).toBe("Start");
     expect(board.options?.arrows).toEqual([]);
@@ -225,12 +227,28 @@ describe("GameView", () => {
     input.remove();
   });
 
+  it("names the strips, shows each side's accuracy and result, and lists the keys", () => {
+    renderView();
+    const white = screen.getByLabelText("white player");
+    expect(white).toHaveTextContent("Won");
+    expect(screen.getByLabelText("black player")).toHaveTextContent("Checkmated");
+    expect(white.textContent).toMatch(/Accuracy \d+%/);
+    key("Home");
+    expect(
+      within(screen.getByLabelText("who played it")).getByText("Start position."),
+    ).toBeVisible();
+    key("?");
+    expect(screen.getByRole("dialog", { name: "Keyboard shortcuts" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("flips the board and opens the move's trace", () => {
     const onOpenTrace = vi.fn();
     renderView(game(), onOpenTrace);
-    fireEvent.click(screen.getByRole("button", { name: "Flip board" }));
+    key("f");
     expect(board.options?.boardOrientation).toBe("black");
-    fireEvent.click(screen.getByRole("button", { name: "Flip board" }));
+    key("f");
     expect(board.options?.boardOrientation).toBe("white");
     const last = { threadId: "thread-1", runId: "run-3", runStartTime: "2026-09-25T12:30:00Z" };
     fireEvent.click(screen.getByRole("button", { name: /Open trace/ }));
@@ -285,6 +303,8 @@ describe("GameView", () => {
           analysis={null}
           launch={{ status: "starting" }}
           onAnalyze={onAnalyze}
+          layout="wide"
+          space={{ width: 1000, height: 800 }}
         />
       </HostTheme>,
     );
@@ -360,7 +380,7 @@ describe("GameView", () => {
     });
     renderView(g);
     expect(current()).toBe("Nf3");
-    expect(screen.getByText("In progress")).toBeInTheDocument();
+    expect(screen.queryByLabelText("result")).not.toBeInTheDocument();
     key("ArrowLeft");
     expect(current()).toBe("e5");
   });

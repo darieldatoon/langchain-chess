@@ -7,25 +7,38 @@ import {
   useChartColorResolver,
 } from "@langchain/macaw-components/utils/chartColors";
 import {
+  allocate,
+  BackToLive,
   Board,
   BoardControls,
+  BoardMenu,
+  EVAL_BAR,
   fenOrStart,
+  GameShell,
   MoveList,
-  outcomeLine,
+  opposite,
+  PlayerStrip,
   PlyDetails,
   replay,
+  ShortcutDialog,
+  stripResult,
+  TOUCH_TARGET,
   turnOf,
+  useGameKeys,
+  useCoarsePointer,
+  usePlyCursor,
+  type Layout,
+  type Space,
   type ChessValues,
   type MoveEntry,
   type PlyView,
   type Side,
-  usePlyCursor,
 } from "@langchain-chess/chess-ui";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react/dist/ssr/ArrowSquareOut";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Analysis, LaunchState } from "../analysis";
 import type { TraceTarget } from "../api";
-import type { Game } from "../games";
+import { sideLabel, type Game } from "../games";
 import { AnalysisBanner } from "./AnalysisBanner";
 import { EvalBar } from "./EvalBar";
 import { EvalGraph } from "./EvalGraph";
@@ -40,6 +53,9 @@ interface Props {
   analysis: Analysis | null;
   launch: LaunchState | undefined;
   onAnalyze: () => void;
+  /** Chosen by the App for the whole page; the games column is already taken out of `space`. */
+  layout: Layout;
+  space: Space;
 }
 
 const NO_MOVES: string[] = [];
@@ -53,6 +69,8 @@ export function GameView({
   analysis,
   launch,
   onAnalyze,
+  layout,
+  space,
 }: Props) {
   const startFen = fenOrStart(values.start_fen);
   const moves = values.moves ?? NO_MOVES;
@@ -62,7 +80,20 @@ export function GameView({
   const last = moves.length;
   const { index, go } = usePlyCursor(last);
   const [orientation, setOrientation] = useState<Side>("white");
+  const flip = useCallback(() => setOrientation((o) => opposite(o)), []);
+  const [help, setHelp] = useState(false);
+  const openHelp = useCallback(() => setHelp(true), []);
+  useGameKeys({ index, last, onGo: go, onFlip: flip, onHelp: openHelp });
   const resolve = useChartColorResolver();
+  const coarse = useCoarsePointer();
+  const allocation = allocate({
+    layout,
+    ...space,
+    left: null,
+    evalBar: review ? EVAL_BAR.wide : 0,
+    coarse,
+    scale: 1,
+  });
 
   const fens = useMemo(() => replay(startFen, moves).fens, [startFen, moves]);
   // From the lines graded, not `settings.multipv`: a setting the feedback claims can be any size.
@@ -103,108 +134,152 @@ export function GameView({
     });
   }
 
-  return (
-    <div
-      className="grid min-h-0 items-start gap-space-4 overflow-auto lg:grid-cols-[minmax(320px,560px)_minmax(260px,1fr)]"
-      aria-label="game"
-    >
-      <section className="flex flex-col gap-space-3">
-        <Card intent="neutral" className="flex flex-col gap-space-3">
-          <div className="flex items-stretch gap-space-2">
-            {review && <EvalBar value={review.evals[index]} flipped={orientation === "black"} />}
-            <div className="min-w-0 flex-1">
-              <Board
-                fen={fens[index]}
-                orientation={orientation}
-                humanSide={orientation}
-                lastMove={played}
-                locked
-                arrows={arrows}
-              />
-            </div>
-          </div>
-          <BoardControls
-            index={index}
-            last={last}
-            onGo={go}
-            onFlip={() => setOrientation((o) => (o === "white" ? "black" : "white"))}
-          >
-            <Text variant="sm" color="secondary" className="min-w-0 flex-1 truncate text-center">
-              {values.outcome ? outcomeLine(values.outcome) : "In progress"}
-            </Text>
-            {review && !analysis && (!launch || launch.status === "starting") && (
-              <Button
-                variant="outlined"
-                color="secondary"
-                size="sm"
-                loading={launch?.status === "starting"}
-                disabled={launch?.status === "starting"}
-                onClick={onAnalyze}
-              >
-                Re-analyze
-              </Button>
-            )}
-            <Button
-              variant="outlined"
-              color="secondary"
-              size="sm"
-              rightDecorator={ArrowSquareOutIcon}
-              onClick={() => onOpenTrace(trace)}
-            >
-              Open trace
-            </Button>
-          </BoardControls>
-        </Card>
-        <AnalysisBanner
-          threadId={game.threadId}
-          grading={grading}
-          analysis={analysis}
-          launch={launch}
-          onAnalyze={onAnalyze}
-        />
-        {review && (
+  const strip = (side: Side) => {
+    const accuracy = review?.accuracy[side];
+    return (
+      <PlayerStrip
+        side={side}
+        name={sideLabel(game, plies, side)}
+        fen={fens[index]}
+        showMaterial
+        status={
           <>
-            <GradeCard
-              move={
-                grade && ply
-                  ? {
-                      grade,
-                      san: ply.san,
-                      fenBefore: fens[index - 1],
-                      before: review.evals[index - 1],
-                      after: review.evals[index],
-                    }
-                  : null
-              }
-              engine={review.engine}
-              lineCount={lineCount}
-            />
-            <Card intent="neutral" className="select-none" aria-label="evaluation graph">
-              <EvalGraph evals={review.evals} index={index} onSelect={go} />
-            </Card>
+            {typeof accuracy === "number" && (
+              <Text variant="xs" color="secondary" as="span">
+                Accuracy {accuracy.toFixed(0)}%
+              </Text>
+            )}
+            {values.outcome && (
+              <Text variant="sm" weight="medium" as="span">
+                {stripResult(values.outcome, side)}
+              </Text>
+            )}
           </>
-        )}
-      </section>
+        }
+      />
+    );
+  };
 
-      <aside className="flex flex-col gap-space-3">
+  const tools = (
+    <div className="flex h-full min-h-0 flex-col gap-space-3 overflow-y-auto" aria-label="tools">
+      <div className="flex flex-wrap items-center justify-end gap-space-2">
+        {review && !analysis && (!launch || launch.status === "starting") && (
+          <Button
+            variant="outlined"
+            color="secondary"
+            size="sm"
+            className={TOUCH_TARGET}
+            loading={launch?.status === "starting"}
+            disabled={launch?.status === "starting"}
+            onClick={onAnalyze}
+          >
+            Re-analyze
+          </Button>
+        )}
+        <Button
+          variant="outlined"
+          color="secondary"
+          size="sm"
+          className={TOUCH_TARGET}
+          rightDecorator={ArrowSquareOutIcon}
+          onClick={() => onOpenTrace(trace)}
+        >
+          Open trace
+        </Button>
+      </div>
+      <AnalysisBanner
+        threadId={game.threadId}
+        grading={grading}
+        analysis={analysis}
+        launch={launch}
+        onAnalyze={onAnalyze}
+      />
+      {review && (
+        <GradeCard
+          move={
+            grade && ply
+              ? {
+                  grade,
+                  san: ply.san,
+                  fenBefore: fens[index - 1],
+                  before: review.evals[index - 1],
+                  after: review.evals[index],
+                }
+              : null
+          }
+          engine={review.engine}
+          lineCount={lineCount}
+        />
+      )}
+      <Card intent="neutral" className="flex min-h-48 flex-1 flex-col gap-space-2 p-space-2">
         <MoveList
           entries={entries}
           startFen={startFen}
           selected={index - 1}
           onSelect={(p) => go(p + 1)}
+          outcome={values.outcome ?? null}
         />
-        {ply && (
-          <PlyDetails
-            title="Who Played It"
-            reply={{
-              status: "played",
-              reply: { ply, turn: turnOf(ply, values.turns ?? []), fenBefore: fens[index - 1] },
-            }}
-            view={view}
-            onViewChange={onViewChange}
-          />
-        )}
-      </aside>
+        <BackToLive index={index} last={last} onGo={go} />
+        <BoardControls
+          index={index}
+          last={last}
+          onGo={go}
+          menu={<BoardMenu onFlip={flip} onHelp={openHelp} />}
+        />
+      </Card>
+      {ply ? (
+        <PlyDetails
+          title="Who Played It"
+          label="who played it"
+          reply={{
+            status: "played",
+            reply: { ply, turn: turnOf(ply, values.turns ?? []), fenBefore: fens[index - 1] },
+          }}
+          view={view}
+          onViewChange={onViewChange}
+        />
+      ) : (
+        <Card intent="neutral" className="flex flex-col gap-space-2" aria-label="who played it">
+          <Text variant="h4" as="h2" color="secondary">
+            Who Played It
+          </Text>
+          <Text variant="sm" color="tertiary">
+            Start position.
+          </Text>
+        </Card>
+      )}
     </div>
+  );
+
+  return (
+    <section className="min-w-0" aria-label="game">
+      <GameShell
+        allocation={allocation}
+        topStrip={strip(opposite(orientation))}
+        bottomStrip={strip(orientation)}
+        evalBar={
+          review && <EvalBar value={review.evals[index]} flipped={orientation === "black"} />
+        }
+        board={
+          <Board
+            fen={fens[index]}
+            orientation={orientation}
+            humanSide={orientation}
+            lastMove={played}
+            locked
+            arrows={arrows}
+          />
+        }
+        table={tools}
+        under={
+          review && (
+            <Card intent="neutral" className="select-none" aria-label="evaluation graph">
+              <EvalGraph evals={review.evals} index={index} onSelect={go} />
+            </Card>
+          )
+        }
+      />
+      {help && <ShortcutDialog onClose={() => setHelp(false)} />}
+    </section>
   );
 }

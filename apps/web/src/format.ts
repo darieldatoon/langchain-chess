@@ -1,4 +1,4 @@
-import { outcomeLine, sideToMove, type Outcome, type Side } from "@langchain-chess/chess-ui";
+import type { Outcome, Side } from "@langchain-chess/chess-ui";
 
 /** The result from the human's side of the board. */
 export function resultHeadline(outcome: Outcome, humanSide: Side): string {
@@ -6,25 +6,6 @@ export function resultHeadline(outcome: Outcome, humanSide: Side): string {
   return outcome.winner === humanSide ? "You won" : "You lost";
 }
 
-export interface StatusInput {
-  outcome: Outcome | null;
-  fen: string;
-  moveCount: number;
-  /** Null for a game this browser can only show. */
-  humanSide: Side | null;
-  pending: boolean;
-}
-
-export function statusLine(game: StatusInput): string {
-  if (game.outcome) return outcomeLine(game.outcome);
-  if (game.humanSide === null) return "View only.";
-  if (game.humanSide === sideToMove(game.fen)) return "Your move.";
-  return game.moveCount === 0 && !game.pending
-    ? "Press Start and the opponent opens."
-    : "Opponent to move.";
-}
-
-/** Where System 1 ranked the played move: its last stage, or where a tournament knocked it out. */
 /** The SDK's refusal of a second submit while a run is in flight (`multitaskStrategy: "reject"`). */
 export function isBusyRejection(error: unknown): boolean {
   return error instanceof Error && error.message.includes("a run is already in flight");

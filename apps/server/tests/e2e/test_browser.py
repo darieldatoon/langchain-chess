@@ -73,22 +73,28 @@ def page(request: pytest.FixtureRequest) -> Iterator[Page]:
 
 
 def no_sideways_scroll(page: Page, selector: str | None = None) -> None:
-    """Neither the document nor `selector` is wider than the viewport."""
+    """Nothing overflows sideways: the document, `main` (which clips it), and `selector`'s
+    element within its own width and the viewport."""
     widths = page.evaluate(
         """(selector) => {
-          const el = selector ? document.querySelector(selector) : null;
+          const measure = (el) =>
+            el ? { scroll: el.scrollWidth, client: el.clientWidth,
+                   right: el.getBoundingClientRect().right } : null;
           return {
             inner: window.innerWidth,
             doc: document.documentElement.scrollWidth,
-            el: el ? el.scrollWidth : 0,
-            elBox: el ? el.getBoundingClientRect().right : 0,
+            main: measure(document.querySelector("main")),
+            el: selector ? measure(document.querySelector(selector)) : null,
           };
         }""",
         selector,
     )
     assert widths["doc"] <= widths["inner"], widths
-    assert widths["el"] <= widths["inner"], widths
-    assert widths["elBox"] <= widths["inner"], widths
+    for name in ("main", "el"):
+        box = widths[name]
+        if box is not None:
+            assert box["scroll"] <= box["client"], (name, widths)
+            assert box["right"] <= widths["inner"], (name, widths)
 
 
 def inside_viewport(page: Page, locator: Locator) -> None:
@@ -133,7 +139,7 @@ def game_state(server: str, page: Page) -> Any:
 
 def test_a_setup_s_settings_reach_the_agent(server: str, page: Page):
     page.goto(f"{server}/ui/")
-    page.get_by_text("Black", exact=True).click()
+    page.get_by_role("radiogroup", name="Play As").get_by_text("Black", exact=True).click()
     page.get_by_role("button", name="Advanced").click()
     pick(page, "Moves to list", "Candidates System 1's, when it has any")
     pick(page, "Claim draws", "No Only forced draws end the game")
@@ -159,7 +165,7 @@ def test_a_setup_s_settings_reach_the_agent(server: str, page: Page):
     assert "Legal moves" not in shown
     shortlist_meta = values["plies"][0]["meta"]["SystemOneMiddleware"]["shortlist"]
     assert len(shortlist_meta) == 2
-    expect(page.get_by_text("Your move.")).to_be_visible()
+    expect(page.get_by_label("black player").get_by_text("Your turn")).to_be_visible()
 
 
 def open_a_game(server: str, page: Page) -> None:
@@ -203,3 +209,62 @@ def test_settings_open_from_new_game_and_fit_a_phone(server: str, page: Page):
         at_least_a_tap(dialog.get_by_role("button", name=name, exact=True))
     dialog.get_by_role("button", name="Cancel").tap()
     expect(page.get_by_role("dialog", name="New game")).to_be_visible()
+
+
+def square(page: Page, name: str) -> Locator:
+    return page.locator(f"[data-square={name}]")
+
+
+def moves_of(server: str, page: Page, count: int) -> list[str]:
+    """The thread's moves once it has `count` of them."""
+    page.wait_for_url("**/ui/?thread=*")
+    thread = parse_qs(urlparse(page.url).query)["thread"][0]
+    client = get_sync_client(url=server)
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        with suppress(NotFoundError):
+            moves = client.threads.get_state(thread)["values"].get("moves") or []
+            if len(moves) >= count:
+                return moves
+        time.sleep(0.2)
+    pytest.fail(f"the thread never reached {count} moves")
+
+
+def drag(page: Page, source: Locator, target: Locator) -> None:
+    """A real press, move and release: the board's drag sensor ignores a single jump."""
+    start, end = source.bounding_box(), target.bounding_box()
+    assert start is not None
+    assert end is not None
+    page.mouse.move(start["x"] + start["width"] / 2, start["y"] + start["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(end["x"] + end["width"] / 2, end["y"] + end["height"] / 2, steps=12)
+    page.mouse.up()
+
+
+@pytest.mark.parametrize("page", ["portrait"], indirect=True)
+def test_a_phone_plays_a_move_with_two_taps(server: str, page: Page):
+    open_a_game(server, page)
+    no_sideways_scroll(page)
+    square(page, "e2").tap()
+    square(page, "e4").tap()
+    assert moves_of(server, page, 2)[0] == "e2e4"
+    expect(page.get_by_label("white player").get_by_text("Your turn")).to_be_visible()
+    no_sideways_scroll(page)
+
+
+def test_desktop_plays_a_move_by_dragging(server: str, page: Page):
+    page.goto(f"{server}/ui/")
+    page.get_by_role("button", name="Play", exact=True).click()
+    expect(page.get_by_role("dialog")).to_have_count(0)
+    drag(page, square(page, "d2"), square(page, "d4"))
+    assert moves_of(server, page, 2)[0] == "d2d4"
+    no_sideways_scroll(page)
+    no_sideways_scroll(page, "[data-slot=table]")
+
+
+@pytest.mark.parametrize("page", ["landscape"], indirect=True)
+def test_a_phone_on_its_side_never_scrolls_sideways(server: str, page: Page):
+    open_a_game(server, page)
+    no_sideways_scroll(page)
+    no_sideways_scroll(page, "[data-slot=table]")
+    inside_viewport(page, square(page, "a1"))

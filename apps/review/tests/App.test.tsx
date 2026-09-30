@@ -343,3 +343,47 @@ describe("App", () => {
     expect(api.games).not.toHaveBeenCalled();
   });
 });
+
+describe("App layouts", () => {
+  function sized(width: number, height: number) {
+    const w = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(width);
+    const h = vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(height);
+    return () => {
+      w.mockRestore();
+      h.mockRestore();
+    };
+  }
+
+  it("keeps the games in a popover when there is no room for their column", async () => {
+    const restore = sized(1100, 700);
+    try {
+      show(fakeApi());
+      const games = await screen.findByRole("button", { name: "Games" });
+      expect(document.querySelector("main")).toHaveAttribute("data-layout", "wide");
+      // Open until a game is picked.
+      fireEvent.click((await screen.findAllByRole("button", { name: /1-0/ }))[0]);
+      expect(screen.queryByRole("button", { name: /Load more/ })).not.toBeInTheDocument();
+      expect(screen.getByLabelText("game")).toBeInTheDocument();
+      fireEvent.click(games);
+      expect(await screen.findByRole("button", { name: "Load more" })).toBeInTheDocument();
+    } finally {
+      restore();
+    }
+  });
+
+  it("shows the games inline on phones, collapsed once one is picked", async () => {
+    const restore = sized(390, 800);
+    try {
+      show(fakeApi());
+      const games = await screen.findByRole("button", { name: "Games" });
+      expect(games).toHaveAttribute("aria-expanded", "true");
+      fireEvent.click((await screen.findAllByRole("button", { name: /1-0/ }))[0]);
+      expect(games).toHaveAttribute("aria-expanded", "false");
+      expect(screen.queryByRole("button", { name: "Load more" })).not.toBeInTheDocument();
+      fireEvent.click(games);
+      expect(screen.getByRole("button", { name: "Load more" })).toBeInTheDocument();
+    } finally {
+      restore();
+    }
+  });
+});
