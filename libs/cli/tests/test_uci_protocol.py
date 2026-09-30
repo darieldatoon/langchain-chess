@@ -102,8 +102,20 @@ def test_completion_rows():
         "info string resigns: no legal move after 4 attempts",
         "bestmove 0000",
     ]
+    # UCI never sends `resign`, but a record that has one reads as the game being over.
+    gave_up = {
+        "turns": [turn("terminal")],
+        "outcome": {"kind": "resignation", "winner": "black", "reason": "resigned"},
+    }
+    assert complete(gave_up, result()) == [
+        "info string game over: White resigned · Black wins. 0-1",
+        "bestmove 0000",
+    ]
     drawn = {"turns": [turn("terminal")], "outcome": {"kind": "draw", "reason": "fivefold"}}
-    assert complete(drawn, result())[0] == "info string game over: Draw by fivefold. 1/2-1/2"
+    assert (
+        complete(drawn, result())[0]
+        == "info string game over: Draw by fivefold repetition. 1/2-1/2"
+    )
     rejected = {"invocation": {"action": "reject"}, "error": "bad"}
     assert complete(rejected, result()) == ["info string bad", "bestmove 0000"]
     kept = {"turns": [turn("pending")], "fallback_move": "d2d4"}

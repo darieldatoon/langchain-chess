@@ -26,6 +26,7 @@ type DrawReason = Literal[
     "seventyfive_moves",
 ]
 type TurnStatus = Literal["pending", "committed", "abandoned", "terminal"]
+type DrawAnswer = Literal["declined"]
 type CallKind = Literal["llm", "systemone", "summary"]
 
 
@@ -141,7 +142,15 @@ class Draw(TypedDict):
 class Resignation(TypedDict):
     kind: Literal["resignation"]
     winner: Side
-    reason: Literal["illegal_moves"]
+    reason: Literal["illegal_moves", "resigned"]
+    """`illegal_moves` is a forfeit: the agent ran out of attempts at a legal move."""
+
+
+class DrawOffer(TypedDict):
+    ply: int
+    """`len(moves)` when it was offered: the completed half-moves, possibly 0."""
+    by: Side
+    answer: DrawAnswer
 
 
 type Outcome = Checkmate | Draw | Resignation
@@ -158,6 +167,8 @@ class ChessState(AgentState):
     """Every turn, even ones that produced no move."""
     error: NotRequired[Annotated[str | None, OmitFromInput]]
     """The last rejection reason."""
+    draw_offers: NotRequired[Annotated[list[DrawOffer], OmitFromInput]]
+    """Absent on games recorded before draw offers: read it as `[]`."""
     # Input only; ChessCore clears it every run.
     position: NotRequired[Annotated[PositionInput | None, OmitFromOutput]]
     # Turn working state: private.
@@ -177,6 +188,6 @@ CHESS_KEYS: frozenset[str] = frozenset(get_type_hints(ChessState, include_extras
 """Every `ChessState` key, `messages` included."""
 
 RECORD_KEYS: frozenset[str] = frozenset(
-    {"start_fen", "moves", "plies", "outcome", "turns", "error"}
+    {"start_fen", "moves", "plies", "outcome", "turns", "error", "draw_offers"}
 )
 """What clients may read: the thread-state API also returns the private channels."""

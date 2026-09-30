@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   fenOrStart,
   fullmoveNumber,
+  normalizeFen,
   isFen,
   isOwnPiece,
   isPromotion,
@@ -10,6 +11,7 @@ import {
   sanAt,
   sideToMove,
   tryMove,
+  validateStart,
 } from "../src/chess";
 import { START_FEN } from "../src/types";
 
@@ -46,6 +48,11 @@ describe("helpers", () => {
   it("reads the side to move", () => {
     expect(sideToMove(START_FEN)).toBe("white");
     expect(sideToMove("8/8/8/8/8/8/8/8 b - - 0 1")).toBe("black");
+    expect(sideToMove(" 4k3/8/8/8/8/8/4P3/4K3 \t b  - - 0 12")).toBe("black");
+    expect(fullmoveNumber("4k3/8/8/8/8/8/4P3/4K3  b  - -\t0  12 ")).toBe(12);
+    expect(normalizeFen(" 4k3/8/8/8/8/8/4P3/4K3 \t b  - - 0 12 ")).toBe(
+      "4k3/8/8/8/8/8/4P3/4K3 b - - 0 12",
+    );
     expect(opposite("white")).toBe("black");
     expect(opposite("black")).toBe("white");
   });
@@ -103,5 +110,28 @@ describe("replay", () => {
   it("names a move at a position, or echoes the UCI when it is illegal there", () => {
     expect(sanAt(START_FEN, "g1f3")).toBe("Nf3");
     expect(sanAt(START_FEN, "e7e5")).toBe("e7e5");
+  });
+});
+
+describe("validateStart", () => {
+  it("accepts a playable position", () => {
+    expect(validateStart(START_FEN)).toBeNull();
+    expect(validateStart("4k3/8/8/8/8/8/8/R3K3 w Q - 0 1")).toBeNull();
+    expect(validateStart("\t4k3/8/8/8/8/8/4P3/4K3  b \t - - 0 12 ")).toBeNull();
+  });
+
+  it("says why a position can't be played", () => {
+    expect(validateStart("garbage")).toMatch(/six space-delimited fields/);
+    expect(validateStart("8/8/8/8/8/8/8/4K3 w - - 0 1")).toMatch(/missing black king/);
+    expect(validateStart("4k3/8/8/8/8/8/8/R3K3 b - - 0 1")).toBeNull();
+    expect(validateStart("4k3/8/8/8/8/8/8/4R1K1 w - - 0 1")).toBe(
+      "The side not to move is in check.",
+    );
+    expect(validateStart("rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3")).toBe(
+      "That position is already checkmate.",
+    );
+    expect(validateStart("7k/5Q2/6K1/8/8/8/8/8 b - - 0 1")).toBe(
+      "That position is already stalemate.",
+    );
   });
 });

@@ -2,21 +2,28 @@ import { useStream } from "@langchain/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DEFAULT_CONTEXT,
-  fenOrStart,
+  START_FEN,
   isPending,
   lastPolicyPly,
   liveAnalysis,
   replay,
+  rootAccepted,
   turnOf,
   type ChessValues,
+  type DrawOffer,
+  type Message,
   type MoveEntry,
   type Outcome,
+  type Ply,
+  type PositionInput,
   type Reply,
   type ReplyState,
+  type Side,
+  type TurnRecord,
 } from "@langchain-chess/chess-ui";
 import { commandKey, createCommandIds } from "./commands";
 import { apiUrl, configurableOf } from "./settings";
-import { gameOf, type GameRecord } from "./setup";
+import { gameOf, startFenOf, type GameRecord } from "./setup";
 
 export const CHESS_GRAPH = "chess";
 /** The trace name and tags. `run_name` is missing from the SDK's `Config` type; the server honours it. */
@@ -40,6 +47,21 @@ export function writeThreadToUrl(threadId: string | null, history: History = win
  */
 export type Restore = "loading" | "missing" | "failed" | "ready";
 
+/** What a run is sent: a position, a chat message, or nothing (resume the pending turn). */
+type Command = { position: PositionInput } | { messages: Message[] } | Record<string, never>;
+
+/** A game's first command from a chosen root, until the server answers it. */
+interface FirstPacket {
+  position: PositionInput;
+  /** The human's first move in it, shown on the board meanwhile. */
+  move: PendingMove | null;
+  /** The values when it was sent: any other values are the server's answer. */
+  sentOn: ChessValues;
+}
+
+/** A resign or draw command in flight. */
+export type Control = "resign" | "draw";
+
 export interface PendingMove {
   uci: string;
   fen: string;
@@ -51,9 +73,18 @@ export interface Game {
   /** The start and the position after each move. */
   fens: string[];
   moves: string[];
+  plies: readonly Ply[];
+  turns: readonly TurnRecord[];
   entries: MoveEntry[];
   outcome: Outcome | null;
   error: string | null;
+  drawOffers: readonly DrawOffer[];
+  /** The server took this game's root: its first command made a turn. */
+  rootAccepted: boolean;
+  /** A first position packet is out with no answer yet: Retry resends it. */
+  firstUnanswered: boolean;
+  /** The server refused the chosen root; choosing another position is the way on. */
+  startRejected: boolean;
   /** Null for a thread with no setup this app can read: it can only be shown. */
   record: GameRecord | null;
   /** Thinking for the whole run, so the card never falls back to the previous reply meanwhile. */
@@ -65,12 +96,17 @@ export interface Game {
   streamError: unknown;
   threadId: string | null;
   pendingMove: PendingMove | null;
+  sending: Control | null;
   play: (uci: string, fenAfter: string) => Promise<void>;
   start: () => Promise<void>;
   retry: () => Promise<void>;
+  /** For `side`, which the server can't know: it doesn't know which side is human. */
+  resign: (side: Side) => Promise<void>;
+  offerDraw: (side: Side) => Promise<void>;
 }
 
 const NO_MOVES: string[] = [];
+const NO_OFFERS: DrawOffer[] = [];
 
 /**
  * One `useStream` on the `chess` graph; one thread is one game, played with the setup its thread
@@ -79,6 +115,7 @@ const NO_MOVES: string[] = [];
 export function useGame(apiKey: string, chosen: GameRecord | null): Game {
   const [threadId, setThreadId] = useState(() => threadFromUrl());
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
+  const [sending, setSending] = useState<Control | null>(null);
   const [load, setLoad] = useState<{
     hydration: Promise<void>;
     restore: "missing" | "failed";
@@ -134,7 +171,8 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
     load?.hydration === hydration ? load.restore : stream.isThreadLoading ? "loading" : "ready";
 
   const values = stream.values;
-  const startFen = fenOrStart(values.start_fen);
+  const accepted = rootAccepted(values);
+  const startFen = startFenOf(values, chosen);
   const moves = values.moves ?? NO_MOVES;
   const plies = useMemo(() => values.plies ?? [], [values.plies]);
   const turns = useMemo(() => values.turns ?? [], [values.turns]);
@@ -165,8 +203,9 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
   const configurable = useMemo(() => configurableOf(record?.context ?? DEFAULT_CONTEXT), [record]);
 
   const send = useCallback(
-    (input: ChessValues) =>
-      stream.submit(input, {
+    (input: Command) =>
+      // The SDK types a run's input as the thread's values; `position` is an input-only channel.
+      stream.submit(input as ChessValues, {
         config: { configurable, ...WEB_TRACE },
         metadata: { surface: "web" },
         multitaskStrategy: "reject",
@@ -182,9 +221,37 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
     [send, commandId, moves.length],
   );
 
-  // Optimistic board: show the human's move until the run settles, success or error.
+  // A game from a chosen root opens with one position command, never a message (the server
+  // rejects both together), and resends exactly that packet until the root is accepted.
+  const [first, setFirst] = useState<FirstPacket | null>(null);
+  const [startRejected, setStartRejected] = useState(false);
+  const custom = chosen !== null && chosen.startFen !== START_FEN && !accepted;
+  if (first && (accepted || values.outcome)) setFirst(null);
+  // Only a response to the packet changes the values: a new error with no turn is its rejection.
+  if (first && !stream.isLoading && values !== first.sentOn && values.error && !accepted) {
+    setFirst(null);
+    setStartRejected(true);
+  }
+  const sendFirst = useCallback(
+    (packet: Omit<FirstPacket, "sentOn">) => {
+      setFirst({ ...packet, sentOn: stream.values });
+      setStartRejected(false);
+      return send({ position: packet.position });
+    },
+    [send, stream],
+  );
+
+  // Optimistic board: show the human's move until the run settles, success or error; a first
+  // packet's move stays until the root is accepted or rejected.
   const play = useCallback(
     async (uci: string, fenAfter: string) => {
+      if (custom) {
+        await sendFirst({
+          position: { start_fen: startFen, moves: [uci] },
+          move: { uci, fen: fenAfter },
+        });
+        return;
+      }
       setPendingMove({ uci, fen: fenAfter });
       try {
         await command(uci);
@@ -192,12 +259,30 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
         setPendingMove(null);
       }
     },
-    [command],
+    [command, custom, sendFirst, startFen],
   );
 
-  const start = useCallback(() => command("go"), [command]);
+  const start = useCallback(
+    () => (custom ? sendFirst({ position: { start_fen: startFen }, move: null }) : command("go")),
+    [command, custom, sendFirst, startFen],
+  );
+  // Never resent: a consumed id resent while a turn is pending would retry that turn.
+  const control = useCallback(
+    async (kind: Control, side: Side) => {
+      setSending(kind);
+      try {
+        await command(`${kind} ${side}`);
+      } finally {
+        setSending(null);
+      }
+    },
+    [command],
+  );
+  const resign = useCallback((side: Side) => control("resign", side), [control]);
+  const offerDraw = useCallback((side: Side) => control("draw", side), [control]);
   // Empty input resumes the pending turn; a fresh `go` would be rejected while one is pending.
-  const retry = useCallback(() => send({}), [send]);
+  // An unanswered first packet is resent unchanged: the server keys it by its fingerprint.
+  const retry = useCallback(() => (first ? sendFirst(first) : send({})), [first, send, sendFirst]);
 
   const isThinking = stream.isLoading;
   const reply = useMemo(
@@ -215,9 +300,15 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
     fen: position.fen,
     fens: position.fens,
     moves,
+    plies,
+    turns,
     entries,
     outcome: values.outcome ?? null,
     error: values.error ?? null,
+    drawOffers: values.draw_offers ?? NO_OFFERS,
+    rootAccepted: accepted,
+    firstUnanswered: first !== null && !stream.isLoading,
+    startRejected: startRejected && !accepted,
     record,
     reply,
     pendingTurn: isPending(turns),
@@ -226,9 +317,12 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
     restore,
     streamError: stream.error,
     threadId,
-    pendingMove,
+    pendingMove: pendingMove ?? first?.move ?? null,
+    sending,
     play,
     start,
     retry,
+    resign,
+    offerDraw,
   };
 }

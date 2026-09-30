@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import { appended, createApi, defaultProject, firstPages, threadUrl } from "../src/api";
-import { matchup, modelName, resultText, toGame, type ThreadItem } from "../src/games";
+import { matchup, modelName, resultText, sideLabel, toGame, type ThreadItem } from "../src/games";
 import { evalText, parseReview, reviewsByRun, whiteCp, whiteWinPercent } from "../src/review";
 import { decodeValues } from "../src/values";
+import { reviewPgn } from "../src/export";
+import { toPgn } from "@langchain-chess/chess-ui";
 import { call as llmCall, ply as plyOf, systemOne, turn } from "@langchain-chess/chess-ui/testing";
 import { game, graded, MOVES, review, reviewFeedback, values } from "./support/fixtures";
 
@@ -129,6 +131,12 @@ describe("values", () => {
     expect(decodeValues(withPly({ analysis: undefined, meta: { [S1]: {} } }))).not.toBeNull();
     expect(decodeValues(withS1({ top: undefined, error: "timeout" }))).not.toBeNull();
     expect(decodeValues(withS1({ played_move_result: null }))).not.toBeNull();
+    for (const reason of ["illegal_moves", "resigned"]) {
+      const resigned = { kind: "resignation", winner: "white", reason };
+      expect(decodeValues({ moves: [], outcome: resigned })).not.toBeNull();
+    }
+    const offers = [{ ply: 0, by: "white", answer: "declined" }];
+    expect(decodeValues({ moves: [], draw_offers: offers })).not.toBeNull();
   });
 
   it("finds no game record in anything else", () => {
@@ -145,6 +153,13 @@ describe("values", () => {
       { moves: [], outcome: { kind: "draw", reason: 1 } },
       { moves: [], outcome: { kind: "checkmate", winner: "nobody" } },
       { moves: [], outcome: { kind: "timeout", winner: "white" } },
+      { moves: [], outcome: { kind: "resignation", winner: "white", reason: "bored" } },
+      { moves: [], outcome: { kind: "resignation", winner: "red", reason: "resigned" } },
+      { moves: [], draw_offers: {} },
+      { moves: [], draw_offers: [{ ply: 1.5, by: "white", answer: "declined" }] },
+      { moves: [], draw_offers: [{ ply: 1, by: "red", answer: "declined" }] },
+      { moves: [], draw_offers: [{ ply: 1, by: "white", answer: "accepted" }] },
+      { moves: [], draw_offers: [null] },
       { ...good, plies: {} },
       { ...good, plies: [null] },
       withPly({ uci: 1 }),
@@ -217,6 +232,9 @@ describe("games", () => {
     const bare = toGame(thread("t"), { ...run, outputs: { messages: [] } as never }, graded());
     expect(bare.values).toBeNull();
     expect(bare.grading.status).toBe("graded");
+    expect(full.surface).toBeNull();
+    const web = toGame(thread("t"), { ...run, metadata: { policy: "llm", surface: "web" } });
+    expect(web.surface).toBe("web");
     const none = toGame(thread("t"), undefined);
     expect(none.matchup).toBe("Unknown setup");
     expect(none.grading).toEqual({ status: "ungraded" });
@@ -383,5 +401,50 @@ describe("threadUrl", () => {
       "/relative",
     ])
       expect(threadUrl(url, target)).toBe(url);
+  });
+});
+
+describe("sideLabel", () => {
+  const plies = values().plies!;
+  const agent = plies.find((p) => p.source !== "external")!.side;
+  const other = agent === "white" ? "black" : "white";
+
+  it("names an agent side by the matchup, from the whole game", () => {
+    expect(sideLabel({ matchup: "m", surface: null }, plies, agent)).toBe("m");
+  });
+
+  it("names a side with only external moves Human for a web game, else by colour", () => {
+    const external = plies.map((p) => ({ ...p, source: "external" }));
+    expect(sideLabel({ matchup: "m", surface: "web" }, external, other)).toBe("Human");
+    expect(sideLabel({ matchup: "m", surface: "tui" }, external, "white")).toBe("White");
+    expect(sideLabel({ matchup: "m", surface: null }, [], "black")).toBe("Black");
+  });
+});
+
+describe("reviewPgn", () => {
+  it("writes an ungraded game with no plies from its moves alone", () => {
+    const { game: pgn, meta } = reviewPgn(game(), { moves: ["e2e4"] }, null, null);
+    expect(pgn).toMatchObject({
+      moves: ["e2e4"],
+      sans: [undefined],
+      outcome: null,
+      grades: undefined,
+    });
+    expect(meta).toMatchObject({ site: "LangSmith", white: "Human", black: "Human" });
+    expect(meta.comment).toBe("claude-opus-5-5 + semif-qwen3.5-4b · Thread thread-1");
+    expect(reviewPgn(game(), {}, null, null).game.moves).toEqual([]);
+  });
+
+  it("places each record's SAN at its own ply, so missing ones are replayed", () => {
+    const sparse = values({ plies: values().plies!.filter((p) => p.ply !== 0 && p.ply !== 3) });
+    const { game: pgn, meta } = reviewPgn(game(), sparse, review(), null);
+    expect(pgn.sans).toEqual([undefined, "e5", "Qh5", undefined, "Bc4", "Nf6", "Qxf7#"]);
+    const movetext = toPgn(pgn, meta)
+      .split("\n\n")[1]
+      .replace(/\{[^}]*\}/g, " ");
+    const played = movetext
+      .split(/\s+/)
+      .filter((t) => t && !/^\d+\.+$/.test(t) && !t.startsWith("$") && t !== "1-0");
+    expect(played).toEqual(["e4", "e5", "Qh5", "Nc6", "Bc4", "Nf6", "Qxf7#"]);
   });
 });

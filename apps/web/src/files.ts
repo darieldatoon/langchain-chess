@@ -2,7 +2,17 @@
 
 /** Saves `value` as a JSON download named `name`. */
 export function downloadJson(name: string, value: unknown, doc: Document = document): void {
-  const blob = new Blob([JSON.stringify(value, null, 2) + "\n"], { type: "application/json" });
+  downloadText(name, JSON.stringify(value, null, 2) + "\n", "application/json", doc);
+}
+
+/** Saves `text` as a download named `name`. */
+export function downloadText(
+  name: string,
+  text: string,
+  type: string,
+  doc: Document = document,
+): void {
+  const blob = new Blob([text], { type });
   const url = URL.createObjectURL(blob);
   const link = doc.createElement("a");
   link.href = url;

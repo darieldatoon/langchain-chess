@@ -9,6 +9,7 @@ import {
   loadSettings,
   modelKwargsProblems,
   opposite,
+  rootAccepted,
   sentEffort,
   sideToMove,
   type ChessContext,
@@ -324,22 +325,36 @@ export function importedSetup(
   }
 }
 
-/** A game's human side and the context every run of it sends. */
+/** A game's human side, the context every run of it sends, and the position it starts from. */
 export interface GameRecord {
   side: Side;
   context: ChessContext;
+  /** Never stored with the setup: a new game chooses it, a thread records it. */
+  startFen: string;
+}
+
+/**
+ * The root a game plays from: the thread's once the server has taken it (any turn), else the new
+ * game's pick. `start_fen` alone proves nothing: a rejected first command writes the standard one.
+ */
+export function startFenOf(
+  values: ChessValues,
+  chosen: Pick<GameRecord, "startFen"> | null,
+): string {
+  if (rootAccepted(values)) return fenOrStart(values.start_fen);
+  return chosen?.startFen ?? fenOrStart(values.start_fen);
 }
 
 /**
  * The human plays the external moves. Before the first, the side the opponent didn't open with;
  * before any move, the side picked, else the side not to move: the opponent's first turn is open.
  */
-function humanSideOf(values: ChessValues, picked: Side | null): Side {
+function humanSideOf(values: ChessValues, picked: Side | null, startFen: string): Side {
   const plies = values.plies ?? [];
   const external = plies.findLast((p) => p.source === "external");
   if (external) return external.side;
   if (plies[0]) return opposite(plies[0].side);
-  return picked ?? opposite(sideToMove(fenOrStart(values.start_fen)));
+  return picked ?? opposite(sideToMove(startFen));
 }
 
 /**
@@ -348,7 +363,9 @@ function humanSideOf(values: ChessValues, picked: Side | null): Side {
  */
 export function gameOf(values: ChessValues, chosen: GameRecord | null): GameRecord | null {
   const context = recordedContext(values.setup) ?? chosen?.context;
-  return context ? { side: humanSideOf(values, chosen?.side ?? null), context } : null;
+  if (!context) return null;
+  const startFen = startFenOf(values, chosen);
+  return { side: humanSideOf(values, chosen?.side ?? null, startFen), context, startFen };
 }
 
 export type Kwargs = { [key: string]: JSONValue };

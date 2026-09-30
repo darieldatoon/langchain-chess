@@ -1,13 +1,12 @@
 // The `game_review` feedback `lcchess grade` writes (libs/cli/langchain_chess_cli/grade/records.py
 // `review`), and the eval maths the board and graph draw from it. Pure.
-import type { Quality, Side } from "@langchain-chess/chess-ui";
+import type { Eval, Quality, Side } from "@langchain-chess/chess-ui";
 import { isJson, isNumber, isSide, isStrings } from "./json";
 
 export const REVIEW_KEY = "game_review";
 export const GRADER = "lcchess grade";
 
-/** White's side, as the grader stores it. `mate: 0` is a mated position. */
-export type Eval = { cp: number } | { mate: number; winner: Side };
+export type { Eval };
 
 export interface EngineLine {
   eval: Eval;

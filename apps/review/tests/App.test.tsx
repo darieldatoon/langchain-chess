@@ -55,7 +55,7 @@ describe("App", () => {
     expect(api.games).toHaveBeenCalledWith("p-app", "2026-09-18T12:00:00.000Z");
     expect(screen.getByText("Pick a game")).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole("button", { name: /1-0/ })[0]);
-    expect(screen.getByRole("button", { name: "Qxf7#" })).toHaveAttribute("aria-current", "step");
+    expect(screen.getByRole("button", { name: /^Qxf7#/ })).toHaveAttribute("aria-current", "step");
     fireEvent.click(screen.getByRole("button", { name: /Open trace/ }));
     await waitFor(() => expect(openUrl).toHaveBeenCalledWith("https://smith/trace"));
     expect(traceUrl).toHaveBeenCalledWith("p-app", {
@@ -65,7 +65,7 @@ describe("App", () => {
     });
   });
 
-  it("keeps the reply card's toggles from game to game", async () => {
+  it("keeps the reply card's toggles and the tab under the board from game to game", async () => {
     show(fakeApi());
     fireEvent.click(await screen.findByRole("button", { name: "Load more" }));
     await waitFor(() => expect(screen.getAllByRole("button", { name: /1-0/ })).toHaveLength(2));
@@ -73,7 +73,9 @@ describe("App", () => {
     fireEvent.click(first);
     fireEvent.click(screen.getByRole("button", { name: "Hide top moves" }));
     fireEvent.click(screen.getByRole("button", { name: "Hide reasoning" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Export" }));
     fireEvent.click(second);
+    expect(screen.getByRole("tab", { name: "Export" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("button", { name: "Show top moves" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Show reasoning" })).toBeInTheDocument();
   });
@@ -195,7 +197,7 @@ describe("App", () => {
     expect(screen.getByText("No game record")).toBeInTheDocument();
     fireEvent.click(screen.getByText("huge-multipv"));
     const lines = within(screen.getByLabelText("engine lines"));
-    expect(lines.getByText("Engine lines before the move")).toBeInTheDocument();
+    expect(lines.getByText("Before 4. Qxf7#")).toBeInTheDocument();
     expect(screen.getByLabelText("engine lines").children).toHaveLength(2);
   });
 
@@ -273,9 +275,11 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "Re-analyze" }));
     expect(await screen.findByText("Analyzing…")).toBeInTheDocument();
     expect(analyze).toHaveBeenCalledWith(expect.anything(), { force: true, previous: null });
+    // The refresh must be out before it can be answered.
+    await waitFor(() => expect(api.games).toHaveBeenCalledTimes(2));
     await act(async () => resolve({ games: [game()], cursor: null }));
     expect(screen.queryByText("Analyzing…")).toBeNull();
-    expect(screen.getByLabelText("engine grade")).toBeInTheDocument();
+    expect(screen.getByLabelText("engine")).toBeInTheDocument();
   });
 
   it("retries a failed analysis in place of its mark", async () => {
@@ -341,5 +345,49 @@ describe("App", () => {
     await waitFor(() => expect(projects).toHaveBeenCalled());
     fireEvent.change(screen.getByLabelText("Window"), { target: { value: "1" } });
     expect(api.games).not.toHaveBeenCalled();
+  });
+});
+
+describe("App layouts", () => {
+  function sized(width: number, height: number) {
+    const w = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(width);
+    const h = vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(height);
+    return () => {
+      w.mockRestore();
+      h.mockRestore();
+    };
+  }
+
+  it("keeps the games in a popover when there is no room for their column", async () => {
+    const restore = sized(1100, 700);
+    try {
+      show(fakeApi());
+      const games = await screen.findByRole("button", { name: "Games" });
+      expect(document.querySelector("main")).toHaveAttribute("data-layout", "wide");
+      // Open until a game is picked.
+      fireEvent.click((await screen.findAllByRole("button", { name: /1-0/ }))[0]);
+      expect(screen.queryByRole("button", { name: /Load more/ })).not.toBeInTheDocument();
+      expect(screen.getByLabelText("game")).toBeInTheDocument();
+      fireEvent.click(games);
+      expect(await screen.findByRole("button", { name: "Load more" })).toBeInTheDocument();
+    } finally {
+      restore();
+    }
+  });
+
+  it("shows the games inline on phones, collapsed once one is picked", async () => {
+    const restore = sized(390, 800);
+    try {
+      show(fakeApi());
+      const games = await screen.findByRole("button", { name: "Games" });
+      expect(games).toHaveAttribute("aria-expanded", "true");
+      fireEvent.click((await screen.findAllByRole("button", { name: /1-0/ }))[0]);
+      expect(games).toHaveAttribute("aria-expanded", "false");
+      expect(screen.queryByRole("button", { name: "Load more" })).not.toBeInTheDocument();
+      fireEvent.click(games);
+      expect(screen.getByRole("button", { name: "Load more" })).toBeInTheDocument();
+    } finally {
+      restore();
+    }
   });
 });

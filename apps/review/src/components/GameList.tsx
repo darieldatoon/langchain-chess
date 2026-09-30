@@ -4,6 +4,14 @@ import { SkeletonRows } from "@langchain/macaw-components/Skeleton";
 import { Text } from "@langchain/macaw-components/Text";
 import { cn } from "@langchain/macaw-components/utils/cn";
 import { ArrowClockwiseIcon } from "@phosphor-icons/react/dist/ssr/ArrowClockwise";
+import {
+  fenOrStart,
+  openingAt,
+  openingTitle,
+  replay,
+  type OpeningTable,
+} from "@langchain-chess/chess-ui";
+import { useMemo } from "react";
 import { analysisOf, type Analysis } from "../analysis";
 import { resultText, type Game } from "../games";
 import type { Grading } from "../review";
@@ -18,6 +26,8 @@ interface Props {
   onRefresh: () => void;
   refreshing: boolean;
   now: Date;
+  /** Null until loaded; rows name their opening once it is. */
+  openings: OpeningTable | null;
 }
 
 const when = (iso: string) =>
@@ -32,6 +42,7 @@ export function GameList({
   onRefresh,
   refreshing,
   now,
+  openings,
 }: Props) {
   return (
     <Card intent="neutral" className="flex min-h-0 flex-col gap-space-3" aria-label="games">
@@ -58,6 +69,7 @@ export function GameList({
               analysis={analysisOf(game.mark, now)}
               current={game.threadId === selected}
               onSelect={onSelect}
+              openings={openings}
             />
           </li>
         ))}
@@ -82,13 +94,21 @@ function GameRow({
   analysis,
   current,
   onSelect,
+  openings,
 }: {
   game: Game;
   analysis: Analysis | null;
   current: boolean;
   onSelect: (threadId: string) => void;
+  openings: OpeningTable | null;
 }) {
   const plies = game.values?.moves?.length ?? 0;
+  const opening = useMemo(() => {
+    const values = game.values;
+    if (!values || !openings) return null;
+    const { fens } = replay(fenOrStart(values.start_fen), values.moves ?? []);
+    return openingAt(fens, fens.length - 1, openings);
+  }, [game.values, openings]);
   return (
     <button
       type="button"
@@ -107,6 +127,11 @@ function GameRow({
           {game.values ? resultText(game.values.outcome) : "No record"}
         </Text>
       </span>
+      {opening && (
+        <Text variant="xs" color="secondary" as="span" className="truncate" aria-label="opening">
+          {openingTitle(opening)}
+        </Text>
+      )}
       <span className="flex items-center justify-between gap-space-2">
         <Text variant="xs" color="tertiary" as="span" className="truncate">
           {when(game.startedAt)} · {plies === 1 ? "1 ply" : `${plies} plies`}

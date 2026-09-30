@@ -1,5 +1,3 @@
-import { AFTER_E4 } from "@langchain-chess/chess-ui/testing";
-import { START_FEN, type Side } from "@langchain-chess/chess-ui";
 import { describe, expect, it } from "vite-plus/test";
 import {
   describeError,
@@ -9,43 +7,10 @@ import {
   parseNullableKnob,
   resultHeadline,
   sliderValue,
-  statusLine,
 } from "../src/format";
 import { CONTEXT_CHECKS } from "../src/settings";
 
-describe("status", () => {
-  const base = {
-    outcome: null,
-    fen: START_FEN,
-    moveCount: 0,
-    humanSide: "white" as Side | null,
-    pending: false,
-  };
-
-  it("shows the outcome once there is one", () => {
-    const draw = { kind: "draw", reason: "stalemate" } as const;
-    expect(statusLine({ ...base, outcome: draw })).toBe("Draw by stalemate. 1/2-1/2");
-    expect(statusLine({ ...base, humanSide: null, outcome: draw })).toBe(
-      "Draw by stalemate. 1/2-1/2",
-    );
-  });
-
-  it("says a game this browser can't play is view only", () => {
-    expect(statusLine({ ...base, humanSide: null })).toBe("View only.");
-  });
-
-  it("says whose move it is", () => {
-    expect(statusLine({ ...base, humanSide: "white" })).toBe("Your move.");
-    expect(statusLine({ ...base, humanSide: "black" })).toMatch(/Press Start/);
-    expect(statusLine({ ...base, humanSide: "black", pending: true })).toBe("Opponent to move.");
-    expect(statusLine({ ...base, fen: AFTER_E4, moveCount: 1, humanSide: "white" })).toBe(
-      "Opponent to move.",
-    );
-    expect(statusLine({ ...base, fen: AFTER_E4, moveCount: 1, humanSide: "black" })).toBe(
-      "Your move.",
-    );
-  });
-
+describe("errors", () => {
   it("describes errors", () => {
     expect(isBusyRejection(new Error("submit() rejected: a run is already in flight"))).toBe(true);
     expect(isBusyRejection(new Error("Failed to fetch"))).toBe(false);

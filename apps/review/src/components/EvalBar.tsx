@@ -5,23 +5,24 @@ import { evalText, whiteWinPercent, type Eval } from "../review";
 const WHITE = { backgroundColor: "var(--board-light)" };
 const BLACK = { backgroundColor: "var(--board-dark)" };
 
-/** White's winning chances as a vertical bar, White at the bottom unless the board is flipped. */
+/**
+ * White's winning chances as a vertical bar as tall as the board, White at the bottom unless the
+ * board is flipped. The label hangs under it, so the bar keeps the board's height.
+ */
 export function EvalBar({ value, flipped }: { value: Eval; flipped: boolean }) {
   const white = whiteWinPercent(value);
   return (
     <div
-      // A fixed width, wider than any label ("+14.0", "-#12"): a column that sized to its label
-      // would resize the board beside it from move to move.
-      className="flex w-12 shrink-0 flex-col items-center gap-space-1"
+      className="relative flex h-full w-full flex-col items-center"
       aria-label={`evaluation ${evalText(value)}`}
     >
       <div
-        className={`flex w-5 flex-1 overflow-hidden rounded-sm ${flipped ? "flex-col" : "flex-col-reverse"}`}
+        className={`flex h-full w-5 overflow-hidden rounded-sm ${flipped ? "flex-col" : "flex-col-reverse"}`}
       >
         <div style={{ ...WHITE, height: `${white}%` }} data-testid="eval-white" />
         <div style={{ ...BLACK, height: `${100 - white}%` }} />
       </div>
-      <Text variant="xs" color="secondary" className="font-mono">
+      <Text variant="xs" color="secondary" className="absolute top-full mt-space-1 font-mono">
         {evalText(value)}
       </Text>
     </div>

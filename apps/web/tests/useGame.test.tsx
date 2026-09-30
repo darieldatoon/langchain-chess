@@ -11,8 +11,8 @@ import { threadFromUrl, useGame, writeThreadToUrl } from "../src/useGame";
 vi.mock("@langchain/react", async () => (await import("./support/fakeStream")).useStreamMock());
 
 const REJECT = { multitaskStrategy: "reject" };
-const WHITE: GameRecord = { side: "white", context: DEFAULT_CONTEXT };
-const BLACK: GameRecord = { side: "black", context: DEFAULT_CONTEXT };
+const WHITE: GameRecord = { side: "white", context: DEFAULT_CONTEXT, startFen: START_FEN };
+const BLACK: GameRecord = { side: "black", context: DEFAULT_CONTEXT, startFen: START_FEN };
 
 beforeEach(() => {
   resetFake();
@@ -48,7 +48,7 @@ describe("useGame", () => {
 
   it("submits a move as a human message with the context and a reject strategy", async () => {
     const context = { ...DEFAULT_CONTEXT, threshold: 0.4 };
-    const chosen: GameRecord = { side: "white", context };
+    const chosen: GameRecord = { side: "white", context, startFen: START_FEN };
     const { result } = renderHook(() => useGame("key", chosen));
     expect(lastOptions.current).toMatchObject({ apiKey: "key" });
     await act(() => result.current.play("e2e4", AFTER_E4));
@@ -140,7 +140,11 @@ describe("useGame", () => {
     const recorded = { ...DEFAULT_CONTEXT, policy: "llm" as const, k: 3 };
     resetFake({ ...E4_E5, setup: recorded });
     const { result } = renderHook(() => useGame("", BLACK));
-    expect(result.current.record).toEqual({ side: "white", context: recorded });
+    expect(result.current.record).toEqual({
+      side: "white",
+      context: recorded,
+      startFen: START_FEN,
+    });
     await act(() => result.current.play("g1f3", "X"));
     expect(fake.submit.mock.lastCall?.[1].config.configurable).toEqual(configurableOf(recorded));
   });

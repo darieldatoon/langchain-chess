@@ -1,11 +1,11 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
-import { DEFAULT_CONTEXT } from "@langchain-chess/chess-ui";
+import { DEFAULT_CONTEXT, START_FEN } from "@langchain-chess/chess-ui";
 import { AFTER_E4, ply, turn } from "@langchain-chess/chess-ui/testing";
 import type { GameRecord } from "../src/setup";
 import { useGame, writeThreadToUrl } from "../src/useGame";
 
-const WHITE: GameRecord = { side: "white", context: DEFAULT_CONTEXT };
+const WHITE: GameRecord = { side: "white", context: DEFAULT_CONTEXT, startFen: START_FEN };
 
 // The real SDK, over a stubbed fetch: how it settles a thread load is what `restore` reads.
 function serve(
@@ -61,7 +61,7 @@ describe("useGame on the real SDK", () => {
     writeThreadToUrl("abc");
     const { result } = renderHook(() => useGame("", null));
     await waitFor(() => expect(result.current.restore).toBe("ready"));
-    expect(result.current.record).toEqual({ side: "black", context: setup });
+    expect(result.current.record).toEqual({ side: "black", context: setup, startFen: START_FEN });
     expect(window.localStorage.length).toBe(0);
   });
 

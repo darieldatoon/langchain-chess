@@ -2,8 +2,11 @@
 import {
   SYSTEMONE_META_KEY,
   type Call,
+  type ChessValues,
+  type DrawOffer,
   type Message,
   type Ply,
+  type Reply,
   type SystemOneMeta,
   type TurnRecord,
 } from "./types";
@@ -33,9 +36,36 @@ export function lastPolicyPly(plies: readonly Ply[]): Ply | null {
   return plies.findLast((p) => p.source !== "external") ?? null;
 }
 
+/**
+ * The reply that led to position `index`: the latest agent ply before it, with its turn and the
+ * position it was chosen from. Null at the start or before any agent move.
+ */
+export function replyAt(
+  plies: readonly Ply[],
+  turns: readonly TurnRecord[],
+  fens: readonly string[],
+  index: number,
+): Reply | null {
+  const ply = plies.findLast((p) => p.ply < index && p.source !== "external");
+  return ply ? { ply, turn: turnOf(ply, turns), fenBefore: fens[ply.ply] } : null;
+}
+
 export function systemOneMeta(ply: Ply): SystemOneMeta | null {
   const meta = ply.meta[SYSTEMONE_META_KEY];
   return meta && typeof meta.status === "string" ? (meta as unknown as SystemOneMeta) : null;
+}
+
+/**
+ * Whether the server has taken a game's root: any turn at all. `start_fen` proves nothing, as a
+ * rejected first command still writes the standard one.
+ */
+export function rootAccepted(values: Pick<ChessValues, "turns">): boolean {
+  return (values.turns?.length ?? 0) > 0;
+}
+
+/** The half-moves after which a draw was offered, as the move list marks them: `ply − 1`. */
+export function drawMarks(offers: readonly DrawOffer[] | undefined): Set<number> {
+  return new Set((offers ?? []).map((o) => o.ply - 1));
 }
 
 export function isPending(turns: readonly TurnRecord[]): boolean {

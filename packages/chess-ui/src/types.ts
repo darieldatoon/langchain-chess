@@ -17,7 +17,15 @@ export type DrawReason =
 export type Outcome =
   | { kind: "checkmate"; winner: Side }
   | { kind: "draw"; reason: DrawReason }
-  | { kind: "resignation"; winner: Side; reason: "illegal_moves" };
+  /** `illegal_moves` is a forfeit: the agent ran out of attempts at a legal move. */
+  | { kind: "resignation"; winner: Side; reason: "illegal_moves" | "resigned" };
+
+/** A draw offered at `ply` (the completed half-moves, possibly 0), and how it was answered. */
+export interface DrawOffer {
+  ply: number;
+  by: Side;
+  answer: "declined";
+}
 
 export interface Call {
   kind: "llm" | "systemone" | "summary";
@@ -121,6 +129,9 @@ export const SYSTEMONE_META_KEY = "SystemOneMiddleware";
 /** A graded move's class. Mirrors `Quality` in libs/chess/langchain_chess/grading.py. */
 export type Quality = "best" | "good" | "inaccuracy" | "mistake" | "blunder";
 
+/** An engine evaluation from White's side, as the grader stores it. `mate: 0` is a mated position. */
+export type Eval = { cp: number } | { mate: number; winner: Side };
+
 /** The latest opponent ply with its turn and the position it was chosen from. */
 export interface Reply {
   ply: Ply;
@@ -149,6 +160,13 @@ export interface Message {
   readonly content: unknown;
 }
 
+/** A position command: a root and the moves from it. Mirrors `PositionInput` in state.py. */
+export interface PositionInput {
+  start_fen?: string;
+  moves?: string[];
+  restrict?: string[];
+}
+
 /** The thread values a UI may read. The state API also returns private channels; never read them. */
 export interface ChessValues {
   messages?: Message[];
@@ -158,6 +176,8 @@ export interface ChessValues {
   turns?: TurnRecord[];
   outcome?: Outcome | null;
   error?: string | null;
+  /** Absent on games recorded before draw offers: read it as `[]`. */
+  draw_offers?: DrawOffer[];
   /**
    * The server's resolved settings on the game's first turn, as that version recorded them:
    * read them with `loadRecorded`. Absent on older games.

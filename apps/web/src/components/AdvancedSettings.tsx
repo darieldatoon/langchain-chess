@@ -4,8 +4,6 @@ import { Slider } from "@langchain/macaw-components/Slider";
 import { Switch } from "@langchain/macaw-components/Switch";
 import { Text } from "@langchain/macaw-components/Text";
 import { Textarea } from "@langchain/macaw-components/Textarea";
-import { Tooltip } from "@langchain/macaw-components/Tooltip";
-import { InfoIcon } from "@phosphor-icons/react/dist/ssr/Info";
 import { useEffect, useState } from "react";
 import { parseKnob, parseNullableKnob, sliderValue } from "../format";
 import { CONTEXT_CHECKS } from "../settings";
@@ -21,6 +19,7 @@ import {
   type TakesEffort,
 } from "../setup";
 import {
+  Hint,
   SETTING_HELP,
   SETTING_LABELS,
   type SettingKey,
@@ -288,19 +287,9 @@ export function AdvancedSettings({
   );
 }
 
-/** An info icon whose tooltip says what a setting does and when to change it. */
+/** An info icon that says what a setting does and when to change it, on tap or hover. */
 export function Info({ setting }: { setting: SettingKey }) {
-  return (
-    <Tooltip title={SETTING_HELP[setting]}>
-      <button
-        type="button"
-        aria-label={`About ${SETTING_LABELS[setting]}`}
-        className="inline-flex text-tertiary hover:text-primary"
-      >
-        <InfoIcon aria-hidden size={14} />
-      </button>
-    </Tooltip>
-  );
+  return <Hint label={`About ${SETTING_LABELS[setting]}`} text={SETTING_HELP[setting]} />;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

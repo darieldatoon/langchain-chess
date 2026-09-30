@@ -186,8 +186,10 @@ async def test_exhausted_retries_resign(make_agent, run, cfg):
     assert turn["ply"] is None
     assert len(turn["calls"]) == 4
     assert turn["illegal_attempts"] == 4
-    results = [m for m in ais(out) if "resigns" in m.content]
-    assert [m.content for m in results] == ["White resigns after repeated illegal moves. 0-1"]
+    results = [m for m in ais(out) if "forfeited" in m.content]
+    assert [m.content for m in results] == [
+        "White forfeited after repeated illegal moves · Black wins. 0-1"
+    ]
 
 
 async def test_after_a_resignation(make_agent, run, cfg):
@@ -242,7 +244,7 @@ async def test_threefold_is_not_adjudicated_before_the_agent_moves(make_agent, r
     assert out["moves"][-1] == "f6g8"
     assert out["outcome"] == {"kind": "draw", "reason": "threefold"}
     assert out["turns"][-1]["status"] == "committed"
-    assert ais(out)[-1].content == "Draw by threefold. 1/2-1/2"
+    assert ais(out)[-1].content == "Draw by threefold repetition. 1/2-1/2"
 
 
 @pytest.mark.parametrize("text", ["--", "Z0", "0000", "@@@@"])
@@ -280,7 +282,7 @@ async def test_chat_move_that_mates_ends_the_game(make_agent, run, cfg):
     assert out["outcome"] == {"kind": "checkmate", "winner": "black"}
     assert out["plies"][-1]["source"] == "external"
     assert out["turns"][-1]["status"] == "terminal"
-    assert ais(out)[-1].content == "Checkmate, black wins. 0-1"
+    assert ais(out)[-1].content == "Checkmate · Black wins. 0-1"
     assert model.calls == 2
 
 

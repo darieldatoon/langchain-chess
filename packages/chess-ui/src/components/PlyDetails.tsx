@@ -3,12 +3,14 @@ import { Button } from "@langchain/macaw-components/Button";
 import { Card } from "@langchain/macaw-components/Card";
 import { Spinner, SpinnerIcon } from "@langchain/macaw-components/Spinner";
 import { Text } from "@langchain/macaw-components/Text";
-import { Tooltip } from "@langchain/macaw-components/Tooltip";
 import type { ReactNode } from "react";
 import { costText, seconds, sourceClass, sourceLabel, type SourceClass } from "../format";
 import { systemOneMeta, turnCost } from "../selectors";
 import type { PlyView, RankedMove, Reply, ReplyState } from "../types";
+import { cn } from "@langchain/macaw-components/utils/cn";
+import { TOUCH_TARGET } from "../touch";
 import { Analysis } from "./Analysis";
+import { Hint } from "./Hint";
 import { MoveBar } from "./MoveBar";
 
 const BADGE_COLORS: Record<SourceClass, "primary" | "special" | "secondary" | "warning" | "plain"> =
@@ -20,18 +22,37 @@ const BADGE_COLORS: Record<SourceClass, "primary" | "special" | "secondary" | "w
     other: "warning",
   };
 
+/** Previews of System 1's moves, each from the position the reply was chosen in. */
+export interface MovePreview {
+  onPin: (uci: string) => void;
+  /** Fine pointers only: null when the pointer leaves. */
+  onHover?: (uci: string | null) => void;
+  /** The move whose preview is pinned. */
+  pinned: string | null;
+}
+
 interface Props {
   reply: ReplyState;
   view: PlyView;
   onViewChange: (view: PlyView) => void;
   title?: string;
+  /** The card's accessible name. */
+  label?: string;
+  preview?: MovePreview;
 }
 
 /**
  * Every section and fact row renders in every state, so the card keeps its shape between moves;
  * do not make one conditional on the ply.
  */
-export function PlyDetails({ reply, view, onViewChange, title = "Last Reply" }: Props) {
+export function PlyDetails({
+  reply,
+  view,
+  onViewChange,
+  title = "Last Reply",
+  label = "last reply",
+  preview,
+}: Props) {
   if (reply.status === "none") {
     return (
       <Card intent="neutral" className="flex flex-col gap-space-3">
@@ -39,7 +60,7 @@ export function PlyDetails({ reply, view, onViewChange, title = "Last Reply" }: 
           {title}
         </Text>
         <Text variant="sm" color="tertiary">
-          Make a move to see how the opponent decided.
+          No reply yet.
         </Text>
       </Card>
     );
@@ -51,7 +72,7 @@ export function PlyDetails({ reply, view, onViewChange, title = "Last Reply" }: 
     <Card
       intent="neutral"
       className="flex flex-col gap-space-3"
-      aria-label="last reply"
+      aria-label={label}
       aria-busy={thinking}
     >
       <Text variant="h4" as="h2" color="secondary">
@@ -79,7 +100,9 @@ export function PlyDetails({ reply, view, onViewChange, title = "Last Reply" }: 
         onToggle={() => onViewChange({ ...view, topMoves: !view.topMoves })}
       >
         {/* Room for the caption and five moves, k's default, so a spinner holds the height. */}
-        <div className="min-h-[9rem]">{played ? <TopMoves reply={played} /> : <Loading />}</div>
+        <div className="min-h-[9rem]">
+          {played ? <TopMoves reply={played} preview={preview} /> : <Loading />}
+        </div>
       </Section>
       <Section
         label="reasoning"
@@ -128,7 +151,7 @@ function Section({
         variant="plain"
         color="secondary"
         size="sm"
-        className="self-start"
+        className={cn("self-start", TOUCH_TARGET)}
         aria-expanded={open}
         rightDecorator={loading && !open ? SpinnerIcon : undefined}
         onClick={onToggle}
@@ -153,9 +176,13 @@ function Facts({ reply }: { reply: Reply | null }) {
         label="Cost"
         value={value(() =>
           cost.incomplete ? (
-            <Tooltip title="Incomplete estimate: some calls were unpriced or approximated">
-              <span aria-label={`${cost.text} (incomplete estimate)`}>{cost.text}</span>
-            </Tooltip>
+            <Hint
+              label={`${cost.text} (incomplete estimate)`}
+              text="Incomplete estimate: some calls were unpriced or approximated"
+              className="font-mono text-primary"
+            >
+              {cost.text}
+            </Hint>
           ) : (
             cost.text
           ),
@@ -175,7 +202,13 @@ function Facts({ reply }: { reply: Reply | null }) {
   );
 }
 
-function TopMoves({ reply: { ply, fenBefore } }: { reply: Reply }) {
+function TopMoves({
+  reply: { ply, fenBefore },
+  preview,
+}: {
+  reply: Reply;
+  preview: MovePreview | undefined;
+}) {
   const meta = systemOneMeta(ply);
   if (meta?.status === "skipped") {
     return (
@@ -199,20 +232,29 @@ function TopMoves({ reply: { ply, fenBefore } }: { reply: Reply }) {
     !top.some((m) => m.uci === ply.uci) && played && played.heat === null && !played.bye
       ? { uci: ply.uci, probability: played.probability }
       : null;
+  const bar = (move: RankedMove, played: boolean) => (
+    <MoveBar
+      key={move.uci}
+      move={move}
+      played={played}
+      fen={fenBefore}
+      onPin={preview && (() => preview.onPin(move.uci))}
+      onHover={preview?.onHover && ((over) => preview.onHover?.(over ? move.uci : null))}
+      pinned={preview?.pinned === move.uci}
+    />
+  );
   return (
     <div className="flex flex-col gap-space-2" aria-label="system 1 moves">
       <Text variant="xs" color="tertiary">
         System 1&apos;s top moves
       </Text>
-      {top.map((move) => (
-        <MoveBar key={move.uci} move={move} played={move.uci === ply.uci} fen={fenBefore} />
-      ))}
+      {top.map((move) => bar(move, move.uci === ply.uci))}
       {extra && (
         <>
           <Text variant="xs" color="tertiary" aria-hidden>
             …
           </Text>
-          <MoveBar move={extra} played fen={fenBefore} />
+          {bar(extra, true)}
         </>
       )}
     </div>

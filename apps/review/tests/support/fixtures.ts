@@ -79,6 +79,7 @@ export function game(overrides: Partial<Game> = {}): Game {
     startedAt: "2026-09-25T12:00:00Z",
     turns: 4,
     matchup: "claude-opus-5-5 + semif-qwen3.5-4b",
+    surface: "web",
     values: values(),
     grading: graded(),
     mark: null,

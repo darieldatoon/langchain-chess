@@ -3,6 +3,12 @@ import pytest
 
 from langchain_chess.rules import (
     CommandError,
+    Go,
+    OfferDraw,
+    Play,
+    Resign,
+    control_command,
+    decline_all,
     describe_outcome,
     ending,
     fingerprint,
@@ -81,11 +87,31 @@ def test_parse_chat_rejects_anything_but_go_or_one_legal_move(text):
         parse_chat(chess.Board(), text)
 
 
-def test_parse_chat_accepts_go_san_and_uci():
+def test_parse_chat_accepts_go_san_uci_resign_and_draw():
     board = chess.Board()
-    assert parse_chat(board, " GO ") is None
-    assert parse_chat(board, "Nf3") == chess.Move.from_uci("g1f3")
-    assert parse_chat(board, "e2e4") == chess.Move.from_uci("e2e4")
+    assert parse_chat(board, " GO ") == Go()
+    assert parse_chat(board, "Nf3") == Play(chess.Move.from_uci("g1f3"))
+    assert parse_chat(board, "e2e4") == Play(chess.Move.from_uci("e2e4"))
+    assert parse_chat(board, "Resign White") == Resign("white")
+    assert parse_chat(board, "resign black") == Resign("black")
+    assert parse_chat(board, " draw BLACK ") == OfferDraw("black")
+
+
+@pytest.mark.parametrize("text", ["resign red", "draw both", "resign  white", "resign", "draw"])
+def test_parse_chat_rejects_a_control_command_without_one_side(text):
+    with pytest.raises(CommandError):
+        parse_chat(chess.Board(), text)
+
+
+def test_a_bad_side_says_how_to_name_one():
+    with pytest.raises(CommandError, match="name the side, `resign white` or `resign black`"):
+        control_command("resign red")
+    assert control_command("e4") is None
+    assert control_command("go") is None
+
+
+def test_the_default_draw_policy_declines():
+    assert decline_all(chess.Board(), "white") == "declined"
 
 
 def test_fingerprint_ignores_restrict_order_but_not_its_presence():
@@ -98,11 +124,17 @@ def test_fingerprint_ignores_restrict_order_but_not_its_presence():
 
 
 def test_result_text_and_score():
-    assert result_text({"kind": "checkmate", "winner": "white"}) == "Checkmate, white wins. 1-0"
-    assert result_text({"kind": "draw", "reason": "threefold"}) == "Draw by threefold. 1/2-1/2"
-    resign: Outcome = {"kind": "resignation", "winner": "white", "reason": "illegal_moves"}
-    assert result_text(resign) == "Black resigns after repeated illegal moves. 1-0"
+    assert result_text({"kind": "checkmate", "winner": "white"}) == "Checkmate · White wins. 1-0"
+    assert (
+        result_text({"kind": "draw", "reason": "threefold"})
+        == "Draw by threefold repetition. 1/2-1/2"
+    )
+    forfeit: Outcome = {"kind": "resignation", "winner": "white", "reason": "illegal_moves"}
+    assert result_text(forfeit) == "Black forfeited after repeated illegal moves · White wins. 1-0"
     assert score({"kind": "resignation", "winner": "black", "reason": "illegal_moves"}) == "0-1"
-    assert describe_outcome(resign) == "white wins by resignation"
+    assert describe_outcome(forfeit) == "white wins by forfeit"
+    resigned: Outcome = {"kind": "resignation", "winner": "black", "reason": "resigned"}
+    assert result_text(resigned) == "White resigned · Black wins. 0-1"
+    assert describe_outcome(resigned) == "black wins, white resigned"
     fifty: Outcome = {"kind": "draw", "reason": "fifty_moves"}
     assert describe_outcome(fifty) == "draw by fifty moves"

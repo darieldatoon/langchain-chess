@@ -1,9 +1,24 @@
 import { Banner } from "@langchain/macaw-components/Banner";
+import { Button } from "@langchain/macaw-components/Button";
+import { Popover, PopoverContent, PopoverTrigger } from "@langchain/macaw-components/Popover";
 import { EmptyState } from "@langchain/macaw-components/EmptyState";
 import { Select } from "@langchain/macaw-components/Select";
 import { Text } from "@langchain/macaw-components/Text";
-import { DEFAULT_PLY_VIEW, type PlyView } from "@langchain-chess/chess-ui";
-import { useEffect, useState } from "react";
+import {
+  DEFAULT_DISPLAY_PREFS,
+  DEFAULT_PLY_VIEW,
+  EVAL_BAR,
+  GAP,
+  layoutFor,
+  REVIEW_LEFT,
+  TOUCH_TARGET,
+  useContainerLayout,
+  useOpenings,
+  type DisplayPrefs,
+  type PlyView,
+} from "@langchain-chess/chess-ui";
+import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
+import { useEffect, useRef, useState } from "react";
 import { analysisOf, type LaunchState } from "./analysis";
 import {
   appended,
@@ -15,12 +30,16 @@ import {
   type TraceTarget,
 } from "./api";
 import type { Game } from "./games";
+import type { ReviewTab } from "./tools";
 import { GameList } from "./components/GameList";
 import { GameView } from "./components/GameView";
 
+/** `window.langsmith.openUrl`: the sandbox's only way to open a page. */
+export type OpenUrl = (url: string, options?: { newTab?: boolean }) => void;
+
 interface Props {
   api: Api;
-  openUrl: (url: string) => void;
+  openUrl: OpenUrl;
   now?: () => Date;
 }
 
@@ -53,6 +72,8 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
   const [error, setError] = useState<string | null>(null);
   // The sandbox has no localStorage and LangSmith no preferences API: this lasts the session.
   const [view, setView] = useState<PlyView>(DEFAULT_PLY_VIEW);
+  const [prefs, setPrefs] = useState<DisplayPrefs>(DEFAULT_DISPLAY_PREFS);
+  const [tab, setTab] = useState<ReviewTab>("graph");
   // A refresh reloads the pages on screen in place, so the list and the open game stay up
   // meanwhile.
   const [reload, setReload] = useState({ count: 0, pages: 1, keep: null as string | null });
@@ -162,7 +183,10 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
   };
 
   const openTrace = (project: string, target: TraceTarget) => {
-    api.traceUrl(project, target).then(openUrl, (e: unknown) => setError(message(e)));
+    api.traceUrl(project, target).then(
+      (url) => openUrl(url),
+      (e: unknown) => setError(message(e)),
+    );
   };
 
   const page = loaded?.key === key ? loaded : null;
@@ -171,14 +195,73 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
   const project = projects.find((p) => p.id === projectId);
   const loading = (projectId !== null && !page && !error) || moreFrom !== null;
 
+  const mainRef = useRef<HTMLElement>(null);
+  const space = useContainerLayout(mainRef);
+  const layout = layoutFor({ ...space, left: REVIEW_LEFT.min, evalBar: EVAL_BAR.wide });
+  const [listOpen, setListOpen] = useState(true);
+  const openings = useOpenings(true);
+  const select = (threadId: string) => {
+    setSelected(threadId);
+    if (layout !== "full") setListOpen(false);
+  };
+  const list = (
+    <GameList
+      games={games}
+      selected={selected}
+      loading={loading}
+      onSelect={select}
+      onMore={page?.cursor ? () => setMoreFrom(page) : null}
+      onRefresh={refresh}
+      refreshing={refreshing}
+      now={now()}
+      openings={openings}
+    />
+  );
+  const gameSpace = {
+    width: layout === "full" ? space.width - REVIEW_LEFT.min - GAP : space.width,
+    height: space.height,
+  };
+
   return (
     <div className="flex h-screen flex-col gap-space-4 bg-surface-level-1 p-space-4">
       <header className="flex flex-wrap items-center justify-between gap-space-3">
-        <Text variant="h3" as="h1">
-          Game review
-        </Text>
-        <div className="flex items-center gap-space-2">
-          <div className="w-64">
+        <div className="flex items-center gap-space-3">
+          <Text variant="h3" as="h1">
+            Game review
+          </Text>
+          {layout === "wide" && (
+            <Popover open={listOpen} onOpenChange={setListOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  size="sm"
+                  rightDecorator={CaretDownIcon}
+                  className={TOUCH_TARGET}
+                >
+                  Games
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="flex max-h-[70vh] w-72 p-0">
+                {list}
+              </PopoverContent>
+            </Popover>
+          )}
+          {layout === "phone" && (
+            <Button
+              variant="outlined"
+              color="secondary"
+              size="sm"
+              aria-expanded={listOpen}
+              className={TOUCH_TARGET}
+              onClick={() => setListOpen((o) => !o)}
+            >
+              Games
+            </Button>
+          )}
+        </div>
+        <div className="flex w-full flex-wrap items-center gap-space-2 sm:w-auto">
+          <div className="w-full sm:w-64">
             <Select
               aria-label="Project"
               placeholder="Choose a project"
@@ -187,7 +270,7 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
               onChange={(value) => value && choose(value, days)}
             />
           </div>
-          <div className="w-40">
+          <div className="w-full sm:w-40">
             <Select
               aria-label="Window"
               hideSearch
@@ -203,39 +286,49 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
           {error}
         </Banner>
       )}
-      <main className="grid min-h-0 flex-1 gap-space-4 md:grid-cols-[18rem_1fr]">
-        <GameList
-          games={games}
-          selected={selected}
-          loading={loading}
-          onSelect={setSelected}
-          onMore={page?.cursor ? () => setMoreFrom(page) : null}
-          onRefresh={refresh}
-          refreshing={refreshing}
-          now={now()}
-        />
-        {game?.values && project ? (
-          <GameView
-            key={game.threadId}
-            game={game}
-            values={game.values}
-            view={view}
-            onViewChange={setView}
-            onOpenTrace={(target) => openTrace(project.id, target)}
-            analysis={analysisOf(game.mark, now())}
-            launch={launches[game.threadId]}
-            onAnalyze={() => analyze(game, project)}
-          />
-        ) : (
-          <EmptyState
-            title={game ? "No game record" : "Pick a game"}
-            description={
-              game
-                ? "The thread's last run carries no game record; it may have errored."
-                : "Games are threads in the project; analyze one to grade it."
-            }
-          />
+      <main
+        ref={mainRef}
+        className="flex min-h-0 flex-1 gap-space-4 overflow-auto"
+        data-layout={layout}
+      >
+        {layout === "full" && (
+          <div className="flex min-h-0 shrink-0 flex-col" style={{ width: REVIEW_LEFT.min }}>
+            {list}
+          </div>
         )}
+        <div className="flex min-w-0 flex-1 flex-col gap-space-4">
+          {layout === "phone" && listOpen && <div className="max-h-80 min-h-0 flex">{list}</div>}
+          {game?.values && project ? (
+            <GameView
+              key={game.threadId}
+              game={game}
+              values={game.values}
+              view={view}
+              onViewChange={setView}
+              onOpenTrace={(target) => openTrace(project.id, target)}
+              analysis={analysisOf(game.mark, now())}
+              launch={launches[game.threadId]}
+              onAnalyze={() => analyze(game, project)}
+              layout={layout}
+              space={gameSpace}
+              prefs={prefs}
+              onPrefsChange={setPrefs}
+              openings={openings}
+              openUrl={openUrl}
+              tab={tab}
+              onTabChange={setTab}
+            />
+          ) : (
+            <EmptyState
+              title={game ? "No game record" : "Pick a game"}
+              description={
+                game
+                  ? "The thread's last run carries no game record; it may have errored."
+                  : "Games are threads in the project; analyze one to grade it."
+              }
+            />
+          )}
+        </div>
       </main>
     </div>
   );

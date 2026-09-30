@@ -31,8 +31,18 @@ export function tryMove(
   return { uci: move.from + move.to + (move.promotion ?? ""), san: move.san, fen: game.fen() };
 }
 
+/** A FEN's fields: chess.js and python-chess accept any run of whitespace between them. */
+export function fenFields(fen: string): string[] {
+  return fen.trim().split(/\s+/);
+}
+
+/** One space between fields: what the board, the PGN and the server are given. */
+export function normalizeFen(fen: string): string {
+  return fenFields(fen).join(" ");
+}
+
 export function sideToMove(fen: string): Side {
-  return fen.split(" ")[1] === "b" ? "black" : "white";
+  return fenFields(fen)[1] === "b" ? "black" : "white";
 }
 
 export function opposite(side: Side): Side {
@@ -40,7 +50,7 @@ export function opposite(side: Side): Side {
 }
 
 export function fullmoveNumber(fen: string): number {
-  const n = Number(fen.split(" ")[5]);
+  const n = Number(fenFields(fen)[5]);
   return Number.isInteger(n) && n > 0 ? n : 1;
 }
 
@@ -96,4 +106,20 @@ export function sanAt(fen: string, uci: string): string {
   } catch {
     return uci;
   }
+}
+
+/** Why a starting position can't be played, or null when it can. */
+export function validateStart(text: string): string | null {
+  // chess.js loads only single-spaced fields.
+  const fen = normalizeFen(text);
+  // chess.js also requires exactly one king a side.
+  const check = validateFen(fen);
+  if (!check.ok) return check.error!;
+  const fields = fenFields(fen);
+  const other = [fields[0], fields[1] === "w" ? "b" : "w", "-", "-", "0", "1"].join(" ");
+  if (new Chess(other).inCheck()) return "The side not to move is in check.";
+  const game = new Chess(fen);
+  if (game.isCheckmate()) return "That position is already checkmate.";
+  if (game.isStalemate()) return "That position is already stalemate.";
+  return null;
 }

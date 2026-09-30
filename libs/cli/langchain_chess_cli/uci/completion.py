@@ -64,7 +64,8 @@ def complete(values: Mapping[str, Any], result: SearchResult) -> list[str]:
         return [f"bestmove {values['plies'][turn['ply']]['uci']}"]
     outcome = values.get("outcome")
     if turn is not None and turn["status"] == "terminal" and outcome is not None:
-        if outcome["kind"] == "resignation":
+        # UCI never sends `resign`, but the record's type allows one.
+        if outcome["kind"] == "resignation" and outcome["reason"] == "illegal_moves":
             attempts = turn["illegal_attempts"]
             return [
                 *info_lines(f"resigns: no legal move after {attempts} attempts"),

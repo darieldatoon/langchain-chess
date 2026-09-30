@@ -1,13 +1,16 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import App from "../src/App";
 import { checkApiKey, type KeyCheck } from "../src/auth";
 import { fetchModelFacts } from "../src/modelFacts";
 import { DEFAULT_SETUP } from "../src/setup";
 import {
   APP_KEY,
+  DISPLAY_KEY,
+  loadDisplayPrefs,
   loadSetup,
+  saveDisplayPrefs,
   saveAppSettings,
   savePlyView,
   saveSetup,
@@ -16,6 +19,8 @@ import {
 import { fake, lastOptions, optionsLog, resetFake } from "./support/fakeStream";
 import { AFTER_E4, E4_E5, ply, turn } from "@langchain-chess/chess-ui/testing";
 import { WEB_TRACE } from "../src/useGame";
+import { openMenu } from "./support/menus";
+import userEvent from "@testing-library/user-event";
 import { renderWithProviders as render } from "./support/renderApp";
 import {
   DEFAULT_CONTEXT,
@@ -36,6 +41,7 @@ interface BoardOptions {
 }
 
 vi.mock("react-chessboard", () => ({
+  defaultPieces: new Proxy({}, { get: () => () => null }),
   Chessboard: ({ options }: { options: BoardOptions }) => (
     <div
       data-testid="board"
@@ -73,6 +79,7 @@ vi.mock("../src/auth", async (importOriginal) => ({
 const downloads = vi.hoisted(() => [] as [string, unknown][]);
 vi.mock("../src/files", () => ({
   downloadJson: (name: string, value: unknown) => downloads.push([name, value]),
+  downloadText: (name: string, text: string) => downloads.push([name, text]),
 }));
 vi.mock("../src/modelFacts", () => ({
   fetchModelFacts: vi.fn(() =>
@@ -95,6 +102,7 @@ const LLM_HIGH: ChessContext = {
 };
 
 const board = () => screen.getByTestId("board");
+const strip = (side: "white" | "black") => screen.getByLabelText(`${side} player`);
 const button = (name: string) => screen.getByRole("button", { name });
 const dialog = () => screen.queryByRole("dialog");
 const change = (label: string, value: string) =>
@@ -155,7 +163,9 @@ describe("new game", () => {
     await click("Play");
     expect(dialog()).not.toBeInTheDocument();
     expect(board()).toHaveAttribute("data-orientation", "white");
-    expect(screen.getByText("SemIf + GLM-5.3 Flash")).toBeInTheDocument();
+    expect(strip("black")).toHaveTextContent("SemIf + GLM-5.3 Flash");
+    expect(strip("white")).toHaveTextContent("You");
+    expect(strip("white")).toHaveTextContent("Your turn");
     expect(fake.submit).not.toHaveBeenCalled();
     expect(loadSetup()).toEqual(DEFAULT_SETUP);
     await click("drop e2e4");
@@ -193,7 +203,8 @@ describe("new game", () => {
     expect(board()).toHaveAttribute("data-draggable", "false");
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
-    await click("Settings");
+    fireEvent.keyDown(button("More"), { key: "Enter" });
+    fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
     expect(screen.getByRole("dialog", { name: "Settings" })).toBeInTheDocument();
     await click("Cancel");
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
@@ -290,8 +301,8 @@ describe("a game's own setup", () => {
     expect(board()).toHaveAttribute("data-orientation", "black");
     expect(board()).toHaveAttribute("data-draggable", "true");
     expect(screen.getByText("abc")).toBeInTheDocument();
-    expect(screen.getByText("GPT-6 Luna · high")).toBeInTheDocument();
-    expect(screen.getByText("Your move.")).toBeInTheDocument();
+    expect(strip("white")).toHaveTextContent("GPT-6 Luna · high");
+    expect(strip("black")).toHaveTextContent("Your turn");
     expect(optionsLog.at(-1)).toMatchObject({ threadId: "abc" });
     await click("drop e7e5");
     expect(submitted()).toEqual(["e7e5"]);
@@ -303,7 +314,7 @@ describe("a game's own setup", () => {
     render(<App />);
     expect(board()).toHaveAttribute("data-orientation", "white");
     expect(board()).toHaveAttribute("data-draggable", "true");
-    expect(screen.getByText("Your move.")).toBeInTheDocument();
+    expect(strip("white")).toHaveTextContent("Your turn");
   });
 
   it("notes advanced knobs that differ from the defaults", () => {
@@ -331,7 +342,9 @@ describe("a game's own setup", () => {
     expect(screen.getByText("View only")).toBeInTheDocument();
     expect(screen.getByText(/can't read this game's settings/)).toBeInTheDocument();
     expect(board()).toHaveAttribute("data-draggable", "false");
-    expect(screen.getByText("View only.")).toBeInTheDocument();
+    // No side is claimed: the strips are named by colour, with no status.
+    expect(strip("white")).toHaveTextContent(/^White$/);
+    expect(strip("black")).toHaveTextContent(/^Black$/);
     expect(screen.queryByRole("button", { name: "Ask opponent to move" })).not.toBeInTheDocument();
     expect(within(screen.getByLabelText("opponent")).getByText("Unknown")).toBeVisible();
     expect(fake.submit).not.toHaveBeenCalled();
@@ -347,8 +360,13 @@ describe("a game's own setup", () => {
   it("shows the result of an unrecorded game without claiming a side or offering a rematch", () => {
     onOldThread("old", { ...E4_E5, outcome: { kind: "checkmate", winner: "white" } });
     render(<App />);
-    expect(screen.getByText("Checkmate, White wins. 1-0")).toBeInTheDocument();
-    expect(screen.queryByLabelText("result")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("result")).toHaveTextContent("1-0Checkmate · White wins");
+    expect(strip("white")).toHaveTextContent("Won");
+    // A new game, but no rematch: this browser can't say which side was whose.
+    const over = screen.getByLabelText("game over");
+    expect(within(over).queryByRole("button", { name: "Rematch" })).not.toBeInTheDocument();
+    expect(within(over).getByRole("button", { name: "New game" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("headline")).not.toBeInTheDocument();
   });
 
   it("locks a game whose thread failed to load, and reloads it", async () => {
@@ -457,7 +475,7 @@ describe("playing Black", () => {
     };
     fireEvent.click(button("Settings"));
     fireEvent.click(button("Cancel"));
-    expect(screen.getByText("Your move.")).toBeInTheDocument();
+    expect(strip("black")).toHaveTextContent("Your turn");
     expect(board()).toHaveAttribute("data-draggable", "true");
     await click("drop e7e5");
     expect(submitted()).toEqual(["go", "e7e5"]);
@@ -468,7 +486,7 @@ describe("playing Black", () => {
     fake.submit = vi.fn(() => Promise.reject(new Error("Failed to fetch")));
     await playFromModal();
     expect(screen.getByRole("status")).toHaveTextContent("Failed to fetch");
-    expect(screen.getByText(/Press Start/)).toBeInTheDocument();
+    expect(within(strip("white")).getByRole("button", { name: "Start" })).toBeInTheDocument();
     fake.submit = vi.fn(() => Promise.resolve());
     await click("Start");
     expect(submitted()).toEqual(["go"]);
@@ -481,7 +499,7 @@ describe("playing Black", () => {
     render(<App />);
     expect(board()).toHaveAttribute("data-orientation", "black");
     expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
-    expect(screen.getByText("Opponent to move.")).toBeInTheDocument();
+    expect(strip("black")).not.toHaveTextContent("Your turn");
     expect(screen.getByRole("status")).toHaveTextContent("provider 529");
     expect(screen.queryByText("LangSmith API key needed")).not.toBeInTheDocument();
     await click("Retry");
@@ -502,13 +520,19 @@ describe("after the game", () => {
   it("shows the result, locks the board, and rematches with colours swapped", async () => {
     onThread("t-1", MATE, LLM_HIGH);
     render(<App />);
-    const result = screen.getByLabelText("result");
-    expect(within(result).getByText("You won")).toBeInTheDocument();
-    expect(within(result).getByText("Checkmate, White wins. 1-0")).toBeInTheDocument();
+    expect(screen.getByLabelText("headline")).toHaveTextContent("You won · Checkmate · White wins");
+    expect(document.title).toBe("Game over · LangChain Chess");
+    expect(screen.queryByRole("button", { name: "Resign" })).not.toBeInTheDocument();
+    expect(strip("white")).toHaveTextContent("Won");
+    expect(strip("black")).toHaveTextContent("Checkmated");
     expect(board()).toHaveAttribute("data-draggable", "false");
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
 
-    await click("Rematch");
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByLabelText("game over")).getByRole("button", { name: "Rematch" }),
+      );
+    });
     expect(window.location.search).toBe("");
     expect(board()).toHaveAttribute("data-orientation", "black");
     expect(board()).toHaveAttribute("data-position", START_FEN);
@@ -524,8 +548,12 @@ describe("after the game", () => {
       outcome: { kind: "checkmate", winner: "white" },
     });
     render(<App />);
-    expect(screen.getByText("You lost")).toBeInTheDocument();
-    await click("Rematch");
+    expect(screen.getByLabelText("headline")).toHaveTextContent("You lost");
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByLabelText("game over")).getByRole("button", { name: "Rematch" }),
+      );
+    });
     expect(board()).toHaveAttribute("data-orientation", "white");
     expect(fake.submit).not.toHaveBeenCalled();
   });
@@ -534,10 +562,12 @@ describe("after the game", () => {
     saveSetup({ ...DEFAULT_SETUP, llm: "langsmith:baseten/zai-org/GLM-5.3" });
     onThread("t-1", { ...E4_E5, outcome: { kind: "draw", reason: "threefold" } });
     render(<App />);
-    expect(screen.getByText("Draw")).toBeInTheDocument();
+    expect(screen.getByLabelText("headline")).toHaveTextContent(
+      "Draw · Draw by threefold repetition",
+    );
     await act(async () => {
       fireEvent.click(
-        within(screen.getByLabelText("result")).getByRole("button", { name: "New game" }),
+        within(screen.getByLabelText("game over")).getByRole("button", { name: "New game" }),
       );
     });
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
@@ -617,7 +647,8 @@ describe("key check on Play", () => {
     onThread("abc");
     render(<App />);
     await click("New game");
-    await click("Settings");
+    fireEvent.keyDown(button("More"), { key: "Enter" });
+    fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
     await click("Cancel");
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
     await click("Cancel");
@@ -634,8 +665,8 @@ describe("the game screen", () => {
       "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
     );
     expect(screen.getByText("System 1 played")).toBeInTheDocument();
-    expect(screen.getByLabelText("move list")).toHaveTextContent("1.e4e5");
-    expect(screen.getByText("Your move.")).toBeInTheDocument();
+    expect(screen.getByLabelText("move list")).toHaveTextContent("1e4e5");
+    expect(strip("white")).toHaveTextContent("Your turn");
     expect(screen.queryByRole("tab")).not.toBeInTheDocument();
   });
 
@@ -666,10 +697,12 @@ describe("the game screen", () => {
   it("flips the board without changing sides", async () => {
     onThread("abc", E4_E5);
     render(<App />);
-    await click("Flip board");
+    await click("Flip");
     expect(board()).toHaveAttribute("data-orientation", "black");
     expect(board()).toHaveAttribute("data-draggable", "true");
-    await click("Flip board");
+    // Top is always the side shown at the top of the board.
+    expect(document.querySelector("[data-slot=top-strip]")).toHaveTextContent("You");
+    fireEvent.keyDown(window, { key: "f" });
     expect(board()).toHaveAttribute("data-orientation", "white");
   });
 
@@ -740,7 +773,7 @@ describe("the game screen", () => {
     onThread("abc", { moves: ["e2e4"], plies: [ply()], turns: [turn({ status: "pending" })] });
     fake.isLoading = true;
     render(<App />);
-    expect(screen.getByText("Opponent is thinking")).toBeInTheDocument();
+    expect(screen.getByText("Thinking…")).toBeInTheDocument();
     const card = screen.getByLabelText("last reply");
     expect(card).toHaveAttribute("aria-busy", "true");
     // Plain text until the lazy Markdown renderer has loaded.
@@ -821,7 +854,7 @@ describe("the game screen", () => {
     };
     fireEvent.click(button("Settings"));
     fireEvent.click(button("Cancel"));
-    expect(screen.getByText("Opponent is thinking")).toBeInTheDocument();
+    expect(screen.getByText("Thinking…")).toBeInTheDocument();
     const old = optionsLog.at(-1) as { onThreadId: (id: string) => void };
 
     await click("New game");
@@ -840,10 +873,595 @@ describe("the game screen", () => {
     expect(window.location.search).toBe("");
     expect(board()).toHaveAttribute("data-position", START_FEN);
     expect(board()).toHaveAttribute("data-orientation", "black");
-    expect(screen.queryByText("Opponent is thinking")).not.toBeInTheDocument();
+    expect(screen.queryByText("Thinking…")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("last reply")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("result")).not.toBeInTheDocument();
     expect(screen.getByText("No moves yet.")).toBeInTheDocument();
     expect(button("Start")).toBeInTheDocument();
+  });
+});
+
+describe("layouts", () => {
+  /** The page as this size of screen: the app measures its main region. */
+  const spies: { mockRestore: () => void }[] = [];
+  function sized(width: number, height: number) {
+    spies.push(
+      vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(width),
+      vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(height),
+    );
+  }
+  const slot = (name: string) => document.querySelector<HTMLElement>(`[data-slot=${name}]`)!;
+  const E4_E5_NF3: ChessValues = {
+    ...E4_E5,
+    moves: [...E4_E5.moves, "g1f3"],
+    plies: [...E4_E5.plies, ply({ ply: 2, uci: "g1f3", san: "Nf3" })],
+  };
+
+  afterEach(() => {
+    for (const spy of spies.splice(0)) spy.mockRestore();
+  });
+
+  it("puts the cards under the board on wide screens, and the reply follows the browsed move", () => {
+    sized(1024, 768);
+    onThread("abc", E4_E5_NF3);
+    render(<App />);
+    expect(document.querySelector("[data-layout]")).toHaveAttribute("data-layout", "wide");
+    expect(within(slot("under")).getByLabelText("last reply")).toBeInTheDocument();
+    expect(within(slot("under")).getByLabelText("opponent")).toBeInTheDocument();
+    expect(screen.getByText("Last Reply")).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    expect(screen.getByText("Reply before move 3")).toBeInTheDocument();
+    expect(screen.getByText("System 1 played")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Viewing move 2");
+    fireEvent.keyDown(window, { key: "Home" });
+    expect(screen.getByText("Reply before move 1")).toBeInTheDocument();
+    expect(screen.getAllByText("No reply yet.").length).toBeGreaterThan(0);
+    fireEvent.click(button("Back to live"));
+    expect(screen.getByText("Last Reply")).toBeInTheDocument();
+  });
+
+  it("lists the keys on ?", async () => {
+    onThread("abc", E4_E5);
+    render(<App />);
+    fireEvent.keyDown(window, { key: "?" });
+    expect(screen.getByRole("dialog", { name: "Keyboard shortcuts" })).toBeInTheDocument();
+    fireEvent.click(button("Done"));
+    expect(dialog()).not.toBeInTheDocument();
+  });
+
+  const PHONE_GAME: ChessValues = {
+    ...E4_E5_NF3,
+    plies: E4_E5_NF3.plies!.map((p) => (p.ply === 1 ? { ...p, analysis: "Solid." } : p)),
+  };
+  it("keeps first and last move in a phone's board menu, and settings in its app menu", async () => {
+    sized(390, 780);
+    onThread("abc", PHONE_GAME);
+    render(<App />);
+    await openMenu("Board menu");
+    fireEvent.click(screen.getByRole("menuitem", { name: "First move" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Viewing move 0");
+    await openMenu("Board menu");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Last move" }));
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    await openMenu("App menu");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
+    expect(screen.getByRole("dialog", { name: "Settings" })).toBeInTheDocument();
+  });
+
+  it("stacks a phone: bar, move strip, reply line and tabs", async () => {
+    sized(390, 780);
+    onThread("abc", PHONE_GAME);
+    render(<App />);
+    expect(document.querySelector("[data-layout]")).toHaveAttribute("data-layout", "phone");
+    expect(screen.queryByText("LangChain Chess")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "First move" })).not.toBeInTheDocument();
+    // The move strip.
+    fireEvent.click(screen.getByRole("button", { name: "e4" }));
+    expect(board()).toHaveAttribute("data-position", AFTER_E4);
+    fireEvent.click(button("Flip board"));
+    expect(board()).toHaveAttribute("data-orientation", "black");
+    fireEvent.click(button("Back to live"));
+
+    const line = screen.getByLabelText("reply line");
+    expect(line).toHaveTextContent("System 1 playede5");
+    fireEvent.click(screen.getByRole("tab", { name: "Opponent" }));
+    expect(screen.getByRole("tab", { name: "Opponent" })).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(within(line).getByRole("button", { name: "Show reasoning" }));
+    expect(screen.getByRole("tab", { name: "Reply" })).toHaveAttribute("aria-selected", "true");
+    // Hidden reasoning is opened, not just its tab.
+    fireEvent.click(button("Hide reasoning"));
+    fireEvent.click(within(line).getByRole("button", { name: "Show reasoning" }));
+    expect(screen.getByText("Solid.")).toBeInTheDocument();
+  });
+
+  it("gives a phone the score and how the game ended, even for a game it can only show", () => {
+    sized(390, 780);
+    onOldThread("old", { ...E4_E5, outcome: { kind: "draw", reason: "stalemate" } });
+    render(<App />);
+    expect(screen.getByLabelText("result")).toHaveTextContent("½-½Draw by stalemate");
+  });
+
+  it("says a phone's opponent is thinking, or hasn't replied, in the reply line", () => {
+    sized(390, 780);
+    onThread("abc", { moves: ["e2e4"], plies: [ply()], turns: [] });
+    const view = render(<App />);
+    expect(
+      within(slot("board").parentElement!.parentElement!.parentElement!).getAllByText(
+        "No reply yet.",
+      ).length,
+    ).toBeGreaterThan(0);
+    view.unmount();
+    fake.isLoading = true;
+    render(<App />);
+    expect(screen.getAllByText("Thinking…").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("shows the empty board behind New game on a phone and a wide screen", () => {
+    sized(390, 780);
+    const phone = render(<App />);
+    expect(screen.getAllByText("Choose a side and an opponent to start.")).toHaveLength(1);
+    phone.unmount();
+    sized(1024, 768);
+    render(<App />);
+    expect(within(slot("under")).getByText("No reply yet.")).toBeInTheDocument();
+  });
+});
+
+describe("display preferences and the tab title", () => {
+  const toggle = (name: string) => fireEvent.click(screen.getByRole("menuitemcheckbox", { name }));
+
+  it("keeps display preferences across reloads", async () => {
+    onThread("abc", { ...E4_E5, moves: ["e2e4", "d7d5", "e4d5"], plies: [] });
+    const view = render(<App />);
+    expect(within(strip("white")).getByLabelText("material")).toHaveTextContent("+1");
+    await openMenu("Board menu");
+    toggle("Show material");
+    expect(within(strip("white")).queryByLabelText("material")).not.toBeInTheDocument();
+    view.unmount();
+    render(<App />);
+    expect(within(strip("white")).queryByLabelText("material")).not.toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(DISPLAY_KEY)!)).toMatchObject({
+      showMaterial: false,
+    });
+  });
+
+  it("steps through the moves with the wheel once it is turned on", async () => {
+    onThread("abc", E4_E5);
+    render(<App />);
+    fireEvent.wheel(board(), { deltaY: -100 });
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    await openMenu("Board menu");
+    toggle("Wheel steps through moves");
+    await userEvent.keyboard("{Escape}");
+    fireEvent.wheel(board(), { deltaY: -100 });
+    expect(screen.getByRole("status")).toHaveTextContent("Viewing move 1");
+    fireEvent.wheel(board(), { deltaY: 100 });
+    fireEvent.wheel(board(), { deltaY: 100 });
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("says it's your turn in a hidden tab's title, until the tab is shown", () => {
+    const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+    onThread("abc", E4_AS_WHITE);
+    render(<App />);
+    expect(document.title).toBe("LangChain Chess");
+    fake.threads.abc = { values: { ...E4_E5, setup: DEFAULT_CONTEXT } };
+    // Any render picks the new values up.
+    fireEvent.keyDown(window, { key: "?" });
+    expect(document.title).toBe("Your turn · LangChain Chess");
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect(document.title).toBe("Your turn · LangChain Chess");
+    hidden.mockReturnValue(false);
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect(document.title).toBe("LangChain Chess");
+    hidden.mockRestore();
+  });
+
+  it("leaves the title alone when it's turned off, and on a game that loads as your move", () => {
+    const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+    saveDisplayPrefs({ ...loadDisplayPrefs(), tabTitle: false });
+    onThread("abc", E4_AS_WHITE);
+    fake.isThreadLoading = true;
+    const view = render(<App />);
+    view.unmount();
+    fake.isThreadLoading = false;
+    render(<App />);
+    fake.threads.abc = { values: { ...E4_E5, setup: DEFAULT_CONTEXT } };
+    fireEvent.keyDown(window, { key: "?" });
+    expect(document.title).toBe("LangChain Chess");
+    hidden.mockRestore();
+  });
+});
+
+describe("resign and draw offers", () => {
+  const resign = () => screen.getByRole("button", { name: "Resign" });
+  const draw = () => screen.getByRole("button", { name: "Offer draw" });
+
+  it("resigns once confirmed, for the human's side", async () => {
+    onThread("abc", E4_E5);
+    render(<App />);
+    fireEvent.click(resign());
+    await click("Confirm resignation");
+    expect(submitted()).toEqual(["resign white"]);
+  });
+
+  it("offers a draw on the human's move, then shows the answer until the next move", async () => {
+    onThread("abc", E4_E5);
+    render(<App />);
+    await act(async () => {
+      fireEvent.click(draw());
+    });
+    expect(submitted()).toEqual(["draw white"]);
+    fake.threads.abc = {
+      values: {
+        ...E4_E5,
+        draw_offers: [{ ply: 2, by: "white", answer: "declined" }],
+        setup: DEFAULT_CONTEXT,
+      },
+    };
+    fireEvent.keyDown(window, { key: "f" });
+    expect(screen.getByText("Draw declined.")).toBeInTheDocument();
+    expect(draw()).toBeDisabled();
+    expect(
+      within(screen.getByLabelText("move list")).getByLabelText("draw offered"),
+    ).toBeInTheDocument();
+  });
+
+  it.each(["resign", "draw"])(
+    "never resends a control command: both stay off while a %s is in flight",
+    async (kind) => {
+      onThread("abc", E4_E5);
+      let settle = () => {};
+      fake.submit = vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            settle = resolve;
+          }),
+      );
+      render(<App />);
+      if (kind === "resign") {
+        fireEvent.click(resign());
+        fireEvent.click(button("Confirm resignation"));
+      } else {
+        fireEvent.click(draw());
+      }
+      fake.isLoading = true;
+      fireEvent.keyDown(window, { key: "f" });
+      expect(resign()).toBeDisabled();
+      expect(draw()).toBeDisabled();
+      fireEvent.click(resign());
+      fireEvent.click(draw());
+      expect(submitted()).toEqual([`${kind} white`]);
+      fake.isLoading = false;
+      await act(async () => settle());
+    },
+  );
+
+  it("titles a hidden tab Game over once the game ends, even after a turn alert", () => {
+    const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+    onThread("abc", E4_AS_WHITE);
+    render(<App />);
+    fake.threads.abc = { values: { ...E4_E5, setup: DEFAULT_CONTEXT } };
+    fireEvent.keyDown(window, { key: "f" });
+    expect(document.title).toBe("Your turn · LangChain Chess");
+    fake.threads.abc = {
+      values: { ...E4_E5, outcome: { kind: "checkmate", winner: "black" }, setup: DEFAULT_CONTEXT },
+    };
+    fireEvent.keyDown(window, { key: "f" });
+    expect(document.title).toBe("Game over · LangChain Chess");
+    hidden.mockRestore();
+  });
+
+  it("disables both while a command is in flight, and says a draw is on its way", async () => {
+    onThread("abc", E4_E5);
+    let settle = () => {};
+    fake.submit = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          settle = resolve;
+        }),
+    );
+    render(<App />);
+    fireEvent.click(draw());
+    expect(screen.getByText("Offering a draw…")).toBeInTheDocument();
+    fake.isLoading = true;
+    fireEvent.keyDown(window, { key: "f" });
+    expect(resign()).toBeDisabled();
+    fake.isLoading = false;
+    await act(async () => settle());
+    expect(screen.queryByText("Offering a draw…")).not.toBeInTheDocument();
+  });
+
+  it("keeps both off until the game has a move or an accepted root, and draws off the opponent's move", () => {
+    onThread("abc", { moves: [], plies: [], turns: [] });
+    const view = render(<App />);
+    expect(resign()).toBeDisabled();
+    expect(draw()).toBeDisabled();
+    view.unmount();
+    onThread("abc", E4_AS_WHITE);
+    render(<App />);
+    expect(resign()).toBeEnabled();
+    expect(draw()).toBeDisabled();
+  });
+
+  it("marks an offer made before the first move", () => {
+    onThread("abc", {
+      moves: [],
+      plies: [],
+      turns: [],
+      draw_offers: [{ ply: 0, by: "white", answer: "declined" }],
+    });
+    render(<App />);
+    expect(
+      within(screen.getByLabelText("move list")).getByLabelText("draw offered"),
+    ).toBeInTheDocument();
+  });
+
+  it("puts resign and draw in a phone's bar", () => {
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(390);
+    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(780);
+    onThread("abc", E4_E5);
+    render(<App />);
+    const bar = screen.getByLabelText("actions");
+    expect(within(bar).getByRole("button", { name: "Resign" })).toBeEnabled();
+    expect(within(bar).getByRole("button", { name: "Offer draw" })).toBeEnabled();
+    vi.restoreAllMocks();
+  });
+
+  it("shows a phone the result and the next steps once the game is over", () => {
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(390);
+    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(780);
+    onThread("abc", {
+      ...E4_E5,
+      outcome: { kind: "resignation", winner: "white", reason: "resigned" },
+    });
+    render(<App />);
+    expect(screen.getByLabelText("headline")).toHaveTextContent("You won · Black resigned");
+    expect(
+      within(screen.getByLabelText("actions")).queryByRole("button", { name: "Resign" }),
+    ).toBeNull();
+    expect(strip("black")).toHaveTextContent("Resigned");
+    vi.restoreAllMocks();
+  });
+});
+
+describe("starting from a FEN", () => {
+  const WHITE_TO_MOVE = "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1";
+  const BLACK_TO_MOVE = "4k3/4p3/8/8/8/8/8/4K3 b - - 0 1";
+  const AFTER_E4_CUSTOM = "4k3/8/8/8/4P3/8/8/4K3 b - - 0 1";
+  const CONFIG = {
+    config: { configurable: DEFAULT_CONTEXT, ...WEB_TRACE },
+    metadata: { surface: "web" },
+    multitaskStrategy: "reject",
+  };
+  const inputs = () => fake.submit.mock.calls.map(([input]) => input);
+
+  async function playFrom(fen: string, side: "White" | "Black" | "Random", random?: () => number) {
+    render(<App random={random} />);
+    fireEvent.click(screen.getByRole("radio", { name: side }));
+    change("Starting position", fen);
+    await click("Play");
+  }
+
+  it.each<[string, string, "White" | "Black", boolean]>([
+    ["White to move, playing White", WHITE_TO_MOVE, "White", false],
+    ["White to move, playing Black", WHITE_TO_MOVE, "Black", true],
+    ["Black to move, playing White", BLACK_TO_MOVE, "White", true],
+    ["Black to move, playing Black", BLACK_TO_MOVE, "Black", false],
+  ])("%s: the opponent opens only when it is to move", async (_, fen, side, opens) => {
+    await playFrom(fen, side);
+    expect(board()).toHaveAttribute("data-position", fen);
+    expect(inputs()).toEqual(opens ? [{ position: { start_fen: fen } }] : []);
+    if (opens) expect(fake.submit).toHaveBeenCalledWith({ position: { start_fen: fen } }, CONFIG);
+  });
+
+  it.each<["White" | "Black", boolean]>([
+    ["White", true],
+    ["Black", false],
+  ])("reads a position typed with extra whitespace, playing %s", async (side, opens) => {
+    const clean = "4k3/4p3/8/8/8/8/8/4K3 b - - 0 12";
+    await playFrom(`  ${clean.replaceAll(" ", " \t ")} `, side);
+    expect(board()).toHaveAttribute("data-position", clean);
+    expect(inputs()).toEqual(opens ? [{ position: { start_fen: clean } }] : []);
+  });
+
+  it.each<[number, boolean]>([
+    [0.3, true],
+    [0.7, false],
+  ])("resolves Random (%s) before deciding who opens", async (roll, opens) => {
+    await playFrom(BLACK_TO_MOVE, "Random", () => roll);
+    expect(inputs()).toEqual(opens ? [{ position: { start_fen: BLACK_TO_MOVE } }] : []);
+  });
+
+  it("sends the human's first move as a position, never as a message", async () => {
+    await playFrom(WHITE_TO_MOVE, "White");
+    await click("drop e2e4");
+    expect(inputs()).toEqual([{ position: { start_fen: WHITE_TO_MOVE, moves: ["e2e4"] } }]);
+  });
+
+  it("keeps a first move whose answer was lost on the board, and Retry resends it as it was", async () => {
+    fake.submit = vi.fn(() => Promise.reject(new Error("Failed to fetch")));
+    await playFrom(WHITE_TO_MOVE, "White");
+    await click("drop e2e4");
+    expect(board()).toHaveAttribute("data-position", AFTER_E4_CUSTOM);
+    expect(screen.getByRole("status")).toHaveTextContent("Failed to fetch");
+    fake.submit = vi.fn(() => Promise.resolve());
+    await click("Retry");
+    expect(inputs()).toEqual([{ position: { start_fen: WHITE_TO_MOVE, moves: ["e2e4"] } }]);
+  });
+
+  it("goes back to chat commands once the server has taken the root", async () => {
+    await playFrom(WHITE_TO_MOVE, "White");
+    await click("drop e2e4");
+    fake.values = {
+      start_fen: WHITE_TO_MOVE,
+      moves: ["e2e4", "e8d7"],
+      plies: [ply(), ply({ ply: 1, side: "black", uci: "e8d7", san: "Kd7", source: "llm" })],
+      turns: [turn({ ply: 1 })],
+      setup: DEFAULT_CONTEXT,
+    };
+    fireEvent.keyDown(window, { key: "f" });
+    fireEvent.keyDown(window, { key: "f" });
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    expect(board()).toHaveAttribute("data-position", "8/3k4/8/8/4P3/8/8/4K3 w - - 1 2");
+  });
+
+  it("takes a rejected root back off the board and offers another position", async () => {
+    await playFrom(WHITE_TO_MOVE, "White");
+    await click("drop e2e4");
+    // A rejection writes the standard start: it must not replace the chosen board.
+    fake.values = {
+      start_fen: START_FEN,
+      moves: [],
+      plies: [],
+      turns: [],
+      error: "invalid position",
+    };
+    fireEvent.keyDown(window, { key: "f" });
+    expect(board()).toHaveAttribute("data-position", WHITE_TO_MOVE);
+    expect(screen.getByText("invalid position")).toBeInTheDocument();
+    await click("Change position");
+    expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Starting position")).toHaveValue(WHITE_TO_MOVE);
+  });
+
+  it("ignores a resend refused because the game is already over", async () => {
+    await playFrom(WHITE_TO_MOVE, "White");
+    await click("drop e2e4");
+    fake.values = {
+      start_fen: WHITE_TO_MOVE,
+      moves: ["e2e4"],
+      plies: [ply()],
+      turns: [turn({ status: "terminal", ply: null })],
+      outcome: { kind: "resignation", winner: "white", reason: "illegal_moves" },
+      error: "the game is over",
+      setup: DEFAULT_CONTEXT,
+    };
+    fireEvent.keyDown(window, { key: "f" });
+    expect(screen.queryByText("Move rejected")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+  });
+
+  it("plays a thread from its recorded root, and rematches from the same one", async () => {
+    onThread("custom", {
+      start_fen: WHITE_TO_MOVE,
+      moves: ["e2e4"],
+      plies: [ply()],
+      turns: [turn({ status: "terminal", ply: null })],
+      outcome: { kind: "resignation", winner: "white", reason: "resigned" },
+    });
+    render(<App />);
+    expect(board()).toHaveAttribute("data-position", AFTER_E4_CUSTOM);
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByLabelText("game over")).getByRole("button", { name: "Rematch" }),
+      );
+    });
+    expect(board()).toHaveAttribute("data-position", WHITE_TO_MOVE);
+    // The human was White, so the rematch plays Black, and the opponent opens.
+    expect(inputs()).toEqual([{ position: { start_fen: WHITE_TO_MOVE } }]);
+  });
+});
+
+describe("exports and openings", () => {
+  const menuItem = async (name: string) => {
+    await openMenu("Board menu");
+    fireEvent.click(screen.getByRole("menuitem", { name }));
+  };
+
+  it("copies the position on the board and the whole game", async () => {
+    const writeText = vi.fn<(text: string) => Promise<void>>(() => Promise.resolve());
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    onThread("abc", E4_E5);
+    render(<App />);
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    await menuItem("Copy FEN");
+    expect(writeText).toHaveBeenLastCalledWith(AFTER_E4);
+    expect(await screen.findByText("Copied the FEN.")).toBeInTheDocument();
+    await menuItem("Copy PGN");
+    const pgn = writeText.mock.lastCall![0];
+    expect(pgn).toContain('[White "You"]');
+    expect(pgn).toContain("1. e4 e5 {C20 King's Pawn Game} *");
+    expect(pgn).toContain("Thread abc");
+  });
+
+  it("shows the text to copy by hand when the browser refuses", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: () => Promise.reject(new Error("denied")) },
+      configurable: true,
+    });
+    onThread("abc", E4_E5);
+    render(<App />);
+    await menuItem("Copy FEN");
+    const dialog = await screen.findByRole("dialog", { name: "FEN" });
+    expect(within(dialog).getByRole("textbox")).toHaveValue(
+      "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Done" }));
+    expect(dialog).not.toBeInTheDocument();
+  });
+
+  it("downloads the PGN and opens the game on Lichess", async () => {
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    onThread("abc", { ...E4_E5, outcome: { kind: "checkmate", winner: "white" } });
+    render(<App />);
+    await menuItem("Download PGN");
+    expect(downloads.at(-1)).toEqual(["langchain-chess-abc.pgn", expect.stringContaining("1-0")]);
+    fireEvent.click(
+      within(screen.getByLabelText("game over")).getByRole("button", {
+        name: /Analyze on Lichess/,
+      }),
+    );
+    expect(open).toHaveBeenCalledWith(
+      expect.stringContaining("lichess.org/analysis/pgn/"),
+      "_blank",
+      "noopener",
+    );
+    open.mockRestore();
+  });
+
+  // 1,600 plies, the heaviest render in the suite: a CI runner needs more than 5s.
+  it("opens only the position when the game is too long for a link", async () => {
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    const moves = Array.from({ length: 1600 }, (_, i) => ["g1f3", "g8f6", "f3g1", "f6g8"][i % 4]);
+    onThread("abc", { moves, plies: [], turns: [] });
+    render(<App />);
+    await menuItem("Analyze on Lichess");
+    expect(open).toHaveBeenCalledWith(
+      expect.stringMatching(/lichess\.org\/analysis\/rnbqkbnr/),
+      "_blank",
+      "noopener",
+    );
+    expect(
+      screen.getByText("Opened the position; the game was too long to send."),
+    ).toBeInTheDocument();
+    open.mockRestore();
+  }, 20_000);
+
+  it("names the opening over the moves and in the tab's title", async () => {
+    onThread("abc", E4_E5);
+    render(<App />);
+    expect(await screen.findByText("C20 · King's Pawn Game")).toBeInTheDocument();
+    expect(document.title).toBe("King's Pawn Game · LangChain Chess");
+  });
+
+  it("marks the opening's move in a phone's move strip, and names it on a tap", async () => {
+    const spies = [
+      vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(390),
+      vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(780),
+    ];
+    onThread("abc", E4_E5);
+    render(<App />);
+    const strip = screen.getAllByLabelText("move list").at(-1)!;
+    const mark = await within(strip).findByRole("button", {
+      name: "Opening: C20 · King's Pawn Game",
+    });
+    await userEvent.click(mark);
+    expect(screen.getByRole("dialog")).toHaveTextContent("C20 · King's Pawn Game");
+    for (const spy of spies) spy.mockRestore();
   });
 });
