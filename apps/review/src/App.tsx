@@ -6,7 +6,7 @@ import { Select } from "@langchain/macaw-components/Select";
 import { Text } from "@langchain/macaw-components/Text";
 import {
   DEFAULT_DISPLAY_PREFS,
-  DEFAULT_PLY_VIEW,
+  DEFAULT_TURN_VIEW,
   EVAL_BAR,
   GAP,
   layoutFor,
@@ -15,7 +15,7 @@ import {
   useContainerLayout,
   useOpenings,
   type DisplayPrefs,
-  type PlyView,
+  type TurnView,
 } from "@langchain-chess/chess-ui";
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { useEffect, useRef, useState } from "react";
@@ -71,7 +71,7 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // The sandbox has no localStorage and LangSmith no preferences API: this lasts the session.
-  const [view, setView] = useState<PlyView>(DEFAULT_PLY_VIEW);
+  const [view, setView] = useState<TurnView>(DEFAULT_TURN_VIEW);
   const [prefs, setPrefs] = useState<DisplayPrefs>(DEFAULT_DISPLAY_PREFS);
   const [tab, setTab] = useState<ReviewTab>("graph");
   // A refresh reloads the pages on screen in place, so the list and the open game stay up

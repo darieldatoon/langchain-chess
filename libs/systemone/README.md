@@ -133,6 +133,11 @@ tooltips are generated from it, and a test fails while they are stale.
 What System 1 decided is on each ply as `ply["meta"]["SystemOneMiddleware"]` (telemetry is
 keyed by middleware name): its status, ranking, shortlist, signal and threshold.
 
+The same decision is public in the thread as `systemone_live` as soon as System 1 makes it, before
+the LLM runs, with its `turn_id` and its calls. A streaming client can show it while the LLM thinks,
+and a reload mid-turn still finds it. It's never cleared: read it only while its `turn_id` is the
+last turn's and that turn is pending. Once the turn commits, the ply's metadata is the record.
+
 ## Test
 
 ```sh

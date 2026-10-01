@@ -6,19 +6,23 @@ import {
   isPending,
   lastPolicyPly,
   liveAnalysis,
+  liveSystemOne,
   replay,
+  replyOf,
   rootAccepted,
-  turnOf,
+  stagesOf,
   type ChessValues,
   type DrawOffer,
   type Message,
   type MoveEntry,
   type Outcome,
   type Ply,
+  type Policy,
   type PositionInput,
   type Reply,
   type ReplyState,
   type Side,
+  type SystemOneLive,
   type TurnRecord,
 } from "@langchain-chess/chess-ui";
 import { commandKey, createCommandIds } from "./commands";
@@ -87,8 +91,12 @@ export interface Game {
   startRejected: boolean;
   /** Null for a thread with no setup this app can read: it can only be shown. */
   record: GameRecord | null;
-  /** Thinking for the whole run, so the card never falls back to the previous reply meanwhile. */
+  /** The recorded policy, else the new game's; null for a thread with neither. */
+  policy: Policy | null;
+  /** Pending for the whole run and while a turn stays open, so the card never falls back to the
+   * previous reply meanwhile. */
   reply: ReplyState;
+  systemOneLive: SystemOneLive | null;
   pendingTurn: boolean;
   isThinking: boolean;
   isLoading: boolean;
@@ -107,6 +115,29 @@ export interface Game {
 
 const NO_MOVES: string[] = [];
 const NO_OFFERS: DrawOffer[] = [];
+
+/** A command in flight that hasn't opened its turn yet; the first values update replaces it. */
+const NONE: ReplyState = { status: "none" };
+
+/** The last turn as id and status: once it differs from a run's start, the run's turn is in. */
+const lastTurnKey = (turns: readonly TurnRecord[] | undefined) => {
+  const last = turns?.at(-1);
+  return last ? `${last.id}:${last.status}` : "";
+};
+
+const IN_FLIGHT: TurnRecord = {
+  id: "",
+  request: "",
+  initial_allowed: [],
+  status: "pending",
+  ply: null,
+  calls: [],
+  rejected_message_ids: [],
+  feedback_message_ids: [],
+  opened_message_id: null,
+  illegal_attempts: 0,
+  latency_ms: 0,
+};
 
 /**
  * One `useStream` on the `chess` graph; one thread is one game, played with the setup its thread
@@ -178,15 +209,13 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
   const turns = useMemo(() => values.turns ?? [], [values.turns]);
   const position = useMemo(() => replay(startFen, moves), [startFen, moves]);
 
+  const record = useMemo(() => gameOf(values, chosen), [values, chosen]);
+  const policy = record?.context.policy ?? null;
+  const systemOneLive = liveSystemOne(values);
   const lastReply = useMemo((): Reply | null => {
     const ply = lastPolicyPly(plies);
-    if (!ply) return null;
-    return {
-      ply,
-      turn: turnOf(ply, turns),
-      fenBefore: position.fens[ply.ply],
-    };
-  }, [plies, turns, position]);
+    return ply ? replyOf(ply, turns, position.fens, policy) : null;
+  }, [plies, turns, position, policy]);
 
   const entries = useMemo(
     () =>
@@ -198,18 +227,24 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
     [moves, plies, position],
   );
 
-  const record = useMemo(() => gameOf(values, chosen), [values, chosen]);
   // Without a record the board stays locked, so the stand-in never reaches a run.
   const configurable = useMemo(() => configurableOf(record?.context ?? DEFAULT_CONTEXT), [record]);
 
+  // The last turn a run started from: this page's own sends, and any pending turn it sees, such
+  // as one already running when it loaded. Undefined until either happens.
+  const [runFrom, setRunFrom] = useState<string | undefined>(undefined);
+  const openKey = turns.at(-1)?.status === "pending" ? lastTurnKey(turns) : undefined;
+  if (openKey !== undefined && openKey !== runFrom) setRunFrom(openKey);
   const send = useCallback(
-    (input: Command) =>
+    (input: Command) => {
+      setRunFrom(lastTurnKey(stream.values.turns));
       // The SDK types a run's input as the thread's values; `position` is an input-only channel.
-      stream.submit(input as ChessValues, {
+      return stream.submit(input as ChessValues, {
         config: { configurable, ...WEB_TRACE },
         metadata: { surface: "web" },
         multitaskStrategy: "reject",
-      }),
+      });
+    },
     [stream, configurable],
   );
 
@@ -285,15 +320,39 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
   const retry = useCallback(() => (first ? sendFirst(first) : send({})), [first, send, sendFirst]);
 
   const isThinking = stream.isLoading;
-  const reply = useMemo(
-    (): ReplyState =>
-      isThinking
-        ? { status: "thinking", reasoning: liveAnalysis(stream.messages, turns, plies) }
-        : lastReply
-          ? { status: "played", reply: lastReply }
-          : { status: "none" },
-    [isThinking, stream.messages, turns, plies, lastReply],
-  );
+  const shownMove = pendingMove ?? first?.move ?? null;
+  const reply = useMemo((): ReplyState => {
+    const last = turns.at(-1);
+    const open = last?.status === "pending" ? last : null;
+    // A commit can land before the run stops loading: it shows at once, never the stand-in.
+    const landed = runFrom !== undefined && lastTurnKey(turns) !== runFrom;
+    if (!open && (!isThinking || landed)) {
+      return lastReply ? { status: "played", reply: lastReply } : NONE;
+    }
+    const turn = open ?? IN_FLIGHT;
+    return {
+      status: "pending",
+      activity: isThinking ? "running" : "stopped",
+      // The table fills it in: it also holds the submit errors.
+      error: null,
+      turn,
+      systemOne: systemOneLive,
+      analysis: liveAnalysis(stream.messages, turns, plies),
+      fenBefore: open ? position.fen : (shownMove?.fen ?? position.fen),
+      stages: stagesOf(policy, turn, null),
+    };
+  }, [
+    isThinking,
+    runFrom,
+    stream.messages,
+    turns,
+    plies,
+    lastReply,
+    systemOneLive,
+    position,
+    shownMove,
+    policy,
+  ]);
 
   return {
     startFen,
@@ -310,14 +369,16 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
     firstUnanswered: first !== null && !stream.isLoading,
     startRejected: startRejected && !accepted,
     record,
+    policy,
     reply,
+    systemOneLive,
     pendingTurn: isPending(turns),
     isThinking,
     isLoading: isThinking || stream.isThreadLoading,
     restore,
     streamError: stream.error,
     threadId,
-    pendingMove: pendingMove ?? first?.move ?? null,
+    pendingMove: shownMove,
     sending,
     play,
     start,

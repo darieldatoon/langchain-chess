@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import {
+  DEFAULT_CONTEXT,
   DEFAULT_DISPLAY_PREFS,
   type OpeningTable,
   positionKey,
@@ -13,6 +14,8 @@ import userEvent from "@testing-library/user-event";
 import { openMenu } from "./support/menus";
 import { EvalBar } from "../src/components/EvalBar";
 import { GameList } from "../src/components/GameList";
+import { call as llmCall, systemOne, turn } from "@langchain-chess/chess-ui/testing";
+import { decodeValues } from "../src/values";
 import { game, graded, UNGRADED, values } from "./support/fixtures";
 import { board } from "./support/mocks";
 import { current, key, renderView, resolved, viewElement, viewProps } from "./support/view";
@@ -130,6 +133,69 @@ describe("GameView", () => {
     expect(screen.getByLabelText("who played it")).toHaveTextContent("Who Played It");
     expect(screen.getByLabelText("evaluation 1-0")).toBeInTheDocument();
     expect(board.options?.arrows).toHaveLength(1);
+  });
+
+  it("shows who played each move, with the game so far at that position", () => {
+    const setup = { ...DEFAULT_CONTEXT, policy: "llm" };
+    const g = game();
+    renderView(game({ values: { ...g.values!, setup } }));
+    const card = () => screen.getByLabelText("who played it");
+    // The last move is the web player's own.
+    expect(card()).toHaveTextContent("Human move");
+    expect(within(card()).getByLabelText("game so far")).toHaveTextContent("3 moves");
+    key("ArrowLeft");
+    expect(within(card()).getByText("LLM chose")).toBeInTheDocument();
+    expect(within(card()).getByRole("region", { name: "LLM stage" })).toBeInTheDocument();
+    // The recorded policy runs no System 1.
+    expect(within(card()).queryByRole("region", { name: "System 1 stage" })).toBeNull();
+    key("ArrowLeft");
+    expect(within(card()).getByLabelText("game so far")).toHaveTextContent("2 moves");
+  });
+
+  it("keeps the footer of a game the agent forfeited before any move", () => {
+    const forfeit = turn({ id: "t", ply: null, status: "terminal", calls: [llmCall()] });
+    const resigned = {
+      kind: "resignation" as const,
+      winner: "black" as const,
+      reason: "illegal_moves" as const,
+    };
+    renderView(
+      game({
+        values: values({ moves: [], plies: [], turns: [forfeit], outcome: resigned }),
+        grading: UNGRADED,
+      }),
+    );
+    const card = screen.getByLabelText("who played it");
+    expect(card).toHaveTextContent("Start position.");
+    expect(within(card).getByLabelText("game so far")).toHaveTextContent("$0.010");
+  });
+
+  it("draws a legacy System 1 decision that recorded no gate facts", () => {
+    const g = game();
+    const legacy = {
+      ...systemOne({ status: "shortlist" }),
+      signal: undefined,
+      threshold_used: undefined,
+    };
+    const plies = g.values!.plies!.map((p) =>
+      p.ply === 5 ? { ...p, meta: { SystemOneMiddleware: legacy } } : p,
+    );
+    const decoded = decodeValues({
+      ...g.values!,
+      plies,
+      setup: { ...DEFAULT_CONTEXT, policy: "hybrid" },
+    });
+    expect(decoded).not.toBeNull();
+    renderView(game({ values: decoded! }));
+    key("ArrowLeft");
+    const card = screen.getByLabelText("who played it");
+    expect(within(card).getByRole("region", { name: "System 1 stage" })).toBeInTheDocument();
+    expect(within(card).getByLabelText("system 1 moves")).toBeInTheDocument();
+  });
+
+  it("calls an outside move external when the game wasn't played on the web", () => {
+    renderView(game({ surface: "uci" }));
+    expect(screen.getByLabelText("who played it")).toHaveTextContent("External move");
   });
 
   it("steps through the game by button, key, graph and move list", () => {

@@ -1,3 +1,5 @@
+import dataclasses
+
 import chess
 import pytest
 from langgraph.checkpoint.memory import InMemorySaver
@@ -532,3 +534,69 @@ async def test_a_skipped_ranking_carries_the_time_it_took(run, cfg):
     assert ply["meta"][META]["status"] == "skipped"
     assert ply["meta"][META]["latency_ms"] == 400.0
     assert 400.0 < ply["latency_ms"] < 800.0
+
+
+CALL = {"kind": "systemone", "model": "fake", "cost_usd": 0.0001, "cost_complete": True}
+PRICED = dataclasses.replace(SPLIT, calls=(CALL,), latency_ms=400.0)
+LIVE_ONLY = {"turn_id", "calls"}
+META_ONLY = {"followed", "played_move_result"}
+
+
+@pytest.mark.parametrize(
+    ("threshold", "script", "status"),
+    [
+        (0.0, [PRICED], "played"),
+        (0.9, [PRICED], "shortlist"),
+        (0.9, [failed("down", [CALL], 300.0)], "skipped"),
+    ],
+)
+async def test_the_decision_is_public_as_soon_as_it_is_made(run, cfg, threshold, script, status):
+    model = ScriptedModel(script=["MOVE: e4"])
+    systemone = SystemOneMiddleware("fake", threshold=threshold, ranker=FakeRanker(script))
+    out = await run(agent(model, systemone), position(), cfg)
+    live = out["systemone_live"]
+    assert live["turn_id"] == out["turns"][0]["id"]
+    assert live["status"] == status
+    assert live["calls"] == [CALL]
+    meta = out["plies"][0]["meta"][META]
+    assert set(live) - LIVE_ONLY == set(meta) - META_ONLY
+    assert {k: live[k] for k in set(live) - LIVE_ONLY} == {
+        k: meta[k] for k in set(meta) - META_ONLY
+    }
+    # The calls join the turn once, when it finalizes.
+    assert out["turns"][0]["calls"].count(CALL) == 1
+
+
+def test_the_live_decision_is_output_but_never_input():
+    built = agent(ScriptedModel(script=[]), SystemOneMiddleware("fake", ranker=FakeRanker([])))
+    assert "systemone_live" in built.get_output_jsonschema()["properties"]
+    assert "systemone_live" not in built.get_input_jsonschema()["properties"]
+    assert "systemone_turn" not in built.get_output_jsonschema()["properties"]
+
+
+async def test_a_retry_replays_the_decision_without_rewriting_it(run, cfg):
+    model = ScriptedModel(script=[RuntimeError("down"), "MOVE: e4"])
+    ranker = FakeRanker([PRICED])
+    chess_agent = agent(model, SystemOneMiddleware("fake", ranker=ranker))
+    with pytest.raises(RuntimeError, match="down"):
+        await run(chess_agent, position(), cfg)
+    before = chess_agent.get_state(cfg).values["systemone_live"]
+    assert before["status"] == "shortlist"
+    out = await run(chess_agent, {}, cfg)
+    assert out["systemone_live"] == before
+    assert len(ranker.requests) == 1
+
+
+def test_a_replayed_decision_writes_no_live_payload():
+    systemone = SystemOneMiddleware("fake", k=2, ranker=FakeRanker([]))
+    state = {
+        "start_fen": chess.STARTING_FEN,
+        "moves": [],
+        "allowed_moves": ["e2e4", "d2d4", "g1f3"],
+        "turns": [{"id": "t1", "initial_allowed": ["e2e4", "d2d4", "g1f3"]}],
+        "systemone_turn": systemone._freeze(SPLIT, "t1"),
+    }
+    assert systemone.before_model(state, None) == {
+        "fallback_move": "e2e4",
+        "candidates": ["e2e4", "d2d4"],
+    }

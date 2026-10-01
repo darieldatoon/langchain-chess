@@ -75,6 +75,34 @@ class SystemOneMeta(TypedDict):
     tactics_present: NotRequired[float | None]
 
 
+class SystemOneLive(TypedDict):
+    """`systemone_live`: the turn's decision as soon as it's made, before the LLM runs.
+
+    `SystemOneMeta` without what only the commit knows (`followed`, `played_move_result`). Never
+    cleared: read it only while `turn_id` is the last turn's and that turn is pending.
+    """
+
+    turn_id: str
+    status: DecisionStatus
+    model: str
+    top: list[RankedMove]
+    shortlist: list[RankedMove]
+    gate: Gate
+    signal: float | None
+    confidence: float | None
+    margin: float | None
+    threshold_used: float | None
+    finalist_conditional: bool
+    tournament: Tournament | None
+    error: str | None
+    latency_ms: float
+    eval_score: float | None
+    needs_calculation: float | None
+    tactics_present: float | None
+    calls: list[Call]
+    """System 1's calls this turn; they join the turn's own calls only when it finalizes."""
+
+
 @dataclass(frozen=True, slots=True)
 class RankRequest:
     start_fen: str

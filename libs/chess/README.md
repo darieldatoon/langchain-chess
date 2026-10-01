@@ -66,7 +66,7 @@ Without a checkpointer the agent is stateless and every run must carry a `positi
   `stream_chunk_timeout` (120 s), the model is called once more in the same turn. A second stall
   fails the turn, which a retry can pick up.
 - **The record** is `start_fen`, `moves`, `plies`, `turns`, `outcome` and `error`. Read only those
-  keys, plus any your own middleware documents (the Agent Server's `setup`, for one). `messages`
+  keys, plus any your own middleware documents (the Agent Server's `setup`, or System 1's `systemone_live`). `messages`
   is the model's working context and may be summarized. The thread-state API also returns private
   channels.
 

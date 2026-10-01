@@ -34,6 +34,7 @@ import {
   scoreText,
   ShortcutDialog,
   sideToMove,
+  soFarAt,
   sourceClass,
   sourceLabel,
   START_FEN,
@@ -47,11 +48,11 @@ import {
   type Allocation,
   type DisplayPrefs,
   type Outcome,
-  type PlyView,
   type Reply,
   type ReplyState,
   type Side,
   type SourceClass,
+  type TurnView,
 } from "@langchain-chess/chess-ui";
 import { downloadJson, downloadText } from "./files";
 import { pgnFileName, pgnOf, playerName } from "./export";
@@ -74,8 +75,8 @@ export interface Seat {
 }
 
 export interface ViewProps {
-  view: PlyView;
-  onViewChange: (view: PlyView) => void;
+  view: TurnView;
+  onViewChange: (view: TurnView) => void;
   prefs: DisplayPrefs;
   onPrefsChange: (prefs: DisplayPrefs) => void;
   allocation: Allocation;
@@ -193,7 +194,13 @@ export function Table({
     issue(game.start);
   });
 
-  const reply = live ? game.reply : playedOrNone(replyAt(game.plies, game.turns, game.fens, index));
+  const reply = live
+    ? withError(game.reply, failureText)
+    : playedOrNone(replyAt(game.plies, game.turns, game.fens, index, game.policy));
+  const soFar = useMemo(
+    () => soFarAt(game.turns, game.plies, index, live, game.systemOneLive),
+    [game.turns, game.plies, index, live, game.systemOneLive],
+  );
   const replyTitle = live ? "Last Reply" : `Reply before move ${index + 1}`;
 
   const nameOf = (side: Side) => playerName(record, side);
@@ -331,7 +338,13 @@ export function Table({
     ) : null;
 
   const replyCard = (
-    <PlyDetails reply={reply} view={view} onViewChange={onViewChange} title={replyTitle} />
+    <PlyDetails
+      reply={reply}
+      view={view}
+      onViewChange={onViewChange}
+      soFar={soFar}
+      title={replyTitle}
+    />
   );
   const opponentCard = <OpponentCard game={game} record={record} onRematch={onRematch} />;
 
@@ -447,7 +460,12 @@ export function Table({
           <ReplyLine
             reply={reply}
             onShow={() => {
-              if (!view.reasoning) onViewChange({ ...view, reasoning: true });
+              if (!view.show.analysis || !view.open.llm) {
+                onViewChange({
+                  open: { ...view.open, llm: true },
+                  show: { ...view.show, analysis: true },
+                });
+              }
               setTab(REPLY_TAB);
             }}
           />
@@ -565,6 +583,11 @@ function playedOrNone(reply: Reply | null): ReplyState {
   return reply ? { status: "played", reply } : { status: "none" };
 }
 
+/** A stopped turn shows the error that stopped it, when this page saw one. */
+function withError(reply: ReplyState, error: string | null): ReplyState {
+  return reply.status === "pending" && reply.activity === "stopped" ? { ...reply, error } : reply;
+}
+
 function colourName(side: Side): string {
   return side === "white" ? "White" : "Black";
 }
@@ -646,10 +669,16 @@ function ResultLine({ outcome }: { outcome: Outcome }) {
 
 /** The reply under the move strip on phones; the full card is in the Reply tab. */
 function ReplyLine({ reply, onShow }: { reply: ReplyState; onShow: () => void }) {
-  if (reply.status === "thinking") {
-    return <ThinkingState label="Thinking…" tone="brand" size="sm" showElapsed />;
+  if (reply.status === "pending") {
+    return reply.activity === "running" ? (
+      <ThinkingState label="Thinking…" tone="brand" size="sm" showElapsed />
+    ) : (
+      <Text variant="sm" color="secondary">
+        Stopped
+      </Text>
+    );
   }
-  if (reply.status === "none") {
+  if (reply.status !== "played") {
     return (
       <Text variant="sm" color="tertiary">
         No reply yet.
@@ -673,7 +702,7 @@ function ReplyLine({ reply, onShow }: { reply: ReplyState; onShow: () => void })
           className={TOUCH_TARGET}
           onClick={onShow}
         >
-          Show reasoning
+          Show analysis
         </Button>
       )}
     </div>

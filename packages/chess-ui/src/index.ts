@@ -10,6 +10,8 @@ export * from "./pgn";
 export * from "./prefs";
 export * from "./selectors";
 export * from "./settings";
+export * from "./stages";
+export * from "./turnStats";
 export * from "./types";
 export { Analysis } from "./components/Analysis";
 export { Board, type BoardPrefs } from "./components/Board";

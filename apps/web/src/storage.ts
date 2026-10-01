@@ -2,10 +2,10 @@
 // reader tolerates missing, old, or corrupt entries, and blocked storage; every writer reports
 // whether it landed. The pure parsing lives in setup.ts and settings.ts.
 import {
-  DEFAULT_PLY_VIEW,
   sanitizeDisplayPrefs,
+  sanitizeTurnView,
   type DisplayPrefs,
-  type PlyView,
+  type TurnView,
 } from "@langchain-chess/chess-ui";
 import { isRecord } from "./settings";
 import { DEFAULT_SETUP, sanitizeSetup, storedSetup, type Setup } from "./setup";
@@ -86,17 +86,12 @@ export function saveAppSettings(settings: AppSettings, storage = browserStorage(
   return write(storage, APP_KEY, settings);
 }
 
-/** Each toggle falls back to its default on its own, so a missing or corrupt one resets only it. */
-export function loadPlyView(storage = browserStorage()): PlyView {
-  const stored = parse(read(storage, VIEW_KEY));
-  const flag = (key: keyof PlyView) => {
-    const value = isRecord(stored) ? stored[key] : undefined;
-    return typeof value === "boolean" ? value : DEFAULT_PLY_VIEW[key];
-  };
-  return { reasoning: flag("reasoning"), topMoves: flag("topMoves") };
+/** Each field falls back to its default on its own; an older `PlyView` migrates. */
+export function loadTurnView(storage = browserStorage()): TurnView {
+  return sanitizeTurnView(parse(read(storage, VIEW_KEY)));
 }
 
-export function savePlyView(view: PlyView, storage = browserStorage()): boolean {
+export function saveTurnView(view: TurnView, storage = browserStorage()): boolean {
   return write(storage, VIEW_KEY, view);
 }
 

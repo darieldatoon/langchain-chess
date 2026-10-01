@@ -41,16 +41,21 @@ const isRanked = (v: unknown) => isJson(v) && isString(v.uci) && isNumber(v.prob
 const isStage = (v: unknown) =>
   isJson(v) && nullable(v.heat, isNumber) && typeof v.bye === "boolean" && isNumber(v.probability);
 
+const isNumberOrNull = (v: unknown) => optional(v, (x) => nullable(x, isNumber));
+
+/** What the card reads from a decision, committed or live: its ranking and its gate. */
+const isDecision = (v: Json) =>
+  S1_STATUSES.includes(v.status) &&
+  isStringOrNull(v.error) &&
+  isArrayOf(v.shortlist, isRanked) &&
+  optional(v.top, (top) => isArrayOf(top, isRanked)) &&
+  isStringOrNull(v.gate) &&
+  [v.signal, v.threshold_used, v.latency_ms].every(isNumberOrNull);
+
 /** System 1's metadata as the ply details read it; absent or status-less metadata is ignored. */
 function isSystemOne(v: unknown): boolean {
   if (!isJson(v) || !isString(v.status)) return true;
-  return (
-    S1_STATUSES.includes(v.status) &&
-    isStringOrNull(v.error) &&
-    isArrayOf(v.shortlist, isRanked) &&
-    optional(v.top, (top) => isArrayOf(top, isRanked)) &&
-    nullable(v.played_move_result, (r) => isArrayOf(r, isStage))
-  );
+  return isDecision(v) && nullable(v.played_move_result, (r) => isArrayOf(r, isStage));
 }
 
 function isPly(v: unknown): boolean {
@@ -75,6 +80,13 @@ const isCall = (v: unknown) =>
 const isTurn = (v: unknown) =>
   isJson(v) && isString(v.id) && isNumber(v.illegal_attempts) && isArrayOf(v.calls, isCall);
 
+const isLive = (v: unknown) =>
+  isJson(v) &&
+  isString(v.turn_id) &&
+  isDecision(v) &&
+  isNumber(v.latency_ms) &&
+  isArrayOf(v.calls, isCall);
+
 function isValues(v: Json): boolean {
   return (
     isArrayOf(v.moves, isUci) &&
@@ -82,7 +94,8 @@ function isValues(v: Json): boolean {
     optional(v.plies, (plies) => isArrayOf(plies, isPly)) &&
     optional(v.turns, (turns) => isArrayOf(turns, isTurn)) &&
     optional(v.outcome, (outcome) => nullable(outcome, isOutcome)) &&
-    optional(v.draw_offers, (offers) => isArrayOf(offers, isDrawOffer))
+    optional(v.draw_offers, (offers) => isArrayOf(offers, isDrawOffer)) &&
+    optional(v.systemone_live, (live) => nullable(live, isLive))
   );
 }
 

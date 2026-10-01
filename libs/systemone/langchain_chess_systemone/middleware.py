@@ -13,7 +13,7 @@ import hashlib
 from collections.abc import Mapping
 from typing import Annotated, Any, NotRequired, TypedDict
 
-from langchain.agents.middleware.types import PrivateStateAttr, hook_config
+from langchain.agents.middleware.types import OmitFromInput, PrivateStateAttr, hook_config
 
 from langchain_chess import ChessMiddleware, ChessState, PositionView
 from langchain_chess.state import Call, JSONValue
@@ -29,7 +29,7 @@ from langchain_chess_systemone.types import (
     RankingFailed,
     RankRequest,
     StageResult,
-    SystemOneMeta,
+    SystemOneLive,
     Tournament,
 )
 
@@ -62,6 +62,8 @@ class FrozenDecision(TypedDict):
 
 class SystemOneState(ChessState):
     systemone_turn: NotRequired[Annotated[FrozenDecision | None, PrivateStateAttr]]
+    # Not private: clients show System 1's result while the LLM is still thinking.
+    systemone_live: NotRequired[Annotated[SystemOneLive | None, OmitFromInput]]
 
 
 def turn_seed(agent_seed: int, turn_id: str) -> int:
@@ -71,6 +73,33 @@ def turn_seed(agent_seed: int, turn_id: str) -> int:
 
 def _ranked(candidates: tuple[Candidate, ...]) -> list[RankedMove]:
     return [RankedMove(uci=c.uci, probability=c.probability) for c in candidates]
+
+
+def _live(frozen: FrozenDecision) -> SystemOneLive:
+    """`ply_meta` is built from this too, so the live payload and the ply never disagree."""
+    return SystemOneLive(
+        turn_id=frozen["turn_id"],
+        status=frozen["status"],
+        model=frozen["model"],
+        top=frozen["ranking"][:TOP_MOVES],
+        shortlist=frozen["shortlist"],
+        gate=frozen["gate"],
+        signal=frozen["signal"],
+        confidence=frozen["confidence"],
+        margin=frozen["margin"],
+        threshold_used=frozen["threshold_used"],
+        finalist_conditional=frozen["tournament"] is not None,
+        tournament=frozen["tournament"],
+        error=frozen["error"],
+        latency_ms=frozen["latency_ms"],
+        eval_score=frozen["eval_score"],
+        needs_calculation=frozen["needs_calculation"],
+        tactics_present=frozen["tactics_present"],
+        calls=list(frozen["calls"]),
+    )
+
+
+_LIVE_ONLY = frozenset({"turn_id", "calls"})
 
 
 class SystemOneMiddleware(ChessMiddleware):
@@ -218,9 +247,14 @@ class SystemOneMiddleware(ChessMiddleware):
         if isinstance(distribution, RankingFailed):
             if not self.has_model:
                 raise distribution
-            return {"systemone_turn": self._skipped(distribution, view.turn_id)}
+            skipped = self._skipped(distribution, view.turn_id)
+            return {"systemone_turn": skipped, "systemone_live": _live(skipped)}
         frozen = self._freeze(distribution, view.turn_id)
-        return {"systemone_turn": frozen, **self._replay(frozen, view)}
+        return {
+            "systemone_turn": frozen,
+            "systemone_live": _live(frozen),
+            **self._replay(frozen, view),
+        }
 
     @hook_config(can_jump_to=["end"])
     def before_model(self, state: Any, runtime: Any) -> dict[str, Any] | None:
@@ -267,29 +301,17 @@ class SystemOneMiddleware(ChessMiddleware):
         uci = proposal.get("uci")
         skipped = frozen["status"] == "skipped"
         by_systemone = proposal.get("source") == "systemone"
-        meta = SystemOneMeta(
-            status=frozen["status"],
-            model=frozen["model"],
-            top=frozen["ranking"][:TOP_MOVES],
-            shortlist=frozen["shortlist"],
-            followed=None
+        shared = {k: v for k, v in _live(frozen).items() if k not in _LIVE_ONLY}
+        meta = {
+            **shared,
+            "followed": None
             if skipped or by_systemone
             else uci in {m["uci"] for m in frozen["shortlist"]},
-            gate=frozen["gate"],
-            signal=frozen["signal"],
-            confidence=frozen["confidence"],
-            margin=frozen["margin"],
-            threshold_used=frozen["threshold_used"],
-            finalist_conditional=frozen["tournament"] is not None,
-            played_move_result=None if skipped or uci is None else self._played_result(frozen, uci),
-            tournament=frozen["tournament"],
-            error=frozen["error"],
-            latency_ms=frozen["latency_ms"],
-            eval_score=frozen["eval_score"],
-            needs_calculation=frozen["needs_calculation"],
-            tactics_present=frozen["tactics_present"],
-        )
-        return dict(meta)  # ty: ignore[invalid-return-type]
+            "played_move_result": None
+            if skipped or uci is None
+            else self._played_result(frozen, uci),
+        }
+        return meta  # ty: ignore[invalid-return-type]
 
     def turn_calls(self, state: Mapping[str, Any]) -> list[Call]:
         frozen = self._current(state)

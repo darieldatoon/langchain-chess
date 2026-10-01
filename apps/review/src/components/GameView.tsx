@@ -17,6 +17,7 @@ import {
   DisplayMenu,
   ExportMenu,
   lichessUrl,
+  liveSystemOne,
   EVAL_BAR,
   moveLabel,
   sanAt,
@@ -29,12 +30,14 @@ import {
   opposite,
   PlayerStrip,
   PlyDetails,
+  recordedPolicy,
   replay,
+  replyOf,
   ShortcutDialog,
+  soFarAt,
   stripResult,
   TOUCH_TARGET,
   toPgn,
-  turnOf,
   useGameKeys,
   useCoarsePointer,
   withAlpha,
@@ -46,8 +49,10 @@ import {
   type MoveEntry,
   type OpeningTable,
   type Ply,
-  type PlyView,
+  type ReplyState,
   type Side,
+  type TurnRecord,
+  type TurnView,
 } from "@langchain-chess/chess-ui";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react/dist/ssr/ArrowSquareOut";
 import { useCallback, useMemo, useState } from "react";
@@ -80,8 +85,8 @@ import { Summary } from "./Summary";
 interface Props {
   game: Game;
   values: ChessValues;
-  view: PlyView;
-  onViewChange: (view: PlyView) => void;
+  view: TurnView;
+  onViewChange: (view: TurnView) => void;
   onOpenTrace: (target: TraceTarget) => void;
   analysis: Analysis | null;
   launch: LaunchState | undefined;
@@ -100,6 +105,7 @@ interface Props {
 
 const NO_MOVES: string[] = [];
 const NO_PLIES: Ply[] = [];
+const NO_TURNS: TurnRecord[] = [];
 const BRAND = "var(--bg-brand)";
 const MOVE_ID = "move-";
 
@@ -124,6 +130,8 @@ export function GameView({
   const startFen = fenOrStart(values.start_fen);
   const moves = values.moves ?? NO_MOVES;
   const plies = values.plies ?? NO_PLIES;
+  const turns = values.turns ?? NO_TURNS;
+  const policy = useMemo(() => recordedPolicy(values.setup), [values.setup]);
   const grading = game.grading;
   const review = grading.status === "graded" ? grading.review : null;
   const last = moves.length;
@@ -224,6 +232,18 @@ export function GameView({
   };
 
   const ply = index > 0 ? records[index - 1] : undefined;
+  const reply: ReplyState = !ply
+    ? { status: "none" }
+    : ply.source === "external"
+      ? {
+          status: "external",
+          ply,
+          fenBefore: fens[index - 1],
+          label: sideLabel(game, plies, ply.side) === "Human" ? "Human move" : "External move",
+        }
+      : { status: "played", reply: replyOf(ply, turns, fens, policy) };
+  // A finished game's last position counts its terminal turn too.
+  const soFar = soFarAt(turns, plies, index, index === last, liveSystemOne(values));
   const grade = index > 0 ? review?.plies[index - 1] : undefined;
   // The move's run, or the last one; only the last one's start time is loaded.
   const runId = grade?.run_id ?? game.lastRunId;
@@ -392,32 +412,20 @@ export function GameView({
           }
         />
       </Card>
-      {ply ? (
-        <PlyDetails
-          title="Who Played It"
-          label="who played it"
-          reply={{
-            status: "played",
-            reply: { ply, turn: turnOf(ply, values.turns ?? []), fenBefore: fens[index - 1] },
-          }}
-          view={view}
-          onViewChange={onViewChange}
-          preview={{
-            onPin: (uci) => openPreview(movePick(uci)),
-            onHover: hoverPreview && ((uci) => hoverPreview(uci === null ? null : movePick(uci))),
-            pinned: pin?.id.startsWith(MOVE_ID) ? pin.line.moves[0] : null,
-          }}
-        />
-      ) : (
-        <Card intent="neutral" className="flex flex-col gap-space-2" aria-label="who played it">
-          <Text variant="h4" as="h2" color="secondary">
-            Who Played It
-          </Text>
-          <Text variant="sm" color="tertiary">
-            Start position.
-          </Text>
-        </Card>
-      )}
+      <PlyDetails
+        title="Who Played It"
+        label="who played it"
+        placeholder="Start position."
+        reply={reply}
+        soFar={soFar}
+        view={view}
+        onViewChange={onViewChange}
+        preview={{
+          onPin: (uci) => openPreview(movePick(uci)),
+          onHover: hoverPreview && ((uci) => hoverPreview(uci === null ? null : movePick(uci))),
+          pinned: pin?.id.startsWith(MOVE_ID) ? pin.line.moves[0] : null,
+        }}
+      />
       {review && (
         <Summary
           review={review}
@@ -485,7 +493,7 @@ export function GameView({
                 <TabPanel>
                   <LatencyChart
                     plies={plies}
-                    turns={values.turns ?? []}
+                    turns={turns}
                     startFen={startFen}
                     index={index}
                     onSelect={go}

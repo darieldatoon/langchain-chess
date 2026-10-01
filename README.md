@@ -137,7 +137,8 @@ the agent opens.
 ![The New game dialog](docs/images/web-new-game.png)
 
 After each reply you can see who chose the move (System 1, the LLM, or a forced move), System 1's
-top moves, the LLM's reasoning, the latency and the cost. The [web UI README](apps/web) covers
+top moves and why the LLM was or wasn't asked, the LLM's analysis, and each stage's model time
+and cost, with running totals for the game. The [web UI README](apps/web) covers
 every control.
 
 If `2024` or `5173` is taken, the task stops rather than talk to another project's server. Pick

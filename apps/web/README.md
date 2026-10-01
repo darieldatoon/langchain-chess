@@ -25,10 +25,12 @@ That starts `langgraph dev` on `:2024` and this app on `:5173`, then prints the 
    how many candidates the LLM sees. Every setting has an info icon that says what it does and
    when to change it. A game from elsewhere with another System 1 model keeps it, by name.
 2. **Move.** Click a piece, then its target, or drag it. When you play Black, the agent opens.
-3. **Read the reply.** Last reply shows who chose the move (System 1, the LLM, or a forced move),
-   the model, latency and cost, System 1's top moves, and the LLM's reasoning. While the
-   opponent thinks, the same card shows spinners and streams the reasoning in. Show/Hide hides
-   the top moves or the reasoning, and stays as you left it.
+3. **Read the reply.** Last reply shows the turn stage by stage: System 1's top moves and why it
+   played or asked the LLM, then the LLM's analysis, each with its model time and cost. System 1's
+   result appears as soon as it's ready, while the LLM is still thinking, and the analysis
+   streams in under it. A turn that failed keeps what it produced, and Retry carries on from
+   there. "Game so far" adds up the cost and average model time. The chevrons open and close
+   each stage, and the ⚙ button chooses what the card shows; both stay as you left them.
 4. **After the game**, Rematch swaps colours and keeps the opponent. New game starts over.
    Any game that recorded its settings offers Rematch and Export under Opponent, mid-game too.
 5. **Share an opponent.** Export in the New game dialog (or under Opponent) saves the settings
@@ -90,8 +92,8 @@ sequenceDiagram
 - **The contract.** Moves are human chat messages whose content is the UCI move (`go` asks the
   agent to open), each with a stable id: resending a finished move is a no-op, and resending one
   whose turn is still pending retries that turn. An empty submit retries a pending turn too. The
-  app reads only `start_fen`, `moves`, `plies`, `turns`, `outcome`, `error`, `setup` and
-  `messages`.
+  app reads only `start_fen`, `moves`, `plies`, `turns`, `outcome`, `error`, `setup`,
+  `systemone_live` and `messages`.
 - **Types.** [`packages/chess-ui/src/types.ts`](../../packages/chess-ui/src/types.ts) mirrors the
   Python state by hand. That package also holds the board, move list and move details this app
   shares with the review app.
@@ -100,7 +102,7 @@ sequenceDiagram
   first turn records it as `setup`. The human's side isn't stored: the external plies are
   theirs, and before the first one they play the side the agent didn't open with.
 - **localStorage** holds only the last setup (`langchain-chess:setup`), the API key
-  (`langchain-chess:app`), and which reply sections are open (`langchain-chess:view`). Nothing
+  (`langchain-chess:app`), and what the reply card shows (`langchain-chess:view`). Nothing
   per game.
 - **Styling** follows the Macaw design system: semantic Tailwind classes from its preset
   (`bg-surface-level-2`, `text-secondary`), Macaw components for controls, and no raw colours.

@@ -1,4 +1,4 @@
-import type { Call, Ply, SystemOneMeta, TurnRecord } from "./types";
+import type { Call, Ply, SystemOneLive, SystemOneMeta, TurnRecord } from "./types";
 
 export function call(overrides: Partial<Call> = {}): Call {
   return {
@@ -71,6 +71,37 @@ export function systemOne(overrides: Partial<SystemOneMeta> = {}): SystemOneMeta
     played_move_result: [{ round: 1, heat: null, rank: 1, probability: 0.95, bye: false }],
     tournament: null,
     error: null,
+    ...overrides,
+  };
+}
+
+/** System 1's live result for `turn-1`, a shortlist handed to the LLM. */
+export function live(overrides: Partial<SystemOneLive> = {}): SystemOneLive {
+  return {
+    turn_id: "turn-1",
+    status: "shortlist",
+    model: "semif-qwen3.5-4b",
+    top: [
+      { uci: "e7e5", probability: 0.4 },
+      { uci: "c7c5", probability: 0.38 },
+    ],
+    shortlist: [
+      { uci: "e7e5", probability: 0.4 },
+      { uci: "c7c5", probability: 0.38 },
+    ],
+    gate: "margin",
+    signal: 0.02,
+    confidence: 0.6,
+    margin: 0.02,
+    threshold_used: 0.9,
+    finalist_conditional: false,
+    tournament: null,
+    error: null,
+    latency_ms: 400,
+    eval_score: null,
+    needs_calculation: null,
+    tactics_present: null,
+    calls: [call({ kind: "systemone", model: "semif-qwen3.5-4b", cost_usd: 0.0001 })],
     ...overrides,
   };
 }

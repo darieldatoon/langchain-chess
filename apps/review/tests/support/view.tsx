@@ -1,10 +1,10 @@
 import { fireEvent, render, renderHook } from "@testing-library/react";
 import {
   DEFAULT_DISPLAY_PREFS,
-  DEFAULT_PLY_VIEW,
+  DEFAULT_TURN_VIEW,
   type DisplayPrefs,
   type OpeningTable,
-  type PlyView,
+  type TurnView,
 } from "@langchain-chess/chess-ui";
 import { useChartColorResolver } from "@langchain/macaw-components/utils/chartColors";
 import { vi } from "vite-plus/test";
@@ -31,7 +31,7 @@ export interface ViewExtras {
   analysis?: Analysis | null;
   launch?: LaunchState;
   onAnalyze?: () => void;
-  view?: PlyView;
+  view?: TurnView;
   tab?: ReviewTab;
 }
 
@@ -42,7 +42,7 @@ export const viewProps = (
 ): ViewProps => ({
   game: g,
   values: g.values!,
-  view: extras.view ?? DEFAULT_PLY_VIEW,
+  view: extras.view ?? DEFAULT_TURN_VIEW,
   onViewChange: () => {},
   onOpenTrace,
   analysis: extras.analysis ?? null,
