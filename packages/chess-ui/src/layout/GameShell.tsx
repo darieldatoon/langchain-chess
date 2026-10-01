@@ -10,6 +10,8 @@ export interface ShellSlots {
   evalBar?: ReactNode;
   /** Beside the board on `full` and `wide`, exactly as tall as the board and its strips. */
   table?: ReactNode;
+  /** Under the table on `full`, above `under` on `wide`, after the table on `phone`. */
+  underTable?: ReactNode;
   /** Under the board on `full`, under everything on `wide` and `phone`. */
   under?: ReactNode;
   phoneBar?: ReactNode;
@@ -47,6 +49,8 @@ export function GameShell({ allocation: a, ...slots }: Props) {
     </div>
   );
 
+  const underTable = slots.underTable && <div data-slot="under-table">{slots.underTable}</div>;
+
   if (a.layout === "phone") {
     return (
       <div data-layout="phone" className="flex min-w-0 flex-col" style={{ gap: a.gap }}>
@@ -58,6 +62,7 @@ export function GameShell({ allocation: a, ...slots }: Props) {
         {slots.phoneMoves}
         {slots.phoneReply}
         {slots.table && <div data-slot="table">{slots.table}</div>}
+        {underTable}
         {slots.phoneTabs}
         {slots.under && <div data-slot="under">{slots.under}</div>}
       </div>
@@ -87,15 +92,19 @@ export function GameShell({ allocation: a, ...slots }: Props) {
           )}
         </div>
         {slots.table && (
-          <div
-            data-slot="table"
-            className="flex min-h-0 shrink-0 flex-col"
-            style={{ width: a.table, height: a.column }}
-          >
-            {slots.table}
+          <div className="flex shrink-0 flex-col" style={{ width: a.table, gap: a.gap }}>
+            <div
+              data-slot="table"
+              className="flex min-h-0 shrink-0 flex-col"
+              style={{ height: a.column }}
+            >
+              {slots.table}
+            </div>
+            {full && underTable}
           </div>
         )}
       </div>
+      {!full && underTable}
       {!full && slots.under && <div data-slot="under">{slots.under}</div>}
     </div>
   );

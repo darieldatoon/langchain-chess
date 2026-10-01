@@ -284,15 +284,12 @@ describe("a game's own setup", () => {
     expect(lastConfigurable()).toEqual(luna);
   });
 
-  it("rematches or exports a recorded game's opponent mid-game", async () => {
+  it("only says who a recorded game is against, mid-game", async () => {
     onThread("abc", E4_AS_BLACK, LLM_HIGH);
     render(<App />);
-    await click("Export");
-    expect(downloads.at(-1)).toEqual(["opponent.json", LLM_HIGH]);
-    await click("Rematch");
-    expect(board()).toHaveAttribute("data-orientation", "white");
-    await click("drop e2e4");
-    expect(lastConfigurable()).toEqual(LLM_HIGH);
+    const card = await screen.findByLabelText("opponent");
+    expect(within(card).getByText("abc")).toBeInTheDocument();
+    expect(within(card).queryAllByRole("button")).toEqual([]);
   });
 
   it("continues a Black game from its thread in a browser that has never seen it", async () => {
@@ -528,6 +525,8 @@ describe("after the game", () => {
     expect(strip("black")).toHaveTextContent("Checkmated");
     expect(board()).toHaveAttribute("data-draggable", "false");
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    expect(screen.queryByRole("button", { name: "Back to live" })).not.toBeInTheDocument();
 
     await act(async () => {
       fireEvent.click(
@@ -1005,6 +1004,16 @@ describe("layouts", () => {
     onOldThread("old", { ...E4_E5, outcome: { kind: "draw", reason: "stalemate" } });
     render(<App />);
     expect(screen.getByLabelText("result")).toHaveTextContent("½-½Draw by stalemate");
+  });
+
+  it("offers a phone no way back to live once the game is over", () => {
+    sized(390, 780);
+    onThread("abc", { ...E4_E5, outcome: { kind: "checkmate", winner: "white" } });
+    render(<App />);
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    expect(board()).toHaveAttribute("data-position", AFTER_E4);
+    expect(screen.queryByText(/Viewing move/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Back to live" })).not.toBeInTheDocument();
   });
 
   it("says a phone's opponent is thinking, stopped, or hasn't replied, in the reply line", () => {

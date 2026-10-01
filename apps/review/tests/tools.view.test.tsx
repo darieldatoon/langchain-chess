@@ -367,3 +367,28 @@ describe("an ungraded game", () => {
     expect(screen.getByRole("textbox", { name: "FEN" })).toHaveValue(FENS[7]);
   });
 });
+
+describe("layout", () => {
+  it("keeps the tools beside the board to what fits, and puts who played it and the summary under them", () => {
+    renderView();
+    const tools = within(screen.getByLabelText("tools"));
+    expect(tools.getByLabelText("move list")).toBeInTheDocument();
+    expect(tools.queryByLabelText("who played it")).toBeNull();
+    const under = within(document.querySelector<HTMLElement>("[data-slot=under-table]")!);
+    expect(under.getByLabelText("who played it")).toBeInTheDocument();
+    expect(under.getByLabelText("summary")).toBeInTheDocument();
+  });
+});
+
+describe("back to live", () => {
+  it("shows only while the game is still being played", () => {
+    const { unmount } = renderView();
+    key("ArrowLeft");
+    expect(screen.queryByRole("button", { name: "Back to live" })).toBeNull();
+    unmount();
+    renderView(game({ values: values({ outcome: null }) }));
+    key("ArrowLeft");
+    fireEvent.click(screen.getByRole("button", { name: "Back to live" }));
+    expect(current()).toBe("Qxf7#");
+  });
+});

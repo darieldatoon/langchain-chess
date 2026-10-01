@@ -54,12 +54,11 @@ import {
   type SourceClass,
   type TurnView,
 } from "@langchain-chess/chess-ui";
-import { downloadJson, downloadText } from "./files";
+import { downloadText } from "./files";
 import { pgnFileName, pgnOf, playerName } from "./export";
 import { ExportDialog } from "./components/ExportDialog";
 import { GameActions, GameOver, ResultHeadline } from "./components/GameActions";
 import { describeError, isAuthError, isBusyRejection } from "./format";
-import { configurableOf } from "./settings";
 import { changedKnobs, opponentLabel, type GameRecord } from "./setup";
 import { pageTitle, useDocumentTitle, useTurnAlert } from "./title";
 import { useGame, type Game } from "./useGame";
@@ -346,7 +345,7 @@ export function Table({
       title={replyTitle}
     />
   );
-  const opponentCard = <OpponentCard game={game} record={record} onRematch={onRematch} />;
+  const opponentCard = <OpponentCard game={game} record={record} />;
 
   const shell = (
     <GameShell
@@ -396,7 +395,7 @@ export function Table({
               heading={<OpeningHeading opening={opening} />}
               aside={openingMark}
             />
-            <BackToLive index={index} last={last} onGo={go} />
+            <BackToLive index={index} last={last} over={over} onGo={go} />
             <BoardControls index={index} last={last} onGo={go} menu={menu} />
             {gameOver || actions}
             {note}
@@ -413,7 +412,7 @@ export function Table({
       }
       phoneBar={
         <div className="flex flex-col gap-space-1">
-          <BackToLive index={index} last={last} onGo={go} />
+          <BackToLive index={index} last={last} over={over} onGo={go} />
           <div
             className="flex flex-wrap items-center justify-between gap-space-1"
             aria-label="actions"
@@ -592,15 +591,7 @@ function colourName(side: Side): string {
   return side === "white" ? "White" : "Black";
 }
 
-function OpponentCard({
-  game,
-  record,
-  onRematch,
-}: {
-  game: Game;
-  record: GameRecord | null;
-  onRematch: (from: GameRecord) => void;
-}) {
+function OpponentCard({ game, record }: { game: Game; record: GameRecord | null }) {
   const changed = record ? changedKnobs(record.context) : [];
   return (
     <Card intent="neutral" className="flex flex-col gap-space-2" aria-label="opponent">
@@ -620,31 +611,7 @@ function OpponentCard({
           Thread <span className="font-mono">{game.threadId}</span>
         </Text>
       )}
-      {record ? (
-        <div className="flex gap-space-2">
-          {/* After the game, the result card offers it. */}
-          {!game.outcome && (
-            <Button
-              variant="outlined"
-              color="secondary"
-              size="sm"
-              className={TOUCH_TARGET}
-              onClick={() => onRematch(record)}
-            >
-              Rematch
-            </Button>
-          )}
-          <Button
-            variant="plain"
-            color="secondary"
-            size="sm"
-            className={TOUCH_TARGET}
-            onClick={() => downloadJson("opponent.json", configurableOf(record.context))}
-          >
-            Export
-          </Button>
-        </div>
-      ) : (
+      {!record && (
         <Text variant="xs" color="tertiary">
           This app can't read this game's settings: start a new game to pick an opponent.
         </Text>

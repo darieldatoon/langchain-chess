@@ -298,6 +298,8 @@ export function GameView({
   };
 
   const tools = (
+    // The move list takes what the cards above it leave. This scrolls only in a window too short
+    // for those cards; anything taller goes under the table.
     <div className="flex h-full min-h-0 flex-col gap-space-3 overflow-y-auto" aria-label="tools">
       <div className="flex flex-wrap items-center justify-end gap-space-2">
         {review && !analysis && (!launch || launch.status === "starting") && (
@@ -343,7 +345,7 @@ export function GameView({
           onHover={hoverPreview}
         />
       )}
-      <Card intent="neutral" className="flex min-h-96 flex-1 flex-col gap-space-2 p-space-2">
+      <Card intent="neutral" className="flex min-h-40 flex-1 flex-col gap-space-2 p-space-2">
         <MoveList
           entries={entries}
           startFen={startFen}
@@ -385,7 +387,7 @@ export function GameView({
           }}
         />
         {pin && <PreviewBar preview={pin} onStep={step} onLeave={leave} />}
-        <BackToLive index={index} last={last} onGo={go} />
+        <BackToLive index={index} last={last} over={!!values.outcome} onGo={go} />
         {exportNote && (
           <Text variant="sm" color="secondary" role="status" aria-label="export">
             {exportNote}
@@ -412,6 +414,11 @@ export function GameView({
           }
         />
       </Card>
+    </div>
+  );
+
+  const underTools = (
+    <div className="flex flex-col gap-space-3">
       <PlyDetails
         title="Who Played It"
         label="who played it"
@@ -464,6 +471,7 @@ export function GameView({
           />
         }
         table={tools}
+        underTable={underTools}
         under={
           <Card intent="neutral" className="select-none" aria-label="game tabs">
             <TabGroup
