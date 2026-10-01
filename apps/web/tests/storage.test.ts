@@ -1,14 +1,15 @@
 import { describe, expect, it, vi } from "vite-plus/test";
+import { DEFAULT_TURN_VIEW } from "@langchain-chess/chess-ui";
 import { DEFAULT_SETUP, type Setup } from "../src/setup";
 import {
   APP_KEY,
   browserStorage,
   DEFAULT_APP_SETTINGS,
   loadAppSettings,
-  loadPlyView,
+  loadTurnView,
   loadSetup,
   saveAppSettings,
-  savePlyView,
+  saveTurnView,
   saveSetup,
   SETUP_KEY,
   VIEW_KEY,
@@ -95,14 +96,15 @@ describe("unavailable storage", () => {
   });
 });
 
-describe("ply view storage", () => {
-  it("defaults, round-trips, and resets each corrupt toggle on its own", () => {
-    expect(loadPlyView()).toEqual({ reasoning: true, topMoves: true });
-    expect(savePlyView({ reasoning: false, topMoves: true })).toBe(true);
-    expect(loadPlyView()).toEqual({ reasoning: false, topMoves: true });
-    store(VIEW_KEY, { reasoning: "no", topMoves: false });
-    expect(loadPlyView()).toEqual({ reasoning: true, topMoves: false });
+describe("turn view storage", () => {
+  it("defaults, round-trips, and migrates the older reply view under the same key", () => {
+    expect(loadTurnView()).toEqual(DEFAULT_TURN_VIEW);
+    const hidden = { ...DEFAULT_TURN_VIEW, show: { ...DEFAULT_TURN_VIEW.show, tokens: true } };
+    expect(saveTurnView(hidden)).toBe(true);
+    expect(loadTurnView()).toEqual(hidden);
+    store(VIEW_KEY, { reasoning: false, topMoves: false });
+    expect(loadTurnView().show).toMatchObject({ analysis: false, topMoves: false, gate: true });
     store(VIEW_KEY, "{not json");
-    expect(loadPlyView()).toEqual({ reasoning: true, topMoves: true });
+    expect(loadTurnView()).toEqual(DEFAULT_TURN_VIEW);
   });
 });

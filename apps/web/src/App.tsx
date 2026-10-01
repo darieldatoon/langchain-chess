@@ -18,7 +18,7 @@ import {
   WEB_LEFT,
   type ChessContext,
   type DisplayPrefs,
-  type PlyView,
+  type TurnView,
   type Side,
 } from "@langchain-chess/chess-ui";
 import { checkApiKey, type KeyCheck } from "./auth";
@@ -33,11 +33,11 @@ import {
   browserStorage,
   loadAppSettings,
   loadDisplayPrefs,
-  loadPlyView,
+  loadTurnView,
   loadSetup,
   saveAppSettings,
   saveDisplayPrefs,
-  savePlyView,
+  saveTurnView,
   saveSetup,
   type AppSettings,
 } from "./storage";
@@ -91,7 +91,7 @@ export default function App({
 }: Props) {
   const [app, setApp] = useState<AppSettings>(() => loadAppSettings());
   const [setup, setSetup] = useState<Setup>(() => loadSetup());
-  const [view, setView] = useState<PlyView>(() => loadPlyView());
+  const [view, setView] = useState<TurnView>(() => loadTurnView());
   const [prefs, setPrefs] = useState<DisplayPrefs>(() => loadDisplayPrefs());
   const [seat, setSeat] = useState<Seat | null>(() => {
     const threadId = threadFromUrl();
@@ -136,8 +136,8 @@ export default function App({
   );
 
   const onViewChange = useCallback(
-    (next: PlyView) => {
-      noteSaved(savePlyView(next));
+    (next: TurnView) => {
+      noteSaved(saveTurnView(next));
       setView(next);
     },
     [noteSaved],

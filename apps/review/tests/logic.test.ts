@@ -5,7 +5,13 @@ import { evalText, parseReview, reviewsByRun, whiteCp, whiteWinPercent } from ".
 import { decodeValues } from "../src/values";
 import { reviewPgn } from "../src/export";
 import { toPgn } from "@langchain-chess/chess-ui";
-import { call as llmCall, ply as plyOf, systemOne, turn } from "@langchain-chess/chess-ui/testing";
+import {
+  call as llmCall,
+  live,
+  ply as plyOf,
+  systemOne,
+  turn,
+} from "@langchain-chess/chess-ui/testing";
 import { game, graded, MOVES, review, reviewFeedback, values } from "./support/fixtures";
 
 const thread = (id: string, last = `${id}-last`): ThreadItem => ({
@@ -137,6 +143,10 @@ describe("values", () => {
     }
     const offers = [{ ply: 0, by: "white", answer: "declined" }];
     expect(decodeValues({ moves: [], draw_offers: offers })).not.toBeNull();
+    expect(decodeValues({ moves: [], systemone_live: live() })).not.toBeNull();
+    expect(decodeValues({ moves: [], systemone_live: null })).not.toBeNull();
+    // Older metadata has no gate facts, or no time.
+    expect(decodeValues(withS1({ signal: undefined, latency_ms: undefined }))).not.toBeNull();
   });
 
   it("finds no game record in anything else", () => {
@@ -176,6 +186,15 @@ describe("values", () => {
       withS1({ played_move_result: [{ heat: "hot", bye: false, probability: 1 }] }),
       withS1({ played_move_result: [{ heat: null, bye: "no", probability: 1 }] }),
       withS1({ played_move_result: [null] }),
+      withS1({ signal: "high" }),
+      withS1({ threshold_used: "0.9" }),
+      withS1({ gate: 1 }),
+      withS1({ latency_ms: "slow" }),
+      { moves: [], systemone_live: "x" },
+      { moves: [], systemone_live: { ...live(), turn_id: 1 } },
+      { moves: [], systemone_live: { ...live(), status: "thinking" } },
+      { moves: [], systemone_live: { ...live(), latency_ms: undefined } },
+      { moves: [], systemone_live: { ...live(), calls: [null] } },
       { ...good, turns: "none" },
       withTurn({ id: 1 }),
       withTurn({ illegal_attempts: null }),

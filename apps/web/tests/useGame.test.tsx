@@ -4,13 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { configurableOf } from "../src/settings";
 import type { GameRecord } from "../src/setup";
 import { fake, lastOptions, resetFake } from "./support/fakeStream";
-import { AFTER_E4, E4_E5, turn } from "@langchain-chess/chess-ui/testing";
+import { AFTER_E4, E4_E5, live, ply, turn } from "@langchain-chess/chess-ui/testing";
 import { DEFAULT_CONTEXT, START_FEN } from "@langchain-chess/chess-ui";
 import { threadFromUrl, useGame, writeThreadToUrl } from "../src/useGame";
 
 vi.mock("@langchain/react", async () => (await import("./support/fakeStream")).useStreamMock());
 
 const REJECT = { multitaskStrategy: "reject" };
+const AFTER_E4_E5 = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2";
 const WHITE: GameRecord = { side: "white", context: DEFAULT_CONTEXT, startFen: START_FEN };
 const BLACK: GameRecord = { side: "black", context: DEFAULT_CONTEXT, startFen: START_FEN };
 
@@ -97,25 +98,54 @@ describe("useGame", () => {
     expect(fake.submit).toHaveBeenLastCalledWith({}, expect.objectContaining(REJECT));
   });
 
-  it("exposes the record, the last reply with its turn, and a pending turn", () => {
-    resetFake({
-      ...E4_E5,
-      turns: [...E4_E5.turns, turn({ id: "turn-2", status: "pending" })],
-      error: "nope",
-      outcome: null,
-    });
+  it("exposes the record and the last reply with its turn and stages", () => {
+    resetFake({ ...E4_E5, error: "nope", outcome: null });
     const { result } = renderHook(() => useGame("", WHITE));
-    expect(result.current.fen).toBe("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2");
+    expect(result.current.fen).toBe(AFTER_E4_E5);
     expect(result.current.entries).toEqual([
       { ply: 0, san: "e4", source: "external" },
       { ply: 1, san: "e5", source: "systemone" },
     ]);
+    expect(result.current.policy).toBe("hybrid");
     expect(result.current.reply).toMatchObject({
       status: "played",
-      reply: { ply: { san: "e5" }, turn: { id: "turn-1" }, fenBefore: AFTER_E4 },
+      reply: {
+        ply: { san: "e5" },
+        turn: { id: "turn-1" },
+        fenBefore: AFTER_E4,
+        stages: { kind: "pipeline", systemOne: true, llm: true, certain: true },
+      },
     });
-    expect(result.current.pendingTurn).toBe(true);
+    expect(result.current.pendingTurn).toBe(false);
     expect(result.current.error).toBe("nope");
+  });
+
+  it("shows a pending turn with what it already produced, stopped when no run is loading", () => {
+    const open = turn({
+      id: "turn-2",
+      status: "pending",
+      ply: null,
+      initial_allowed: ["g1f3", "d2d4"],
+      opened_message_id: "h",
+    });
+    const result1 = live({ turn_id: "turn-2" });
+    resetFake({ ...E4_E5, turns: [...E4_E5.turns, open], systemone_live: result1 }, [
+      new HumanMessage({ id: "h", content: "go" }),
+      new AIMessage({ id: "a", content: "So far" }),
+    ]);
+    const { result } = renderHook(() => useGame("", WHITE));
+    expect(result.current.pendingTurn).toBe(true);
+    expect(result.current.systemOneLive).toBe(result1);
+    expect(result.current.reply).toEqual({
+      status: "pending",
+      activity: "stopped",
+      error: null,
+      turn: open,
+      systemOne: result1,
+      analysis: "So far",
+      fenBefore: AFTER_E4_E5,
+      stages: { kind: "pipeline", systemOne: true, llm: true, certain: true },
+    });
   });
 
   it("names moves without plies from the replay, and falls back to UCI", () => {
@@ -206,20 +236,136 @@ describe("useGame", () => {
     expect(result.current.pendingMove).toBeNull();
   });
 
-  it("thinks for the whole run, streaming the analysis once it has text", () => {
+  it("thinks for the whole run: in flight, then the turn, System 1, the analysis and the commit", () => {
     resetFake(E4_E5, [new HumanMessage({ id: "h", content: "e2e4" })]);
-    const idle = renderHook(() => useGame("", WHITE));
-    expect(idle.result.current.reply.status).toBe("played");
+    const { result, rerender } = renderHook(() => useGame("", WHITE));
+    expect(result.current.reply.status).toBe("played");
+
+    // The command is in flight: a stand-in turn, with the policy's stages.
     fake.isLoading = true;
-    const started = renderHook(() => useGame("", WHITE));
-    expect(started.result.current.reply).toEqual({ status: "thinking", reasoning: null });
-    fake.messages = [...fake.messages, new AIMessage({ id: "a", content: "Considering e5." })];
-    const busy = renderHook(() => useGame("", WHITE));
-    expect(busy.result.current.reply).toEqual({
-      status: "thinking",
-      reasoning: "Considering e5.",
+    rerender();
+    expect(result.current.reply).toMatchObject({
+      status: "pending",
+      activity: "running",
+      turn: { id: "", calls: [], latency_ms: 0, initial_allowed: [] },
+      systemOne: null,
+      analysis: null,
+      stages: { kind: "pipeline", systemOne: true, llm: true },
     });
-    expect(busy.result.current.isThinking).toBe(true);
+
+    const open = turn({ id: "turn-2", status: "pending", ply: null, opened_message_id: "h2" });
+    const human = new HumanMessage({ id: "h2", content: "go" });
+    fake.values = { ...E4_E5, turns: [...E4_E5.turns, open] };
+    fake.messages = [...fake.messages, human];
+    rerender();
+    expect(result.current.reply).toMatchObject({ status: "pending", turn: { id: "turn-2" } });
+
+    const result1 = live({ turn_id: "turn-2" });
+    fake.values = { ...fake.values, systemone_live: result1 };
+    rerender();
+    expect(result.current.reply).toMatchObject({ systemOne: result1, analysis: null });
+
+    fake.messages = [...fake.messages, new AIMessage({ id: "a", content: "Considering Nf3." })];
+    rerender();
+    expect(result.current.reply).toMatchObject({
+      systemOne: result1,
+      analysis: "Considering Nf3.",
+    });
+    expect(result.current.isThinking).toBe(true);
+
+    // The run fails: the turn stays open with its progress.
+    fake.isLoading = false;
+    rerender();
+    expect(result.current.reply).toMatchObject({
+      status: "pending",
+      activity: "stopped",
+      systemOne: result1,
+      analysis: "Considering Nf3.",
+    });
+
+    // Retry resumes it, keeping both.
+    fake.isLoading = true;
+    rerender();
+    expect(result.current.reply).toMatchObject({
+      activity: "running",
+      systemOne: result1,
+      analysis: "Considering Nf3.",
+    });
+
+    // The commit.
+    const nf3 = ply({
+      ply: 2,
+      side: "white",
+      uci: "g1f3",
+      san: "Nf3",
+      source: "llm",
+      turn_id: "turn-2",
+      message_id: "a",
+      analysis: "Considering Nf3.",
+    });
+    fake.values = {
+      ...fake.values,
+      moves: [...E4_E5.moves, "g1f3"],
+      plies: [...E4_E5.plies, nf3],
+      turns: [E4_E5.turns[0], { ...open, status: "committed", ply: 2 }],
+    };
+    fake.isLoading = false;
+    rerender();
+    expect(result.current.reply).toMatchObject({
+      status: "played",
+      reply: { ply: { san: "Nf3" } },
+    });
+    expect(result.current.systemOneLive).toBeNull();
+  });
+
+  it("shows a commit that lands while the run is still loading, never the stand-in turn", async () => {
+    resetFake(E4_E5, [new HumanMessage({ id: "h", content: "e2e4" })]);
+    let finish: () => void = () => {};
+    fake.submit = vi.fn(() => new Promise<void>((resolve) => (finish = resolve)));
+    const { result, rerender } = renderHook(() => useGame("", WHITE));
+    act(() => void result.current.play("g1f3", "X"));
+    fake.isLoading = true;
+    rerender();
+    expect(result.current.reply).toMatchObject({ status: "pending", turn: { id: "" } });
+    // A forced reply commits; the run hasn't stopped loading yet.
+    const forced = turn({ id: "turn-2", initial_allowed: ["e8e7"], ply: 2 });
+    const kE7 = ply({ ply: 2, uci: "e8e7", san: "Ke7", source: "forced", turn_id: "turn-2" });
+    fake.values = {
+      ...E4_E5,
+      moves: [...E4_E5.moves, "e8e7"],
+      plies: [...E4_E5.plies, kE7],
+      turns: [...E4_E5.turns, forced],
+    };
+    rerender();
+    expect(result.current.reply).toMatchObject({
+      status: "played",
+      reply: { ply: { san: "Ke7" }, stages: { kind: "forced" } },
+    });
+    await act(async () => finish());
+  });
+
+  it("shows the commit of a run it found already running, never the stand-in turn", () => {
+    const forced = turn({ id: "turn-2", status: "pending", ply: null, initial_allowed: ["e8e7"] });
+    resetFake({ ...E4_E5, turns: [...E4_E5.turns, forced] });
+    fake.isLoading = true;
+    const { result, rerender } = renderHook(() => useGame("", WHITE));
+    expect(result.current.reply).toMatchObject({ status: "pending", stages: { kind: "forced" } });
+    const kE7 = ply({ ply: 2, uci: "e8e7", san: "Ke7", source: "forced", turn_id: "turn-2" });
+    fake.values = {
+      ...E4_E5,
+      moves: [...E4_E5.moves, "e8e7"],
+      plies: [...E4_E5.plies, kE7],
+      turns: [...E4_E5.turns, { ...forced, status: "committed", ply: 2 }],
+    };
+    rerender();
+    expect(result.current.reply).toMatchObject({
+      status: "played",
+      reply: { ply: { san: "Ke7" }, stages: { kind: "forced" } },
+    });
+    // The next command is in flight again until its own turn opens.
+    act(() => void result.current.start());
+    rerender();
+    expect(result.current.reply).toMatchObject({ status: "pending", turn: { id: "" } });
   });
 
   it("reports loading from either stream flag", () => {

@@ -70,14 +70,16 @@ describe("App", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Load more" }));
     await waitFor(() => expect(screen.getAllByRole("button", { name: /1-0/ })).toHaveLength(2));
     const [first, second] = screen.getAllByRole("button", { name: /1-0/ });
+    // Each game opens on its last move, White's own: the agent's is the one before.
+    const back = () => fireEvent.keyDown(window, { key: "ArrowLeft" });
     fireEvent.click(first);
-    fireEvent.click(screen.getByRole("button", { name: "Hide top moves" }));
-    fireEvent.click(screen.getByRole("button", { name: "Hide reasoning" }));
+    back();
+    fireEvent.click(screen.getByRole("button", { name: "Hide LLM" }));
     fireEvent.click(screen.getByRole("tab", { name: "Export" }));
     fireEvent.click(second);
     expect(screen.getByRole("tab", { name: "Export" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("button", { name: "Show top moves" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Show reasoning" })).toBeInTheDocument();
+    back();
+    expect(screen.getByRole("button", { name: "Show LLM" })).toBeInTheDocument();
   });
 
   it("explains a thread without a game record", async () => {

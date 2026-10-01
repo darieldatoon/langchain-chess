@@ -62,15 +62,16 @@ Macaw tooltips, hence the provider.
 
 Everything but the fixtures imports from the package root.
 
-| Import                                                | What it is                                                                                                      |
-| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `Board`, `BoardControls`                              | The board (click or drag to move, arrows, highlights, a promotion picker) and first/previous/next/last controls |
-| `MoveList`, `usePlyCursor`                            | The numbered move list, and the position shown: controls and arrow keys, following the game at its end          |
-| `PlyDetails`, `Analysis`                              | Who played a move, with model, latency, cost and System 1's top moves; the LLM's reasoning as Markdown          |
-| `MoveBar`                                             | One of System 1's moves: SAN, probability bar and percentage                                                    |
-| Types (`src/types.ts`)                                | `ChessState`, `Ply`, `TurnRecord`, `ChessContext` and friends, mirrored by hand from the Python packages        |
-| Helpers (`src/selectors.ts`, `chess.ts`, `format.ts`) | Pure functions: turn cost and System 1 telemetry, legal moves and positions, labels and formatting              |
-| `@langchain-chess/chess-ui/testing`                   | Fixture builders for plies, turns and game states                                                               |
+| Import                                                | What it is                                                                                                           |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `Board`, `BoardControls`                              | The board (click or drag to move, arrows, highlights, a promotion picker) and first/previous/next/last controls      |
+| `MoveList`, `usePlyCursor`                            | The numbered move list, and the position shown: controls and arrow keys, following the game at its end               |
+| `PlyDetails`, `Analysis`                              | The agent's turn stage by stage, with each stage's model time and cost and the game so far; the analysis as Markdown |
+| `MoveBar`                                             | One of System 1's moves: SAN, probability bar and percentage                                                         |
+| Types (`src/types.ts`)                                | `ChessState`, `Ply`, `TurnRecord`, `ChessContext` and friends, mirrored by hand from the Python packages             |
+| Helpers (`src/selectors.ts`, `chess.ts`, `format.ts`) | Pure functions: turn cost and System 1 telemetry, legal moves and positions, labels and formatting                   |
+| `stages.ts`, `turnStats.ts`, `turnText.ts`            | Pure functions behind the reply card: a turn's stages and their status, model time, cost and tokens, its words       |
+| `@langchain-chess/chess-ui/testing`                   | Fixture builders for plies, turns and game states                                                                    |
 
 `src/types.ts` must change with the Python state in [`libs/chess`](../../libs/chess) and
 [`libs/systemone`](../../libs/systemone); nothing checks them against each other.

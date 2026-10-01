@@ -270,6 +270,37 @@ def test_desktop_plays_a_move_by_dragging(server: str, page: Page):
     no_sideways_scroll(page, "[data-slot=table]")
 
 
+def test_the_reply_card_shows_the_turn_stage_by_stage(server: str, page: Page):
+    page.goto(f"{server}/ui/")
+    page.get_by_role("button", name="Play", exact=True).click()
+    square(page, "e2").click()
+    square(page, "e4").click()
+    card = page.get_by_label("last reply", exact=True)
+    expect(card.get_by_text("LLM chose")).to_be_visible()
+    system_one = card.get_by_role("region", name="System 1 stage")
+    expect(system_one.get_by_label("system 1 moves")).to_be_visible()
+    expect(system_one.get_by_text("asked the LLM")).to_be_visible()
+    expect(card.get_by_role("region", name="LLM stage")).to_contain_text("MOVE:")
+    expect(card.get_by_label("game so far")).to_contain_text("1 move")
+
+
+@pytest.mark.parametrize("page", ["portrait"], indirect=True)
+def test_a_phone_customizes_the_reply_card_with_taps(server: str, page: Page):
+    open_a_game(server, page)
+    square(page, "e2").tap()
+    square(page, "e4").tap()
+    card = page.get_by_label("last reply", exact=True)
+    expect(card.get_by_text("LLM chose")).to_be_visible()
+    for name in ("Customize", "Hide System 1", "Hide LLM"):
+        at_least_a_tap(card.get_by_role("button", name=name, exact=True))
+    card.get_by_role("button", name="Customize", exact=True).tap()
+    tokens = page.get_by_role("switch", name="Token details")
+    expect(tokens).to_be_visible()
+    tokens.tap()
+    expect(card.get_by_label("token details").first).to_be_visible()
+    no_sideways_scroll(page)
+
+
 @pytest.mark.parametrize("page", ["landscape"], indirect=True)
 def test_a_phone_on_its_side_never_scrolls_sideways(server: str, page: Page):
     open_a_game(server, page)

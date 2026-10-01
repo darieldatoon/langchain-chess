@@ -1,5 +1,6 @@
 // How the board is shown and driven: one record both apps keep, the web app in localStorage
 // and the review app for the session. Pure.
+import { DEFAULT_TURN_VIEW, type TurnView } from "./types";
 
 export type Animation = "off" | "fast" | "normal";
 export type MoveInput = "both" | "click" | "drag";
@@ -71,5 +72,29 @@ export function sanitizeDisplayPrefs(stored: unknown): DisplayPrefs {
       : d.moveInput,
     autoQueen: flag("autoQueen"),
     tabTitle: flag("tabTitle"),
+  };
+}
+
+/**
+ * A stored reply-card view, field by field over the defaults. Migrates the older `PlyView`
+ * (`{ reasoning, topMoves }`), stored under the same key.
+ */
+export function sanitizeTurnView(stored: unknown): TurnView {
+  const record = isRecord(stored) ? stored : {};
+  const open = isRecord(record.open) ? record.open : {};
+  const show = isRecord(record.show) ? record.show : {};
+  const d = DEFAULT_TURN_VIEW;
+  const flag = (value: unknown, fallback: boolean) =>
+    typeof value === "boolean" ? value : fallback;
+  return {
+    open: { systemOne: flag(open.systemOne, d.open.systemOne), llm: flag(open.llm, d.open.llm) },
+    show: {
+      topMoves: flag(show.topMoves, flag(record.topMoves, d.show.topMoves)),
+      gate: flag(show.gate, d.show.gate),
+      analysis: flag(show.analysis, flag(record.reasoning, d.show.analysis)),
+      stageStats: flag(show.stageStats, d.show.stageStats),
+      gameSoFar: flag(show.gameSoFar, d.show.gameSoFar),
+      tokens: flag(show.tokens, d.show.tokens),
+    },
   };
 }

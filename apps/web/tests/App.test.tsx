@@ -12,18 +12,19 @@ import {
   loadSetup,
   saveDisplayPrefs,
   saveAppSettings,
-  savePlyView,
+  saveTurnView,
   saveSetup,
   VIEW_KEY,
 } from "../src/storage";
 import { fake, lastOptions, optionsLog, resetFake } from "./support/fakeStream";
-import { AFTER_E4, E4_E5, ply, turn } from "@langchain-chess/chess-ui/testing";
+import { AFTER_E4, E4_E5, live, ply, turn } from "@langchain-chess/chess-ui/testing";
 import { WEB_TRACE } from "../src/useGame";
 import { openMenu } from "./support/menus";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders as render } from "./support/renderApp";
 import {
   DEFAULT_CONTEXT,
+  DEFAULT_TURN_VIEW,
   START_FEN,
   type ChessContext,
   type ChessValues,
@@ -773,14 +774,14 @@ describe("the game screen", () => {
     onThread("abc", { moves: ["e2e4"], plies: [ply()], turns: [turn({ status: "pending" })] });
     fake.isLoading = true;
     render(<App />);
-    expect(screen.getByText("Thinking…")).toBeInTheDocument();
     const card = screen.getByLabelText("last reply");
+    expect(within(card).getByText("Thinking…")).toBeInTheDocument();
     expect(card).toHaveAttribute("aria-busy", "true");
     // Plain text until the lazy Markdown renderer has loaded.
     expect(card).toHaveTextContent("**e5** mirrors the centre.");
     expect(await screen.findByText("e5", { selector: "strong" })).toBeInTheDocument();
     expect(card).toHaveTextContent("e5 mirrors the centre.");
-    expect(within(card).getByText("Latency")).toBeInTheDocument();
+    expect(within(card).getByRole("region", { name: "LLM stage" })).toBeInTheDocument();
     expect(board()).toHaveAttribute("data-draggable", "false");
   });
 
@@ -793,8 +794,8 @@ describe("the game screen", () => {
     expect(screen.queryByText("System 1 played")).not.toBeInTheDocument();
   });
 
-  it("keeps the reasoning hidden while it streams when the player hid it", () => {
-    savePlyView({ reasoning: false, topMoves: true });
+  it("keeps the analysis hidden while it streams when the player hid it", () => {
+    saveTurnView({ ...DEFAULT_TURN_VIEW, show: { ...DEFAULT_TURN_VIEW.show, analysis: false } });
     resetFake({}, [
       new HumanMessage({ id: "msg-1", content: "e2e4" }),
       new AIMessage({ id: "a1", content: "Weighing e5." }),
@@ -803,22 +804,44 @@ describe("the game screen", () => {
     fake.isLoading = true;
     render(<App />);
     expect(screen.queryByText("Weighing e5.")).not.toBeInTheDocument();
-    expect(button("Show reasoning").querySelector(".animate-spin")).not.toBeNull();
+    expect(screen.getByRole("region", { name: "LLM stage" })).toBeInTheDocument();
   });
 
-  it("remembers the reply card's toggles across reloads", async () => {
+  it("shows System 1's result mid-turn, and keeps it with the analysis when the run fails", () => {
+    const open = turn({ status: "pending", ply: null, opened_message_id: "msg-1" });
+    resetFake({}, [
+      new HumanMessage({ id: "msg-1", content: "e2e4" }),
+      new AIMessage({ id: "a1", content: "Weighing e5." }),
+    ]);
+    onThread("abc", {
+      moves: ["e2e4"],
+      plies: [ply()],
+      turns: [open],
+      systemone_live: live({ turn_id: open.id }),
+    });
+    fake.error = new Error("Gateway timeout");
+    render(<App />);
+    const card = screen.getByLabelText("last reply");
+    expect(within(card).getByText("Stopped")).toBeInTheDocument();
+    expect(within(card).getByLabelText("system 1 moves")).toBeInTheDocument();
+    expect(within(card).getByText("Weighing e5.")).toBeInTheDocument();
+    const llm = within(card).getByRole("region", { name: "LLM stage" });
+    expect(within(llm).getByText("Failed")).toBeInTheDocument();
+    expect(within(llm).getByText(/Gateway timeout/)).toBeInTheDocument();
+    expect(button("Retry")).toBeInTheDocument();
+  });
+
+  it("remembers the reply card's view across reloads", async () => {
     onThread("abc", E4_E5);
     const first = render(<App />);
-    await click("Hide top moves");
-    await click("Hide reasoning");
+    await click("Hide System 1");
     expect(JSON.parse(window.localStorage.getItem(VIEW_KEY)!)).toEqual({
-      reasoning: false,
-      topMoves: false,
+      ...DEFAULT_TURN_VIEW,
+      open: { systemOne: false, llm: true },
     });
     first.unmount();
     render(<App />);
-    expect(button("Show top moves")).toBeInTheDocument();
-    expect(button("Show reasoning")).toBeInTheDocument();
+    expect(button("Show System 1")).toBeInTheDocument();
     expect(screen.queryByLabelText("system 1 moves")).not.toBeInTheDocument();
   });
 
@@ -854,7 +877,7 @@ describe("the game screen", () => {
     };
     fireEvent.click(button("Settings"));
     fireEvent.click(button("Cancel"));
-    expect(screen.getByText("Thinking…")).toBeInTheDocument();
+    expect(screen.getAllByText("Thinking…").length).toBeGreaterThan(0);
     const old = optionsLog.at(-1) as { onThreadId: (id: string) => void };
 
     await click("New game");
@@ -874,7 +897,8 @@ describe("the game screen", () => {
     expect(board()).toHaveAttribute("data-position", START_FEN);
     expect(board()).toHaveAttribute("data-orientation", "black");
     expect(screen.queryByText("Thinking…")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("last reply")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("last reply")).toHaveTextContent("No reply yet.");
+    expect(screen.queryByLabelText("game so far")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("result")).not.toBeInTheDocument();
     expect(screen.getByText("No moves yet.")).toBeInTheDocument();
     expect(button("Start")).toBeInTheDocument();
@@ -931,7 +955,9 @@ describe("layouts", () => {
 
   const PHONE_GAME: ChessValues = {
     ...E4_E5_NF3,
-    plies: E4_E5_NF3.plies!.map((p) => (p.ply === 1 ? { ...p, analysis: "Solid." } : p)),
+    plies: E4_E5_NF3.plies!.map((p) =>
+      p.ply === 1 ? { ...p, source: "llm", analysis: "Solid." } : p,
+    ),
   };
   it("keeps first and last move in a phone's board menu, and settings in its app menu", async () => {
     sized(390, 780);
@@ -963,14 +989,14 @@ describe("layouts", () => {
     fireEvent.click(button("Back to live"));
 
     const line = screen.getByLabelText("reply line");
-    expect(line).toHaveTextContent("System 1 playede5");
+    expect(line).toHaveTextContent("LLM chosee5");
     fireEvent.click(screen.getByRole("tab", { name: "Opponent" }));
     expect(screen.getByRole("tab", { name: "Opponent" })).toHaveAttribute("aria-selected", "true");
-    fireEvent.click(within(line).getByRole("button", { name: "Show reasoning" }));
+    fireEvent.click(within(line).getByRole("button", { name: "Show analysis" }));
     expect(screen.getByRole("tab", { name: "Reply" })).toHaveAttribute("aria-selected", "true");
-    // Hidden reasoning is opened, not just its tab.
-    fireEvent.click(button("Hide reasoning"));
-    fireEvent.click(within(line).getByRole("button", { name: "Show reasoning" }));
+    // A hidden analysis is opened, not just its tab.
+    fireEvent.click(button("Hide LLM"));
+    fireEvent.click(within(line).getByRole("button", { name: "Show analysis" }));
     expect(screen.getByText("Solid.")).toBeInTheDocument();
   });
 
@@ -981,7 +1007,7 @@ describe("layouts", () => {
     expect(screen.getByLabelText("result")).toHaveTextContent("½-½Draw by stalemate");
   });
 
-  it("says a phone's opponent is thinking, or hasn't replied, in the reply line", () => {
+  it("says a phone's opponent is thinking, stopped, or hasn't replied, in the reply line", () => {
     sized(390, 780);
     onThread("abc", { moves: ["e2e4"], plies: [ply()], turns: [] });
     const view = render(<App />);
@@ -992,8 +1018,14 @@ describe("layouts", () => {
     ).toBeGreaterThan(0);
     view.unmount();
     fake.isLoading = true;
-    render(<App />);
+    const thinking = render(<App />);
     expect(screen.getAllByText("Thinking…").length).toBeGreaterThanOrEqual(2);
+    thinking.unmount();
+    // A run that failed mid-turn leaves it open, and stopped.
+    fake.isLoading = false;
+    onThread("abc", { moves: ["e2e4"], plies: [ply()], turns: [turn({ status: "pending" })] });
+    render(<App />);
+    expect(screen.getAllByText("Stopped").length).toBeGreaterThanOrEqual(2);
   });
 
   it("shows the empty board behind New game on a phone and a wide screen", () => {
