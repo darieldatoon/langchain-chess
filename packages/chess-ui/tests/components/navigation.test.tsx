@@ -107,11 +107,18 @@ describe("StepButton", () => {
 describe("BackToLive", () => {
   it("says where the reader is and goes back to the latest move", () => {
     const onGo = vi.fn();
-    const { rerender } = renderWithProviders(<BackToLive index={2} last={5} onGo={onGo} />);
+    const { rerender } = renderWithProviders(
+      <BackToLive index={2} last={5} over={false} onGo={onGo} />,
+    );
     expect(screen.getByRole("status")).toHaveTextContent("Viewing move 2");
     fireEvent.click(button("Back to live"));
     expect(onGo).toHaveBeenCalledWith(5);
-    rerender(<BackToLive index={5} last={5} onGo={onGo} />);
+    rerender(<BackToLive index={5} last={5} over={false} onGo={onGo} />);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("stays out of a finished game", () => {
+    renderWithProviders(<BackToLive index={2} last={5} over onGo={vi.fn()} />);
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 });

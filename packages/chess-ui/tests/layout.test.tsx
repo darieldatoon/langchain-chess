@@ -204,6 +204,7 @@ const slots = {
   bottomStrip: <p>bottom</p>,
   evalBar: <p>eval</p>,
   table: <p>table</p>,
+  underTable: <p>under table</p>,
   under: <p>under</p>,
   phoneBar: <p>bar</p>,
   phoneMoves: <p>moves</p>,
@@ -219,10 +220,12 @@ describe("GameShell", () => {
     expect(slot("left")).toHaveStyle({ width: "280px" });
     expect(slot("board")).toHaveStyle({ width: "300px", height: "300px" });
     expect(slot("top-strip")).toHaveStyle({ height: "32px" });
-    expect(slot("table")).toHaveStyle({ width: "250px", height: "372px" });
+    expect(slot("table")).toHaveStyle({ height: "372px" });
+    expect(slot("table")!.parentElement).toHaveStyle({ width: "250px" });
     expect(slot("eval-bar")).toHaveStyle({ width: "48px", height: "300px" });
     // Under the board, as wide as it.
     expect(slot("under")).toHaveStyle({ width: "300px" });
+    expect(slot("under-table")!.previousElementSibling).toBe(slot("table"));
     expect(screen.queryByText("bar")).not.toBeInTheDocument();
   });
 
@@ -231,11 +234,23 @@ describe("GameShell", () => {
     expect(screen.queryByText("left")).not.toBeInTheDocument();
     expect(slot("under")).not.toHaveStyle({ width: "300px" });
     expect(screen.getByText("table")).toBeInTheDocument();
+    expect(slot("under-table")!.nextElementSibling).toBe(slot("under"));
   });
 
   it("stacks everything on phones", () => {
     render(<GameShell allocation={allocation("phone")} {...slots} />);
-    const order = ["top", "board", "bottom", "bar", "moves", "reply", "table", "tabs", "under"];
+    const order = [
+      "top",
+      "board",
+      "bottom",
+      "bar",
+      "moves",
+      "reply",
+      "table",
+      "under table",
+      "tabs",
+      "under",
+    ];
     const texts = [...document.querySelectorAll("p")].map((p) => p.textContent);
     expect(texts.filter((t) => order.includes(t!))).toEqual(order);
     expect(screen.queryByText("left")).not.toBeInTheDocument();
@@ -251,6 +266,7 @@ describe("GameShell", () => {
       />,
     );
     expect(slot("table")).toBeNull();
+    expect(slot("under-table")).toBeNull();
     expect(slot("under")).toBeNull();
     expect(slot("eval-bar")).toBeNull();
   });

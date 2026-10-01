@@ -32,8 +32,7 @@ That starts `langgraph dev` on `:2024` and this app on `:5173`, then prints the 
    there. "Game so far" adds up the cost and average model time. The chevrons open and close
    each stage, and the ⚙ button chooses what the card shows; both stay as you left them.
 4. **After the game**, Rematch swaps colours and keeps the opponent. New game starts over.
-   Any game that recorded its settings offers Rematch and Export under Opponent, mid-game too.
-5. **Share an opponent.** Export in the New game dialog (or under Opponent) saves the settings
+5. **Share an opponent.** Export in the New game dialog saves the settings
    as `opponent.json`, the file `lcchess --config`, UCI's `Config` and the evals read. Import
    loads one, keeping the side you picked.
 

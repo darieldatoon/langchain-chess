@@ -119,17 +119,22 @@ export function BoardControls({ index, last, onGo, menu, compact = false }: Prop
   );
 }
 
-/** Above the navigation while the cursor isn't on the latest move: why the board is locked. */
+/**
+ * Above the navigation while the cursor isn't on the latest move of a game in progress: why the
+ * board is locked. A finished game has nothing live to go back to.
+ */
 export function BackToLive({
   index,
   last,
+  over,
   onGo,
 }: {
   index: number;
   last: number;
+  over: boolean;
   onGo: (index: number) => void;
 }) {
-  if (index >= last) return null;
+  if (over || index >= last) return null;
   return (
     <div role="status" className="flex items-center justify-between gap-space-2">
       <Text variant="sm" color="secondary" as="span">
