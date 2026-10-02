@@ -29,6 +29,12 @@ html.dark {
   --board-check: color-mix(in srgb, var(--bg-error-strong) 90%, transparent);
 }
 
+/* The black piece images have no light outline, so captured material vanishes on dark surfaces. */
+html.dark .material-black {
+  filter: drop-shadow(0.5px 0 0 var(--text-primary)) drop-shadow(-0.5px 0 0 var(--text-primary))
+    drop-shadow(0 0.5px 0 var(--text-primary)) drop-shadow(0 -0.5px 0 var(--text-primary));
+}
+
 /* Markdown rendered from the LLM reply; element selectors need CSS, so map them to tokens. */
 .markdown {
   @apply text-sm leading-normal text-primary;
