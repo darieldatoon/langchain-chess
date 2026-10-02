@@ -353,8 +353,14 @@ describe("PlayerStrip", () => {
     expect(strip).toHaveTextContent("Your turn");
     expect(strip.querySelector("[data-role=r]")?.children).toHaveLength(1);
     expect(strip.querySelector("[data-role=p]")?.children).toHaveLength(2);
+    expect(strip.querySelector(".material-black")).toBeNull();
     rerender(<PlayerStrip side="black" name="SemIf" fen={fen} showMaterial />);
     expect(screen.getByLabelText("black player")).not.toHaveTextContent("+");
+    rerender(
+      <PlayerStrip side="black" name="SemIf" fen="r3k3/8/8/8/8/8/8/4K3 w - - 0 1" showMaterial />,
+    );
+    const black = screen.getByLabelText("black player");
+    expect(black.querySelector("[data-role=r] > span")).toHaveClass("material-black");
     rerender(<PlayerStrip side="white" name="You" fen={fen} showMaterial={false} />);
     expect(screen.queryByLabelText("material")).not.toBeInTheDocument();
   });

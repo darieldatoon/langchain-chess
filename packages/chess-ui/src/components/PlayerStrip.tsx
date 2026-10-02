@@ -41,7 +41,15 @@ export function PlayerStrip({ side, name, fen, showMaterial, status, className }
               ? [
                   <span key={role} className="flex items-center" data-role={role}>
                     {Array.from({ length: extra[role] }, (_, i) => (
-                      <span key={i} aria-hidden className={cn("block size-4", i > 0 && "-ml-2")}>
+                      <span
+                        key={i}
+                        aria-hidden
+                        className={cn(
+                          "block size-4",
+                          i > 0 && "-ml-2",
+                          side === "black" && "material-black",
+                        )}
+                      >
                         {defaultPieces[`${colour}${role.toUpperCase()}`]()}
                       </span>
                     ))}
