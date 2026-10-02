@@ -15,7 +15,7 @@ import uuid
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, replace
 from time import monotonic
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 import chess
 from langgraph.checkpoint.memory import InMemorySaver
@@ -90,8 +90,19 @@ type Factory = Callable[[ChessContext, Checkpointer], CompiledStateGraph]
 
 RUN = "agent-run"
 PLACEHOLDER = "Type a move (SAN or UCI), or click the board"
-WIDE = 160
-"""Columns from which Last Reply gets its own column on the left, as on the web's `full`."""
+type Layout = Literal["full", "wide", "phone"]
+"""The web's layouts: Last Reply on the left; the table beside the board; everything stacked."""
+
+FULL = 160
+WIDE = 88
+"""The 44-column table beside the smallest board with two-row squares, 42 columns, and its
+padding. Narrower, the board would shrink to one-row squares or vanish, so it stacks instead."""
+
+
+def layout_for(width: int) -> Layout:
+    if width >= FULL:
+        return "full"
+    return "wide" if width >= WIDE else "phone"
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,6 +112,12 @@ class Game:
     context: ChessContext
     side: Side
     start: str = chess.STARTING_FEN
+
+
+class Main(Grid):
+    def on_resize(self, event: events.Resize) -> None:
+        # Stacked and already scrolling, a change of height alone never resizes the column.
+        self.query_one(BoardColumn).fit()
 
 
 class ConfirmResign(ModalScreen[bool]):
@@ -134,8 +151,11 @@ class ChessApp(App[None]):
     TITLE = "LangChain Chess"
     CSS = """
     #main { layout: grid; grid-size: 3 1; grid-columns: 44 1fr 38; height: 1fr; }
-    #main.-narrow { grid-size: 2 2; grid-columns: 1fr 44; grid-rows: 2fr 3fr; }
-    #main.-narrow #board-col { row-span: 2; }
+    #main.-wide { grid-size: 2 2; grid-columns: 1fr 44; grid-rows: 2fr 3fr; }
+    #main.-wide #board-col { row-span: 2; }
+    #main.-phone { layout: vertical; overflow-y: auto; scrollbar-size-vertical: 1; }
+    #main.-phone > * { height: auto; }
+    #main.-phone #moves { height: auto; max-height: 12; }
     #reply { height: 1fr; }
     #table { height: 1fr; padding: 0 1; border: round $border; }
     #headline { margin-bottom: 1; }
@@ -203,7 +223,7 @@ class ChessApp(App[None]):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        with Grid(id="main"):
+        with Main(id="main"):
             yield ReplyPanel(id="reply")
             with BoardColumn(id="board-col"):
                 yield PlayerStrip(id="top")
@@ -243,15 +263,15 @@ class ChessApp(App[None]):
 
     def on_resize(self, event: events.Resize) -> None:
         main = self.query_one("#main", Grid)
-        narrow = event.size.width < WIDE
-        if narrow == main.has_class("-narrow"):
-            return
-        main.set_class(narrow, "-narrow")
+        layout = layout_for(event.size.width)
+        main.set_class(layout == "wide", "-wide")
+        main.set_class(layout == "phone", "-phone")
         reply = self.query_one("#reply", ReplyPanel)
-        if narrow:
-            main.move_child(reply, after=self.query_one("#table"))
-        else:
+        on_left = main.children[0] is reply
+        if layout == "full" and not on_left:
             main.move_child(reply, before=self.query_one("#board-col"))
+        elif layout != "full" and on_left:
+            main.move_child(reply, after=self.query_one("#table"))
 
     # ---- what the screen shows ----------------------------------------------------------------
 

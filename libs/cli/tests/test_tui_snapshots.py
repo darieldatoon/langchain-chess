@@ -191,3 +191,7 @@ def test_advanced_settings_with_an_invalid_field(snap_compare, monkeypatch):
 
 def test_a_short_terminal(snap_compare, monkeypatch):
     assert snap_compare(hybrid_game(monkeypatch), terminal_size=(100, 30), run_before=play_two)
+
+
+def test_a_narrow_terminal_stacks_the_table_under_the_board(snap_compare, monkeypatch):
+    assert snap_compare(hybrid_game(monkeypatch), terminal_size=(50, 30), run_before=play_two)

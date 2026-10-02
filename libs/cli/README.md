@@ -58,9 +58,12 @@ mise run dev:tui -- --fen "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1"   # from a position
 
 The screen follows the web app's: Last Reply on the left (under the moves below 160 columns),
 the board between the two players' strips, and the opening, the moves and the game's controls
-on the right. The flags set up the first game; `ctrl+n` opens the New Game screen, which picks
+on the right. Below 88 columns everything stacks under the board, and the screen scrolls. The
+flags set up the first game; `ctrl+n` opens the New Game screen, which picks
 the side, the starting position, System 1, the LLM and the Advanced settings as the web app's
 dialog does. Rematch keeps the opponent and swaps sides.
+
+![A 50-column terminal: the board first, the moves under it](../../docs/images/tui-narrow.png)
 
 ![The New Game screen](../../docs/images/tui-new-game.png)
 
