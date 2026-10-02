@@ -7,7 +7,7 @@ model, errors and SAN go in as plain `Content`, never as markup.
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from time import monotonic
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import chess
 from textual import events
@@ -147,9 +147,14 @@ class BoardColumn(Vertical):
     """
 
     def on_resize(self, event: events.Resize) -> None:
+        self.fit()
+
+    def fit(self) -> None:
         board = self.query_one(ChessBoard)
-        size = self.content_size
-        geo = geometry(size.width, size.height - 2, white_bottom=board.state.white_bottom)
+        # The parent's visible height, not the column's own: stacked, the column is as tall as
+        # the board it holds.
+        room = cast("Widget", self.parent).scrollable_content_region.height
+        geo = geometry(self.content_size.width, room - 2, white_bottom=board.state.white_bottom)
         board.styles.width, board.styles.height = geo.width, geo.height
         for strip in self.query(PlayerStrip):
             strip.styles.width = geo.width

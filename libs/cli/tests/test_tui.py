@@ -10,7 +10,7 @@ from textual.worker import WorkerCancelled, WorkerState
 
 from langchain_chess import create_chess_agent
 from langchain_chess.testing import ScriptedModel
-from langchain_chess_cli.tui.app import ChessApp, ConfirmResign, Game
+from langchain_chess_cli.tui.app import ChessApp, ConfirmResign, Game, layout_for
 from langchain_chess_cli.tui.board import ChessBoard
 from langchain_chess_cli.tui.newgame import NewGameScreen
 from langchain_chess_cli.tui.widgets import PlayerStrip, Stage
@@ -457,20 +457,50 @@ async def test_export_from_the_command_palette(monkeypatch, tmp_path):
         assert opened[1] == copied[1]
 
 
-async def test_last_reply_moves_under_the_table_on_a_narrow_terminal():
+async def test_last_reply_moves_under_the_table_below_the_full_layout():
     app, _model = app_with([])
     async with app.run_test(size=(170, 48)) as pilot:
         main = app.query_one("#main")
         assert [w.id for w in main.children] == ["reply", "board-col", "table"]
         await pilot.resize_terminal(120, 40)
         await pilot.pause()
-        assert main.has_class("-narrow")
+        assert main.has_class("-wide")
         assert [w.id for w in main.children] == ["board-col", "table", "reply"]
-        await pilot.resize_terminal(121, 40)
+        await pilot.resize_terminal(60, 40)
         await pilot.pause()
+        assert main.has_class("-phone")
+        assert not main.has_class("-wide")
+        assert [w.id for w in main.children] == ["board-col", "table", "reply"]
         await pilot.resize_terminal(170, 48)
         await pilot.pause()
+        assert main.classes == frozenset()
         assert [w.id for w in main.children] == ["reply", "board-col", "table"]
+
+
+def test_the_layout_follows_the_width():
+    assert [layout_for(w) for w in (40, 87, 88, 159, 160)] == [
+        "phone",
+        "phone",
+        "wide",
+        "wide",
+        "full",
+    ]
+
+
+async def test_a_stacked_board_keeps_its_full_size_and_fits_the_height():
+    app, _model = app_with([])
+    async with app.run_test(size=(50, 30)) as pilot:
+        await pilot.pause()
+        board = app.query_one("#board")
+        assert board.size == (42, 17)
+        assert app.query_one("#board-col").size.height == 19
+        # Already scrolling, so only the height changes: nothing resizes the column itself.
+        await pilot.resize_terminal(50, 14)
+        await pilot.pause()
+        assert board.size == (26, 9)
+        await pilot.resize_terminal(50, 30)
+        await pilot.pause()
+        assert board.size == (42, 17)
 
 
 async def test_stages_open_and_close_and_the_theme_switches():
