@@ -5,6 +5,7 @@ Typing any other character hands it to the notation input. Layout and drawing ar
 `ChessBoard` holds the interaction state.
 """
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import ClassVar
 
@@ -22,28 +23,34 @@ from textual.widget import Widget
 from textual.widgets import Button, Label
 
 from langchain_chess_cli.tui.pieces import piece_lines, piece_size
+from langchain_chess_cli.tui.theme import DARK_BOARD
 
 LABEL_WIDTH = 2
 PROMOTIONS = (("q", "Queen"), ("r", "Rook"), ("b", "Bishop"), ("n", "Knight"))
-ROLES = (
-    "light",
-    "dark",
-    "last-light",
-    "last-dark",
-    "cursor",
-    "selected",
-    "capture",
-    "check",
-    "white-piece",
-    "black-piece",
-    "target",
-    "label",
-)
-"""Each role is a `chess-board--<role>` component class, so CSS and themes can restyle it."""
+SQUARES = ("light", "dark", "last-move", "cursor", "selected", "capture", "check")
+"""Roles drawn as a square's background, from the theme's `board-<role>` variables."""
+INKS = ("white-piece", "black-piece", "target", "label")
+"""Roles drawn as a foreground colour, from the theme's `board-<role>` variables."""
+NOTATION = frozenset("abcdefghKQRBNO0")
+"""What a typed move or `go` starts with; typing on moves focus to the input, which takes the
+rest. Other keys are left to the app's bindings."""
 
 type Palette = dict[str, Style]
 """A rich style per role."""
 type Line = list[Segment]
+
+
+def palette(variables: Mapping[str, str]) -> Palette:
+    """The board's styles from a theme's variables; a theme without them gets the dark board's."""
+
+    def color(role: str) -> str:
+        return variables.get(f"board-{role}", DARK_BOARD[f"board-{role}"])
+
+    styles = {role: Style(bgcolor=color(role)) for role in SQUARES}
+    styles |= {role: Style(color=color(role)) for role in INKS}
+    styles["white-piece"] += Style(bold=True)
+    styles["black-piece"] += Style(bold=True)
+    return styles
 
 
 @dataclass(frozen=True, slots=True)
@@ -110,7 +117,7 @@ def background_role(square: chess.Square, board: chess.Board, marks: Marks) -> s
     if square in marks.targets and board.piece_at(square) is not None:
         return "capture"
     if marks.last_move is not None and square in marks.last_move:
-        return "last-light" if light else "last-dark"
+        return "last-move"
     return "light" if light else "dark"
 
 
@@ -206,23 +213,9 @@ class _State:
 
 
 class ChessBoard(Widget, can_focus=True):
-    # chess-tui's default skin, with lichess-like move highlights.
     DEFAULT_CSS = """
     ChessBoard { width: 1fr; height: 1fr; }
-    ChessBoard > .chess-board--light { background: rgb(160, 160, 160); }
-    ChessBoard > .chess-board--dark { background: rgb(128, 95, 69); }
-    ChessBoard > .chess-board--last-light { background: rgb(172, 186, 112); }
-    ChessBoard > .chess-board--last-dark { background: rgb(138, 140, 70); }
-    ChessBoard > .chess-board--cursor { background: rgb(100, 150, 220); }
-    ChessBoard > .chess-board--selected { background: rgb(104, 176, 104); }
-    ChessBoard > .chess-board--capture { background: rgb(206, 140, 96); }
-    ChessBoard > .chess-board--check { background: rgb(205, 82, 82); }
-    ChessBoard > .chess-board--white-piece { color: #ffffff; text-style: bold; }
-    ChessBoard > .chess-board--black-piece { color: #000000; text-style: bold; }
-    ChessBoard > .chess-board--target { color: rgb(55, 55, 55); }
-    ChessBoard > .chess-board--label { color: $text-muted; }
     """
-    COMPONENT_CLASSES: ClassVar[set[str]] = {f"chess-board--{role}" for role in ROLES}
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("up", "cursor('up')", "Cursor", show=False),
         Binding("down", "cursor('down')", "Cursor", show=False),
@@ -293,16 +286,13 @@ class ChessBoard(Widget, can_focus=True):
 
     # ---- drawing ------------------------------------------------------------------------------
 
-    def palette(self) -> Palette:
-        # Partial: a piece's style must carry only its colour, never a background.
-        return {
-            role: self.get_component_rich_style(f"chess-board--{role}", partial=True)
-            for role in ROLES
-        }
-
     def _redraw(self) -> None:
-        self._lines = draw(self.state.board, self.geometry, self.marks(), self.palette())
+        colors = palette(self.app.theme_variables)
+        self._lines = draw(self.state.board, self.geometry, self.marks(), colors)
         self.refresh()
+
+    def on_mount(self) -> None:
+        self.app.theme_changed_signal.subscribe(self, lambda _theme: self._redraw())
 
     def on_resize(self, event: events.Resize) -> None:
         self._redraw()
@@ -315,10 +305,12 @@ class ChessBoard(Widget, can_focus=True):
 
     def render_line(self, y: int) -> Strip:
         # Never an unstyled cell: Textual's NO_COLOR filter dereferences every segment's style.
-        width, blank = self.size.width, Style.null()
+        # The widget's style goes under every cell, so the margins take the theme's background.
+        width, base = self.size.width, self.rich_style
         if y >= len(self._lines):
-            return Strip.blank(width, blank)
-        return Strip(self._lines[y]).crop_extend(0, width, blank)
+            return Strip.blank(width, base)
+        segments = Segment.apply_style(self._lines[y], style=base)
+        return Strip(segments).crop_extend(0, width, base)
 
     # ---- input --------------------------------------------------------------------------------
 
@@ -342,7 +334,7 @@ class ChessBoard(Widget, can_focus=True):
             self.activate(square)
 
     def on_key(self, event: events.Key) -> None:
-        if event.is_printable and event.character and event.character != " ":
+        if event.character in NOTATION:
             event.stop()
             self.post_message(self.Typed(event.character))
 

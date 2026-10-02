@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Literal
 
+import chess
 import typer
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Checkpointer
@@ -167,11 +168,18 @@ def uci(
 
 
 SideOption = Annotated[Literal["white", "black"], typer.Option(help="The side you play.")]
+StartOption = Annotated[
+    str | None,
+    typer.Option(
+        "--fen", metavar="FEN", help="Start from this position.", show_default="the standard one"
+    ),
+]
 
 
 @app.command()
 def play(
     side: SideOption = "white",
+    fen: StartOption = None,
     config: ConfigOption = None,
     reset: ResetOption = None,
     policy: PolicyOption = None,
@@ -195,8 +203,10 @@ def play(
     show_board: BoardOption = None,
     model_kwargs: ModelKwargsOption = None,
 ) -> None:
-    """Play a game in the terminal (Textual)."""
-    from langchain_chess_cli.tui.app import ChessApp
+    """Play a game in the terminal (Textual). The flags set up the first game; ctrl+n picks
+    another."""
+    from langchain_chess_cli.tui.app import ChessApp, Game
+    from langchain_chess_cli.tui.setup import start_problem
 
     settings = _settings(
         config=config,
@@ -223,11 +233,16 @@ def play(
         model_kwargs=model_kwargs,
     )
 
-    def factory(checkpointer: Checkpointer) -> CompiledStateGraph:
-        return build_agent(settings, checkpointer=checkpointer)
+    root = (fen or "").strip()
+    if problem := start_problem(root, settings.draw_claims):
+        raise typer.BadParameter(problem, param_hint="--fen")
+    start = chess.Board(root).fen() if root else chess.STARTING_FEN
+
+    def factory(game_settings: ChessContext, checkpointer: Checkpointer) -> CompiledStateGraph:
+        return build_agent(game_settings, checkpointer=checkpointer)
 
     try:
-        tui = ChessApp(factory, settings, side=side)
+        tui = ChessApp(factory, Game(settings, side, start))
     except ValueError as e:
         raise typer.BadParameter(str(e)) from e
     tui.run()

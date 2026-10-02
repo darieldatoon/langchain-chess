@@ -1,3 +1,4 @@
+import chess
 import pytest
 from typer.testing import CliRunner
 
@@ -18,14 +19,41 @@ def test_play_runs_the_tui(monkeypatch):
     ran = []
 
     def fake_run(self):
-        ran.append((self.side, self.settings.policy, self.settings.memory, self.agent.name))
+        game = self.game
+        ran.append((game.side, game.context.policy, game.context.memory, game.start))
+        ran.append(self.agent.name)
+        # A new game's settings build their own agent.
+        other = self.factory(game.context.model_copy(update={"k": 3}), self.checkpointer)
+        ran.append(other.name)
 
     monkeypatch.setattr(tui.ChessApp, "run", fake_run)
     monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
     args = ["play", "--side", "black", "--policy", "systemone", "--memory"]
     result = CliRunner().invoke(app, args)
     assert result.exit_code == 0, result.output
-    assert ran == [("black", "systemone", True, "chess")]
+    assert ran == [("black", "systemone", True, chess.STARTING_FEN), "chess", "chess"]
+
+
+def test_play_starts_from_a_fen(monkeypatch):
+    import langchain_chess_cli.tui.app as tui
+
+    starts = []
+    monkeypatch.setattr(tui.ChessApp, "run", lambda self: starts.append(self.game.start))
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
+    fen = "4k3/8/8/8/8/8/4P3/4K3 b - - 0 1"
+    result = CliRunner().invoke(app, ["play", "--policy", "systemone", "--fen", f" {fen} "])
+    assert result.exit_code == 0, result.output
+    assert starts == [fen]
+    blank = CliRunner().invoke(app, ["play", "--policy", "systemone", "--fen", "   "])
+    assert blank.exit_code == 0, blank.output
+    assert starts == [fen, chess.STARTING_FEN]
+    fifty = "4k3/8/8/8/8/8/8/R3K3 w - - 100 60"
+    never = ["play", "--policy", "systemone", "--draw-claims", "never", "--fen", fifty]
+    assert CliRunner().invoke(app, never).exit_code == 0
+    for bad in ("not a fen", "8/8/8/8/8/8/8/8 w - - 0 1", fifty):
+        result = CliRunner().invoke(app, ["play", "--policy", "systemone", "--fen", bad])
+        assert result.exit_code == 2
+        assert "--fen" in result.output
 
 
 def test_play_refuses_an_effort_the_model_takes_none_of(monkeypatch):
