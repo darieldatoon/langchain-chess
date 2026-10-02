@@ -53,6 +53,15 @@ async def settle(app, pilot):
     await pilot.pause()
 
 
+async def until(pilot, condition):
+    """Play's callback runs once its screen is gone, some ticks later: one pause can miss it."""
+    for _ in range(500):
+        if condition():
+            return
+        await pilot.pause(0.01)
+    raise AssertionError("timed out")
+
+
 async def play(pilot, move):
     pilot.app.query_one("#move", Input).focus()
     await pilot.pause()
@@ -388,6 +397,7 @@ async def test_new_game_from_the_screen_and_cancel():
         await pilot.press("ctrl+n")
         await pilot.pause(0.5)
         app.screen.query_one("#play", Button).press()
+        await until(pilot, lambda: app.thread != first)
         await settle(app, pilot)
         assert run.state == WorkerState.CANCELLED
         assert app.thread != first
@@ -405,7 +415,9 @@ async def test_a_new_opponent_builds_its_agent_and_random_tosses_a_coin():
         screen.query_one("#side").query("RadioButton")[1].value = True
         screen.query_one("#k", Input).value = "3"
         await pilot.pause()
+        before = app.thread
         screen.query_one("#play", Button).press()
+        await until(pilot, lambda: app.thread != before)
         await settle(app, pilot)
         assert app.game.side == "black"
         assert app.built[-1].k == 3
@@ -687,6 +699,9 @@ async def test_an_opponent_that_cant_be_built_keeps_the_game_and_reopens_new_gam
         screen.query_one("#custom-model", Input).value = "unsupported:x"
         await pilot.pause(0.5)
         screen.query_one("#play", Button).press()
+        await until(
+            pilot, lambda: isinstance(app.screen, NewGameScreen) and app.screen is not screen
+        )
         await pilot.pause()
         assert app.thread == thread
         assert app.values["moves"] == ["e2e4", "e7e5"]
