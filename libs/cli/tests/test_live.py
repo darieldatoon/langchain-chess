@@ -3,7 +3,7 @@
 import pytest
 from textual.widgets import Input
 
-from langchain_chess_cli.tui.app import ChessApp
+from langchain_chess_cli.tui.app import ChessApp, Game
 from langchain_chess_systemone.agent import build_agent
 from langchain_chess_systemone.settings import ChessContext
 
@@ -14,9 +14,7 @@ pytestmark = [pytest.mark.live, pytest.mark.asyncio(loop_scope="session")]
 async def test_a_short_tui_game_against_the_hybrid():
     options = ChessContext(reasoning_effort="low")
     app = ChessApp(
-        lambda saver: build_agent(options, checkpointer=saver),
-        options,
-        side="white",
+        lambda context, saver: build_agent(context, checkpointer=saver), Game(options, "white")
     )
     async with app.run_test() as pilot:
         for move in ("e4", "Nf3"):

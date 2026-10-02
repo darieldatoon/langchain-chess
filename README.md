@@ -157,10 +157,11 @@ mise run dev:tui                    # you play White
 mise run dev:tui -- --side black    # options after -- go to `lcchess play`
 ```
 
-![The terminal UI](docs/images/tui-game.png)
+![The terminal UI: the board between the players' strips, Last Reply on the left, the moves on the right](docs/images/tui-game.png)
 
-Type a move (`Nf3` or `g1f3`) and press Enter, or click a piece and then its target. See the
-[CLI README](libs/cli) for the keys, the options, and how to install `lcchess` without cloning.
+Type a move (`Nf3` or `g1f3`) and press Enter, or click a piece and then its target. The screen
+follows the web app's, with a New Game screen on `ctrl+n`. See the [CLI README](libs/cli) for the
+keys, the options, and how to install `lcchess` without cloning.
 
 ## Grade and review your games
 

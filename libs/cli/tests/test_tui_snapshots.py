@@ -9,11 +9,12 @@ import chess
 import pytest
 from textual.app import App, ComposeResult
 
-from langchain_chess import create_chess_agent
 from langchain_chess.testing import ScriptedModel
-from langchain_chess_cli.tui.app import ChessApp
+from langchain_chess_cli.tui.app import ChessApp, Game
 from langchain_chess_cli.tui.board import ChessBoard
+from langchain_chess_systemone.agent import build_agent
 from langchain_chess_systemone.settings import ChessContext
+from langchain_chess_systemone.testing import FakeRanker, distribution
 
 AFTER_E4_E5 = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2"
 
@@ -82,20 +83,111 @@ def test_the_promotion_dialog(snap_compare):
     assert snap_compare(app, terminal_size=(100, 34), run_before=promote)
 
 
-def test_the_game_screen(snap_compare, monkeypatch):
-    # The screen prints the reply's measured latency; a slow runner turns "0.0 s" into "0.1 s".
+def hybrid_game(monkeypatch, *script):
+    """SemIf hands e4's reply to the LLM, then plays Nf3's reply alone."""
+    # The screen prints measured latencies; a slow runner would change them.
     monkeypatch.setattr(
         "langchain_chess.middleware.core.time", SimpleNamespace(perf_counter=lambda: 0.0)
     )
-    model = ScriptedModel(script=["The Italian keeps options open.\nMOVE: e5"])
-    app = ChessApp(
-        lambda saver: create_chess_agent(model, checkpointer=saver),
-        ChessContext(policy="llm"),
+    ranker = FakeRanker(
+        [
+            distribution({"e7e5": 0.55, "c7c5": 0.35, "e7e6": 0.1}, latency_ms=820.0),
+            distribution({"b8c6": 0.97, "g8f6": 0.03}, latency_ms=640.0),
+        ]
+    )
+    model = ScriptedModel(
+        script=list(
+            script or ["The **Italian** keeps options open.\n\n- e5 claims the centre\nMOVE: e5"]
+        )
     )
 
-    async def play_e4(pilot):
-        await pilot.press("e", "4", "enter")
+    def factory(context, saver):
+        return build_agent(
+            context,
+            model_factory=lambda _: model,
+            ranker_factory=lambda _: ranker,
+            checkpointer=saver,
+        )
+
+    return ChessApp(factory, Game(ChessContext(), "white"), limit=lambda m: 1000)
+
+
+async def play_two(pilot):
+    for move in ("e4", "Nf3"):
+        await pilot.press(*move, "enter")
         await pilot.app.workers.wait_for_complete()
         await pilot.pause()
 
-    assert snap_compare(app, terminal_size=(150, 45), run_before=play_e4)
+
+def test_the_game_screen(snap_compare, monkeypatch):
+    assert snap_compare(hybrid_game(monkeypatch), terminal_size=(170, 48), run_before=play_two)
+
+
+def test_the_light_theme_on_a_narrow_terminal(snap_compare, monkeypatch):
+    async def light(pilot):
+        await play_two(pilot)
+        pilot.app.theme = "langchain-light"
+        await pilot.pause()
+
+    app = hybrid_game(monkeypatch)
+    assert snap_compare(app, terminal_size=(130, 44), run_before=light)
+
+
+def test_stepping_back_shows_the_reply_before_the_move(snap_compare, monkeypatch):
+    async def back(pilot):
+        await play_two(pilot)
+        await pilot.press("comma", "comma")
+        await pilot.pause()
+
+    assert snap_compare(hybrid_game(monkeypatch), terminal_size=(170, 48), run_before=back)
+
+
+def test_the_game_over(snap_compare, monkeypatch):
+    async def resign(pilot):
+        await play_two(pilot)
+        await pilot.press("ctrl+g")
+        await pilot.pause()
+        await pilot.click("#confirm")
+        await pilot.app.workers.wait_for_complete()
+        await pilot.pause()
+
+    app = hybrid_game(monkeypatch)
+    assert snap_compare(app, terminal_size=(170, 48), run_before=resign)
+
+
+def test_the_new_game_screen(snap_compare, monkeypatch):
+    async def open_it(pilot):
+        await pilot.press("ctrl+n")
+        await pilot.pause(0.5)
+
+    app = hybrid_game(monkeypatch)
+    assert snap_compare(app, terminal_size=(130, 48), run_before=open_it)
+
+
+def test_a_stopped_turn_offers_retry(snap_compare, monkeypatch):
+    async def fail(pilot):
+        await pilot.press(*"e4", "enter")
+        await pilot.app.workers.wait_for_complete()
+        await pilot.pause()
+
+    app = hybrid_game(monkeypatch, RuntimeError("the provider timed out"))
+    assert snap_compare(app, terminal_size=(170, 48), run_before=fail)
+
+
+def test_advanced_settings_with_an_invalid_field(snap_compare, monkeypatch):
+    async def invalid(pilot):
+        await pilot.press("ctrl+n")
+        await pilot.pause(0.5)
+        screen = pilot.app.screen
+        screen.query_one("#advanced").collapsed = False
+        await pilot.pause()
+        screen.query_one("#k").value = "0"
+        screen.query_one("#k").focus()
+        await pilot.pause()
+
+    app = hybrid_game(monkeypatch)
+    assert snap_compare(app, terminal_size=(130, 48), run_before=invalid)
+
+
+def test_a_short_terminal(snap_compare, monkeypatch):
+    assert snap_compare(hybrid_game(monkeypatch), terminal_size=(100, 30), run_before=play_two)

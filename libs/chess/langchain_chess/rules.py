@@ -147,8 +147,29 @@ def parse_chat(board: chess.Board, text: str) -> ChatCommand:
             continue
         if move in board.legal_moves:
             return Play(move)
+    if (pieces := _promotions(board, token)) is not None:
+        msg = f"`{token}` promotes; add the piece: {pieces}"
+        raise CommandError(msg)
     msg = f"`{token}` is neither `go` nor a legal move"
     raise CommandError(msg)
+
+
+def _promotions(board: chess.Board, token: str) -> str | None:
+    """`token` completed with each promotion piece, in its own notation, if it names one."""
+    base = token.rstrip("+#")
+    # UCI first: SAN parsing also takes `e7e8=Q`, which would answer UCI in SAN.
+    notations = (
+        (board.parse_uci, [f"{base}{piece}" for piece in "qrbn"]),
+        (board.parse_san, [f"{base}={piece}" for piece in "QRBN"]),
+    )
+    for parse, forms in notations:
+        try:
+            parse(forms[0])  # raises unless it's legal here
+        except ValueError:
+            continue
+        quoted = [f"`{form}`" for form in forms]
+        return f"{', '.join(quoted[:3])} or {quoted[3]}"
+    return None
 
 
 type DrawPolicy = Callable[[chess.Board, Side], DrawAnswer]

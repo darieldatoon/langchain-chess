@@ -110,6 +110,28 @@ def test_a_bad_side_says_how_to_name_one():
     assert control_command("go") is None
 
 
+@pytest.mark.parametrize(
+    ("text", "forms"),
+    [
+        ("e8", "`e8=Q`, `e8=R`, `e8=B` or `e8=N`"),
+        ("exd8", "`exd8=Q`, `exd8=R`, `exd8=B` or `exd8=N`"),
+        ("e7e8", "`e7e8q`, `e7e8r`, `e7e8b` or `e7e8n`"),
+        ("exd8+", "`exd8=Q`, `exd8=R`, `exd8=B` or `exd8=N`"),
+    ],
+)
+def test_a_promotion_without_its_piece_names_the_fix(text, forms):
+    board = chess.Board("3n3k/4P3/8/8/8/8/8/4K3 w - - 0 1")
+    with pytest.raises(CommandError) as raised:
+        parse_chat(board, text)
+    assert str(raised.value) == f"`{text}` promotes; add the piece: {forms}"
+
+
+def test_a_uci_move_that_isnt_a_promotion_gets_the_plain_error():
+    board = chess.Board("3n3k/4P3/8/8/8/8/8/4K3 w - - 0 1")
+    with pytest.raises(CommandError, match="neither `go` nor a legal move"):
+        parse_chat(board, "h7h8")
+
+
 def test_the_default_draw_policy_declines():
     assert decline_all(chess.Board(), "white") == "declined"
 

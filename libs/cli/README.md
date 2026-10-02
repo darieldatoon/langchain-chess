@@ -3,7 +3,7 @@
 The `lcchess` command. Play the agent in your terminal, plug it into any chess GUI as a UCI
 engine, and grade finished games with Stockfish.
 
-![The terminal UI: System 1 played Nxe4 at 99%](../../docs/images/tui-game.png)
+![The terminal UI: the LLM chose Bd7 over System 1's top move, with its analysis and the game so far](../../docs/images/tui-game.png)
 
 For accounts, keys and the full setup, start with the [repository README](../../README.md).
 
@@ -53,15 +53,45 @@ lcchess play --config opponent.json --k 3 --reset reasoning_effort
 ```sh
 mise run dev:tui                                  # hybrid: SemIf + GLM-5.3 Flash
 mise run dev:tui -- --side black --policy llm     # the LLM alone, you play Black
+mise run dev:tui -- --fen "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1"   # from a position
 ```
 
-- **Move** by typing SAN (standard notation, `Nf3`) or UCI (from and to squares, `g1f3`) and pressing Enter, by clicking a piece and then
-  its target, or with the arrow keys and Enter (or Space) on the piece and again on the target.
-  Legal targets are marked.
-- **Keys:** `ctrl+n` new game, `ctrl+f` new game with the other side, `ctrl+r` retry a failed
-  move, `ctrl+s` ask the agent to open, `ctrl+q` quit, `ctrl+p` command palette.
-- The pieces grow with the terminal. The board colours are `chess-board--*` component classes,
-  so CSS can restyle them. The block-art pieces are chess-tui's.
+The screen follows the web app's: Last Reply on the left (under the moves below 160 columns),
+the board between the two players' strips, and the opening, the moves and the game's controls
+on the right. The flags set up the first game; `ctrl+n` opens the New Game screen, which picks
+the side, the starting position, System 1, the LLM and the Advanced settings as the web app's
+dialog does. Rematch keeps the opponent and swaps sides.
+
+![The New Game screen](../../docs/images/tui-new-game.png)
+
+- **Move** by typing SAN (standard notation, `Nf3`) or UCI (from and to squares, `g1f3`) and
+  pressing Enter, by clicking a piece and then its target, or with the arrow keys and Enter (or
+  Space) on the piece and again on the target. Legal targets are marked. Typing `go`,
+  `resign` or `draw` works too, with the same checks as the keys.
+- **Keys:**
+
+  | Key | Does |
+  |---|---|
+  | `,` `.` | the previous and next move; Home and End, the first and the latest |
+  | `ctrl+f` | flip the board |
+  | `ctrl+g` | resign, after a confirmation |
+  | `ctrl+o` | offer a draw |
+  | `ctrl+n` | New Game |
+  | `ctrl+s`, `ctrl+r` | ask the agent to open, retry its failed move |
+  | `ctrl+p` | the command palette: Copy PGN, Copy FEN, Save PGN, Analyze on Lichess, themes |
+  | `ctrl+q` | quit |
+
+  The move list takes the arrow keys and clicks too. While you look at an earlier move, the
+  board and the move input wait until you're back to live.
+- **Themes:** `langchain` (dark) and `langchain-light`, built from the web app's colours; the
+  palette's Change theme switches them. The light squares are darker than the web's, so the
+  white block-art pieces (chess-tui's) stay visible. Below 160 columns, Last Reply moves under
+  the moves:
+
+  ![The light theme on a 130-column terminal](../../docs/images/tui-light.png)
+- **Copy PGN and Copy FEN** go through your terminal's clipboard support (OSC 52), which some
+  terminals, macOS Terminal among them, turn off. Save PGN always works: it writes
+  `langchain-chess-<thread>.pgn` in the current directory.
 
 ## Use it as a UCI engine
 

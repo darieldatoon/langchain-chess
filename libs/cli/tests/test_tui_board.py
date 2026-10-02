@@ -5,22 +5,24 @@ from textual.app import App, ComposeResult
 from textual.widgets import Input
 
 from langchain_chess_cli.tui.board import (
-    ROLES,
+    INKS,
+    SQUARES,
     ChessBoard,
     Marks,
     PromotionScreen,
     arrow,
     draw,
     geometry,
+    palette,
 )
 from langchain_chess_cli.tui.pieces import piece_lines, piece_size
+from langchain_chess_cli.tui.theme import DARK_BOARD, LIGHT_BOARD
 
 PROMOTE = "8/P6k/8/8/8/8/8/K7 w - - 0 1"
 # A distinct colour per role, so tests can read which role styled a cell.
-FOREGROUND = {"white-piece", "black-piece", "target", "label"}
 PALETTE = {
-    role: Style(color=f"color({i})") if role in FOREGROUND else Style(bgcolor=f"color({i})")
-    for i, role in enumerate(ROLES, start=1)
+    role: Style(color=f"color({i})") if role in INKS else Style(bgcolor=f"color({i})")
+    for i, role in enumerate(SQUARES + INKS, start=1)
 }
 
 
@@ -110,7 +112,7 @@ def test_draw_labels_pieces_and_marks():
     assert square_role(chess.G8) == "selected"
     assert square_role(chess.E8) == "check"
     assert square_role(chess.H5) == "capture"  # a target holding a piece
-    assert square_role(chess.D1) == "last-light"
+    assert square_role(chess.D1) == "last-move"
     assert square_role(chess.B1) == "light"
     assert square_role(chess.C1) == "dark"
     _, y = geo.origin(chess.H6)
@@ -123,6 +125,16 @@ def test_draw_from_blacks_side():
     assert text(lines[0]).strip().startswith("1")
     assert text(lines[-1]).split() == list("hgfedcba")
     assert "♖" in text(lines[0])
+
+
+def test_the_palette_comes_from_the_theme_with_the_dark_board_as_fallback():
+    light = palette({f"x-{k}": v for k, v in DARK_BOARD.items()} | LIGHT_BOARD)
+    assert light["dark"] == Style(bgcolor=LIGHT_BOARD["board-dark"])
+    assert light["black-piece"] == Style(color=LIGHT_BOARD["board-black-piece"], bold=True)
+    # Another Textual theme has none of the board's variables.
+    other = palette({"text-muted": "auto 60%"})
+    assert other["dark"] == Style(bgcolor=DARK_BOARD["board-dark"])
+    assert other["label"] == Style(color=DARK_BOARD["board-label"])
 
 
 def test_arrow_steps_on_screen_and_clamps():
@@ -214,11 +226,13 @@ async def test_keyboard_play_from_blacks_side():
         assert board.state.selected is None
 
 
-async def test_typing_is_handed_to_the_input():
+async def test_typing_a_move_is_handed_to_the_input():
     app = Host()
     async with app.run_test(size=(100, 30)) as pilot:
-        await pilot.press("N", "f", "3")
-        assert app.typed == ["N", "f", "3"]
+        await pilot.press("N", "f", "O", "0")
+        # Not how a move starts: left to the app's bindings.
+        await pilot.press("3", "comma", "full_stop", "z", "?")
+        assert app.typed == ["N", "f", "O", "0"]
 
 
 async def test_not_interactive_rings_the_bell():

@@ -1,126 +1,130 @@
 """What the TUI shows, computed from the thread's record. Pure."""
 
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any
 
 import chess
 
-from langchain_chess import turn_cost
-from langchain_chess.rules import result_text
-from langchain_chess_systemone.agent import sent
-from langchain_chess_systemone.settings import ChessContext
+from langchain_chess.state import Outcome, Side
 
-SOURCES = {
-    "external": "you",
-    "llm": "LLM",
-    "systemone": "System 1",
-    "forced": "forced",
-}
+type Values = Mapping[str, Any]
+
+ROLES = (chess.QUEEN, chess.ROOK, chess.BISHOP, chess.KNIGHT, chess.PAWN)
+"""Largest first, as the strips show them."""
+POINTS = {chess.QUEEN: 9, chess.ROOK: 5, chess.BISHOP: 3, chess.KNIGHT: 3, chess.PAWN: 1}
 
 
-def board_of(values: Mapping[str, Any]) -> chess.Board:
-    board = chess.Board(values.get("start_fen") or chess.STARTING_FEN)
+def start_fen(values: Values) -> str:
+    return values.get("start_fen") or chess.STARTING_FEN
+
+
+def board_of(values: Values) -> chess.Board:
+    board = chess.Board(start_fen(values))
     for uci in values.get("moves") or ():
         board.push_uci(uci)
     return board
 
 
-def source_label(source: str) -> str:
-    return SOURCES.get(source, source)
+def positions(values: Values) -> list[str]:
+    """The start and the position after each move."""
+    board = chess.Board(start_fen(values))
+    fens = [board.fen()]
+    for uci in values.get("moves") or ():
+        board.push_uci(uci)
+        fens.append(board.fen())
+    return fens
 
 
-def cost_text(calls: Sequence[Mapping[str, Any]]) -> str:
-    """The turn total; `—` when nothing was priced, `≥` when the estimate is incomplete."""
-    cost = turn_cost(list(calls))  # ty: ignore[invalid-argument-type]
-    if cost is None:
-        return "—"
-    return f"${cost['usd']:.4f}" if cost["complete"] else f"≥${cost['usd']:.4f}"
+def board_at(values: Values, index: int) -> chess.Board:
+    """The position after `index` moves, with its history, so the board can show check."""
+    board = chess.Board(start_fen(values))
+    for uci in (values.get("moves") or [])[:index]:
+        board.push_uci(uci)
+    return board
 
 
-def _turn(values: Mapping[str, Any], turn_id: str | None) -> Mapping[str, Any] | None:
-    return next((t for t in values.get("turns") or () if t["id"] == turn_id), None)
+def opposite(side: Side) -> Side:
+    return "black" if side == "white" else "white"
 
 
-def move_list(values: Mapping[str, Any]) -> str:
-    """Numbered from the root, one line per move pair, with each move's source and cost."""
-    root = chess.Board(values.get("start_fen") or chess.STARTING_FEN)
-    number, white = root.fullmove_number, root.turn == chess.WHITE
-    lines: list[str] = []
-    row = ""
-    for ply in values.get("plies") or ():
-        turn = _turn(values, ply["turn_id"])
-        cost = f" {cost_text(turn['calls'])}" if turn is not None else ""
-        label = f"{ply['san']} ({source_label(ply['source'])}{cost})"
-        if white:
-            row = f"{number}. {label}"
-        else:
-            lines.append(f"{row}  {label}" if row else f"{number}... {label}")
-            row = ""
-            number += 1
-        white = not white
-    if row:
-        lines.append(row)
-    return "\n".join(lines) or "No moves yet."
+def color_side(color: chess.Color) -> Side:
+    return "white" if color == chess.WHITE else "black"
 
 
-def _san(board: chess.Board, uci: str) -> str:
-    return board.san(chess.Move.from_uci(uci))
+def material_diff(board: chess.Board) -> dict[Side, dict[chess.PieceType, int]]:
+    """The pieces each side has beyond the other's, per role."""
+    white = {role: len(board.pieces(role, chess.WHITE)) for role in ROLES}
+    black = {role: len(board.pieces(role, chess.BLACK)) for role in ROLES}
+    return {
+        "white": {role: max(0, white[role] - black[role]) for role in ROLES},
+        "black": {role: max(0, black[role] - white[role]) for role in ROLES},
+    }
 
 
-def ply_details(values: Mapping[str, Any]) -> str:
-    """The latest agent move: source, model, latency, cost and System 1's suggestions."""
-    plies = [p for p in values.get("plies") or () if p["source"] != "external"]
-    if not plies:
-        return "The agent hasn't moved yet."
-    ply = plies[-1]
-    empty: dict[str, Any] = {"calls": [], "illegal_attempts": 0}
-    turn = _turn(values, ply["turn_id"]) or empty
-    lines = [
-        f"{ply['san']} by {source_label(ply['source'])}"
-        + (f" ({ply['model']})" if ply["model"] else ""),
-        f"latency {ply['latency_ms'] / 1000:.1f} s, cost {cost_text(turn['calls'])}",
-    ]
-    if turn["illegal_attempts"]:
-        lines.append(f"illegal attempts: {turn['illegal_attempts']}")
-    meta = ply["meta"].get("SystemOneMiddleware")
-    if meta is not None:
-        board = board_of({**values, "moves": (values.get("moves") or [])[: ply["ply"]]})
-        if meta["status"] == "skipped":
-            lines.append(f"System 1 skipped: {meta['error']}")
-        else:
-            verb = "played" if meta["status"] == "played" else "suggested"
-            lines.append(f"System 1 {verb}; its top moves:")
-            for move in meta.get("top") or meta["shortlist"]:
-                marker = "▸" if move["uci"] == ply["uci"] else " "
-                lines.append(f" {marker}{_san(board, move['uci'])} {move['probability']:.0%}")
-    return "\n".join(lines)
+def material_score(board: chess.Board) -> int:
+    """White's lead in points; kings don't count."""
+    return sum(
+        POINTS[role] * (len(board.pieces(role, chess.WHITE)) - len(board.pieces(role, chess.BLACK)))
+        for role in ROLES
+    )
 
 
-def status_text(
-    values: Mapping[str, Any], *, human: chess.Color, running: bool, failed: str | None
-) -> str:
-    outcome = values.get("outcome")
-    if outcome is not None:
-        return result_text(outcome)
-    turns = values.get("turns") or []
-    if running:
-        return "The agent is thinking…"
-    if turns and turns[-1]["status"] == "pending":
-        reason = f" ({failed})" if failed else ""
-        return f"The agent's move failed{reason}. Press ctrl+r to retry."
-    board = board_of(values)
-    if board.turn == human:
-        return "Your move."
-    if not values.get("moves"):
-        return "Press ctrl+s and the agent opens."
-    return "The agent's move."
+def material_text(board: chess.Board, side: Side) -> str:
+    """The pieces `side` is up and its lead, e.g. "♟♟ +2"; empty when it's not ahead in either."""
+    color = chess.WHITE if side == "white" else chess.BLACK
+    extra = material_diff(board)[side]
+    pieces = "".join(
+        chess.Piece(role, color).unicode_symbol() * extra[role] for role in ROLES if extra[role]
+    )
+    lead = material_score(board) * (1 if side == "white" else -1)
+    return " ".join(part for part in (pieces, f"+{lead}" if lead > 0 else "") if part)
 
 
-def describe_settings(settings: ChessContext) -> str:
-    if settings.policy == "systemone":
-        return f"System 1 alone ({settings.systemone_model})"
-    effort = sent(settings)["reasoning_effort"]
-    llm = settings.model if effort is None else f"{settings.model} ({effort})"
-    if settings.policy == "llm":
-        return llm
-    return f"{settings.systemone_model} + {llm}"
+@dataclass(frozen=True, slots=True)
+class Entry:
+    ply: int
+    san: str
+    source: str
+
+
+type MoveRow = tuple[int, Entry | None, Entry | None]
+
+
+def entries(values: Values) -> list[Entry]:
+    return [Entry(p["ply"], p["san"], p["source"]) for p in values.get("plies") or ()]
+
+
+def move_rows(moves: Sequence[Entry], start: str) -> list[MoveRow]:
+    """Rows numbered from the root, which may have Black to move and any fullmove number."""
+    root = chess.Board(start)
+    offset = 1 if root.turn == chess.BLACK else 0
+    rows: dict[int, list[Any]] = {}
+    for i, entry in enumerate(moves):
+        slot = i + offset
+        row = rows.setdefault(slot // 2, [root.fullmove_number + slot // 2, None, None])
+        row[1 + slot % 2] = entry
+    return [(row[0], row[1], row[2]) for _, row in sorted(rows.items())]
+
+
+def score_text(outcome: Outcome) -> str:
+    if outcome["kind"] == "draw":
+        return "½-½"
+    return "1-0" if outcome["winner"] == "white" else "0-1"
+
+
+def strip_result(outcome: Outcome, side: Side) -> str:
+    """One word for a side's strip once the game is over."""
+    if outcome["kind"] == "draw":
+        return "Draw"
+    if outcome["winner"] == side:
+        return "Won"
+    if outcome["kind"] == "checkmate":
+        return "Checkmated"
+    return "Resigned" if outcome["reason"] == "resigned" else "Forfeited"
+
+
+def result_headline(outcome: Outcome, human: Side) -> str:
+    if outcome["kind"] == "draw":
+        return "Draw"
+    return "You won" if outcome["winner"] == human else "You lost"
