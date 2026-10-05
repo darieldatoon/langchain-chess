@@ -81,7 +81,7 @@ describe("marks", () => {
     expect(g.mark).toEqual({ status: "failed", id: "m", log: "" });
     expect(g.lastRunStartTime).toBe("2026-09-25T11:00:00Z");
     expect(call).toHaveBeenCalledWith("GET /api/v1/feedback", {
-      params: { run: ["r"], key: ["game_review", "grade_status"], limit: "100" },
+      params: { run: ["r"], key: ["game_review", "grade_status"], limit: "100", offset: "0" },
     });
   });
 });

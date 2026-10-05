@@ -1,11 +1,14 @@
 import asyncio
 import contextlib
+import itertools
+import json
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
-from typing import ClassVar
+from typing import ClassVar, cast
 
 import chess
 import pytest
+from langsmith.utils import LangSmithNotFoundError
 from typer.testing import CliRunner
 
 from langchain_chess.engine import Grader, SearchLimit
@@ -24,6 +27,7 @@ from langchain_chess_cli.grade.batch import (
 from langchain_chess_cli.grade.records import (
     FAILED,
     GRADER,
+    PART_KEY,
     REVIEW_KEY,
     STATUS_KEY,
     Feedback,
@@ -31,9 +35,16 @@ from langchain_chess_cli.grade.records import (
     feedback,
     game_record,
     review,
+    size,
     source_info,
+    whole,
 )
-from langchain_chess_cli.grade.store import LangSmithStore, ProjectQuery, run_filter
+from langchain_chess_cli.grade.store import (
+    LangSmithStore,
+    ProjectQuery,
+    UnstoredReviewError,
+    run_filter,
+)
 from langchain_chess_cli.main import app
 
 T0 = datetime(2026, 9, 25, 12, tzinfo=UTC)
@@ -97,7 +108,7 @@ def _grade(record):
 
 def test_feedback_goes_on_agent_turns_and_the_last_run():
     record = game_record("t", web_game("t", ITALIAN[:4]))
-    entries = feedback(record, _grade(record), GRADER_A)
+    entries = feedback(record, _grade(record), GRADER_A, "g1")
     by_run = [(e.run.id, e.key) for e in entries]
     assert by_run == [
         ("t-r0", "move_quality"),
@@ -110,6 +121,7 @@ def test_feedback_goes_on_agent_turns_and_the_last_run():
         ("t-r1", "best_move"),
         ("t-r1", "accuracy_white"),
         ("t-r1", "accuracy_black"),
+        ("t-r1", PART_KEY),
         ("t-r1", REVIEW_KEY),
     ]
     assert entries[0].value == "good"
@@ -120,18 +132,27 @@ def test_feedback_goes_on_agent_turns_and_the_last_run():
 
 def test_a_side_that_never_moved_gets_no_accuracy():
     record = game_record("t", web_game("t", ITALIAN[:1]))
-    keys = [e.key for e in feedback(record, _grade(record), GRADER_A)]
-    assert keys == ["accuracy_white", REVIEW_KEY]
+    keys = [e.key for e in feedback(record, _grade(record), GRADER_A, "g1")]
+    assert keys == ["accuracy_white", PART_KEY, REVIEW_KEY]
 
 
 def test_the_review_holds_what_the_app_draws():
     record = game_record("t", web_game("t", ITALIAN[:2]))
-    value = review(record, _grade(record), GRADER_A)
-    assert value["version"] == 1
-    assert value["engine"] == "FakeFish 1"
-    assert value["accuracy"] == {"white": 100.0, "black": 100.0}
-    assert value["evals"] == [{"cp": 0}] * 3
-    assert value["plies"][0] == {
+    header, parts = review(record, _grade(record), GRADER_A, "g1")
+    assert header == {
+        "version": 2,
+        "generation": "g1",
+        "engine": "FakeFish 1",
+        "settings": GRADER_A.settings,
+        "accuracy": {"white": 100.0, "black": 100.0},
+        "plies": 2,
+        "parts": 1,
+        "final_eval": {"cp": 0},
+    }
+    [part] = parts
+    assert (part["version"], part["generation"], part["part"], part["from"]) == (2, "g1", 0, 0)
+    assert part["evals"] == [{"cp": 0}] * 2
+    assert part["plies"][0] == {
         "ply": 0,
         "run_id": "t-r0",
         "side": "white",
@@ -144,8 +165,35 @@ def test_the_review_holds_what_the_app_draws():
         "lines": [{"eval": {"cp": 0}, "pv": ["e2e4"]}],
     }
     one = game_record("t", web_game("t", ITALIAN[:1]))
-    single = review(one, _grade(one), GRADER_A)
+    single, _ = review(one, _grade(one), GRADER_A, "g1")
     assert single["accuracy"] == {"white": 100.0, "black": None}
+
+
+def test_a_long_review_is_split_into_parts_under_the_budget():
+    record = game_record("t", web_game("t", ITALIAN))
+    grade = _grade(record)
+    [whole_part] = review(record, grade, GRADER_A, "g1")[1]
+    header, parts = review(record, grade, GRADER_A, "g1", part_bytes=700)
+    assert header["parts"] == len(parts) > 1
+    assert all(size(p) <= 700 for p in parts)
+    assert [p["part"] for p in parts] == list(range(len(parts)))
+    plies = [cast("list", p["plies"]) for p in parts]
+    assert [p["from"] for p in parts] == [0, *itertools.accumulate(map(len, plies))][:-1]
+    assert [x for chunk in plies for x in chunk] == whole_part["plies"]
+    assert [x for p in parts for x in cast("list", p["evals"])] == whole_part["evals"]
+    with pytest.raises(ValueError, match="ply 0's grade alone is over 100 bytes"):
+        review(record, grade, GRADER_A, "g1", part_bytes=100)
+
+
+def test_a_header_is_whole_with_every_part_of_its_generation():
+    header = {"version": 2, "generation": "g2", "parts": 2}
+    part = lambda i, g="g2": {"generation": g, "part": i}  # noqa: E731
+    assert whole(header, [part(1), part(0), part(0, "g1")])
+    assert not whole(header, [part(0), part(1, "g1")])
+    assert not whole(header, [part(0), None, "x"])
+    assert not whole({**header, "parts": None}, [part(0)])
+    assert not whole({"version": 1}, [])
+    assert not whole(None, [part(0), part(1)])
 
 
 # store
@@ -163,17 +211,25 @@ def test_run_filters():
     assert both.count("metadata_key") == 2
 
 
-def fb(key, run_id, grader=GRADER, fingerprint="f1"):
+def fb(key, run_id, grader=GRADER, fingerprint="f1", value=None, created_at=T0, id=None):
     source = SimpleNamespace(metadata={"grader": grader, "fingerprint": fingerprint})
     return SimpleNamespace(
-        id=f"{run_id}/{key}/{grader}", key=key, run_id=run_id, feedback_source=source
+        id=id or f"{run_id}/{key}/{grader}",
+        key=key,
+        run_id=run_id,
+        value=value,
+        created_at=created_at,
+        feedback_source=source,
     )
 
 
 class FakeClient:
-    def __init__(self, runs=(), feedback=()):
+    """Stores what it is given as JSON, nulling a value over `cap` bytes as LangSmith does."""
+
+    def __init__(self, runs=(), feedback=(), cap=20 * 1024):
         self.runs = list(runs)
         self.feedback = list(feedback)
+        self.cap = cap
         self.calls = []
         self.created = []
 
@@ -187,6 +243,9 @@ class FakeClient:
 
     def delete_feedback(self, feedback_id):
         self.calls.append(("delete", feedback_id))
+        if not any(f.id == feedback_id for f in self.feedback):
+            raise LangSmithNotFoundError(feedback_id)
+        self.feedback = [f for f in self.feedback if f.id != feedback_id]
 
     def update_feedback(self, feedback_id, **kw):
         self.calls.append(("update", feedback_id, kw))
@@ -194,6 +253,21 @@ class FakeClient:
     def create_feedback(self, run_id, **kw):
         self.calls.append(("create", run_id, kw["key"], kw["session_id"]))
         self.created.append(kw)
+        value = kw["value"]
+        stored = (
+            None if value is not None and size(value) > self.cap else json.loads(json.dumps(value))
+        )
+        self.feedback.append(
+            fb(
+                kw["key"],
+                run_id,
+                grader=kw["source_info"].get("grader", GRADER),
+                fingerprint=kw["source_info"].get("fingerprint"),
+                value=stored,
+                created_at=T0 + timedelta(seconds=len(self.created)),
+                id=kw["feedback_id"],
+            )
+        )
 
 
 def listed(thread_id):
@@ -223,44 +297,251 @@ def test_thread_runs():
     assert '"t1"' in client.calls[0][1]["filter"]
 
 
-def test_graded_reads_only_this_graders_review():
-    client = FakeClient(feedback=[fb(REVIEW_KEY, "r1", grader="someone"), fb(REVIEW_KEY, "r1")])
+def header_and_part(generation="g1"):
+    header = {"version": 2, "generation": generation, "parts": 1}
+    return header, {"version": 2, "generation": generation, "part": 0}
+
+
+def test_graded_reads_only_this_graders_whole_review():
+    header, part = header_and_part()
+    client = FakeClient(
+        feedback=[
+            fb(REVIEW_KEY, "r1", grader="someone", value=header),
+            fb(REVIEW_KEY, "r1", value=header),
+            fb(PART_KEY, "r1", value=part),
+        ]
+    )
     store = LangSmithStore(client)
     assert store.graded("r1") == "f1"
     assert store.graded("r2") is None
-    client.feedback[1].feedback_source = None
+    client.feedback[2].feedback_source = None
     assert store.graded("r1") is None
 
 
-def test_replace_drops_this_graders_feedback_and_writes_the_marker_last():
-    run = RootRun("r1", "p1", T0)
-    client = FakeClient(
-        feedback=[fb("cp_loss", "r1"), fb("cp_loss", "r1", grader="human"), fb(REVIEW_KEY, "r0")]
-    )
-    entries = [Feedback(run, k, {}) for k in ("cp_loss", "best_move", REVIEW_KEY)]
-    LangSmithStore(client, write_concurrency=1).replace([run, RootRun("r0", "p1", T0)], entries)
-    ops = [c for c in client.calls if c[0] != "list_feedback"]
-    assert ops[:2] == [("delete", f"r0/{REVIEW_KEY}/{GRADER}"), ("delete", f"r1/cp_loss/{GRADER}")]
-    assert ops[2:] == [
-        ("create", "r1", "cp_loss", "p1"),
-        ("create", "r1", "best_move", "p1"),
-        ("create", "r1", REVIEW_KEY, "p1"),
+@pytest.mark.parametrize(
+    ("value", "graded"),
+    [({"version": 1, "plies": []}, "f1"), (None, None), ({"version": 2}, None), ("x", None)],
+)
+def test_a_review_stored_as_null_or_without_its_parts_is_not_graded(value, graded):
+    assert LangSmithStore(FakeClient(feedback=[fb(REVIEW_KEY, "r1", value=value)])).graded(
+        "r1"
+    ) == (graded)
+
+
+def test_graded_reads_the_newest_header():
+    old, old_part = header_and_part("g1")
+    new, _ = header_and_part("g2")
+    later = T0 + timedelta(minutes=1)
+    stored = [
+        fb(REVIEW_KEY, "r1", value=old, id="old"),
+        fb(PART_KEY, "r1", value=old_part),
+        fb(REVIEW_KEY, "r1", value=new, created_at=later, id="new"),
+    ]
+    assert LangSmithStore(FakeClient(feedback=stored)).graded("r1") is None
+
+
+def test_feedback_is_listed_a_batch_of_runs_at_a_time():
+    client = FakeClient()
+    store = LangSmithStore(client)
+    store.settle([RootRun(f"r{i}", "p1", T0) for i in range(60)], None)
+    store.settle([], "engine died")
+    assert [len(c[1]) for c in client.calls if c[0] == "list_feedback"] == [25, 25, 10]
+
+
+def replace_run(entry, run):
+    return Feedback(run, entry.key, entry.source_info, entry.score, entry.value)
+
+
+def entries_for(run, generation="g2"):
+    header, part = header_and_part(generation)
+    return [
+        Feedback(run, "cp_loss", source_info(GRADER_A), score=3),
+        Feedback(run, PART_KEY, source_info(GRADER_A), value=part),
+        Feedback(run, REVIEW_KEY, source_info(GRADER_A), value=header),
     ]
 
 
-def test_replace_writes_grades_that_extend_the_games_retention():
+def test_replace_publishes_the_new_review_before_dropping_the_old():
+    run, r0 = RootRun("r1", "p1", T0), RootRun("r0", "p1", T0)
+    old, old_part = header_and_part("g1")
+    client = FakeClient(
+        feedback=[
+            fb("cp_loss", "r0"),
+            fb("cp_loss", "r1", grader="human"),
+            fb(PART_KEY, "r1", value=old_part),
+            fb(REVIEW_KEY, "r1", value=old),
+            fb(STATUS_KEY, "r1"),
+        ]
+    )
+    store = LangSmithStore(client, write_concurrency=1)
+    store.replace([run, r0], entries_for(run))
+    ops = [c[:3] if c[0] == "create" else c[:2] for c in client.calls]
+    assert ops == [
+        ("list_feedback", ["r1", "r0"]),
+        ("delete", f"r0/cp_loss/{GRADER}"),
+        ("create", "r1", "cp_loss"),
+        ("create", "r1", PART_KEY),
+        ("list_feedback", ["r1"]),
+        ("create", "r1", REVIEW_KEY),
+        ("list_feedback", ["r1"]),
+        ("delete", f"r1/{PART_KEY}/{GRADER}"),
+        ("delete", f"r1/{REVIEW_KEY}/{GRADER}"),
+        ("delete", f"r1/{STATUS_KEY}/{GRADER}"),
+    ]
+    assert store.graded("r1") == GRADER_A.fingerprint
+    assert [kw["extend_trace_retention"] for kw in client.created] == [True] * 3
+
+
+def test_a_graded_game_round_trips_through_langsmith():
+    record = game_record("t", web_game("t", ITALIAN))
+    entries = feedback(record, _grade(record), GRADER_A, "g1", part_bytes=700)
+    client = FakeClient()
+    store = LangSmithStore(client)
+    store.replace(record.runs, entries)
+    assert store.graded(record.last_run.id) == GRADER_A.fingerprint
+    stored = {(f.key, json.dumps(f.value)) for f in client.feedback}
+    assert stored == {(e.key, json.dumps(e.value)) for e in entries}
+
+
+def test_a_review_langsmith_drops_leaves_the_earlier_one_published():
+    run = RootRun("r1", "p1", T0)
+    old, old_part = header_and_part("g1")
+    client = FakeClient(
+        feedback=[fb(PART_KEY, "r1", value=old_part), fb(REVIEW_KEY, "r1", value=old)], cap=10
+    )
+    sleeps = []
+    store = LangSmithStore(client, write_concurrency=1, sleep=sleeps.append)
+    with pytest.raises(UnstoredReviewError, match=r"didn't store 1 of 1 game_review_part values"):
+        store.replace([run], entries_for(run))
+    assert sleeps == [1, 2, 4, 8]
+    assert not any(c[0] == "create" and c[2] == REVIEW_KEY for c in client.calls)
+    assert [f.value for f in client.feedback if f.key in (PART_KEY, REVIEW_KEY)] == [old_part, old]
+    assert store.graded("r1") == "f1"
+
+
+class HeaderDroppingClient(FakeClient):
+    def create_feedback(self, run_id, **kw):
+        super().create_feedback(run_id, **kw)
+        if kw["key"] == REVIEW_KEY:
+            self.feedback[-1].value = None
+
+
+def test_a_header_langsmith_drops_is_taken_back_with_its_parts():
+    run = RootRun("r1", "p1", T0)
+    old, old_part = header_and_part("g1")
+    client = HeaderDroppingClient(
+        feedback=[fb(PART_KEY, "r1", value=old_part), fb(REVIEW_KEY, "r1", value=old)]
+    )
+    store = LangSmithStore(client, write_concurrency=1, sleep=lambda _: None)
+    with pytest.raises(UnstoredReviewError, match="1 of 1 game_review values"):
+        store.replace([run], entries_for(run))
+    assert [f.value for f in client.feedback if f.key in (PART_KEY, REVIEW_KEY)] == [old_part, old]
+    assert store.graded("r1") == "f1"
+
+
+class StoredButFailedClient(FakeClient):
+    """Stores the header, then fails the request, as a timeout after the write would."""
+
+    def create_feedback(self, run_id, **kw):
+        super().create_feedback(run_id, **kw)
+        if kw["key"] == REVIEW_KEY:
+            raise RuntimeError("read timed out")
+
+
+def test_a_header_stored_by_a_failed_request_is_taken_back():
+    run = RootRun("r1", "p1", T0)
+    record = game_record("t", web_game("t", ITALIAN))
+    entries = feedback(record, _grade(record), GRADER_A, "g2")
+    old = [
+        fb(e.key, run.id, value=e.value, id=f"old-{e.key}")
+        for e in feedback(record, _grade(record), GRADER_A, "g1")
+        if e.key in (PART_KEY, REVIEW_KEY)
+    ]
+    client = StoredButFailedClient(feedback=old)
+    store = LangSmithStore(client, write_concurrency=1)
+    with pytest.raises(RuntimeError, match="read timed out"):
+        store.replace([run], [replace_run(e, run) for e in entries])
+    assert [f for f in client.feedback if f.key in (PART_KEY, REVIEW_KEY)] == old
+    assert store.graded("r1") == "f1"
+
+
+class StuckHeaderClient(HeaderDroppingClient):
+    """Drops the header's value, then can't delete it."""
+
+    def delete_feedback(self, feedback_id):
+        if any(f.id == feedback_id and f.key == REVIEW_KEY for f in self.feedback):
+            raise RuntimeError("delete failed")
+        super().delete_feedback(feedback_id)
+
+
+def test_parts_stay_while_their_header_cant_be_taken_back():
+    run = RootRun("r1", "p1", T0)
+    client = StuckHeaderClient()
+    store = LangSmithStore(client, write_concurrency=1, sleep=lambda _: None)
+    with pytest.raises(RuntimeError, match="delete failed"):
+        store.replace([run], entries_for(run))
+    assert sorted(f.key for f in client.feedback) == ["cp_loss", REVIEW_KEY, PART_KEY]
+
+
+def test_a_regrade_leaves_another_gradings_unpublished_parts():
+    run = RootRun("r1", "p1", T0)
+    old, old_part = header_and_part("g1")
+    _, pending = header_and_part("g9")
+    client = FakeClient(
+        feedback=[
+            fb(REVIEW_KEY, "r1", value=old),
+            fb(PART_KEY, "r1", value=old_part, id="old-part"),
+            fb(PART_KEY, "r1", value=pending, id="pending-part"),
+            fb(PART_KEY, "r1", value=None, id="dropped-part"),
+        ]
+    )
+    LangSmithStore(client, write_concurrency=1).replace([run], entries_for(run))
+    deleted = [c[1] for c in client.calls if c[0] == "delete"]
+    assert deleted == [f"r1/{REVIEW_KEY}/{GRADER}", "old-part", "dropped-part"]
+    assert "pending-part" in [f.id for f in client.feedback]
+
+
+def test_a_regrade_tolerates_feedback_another_deleted_first():
+    run = RootRun("r1", "p1", T0)
+    client = FakeClient(feedback=[fb("cp_loss", "r1"), fb(STATUS_KEY, "r1")])
+    client.list_feedback = lambda **kw: [
+        fb("cp_loss", "r1", id="gone"),
+        *FakeClient.list_feedback(client, **kw),
+    ]
+    LangSmithStore(client, write_concurrency=1).replace([run], entries_for(run))
+    assert ("delete", "gone") in client.calls
+
+
+class LateClient(FakeClient):
+    """Lists what it stored only after `lag` more listings, as an ingest queue would."""
+
+    def __init__(self, lag, **kw):
+        super().__init__(**kw)
+        self.lag = lag
+
+    def list_feedback(self, *, run_ids, feedback_key):
+        listed = super().list_feedback(run_ids=run_ids, feedback_key=feedback_key)
+        self.lag -= 1
+        new = {kw["feedback_id"] for kw in self.created}
+        return [f for f in listed if f.id not in new] if self.lag >= 0 else listed
+
+
+def test_replace_waits_for_feedback_langsmith_stores_late():
+    run = RootRun("r1", "p1", T0)
+    sleeps = []
+    store = LangSmithStore(LateClient(3), write_concurrency=1, sleep=sleeps.append)
+    store.replace([run], entries_for(run))
+    assert sleeps == [1, 2]
+    assert store.graded("r1") == GRADER_A.fingerprint
+
+
+def test_replace_without_parts_checks_only_the_header():
     run = RootRun("r1", "p1", T0)
     client = FakeClient()
-    LangSmithStore(client, write_concurrency=1).replace([run], [Feedback(run, REVIEW_KEY, {})])
-    assert [kw["extend_trace_retention"] for kw in client.created] == [True]
-
-
-def test_replace_clears_the_apps_mark_once_the_game_reads_as_graded():
-    run = RootRun("r1", "p1", T0)
-    client = FakeClient(feedback=[fb(STATUS_KEY, "r1"), fb(STATUS_KEY, "r1", grader="human")])
-    LangSmithStore(client, write_concurrency=1).replace([run], [Feedback(run, REVIEW_KEY, {})])
-    ops = [c for c in client.calls if c[0] != "list_feedback"]
-    assert ops == [("create", "r1", REVIEW_KEY, "p1"), ("delete", f"r1/{STATUS_KEY}/{GRADER}")]
+    LangSmithStore(client, write_concurrency=1).replace(
+        [run], [Feedback(run, REVIEW_KEY, {}, value={"version": 1})]
+    )
+    assert [c[0] for c in client.calls] == ["list_feedback", "create", "list_feedback"]
 
 
 def test_settle_clears_or_fails_this_graders_marks():
@@ -269,6 +550,7 @@ def test_settle_clears_or_fails_this_graders_marks():
     client = FakeClient(feedback=marks)
     store = LangSmithStore(client)
     store.settle(runs, None)
+    client.feedback = list(marks)
     store.settle(runs, "engine died")
     store.settle([], "engine died")
     ops = [c for c in client.calls if c[0] != "list_feedback"]
@@ -277,35 +559,6 @@ def test_settle_clears_or_fails_this_graders_marks():
         ("update", f"r1/{STATUS_KEY}/{GRADER}", {"value": FAILED, "comment": "engine died"}),
     ]
     assert [c[1] for c in client.calls if c[0] == "list_feedback"] == [["r0", "r1"]] * 2
-
-
-class FlakyClient(FakeClient):
-    """Deletes for real, but fails deleting the feedback keyed `broken`."""
-
-    def __init__(self, broken, feedback):
-        super().__init__(feedback=feedback)
-        self.broken = broken
-
-    def delete_feedback(self, feedback_id):
-        if feedback_id.split("/")[1] == self.broken:
-            msg = "delete failed"
-            raise RuntimeError(msg)
-        super().delete_feedback(feedback_id)
-        self.feedback = [f for f in self.feedback if f.id != feedback_id]
-
-
-@pytest.mark.parametrize(
-    ("broken", "graded", "left"), [(REVIEW_KEY, "f1", 2), ("cp_loss", None, 1)]
-)
-def test_a_failed_delete_never_leaves_a_partial_game_marked_graded(broken, graded, left):
-    run = RootRun("r1", "p1", T0)
-    client = FlakyClient(broken, [fb("cp_loss", "r1"), fb(REVIEW_KEY, "r1")])
-    store = LangSmithStore(client, write_concurrency=1)
-    with pytest.raises(RuntimeError, match="delete failed"):
-        store.replace([run], [Feedback(run, k, {}) for k in ("cp_loss", REVIEW_KEY)])
-    assert store.graded("r1") == graded
-    assert len(client.feedback) == left
-    assert not any(c[0] == "create" for c in client.calls)
 
 
 # batch

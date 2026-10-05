@@ -1,5 +1,6 @@
 """Games read from their traces, and the feedback their grades become. Pure."""
 
+import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -12,12 +13,17 @@ from langchain_chess.state import JSONValue, Outcome
 
 GRADER = "lcchess grade"
 REVIEW_KEY = "game_review"
+"""The review's header, written last: a game is graded once it is there and its parts are whole."""
+PART_KEY = "game_review_part"
+PART_BYTES = 16 * 1024
+"""Each part's budget, under LangSmith's default 20 KiB cap: it stores a bigger value as null."""
 STATUS_KEY = "grade_status"
 """The review app's mark on a game it launched a grading job for: `analyzing`, then `failed`."""
 FAILED = "failed"
 PLY_KEYS = ("move_quality", "cp_loss", "win_pct_loss", "best_move")
-GAME_KEYS = ("accuracy_white", "accuracy_black", REVIEW_KEY)
-KEYS = (*PLY_KEYS, *GAME_KEYS)
+GAME_KEYS = ("accuracy_white", "accuracy_black")
+SCORE_KEYS = (*PLY_KEYS, *GAME_KEYS)
+REVIEW_KEYS = (REVIEW_KEY, PART_KEY)
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,10 +100,17 @@ def source_info(grader: Grader, **extra: JSONValue) -> dict[str, JSONValue]:
     }
 
 
-def feedback(record: GameRecord, grade: GameGrade, grader: Grader) -> tuple[Feedback, ...]:
-    """Per-move keys on each agent turn's run; the game's on its last run, the review last.
+def feedback(
+    record: GameRecord,
+    grade: GameGrade,
+    grader: Grader,
+    generation: str,
+    part_bytes: int = PART_BYTES,
+) -> tuple[Feedback, ...]:
+    """Per-move keys on each agent turn's run; the game's on its last run, the review's header last.
 
-    The review is the marker that a game is graded, so a write cut short is redone.
+    The header is the marker that a game is graded, so a write cut short is redone. `generation`
+    ties the header to its parts, so a reader never mixes two gradings.
     """
     entries: list[Feedback] = []
     for ply, turn_id in zip(grade.plies, record.turn_ids, strict=True):
@@ -117,31 +130,88 @@ def feedback(record: GameRecord, grade: GameGrade, grader: Grader) -> tuple[Feed
             entries.append(
                 Feedback(record.last_run, f"accuracy_{side}", info, score=round(accuracy, 1))
             )
-    entries.append(Feedback(record.last_run, REVIEW_KEY, info, value=review(record, grade, grader)))
+    header, parts = review(record, grade, grader, generation, part_bytes)
+    entries += [Feedback(record.last_run, PART_KEY, info, value=part) for part in parts]
+    entries.append(Feedback(record.last_run, REVIEW_KEY, info, value=header))
     return tuple(entries)
 
 
-def review(record: GameRecord, grade: GameGrade, grader: Grader) -> dict[str, JSONValue]:
-    """Everything the review app draws, in one value; `run_id` saves it reading every turn."""
-    return {
-        "version": 1,
+def size(value: JSONValue) -> int:
+    """Bytes as LangSmith measures a feedback value against its cap: compact JSON."""
+    return len(json.dumps(value, separators=(",", ":")).encode())
+
+
+def review(
+    record: GameRecord,
+    grade: GameGrade,
+    grader: Grader,
+    generation: str,
+    part_bytes: int = PART_BYTES,
+) -> tuple[dict[str, JSONValue], list[dict[str, JSONValue]]]:
+    """Everything the review app draws: a header, and the plies in parts of at most `part_bytes`.
+
+    Each part carries its plies and the evaluation before each; the header the final one.
+    `run_id` saves the app reading every turn.
+    """
+    evals: list[JSONValue] = [eval_json(e) for e in grade.evals]
+    plies: list[JSONValue] = [
+        {
+            "ply": p.ply,
+            "run_id": record.ply_runs[p.ply].id,
+            "side": p.side,
+            "uci": p.played,
+            "best_move": p.best_move,
+            "quality": p.quality,
+            "cp_loss": p.cp_loss,
+            "win_pct_loss": round(p.win_pct_loss, 2),
+            "accuracy": round(p.accuracy, 1),
+            "lines": [{"eval": eval_json(line.eval), "pv": list(line.pv)} for line in p.lines],
+        }
+        for p in grade.plies
+    ]
+
+    def part(start: int, end: int) -> dict[str, JSONValue]:
+        return {
+            "version": 2,
+            "generation": generation,
+            "part": len(parts),
+            "from": start,
+            "evals": evals[start:end],
+            "plies": plies[start:end],
+        }
+
+    parts: list[dict[str, JSONValue]] = []
+    start = 0
+    while start < len(plies):
+        end = start + 1
+        if size(part(start, end)) > part_bytes:
+            msg = f"ply {start}'s grade alone is over {part_bytes} bytes"
+            raise ValueError(msg)
+        while end < len(plies) and size(part(start, end + 1)) <= part_bytes:
+            end += 1
+        parts.append(part(start, end))
+        start = end
+    header: dict[str, JSONValue] = {
+        "version": 2,
+        "generation": generation,
         "engine": grader.engine,
         "settings": grader.settings,
         "accuracy": {s: None if a is None else round(a, 1) for s, a in grade.accuracy.items()},
-        "evals": [eval_json(e) for e in grade.evals],
-        "plies": [
-            {
-                "ply": p.ply,
-                "run_id": record.ply_runs[p.ply].id,
-                "side": p.side,
-                "uci": p.played,
-                "best_move": p.best_move,
-                "quality": p.quality,
-                "cp_loss": p.cp_loss,
-                "win_pct_loss": round(p.win_pct_loss, 2),
-                "accuracy": round(p.accuracy, 1),
-                "lines": [{"eval": eval_json(line.eval), "pv": list(line.pv)} for line in p.lines],
-            }
-            for p in grade.plies
-        ],
+        "plies": len(plies),
+        "parts": len(parts),
+        "final_eval": evals[-1],
     }
+    return header, parts
+
+
+def whole(header: object, parts: Sequence[object]) -> bool:
+    """Whether a version 2 header has every one of its parts among `parts`."""
+    if not isinstance(header, dict) or header.get("version") != 2:
+        return False
+    ours = {
+        p.get("part")
+        for p in parts
+        if isinstance(p, dict) and p.get("generation") == header.get("generation")
+    }
+    count = header.get("parts")
+    return isinstance(count, int) and ours >= set(range(count))

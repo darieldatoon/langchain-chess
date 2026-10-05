@@ -1,7 +1,7 @@
 // The LangSmith API as the app uses it. `call` is `window.langsmith.call`, injected for tests.
 import { analyze, marksByRun, STATUS_KEY, type Launch, type Target } from "./analysis";
 import { toGame, type Game, type RootRun, type ThreadItem } from "./games";
-import { REVIEW_KEY, reviewsByRun, type FeedbackItem } from "./review";
+import { PART_KEY, REVIEW_KEY, reviewsByRun, type FeedbackItem } from "./review";
 
 export type Call = (
   operation: string,
@@ -99,6 +99,23 @@ export interface Api {
 
 const PAGE_SIZE = 20;
 const RUN_SELECTS = ["ID", "TRACE_ID", "START_TIME", "METADATA", "OUTPUTS"];
+/** The most `GET /api/v1/feedback` returns at once. */
+const FEEDBACK_PAGE = 100;
+
+/**
+ * All the runs' feedback under `keys`, a page at a time. A regrade deleting feedback between
+ * pages can shift a row past the offset, so headers are listed apart from their parts.
+ */
+async function allFeedback(call: Call, runs: string[], keys: string[]): Promise<FeedbackItem[]> {
+  const items = new Map<unknown, FeedbackItem>();
+  for (let offset = 0; ; offset += FEEDBACK_PAGE) {
+    const page = (await call("GET /api/v1/feedback", {
+      params: { run: runs, key: keys, limit: String(FEEDBACK_PAGE), offset: String(offset) },
+    })) as FeedbackItem[];
+    for (const item of page) items.set(item.id ?? item, item);
+    if (page.length < FEEDBACK_PAGE) return [...items.values()];
+  }
+}
 
 export function createApi(call: Call): Api {
   return {
@@ -121,7 +138,7 @@ export function createApi(call: Call): Api {
       })) as { items: ThreadItem[]; next_cursor: string | null };
       const ids = page.items.map((t) => t.last_trace_id);
       if (ids.length === 0) return { games: [], cursor: null };
-      const [runs, feedback] = await Promise.all([
+      const [runs, marked, parts] = await Promise.all([
         call("POST /api/v2/runs/query", {
           body: {
             project_ids: [projectId],
@@ -133,13 +150,12 @@ export function createApi(call: Call): Api {
             page_size: PAGE_SIZE,
           },
         }) as Promise<{ items: RootRun[] }>,
-        call("GET /api/v1/feedback", {
-          params: { run: ids, key: [REVIEW_KEY, STATUS_KEY], limit: "100" },
-        }) as Promise<FeedbackItem[]>,
+        allFeedback(call, ids, [REVIEW_KEY, STATUS_KEY]),
+        allFeedback(call, ids, [PART_KEY]),
       ]);
       const byId = new Map(runs.items.map((r) => [r.id, r]));
-      const reviews = reviewsByRun(feedback);
-      const marks = marksByRun(feedback);
+      const reviews = reviewsByRun([...marked, ...parts]);
+      const marks = marksByRun(marked);
       return {
         games: page.items.map((t) =>
           toGame(

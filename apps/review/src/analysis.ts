@@ -69,7 +69,7 @@ export function sandboxName(threadId: string): string {
   return `lcchess-grade-${safe}`.slice(0, 63).replace(/-+$/, "");
 }
 
-const quote = (s: string) => `'${s.replaceAll("'", `'\\''`)}'`;
+export const quote = (s: string) => `'${s.replaceAll("'", `'\\''`)}'`;
 
 /** Detached and silent: the job must outlive `execute`, which ends its process group. */
 export function gradeCommand(target: Target, force: boolean): string {

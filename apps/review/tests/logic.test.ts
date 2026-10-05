@@ -1,7 +1,15 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import { appended, createApi, defaultProject, firstPages, threadUrl } from "../src/api";
 import { matchup, modelName, resultText, sideLabel, toGame, type ThreadItem } from "../src/games";
-import { evalText, parseReview, reviewsByRun, whiteCp, whiteWinPercent } from "../src/review";
+import {
+  EMPTY,
+  evalText,
+  parseReview,
+  readReview,
+  reviewsByRun,
+  whiteCp,
+  whiteWinPercent,
+} from "../src/review";
 import { decodeValues } from "../src/values";
 import { reviewPgn } from "../src/export";
 import { toPgn } from "@langchain-chess/chess-ui";
@@ -12,7 +20,16 @@ import {
   systemOne,
   turn,
 } from "@langchain-chess/chess-ui/testing";
-import { game, graded, MOVES, review, reviewFeedback, values } from "./support/fixtures";
+import {
+  game,
+  graded,
+  MOVES,
+  partFeedback,
+  review,
+  reviewFeedback,
+  values,
+  versionTwo,
+} from "./support/fixtures";
 
 const thread = (id: string, last = `${id}-last`): ThreadItem => ({
   thread_id: id,
@@ -39,7 +56,7 @@ describe("review", () => {
     const cases: [unknown, string][] = [
       [null, "it is not an object"],
       [[], "it is not an object"],
-      [{ ...good, version: 2 }, "version 2 is not supported"],
+      [{ ...good, version: 3 }, "version 3 is not supported"],
       [{ ...good, version: { toString: null } }, "the version is missing or malformed"],
       [{ ...good, version: undefined }, "the version is missing or malformed"],
       [{ ...good, engine: undefined }, "the engine is missing"],
@@ -93,6 +110,60 @@ describe("review", () => {
     expect([...reviews.keys()]).toEqual(["a", "c"]);
     expect(reviews.get("a")?.status).toBe("graded");
     expect(reviews.get("c")).toEqual({ status: "invalid", problem: "version 0 is not supported" });
+  });
+
+  it("joins a version 2 header's parts into the review", () => {
+    const { header, parts } = versionTwo();
+    expect(readReview(header, [parts[1], parts[0]])).toEqual(graded());
+    const other = versionTwo(review(), [7], "g0").parts;
+    expect(readReview(header, [...other, ...parts]).status).toBe("graded");
+  });
+
+  it("says what is wrong with a version 2 review", () => {
+    const { header, parts } = versionTwo();
+    const [first, second] = parts;
+    const cases: [unknown, unknown[], string][] = [
+      [null, parts, EMPTY],
+      ["x", parts, "it is not an object"],
+      [{ ...header, generation: 1 }, parts, "its header is malformed"],
+      [{ ...header, parts: "2" }, parts, "its header is malformed"],
+      [{ ...header, plies: null }, parts, "its header is malformed"],
+      [header, [first], "part 2 of 2 is missing"],
+      [header, [first, { ...second, generation: "g0" }], "part 2 of 2 is missing"],
+      [header, [first, null, second, { ...second }], "it is valid"],
+      [header, [first, { ...second, version: 3 }], "part 1 has an unsupported version"],
+      [header, [first, second, { ...second, from: 9 }], "part 1 is stored twice, differently"],
+      [header, [first, { ...second, from: 2 }], "part 2 of 2 is malformed"],
+      [header, [first, { ...second, plies: {} }], "part 2 of 2 is malformed"],
+      [header, [first, { ...second, evals: null }], "part 2 of 2 is malformed"],
+      [header, [first, { ...second, evals: [] }], "part 2 of 2 is malformed"],
+      [{ ...header, plies: 8 }, parts, "its parts hold 7 of its 8 plies"],
+      [{ ...header, final_eval: undefined }, parts, "evaluation 7 is malformed"],
+    ];
+    for (const [value, stored, problem] of cases) {
+      const expected = problem === "it is valid" ? graded() : { status: "invalid", problem };
+      expect(readReview(value, stored), problem).toEqual(expected);
+    }
+  });
+
+  it("reads the newest header of a run, and parts only with a header", () => {
+    const old = versionTwo(review(), [7], "g0");
+    const fresh = versionTwo(review({ accuracy: { white: 1, black: 2 } }), [7], "g1");
+    const reviews = reviewsByRun([
+      reviewFeedback("a", old.header),
+      reviewFeedback("a", fresh.header, undefined, "2026-09-25T12:40:00.000001Z"),
+      reviewFeedback("a", old.header, undefined, "2026-09-25T12:40:00Z"),
+      reviewFeedback("a", old.header, undefined, "not a time"),
+      partFeedback("a", old.parts[0]),
+      partFeedback("a", fresh.parts[0]),
+      partFeedback("a", { junk: true }, "someone else"),
+      partFeedback("b", fresh.parts[0]),
+      { ...reviewFeedback("c", null), created_at: undefined },
+      { ...reviewFeedback("c", review()), created_at: undefined },
+    ]);
+    expect([...reviews.keys()]).toEqual(["a", "c"]);
+    expect(reviews.get("a")).toEqual(graded({ accuracy: { white: 1, black: 2 } }));
+    expect(reviews.get("c")).toEqual({ status: "invalid", problem: EMPTY });
   });
 
   it("scores from White's side with mates at the ceiling", () => {
@@ -338,6 +409,35 @@ describe("api", () => {
     expect(page.games.map((g) => g.grading)).toEqual([
       { status: "invalid", problem: "the version is missing or malformed" },
     ]);
+  });
+
+  it("reads every page of a page of games' feedback, headers apart from parts", async () => {
+    const { header, parts } = versionTwo(review(), [1, 1, 1, 1, 1, 1, 1]);
+    const filler = Array.from({ length: 96 }, (_, i) => ({
+      ...partFeedback("b-last", null, "someone else"),
+      id: `filler-${i}`,
+    }));
+    const stored = [
+      ...filler,
+      ...parts.map((p, i) => ({ ...partFeedback("a-last", p), id: `part-${i}` })),
+    ];
+    const listed: string[] = [];
+    const call = vi.fn(async (operation: string, args?: { params?: Record<string, unknown> }) => {
+      if (operation === "POST /api/v2/threads/query") return { items: [thread("a")] };
+      if (operation === "POST /api/v2/runs/query") return { items: [] };
+      const { key, offset } = args!.params as { key: string[]; offset: string };
+      listed.push(`${key.join("+")}@${offset}`);
+      if (!key.includes("game_review_part")) return [reviewFeedback("a-last", header)];
+      // A row seen at the end of the first page comes again at the start of the second.
+      return Number(offset) ? stored.slice(99) : stored.slice(0, 100);
+    });
+    const page = await createApi(call).games("p1", "2026-09-18T00:00:00Z");
+    expect(listed).toEqual([
+      "game_review+grade_status@0",
+      "game_review_part@0",
+      "game_review_part@100",
+    ]);
+    expect(page.games[0].grading).toEqual(graded());
   });
 
   it("pages games with their last runs and reviews", async () => {

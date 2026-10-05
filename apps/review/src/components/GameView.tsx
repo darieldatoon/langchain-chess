@@ -83,6 +83,8 @@ import { PreviewBar } from "./PreviewBar";
 import { Summary } from "./Summary";
 
 interface Props {
+  /** For the CLI command the banner offers. */
+  projectName: string;
   game: Game;
   values: ChessValues;
   view: TurnView;
@@ -110,6 +112,7 @@ const BRAND = "var(--bg-brand)";
 const MOVE_ID = "move-";
 
 export function GameView({
+  projectName,
   game,
   values,
   view,
@@ -327,6 +330,7 @@ export function GameView({
         </Button>
       </div>
       <AnalysisBanner
+        projectName={projectName}
         threadId={game.threadId}
         grading={grading}
         analysis={analysis}
