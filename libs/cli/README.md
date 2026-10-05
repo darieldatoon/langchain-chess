@@ -181,7 +181,7 @@ flowchart LR
   dedupe --> sf["Stockfish workers"]
   sf --> grades["Grade each move:<br/>best … blunder, cp loss,<br/>accuracy"]
   grades --> turn["Per turn: move_quality,<br/>cp_loss, win_pct_loss, best_move"]
-  grades --> game["Last turn: accuracy_white,<br/>accuracy_black, game_review"]
+  grades --> game["Last turn: accuracy_white,<br/>accuracy_black, game_review_part,<br/>game_review"]
   turn --> fb[("LangSmith feedback")]
   game --> fb
 ```
@@ -198,6 +198,12 @@ flowchart LR
   `blunder`, and `cp_loss` is how many centipawns (hundredths of a pawn) the move gave away. Moves that came in as input (yours, in the web UI) count toward `game_review` and
   the accuracies but get no per-turn feedback. Every entry's source info records the engine, the
   settings and their fingerprint.
+- **The review** the review app draws is a `game_review` header and `game_review_part` entries
+  of up to 16 KiB each. LangSmith stores a feedback value over its cap (20 KiB by default) as
+  null, so one entry can't hold a long game. A regrade reads its parts and header back before
+  it deletes the earlier review, and fails, keeping the earlier review, if LangSmith didn't
+  store them as written; a lower cap than 16 KiB shows up that way. A game is graded once its
+  header and every part are there.
 - **From the review app.** The app's Analyze button runs `lcchess grade --thread <id>
   --sandbox-job` in a LangSmith sandbox. `--sandbox-job` settles the app's `grade_status` mark
   (cleared on success, `failed` with the log's last lines otherwise), then deletes its own sandbox.

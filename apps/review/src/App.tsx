@@ -301,6 +301,7 @@ export function App({ api, openUrl, now = () => new Date() }: Props) {
           {game?.values && project ? (
             <GameView
               key={game.threadId}
+              projectName={project.name}
               game={game}
               values={game.values}
               view={view}

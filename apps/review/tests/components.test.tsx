@@ -295,7 +295,9 @@ describe("GameView", () => {
     const onAnalyze = vi.fn();
     renderView(game({ grading: UNGRADED }), vi.fn(), { onAnalyze });
     expect(screen.getByText("Not graded yet")).toBeInTheDocument();
-    expect(screen.getByText("lcchess grade --thread thread-1")).toBeInTheDocument();
+    expect(
+      screen.getByText("lcchess grade --project 'langchain-chess-app' --thread thread-1"),
+    ).toBeInTheDocument();
     expect(screen.queryByLabelText(/^evaluation/)).toBeNull();
     expect(screen.queryByLabelText("engine")).toBeNull();
     expect(screen.queryByRole("button", { name: "Re-analyze" })).toBeNull();
@@ -308,7 +310,9 @@ describe("GameView", () => {
     const g = game({ grading: { status: "invalid", problem: "evaluation 3 is malformed" } });
     renderView(g, vi.fn(), { onAnalyze });
     expect(screen.getByText(/evaluation 3 is malformed/)).toBeInTheDocument();
-    expect(screen.getByText("lcchess grade --thread thread-1 --force")).toBeInTheDocument();
+    expect(
+      screen.getByText("lcchess grade --project 'langchain-chess-app' --thread thread-1 --force"),
+    ).toBeInTheDocument();
     expect(screen.queryByLabelText(/^evaluation/)).toBeNull();
     expect(current()).toBe("Qxf7#");
     fireEvent.click(screen.getByRole("button", { name: "Re-analyze" }));

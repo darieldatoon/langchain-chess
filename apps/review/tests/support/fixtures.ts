@@ -2,7 +2,14 @@ import { START_FEN, type ChessValues, type Quality } from "@langchain-chess/ches
 import { ply, turn } from "@langchain-chess/chess-ui/testing";
 import { STATUS_KEY } from "../../src/analysis";
 import type { Game } from "../../src/games";
-import { GRADER, REVIEW_KEY, type Eval, type GameReview, type Grading } from "../../src/review";
+import {
+  GRADER,
+  PART_KEY,
+  REVIEW_KEY,
+  type Eval,
+  type GameReview,
+  type Grading,
+} from "../../src/review";
 
 /** Scholar's mate: White's queen and bishop mate on f7; Black's 3...Nf6?? allows it. */
 export const MOVES = ["e2e4", "e7e5", "d1h5", "b8c6", "f1c4", "g8f6", "h5f7"];
@@ -87,8 +94,51 @@ export function game(overrides: Partial<Game> = {}): Game {
   };
 }
 
-export function reviewFeedback(runId: string, value: unknown = review(), grader = GRADER) {
-  return { key: REVIEW_KEY, run_id: runId, value, feedback_source: { metadata: { grader } } };
+export function reviewFeedback(
+  runId: string,
+  value: unknown = review(),
+  grader = GRADER,
+  createdAt = "2026-09-25T12:31:00Z",
+) {
+  return {
+    key: REVIEW_KEY,
+    run_id: runId,
+    value,
+    created_at: createdAt,
+    feedback_source: { metadata: { grader } },
+  };
+}
+
+/** A version 1 review as `lcchess grade` now writes it: a header, and parts of `sizes` plies. */
+export function versionTwo(r: GameReview = review(), sizes = [3, 4], generation = "g1") {
+  const header = {
+    version: 2,
+    generation,
+    engine: r.engine,
+    settings: r.settings,
+    accuracy: r.accuracy,
+    plies: r.plies.length,
+    parts: sizes.length,
+    final_eval: r.evals.at(-1),
+  };
+  let from = 0;
+  const parts = sizes.map((n, part) => {
+    const value = {
+      version: 2,
+      generation,
+      part,
+      from,
+      evals: r.evals.slice(from, from + n),
+      plies: r.plies.slice(from, from + n),
+    };
+    from += n;
+    return value;
+  });
+  return { header, parts };
+}
+
+export function partFeedback(runId: string, value: unknown, grader = GRADER) {
+  return { key: PART_KEY, run_id: runId, value, feedback_source: { metadata: { grader } } };
 }
 
 export function statusFeedback(

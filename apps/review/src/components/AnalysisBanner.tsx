@@ -1,9 +1,10 @@
 import { Banner } from "@langchain/macaw-components/Banner";
 import { Button } from "@langchain/macaw-components/Button";
-import type { Analysis, LaunchState } from "../analysis";
+import { quote, type Analysis, type LaunchState } from "../analysis";
 import type { Grading } from "../review";
 
 interface Props {
+  projectName: string;
   threadId: string;
   grading: Grading;
   analysis: Analysis | null;
@@ -12,7 +13,14 @@ interface Props {
 }
 
 /** Where the game stands with the Analyze button; nothing for a graded game at rest. */
-export function AnalysisBanner({ threadId, grading, analysis, launch, onAnalyze }: Props) {
+export function AnalysisBanner({
+  projectName,
+  threadId,
+  grading,
+  analysis,
+  launch,
+  onAnalyze,
+}: Props) {
   const starting = launch?.status === "starting";
   // `loading` alone leaves the button clickable, and a second click would launch twice.
   const action = (label: string) => (
@@ -27,9 +35,10 @@ export function AnalysisBanner({ threadId, grading, analysis, launch, onAnalyze 
       {label}
     </Button>
   );
+  const grade = `lcchess grade --project ${quote(projectName)} --thread ${threadId}`;
   const fallback = (
     <>
-      Or grade it with <code>lcchess grade --thread {threadId}</code>.
+      Or grade it with <code>{grade}</code>.
     </>
   );
 
@@ -68,7 +77,7 @@ export function AnalysisBanner({ threadId, grading, analysis, launch, onAnalyze 
     return (
       <Banner intent="warning" title="Review unreadable" action={action("Re-analyze")}>
         The engine review can't be drawn: {grading.problem}. Re-analyze it, or regrade it with{" "}
-        <code>lcchess grade --thread {threadId} --force</code>.
+        <code>{grade} --force</code>.
       </Banner>
     );
   }

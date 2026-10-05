@@ -1,9 +1,12 @@
 // The `game_review` feedback `lcchess grade` writes (libs/cli/langchain_chess_cli/grade/records.py
 // `review`), and the eval maths the board and graph draw from it. Pure.
 import type { Eval, Quality, Side } from "@langchain-chess/chess-ui";
-import { isJson, isNumber, isSide, isStrings } from "./json";
+import { isJson, isNumber, isSide, isStrings, type Json } from "./json";
 
+/** A version 1 review, or a version 2 review's header. */
 export const REVIEW_KEY = "game_review";
+/** A version 2 review's plies, in parts each under LangSmith's feedback size cap. */
+export const PART_KEY = "game_review_part";
 export const GRADER = "lcchess grade";
 
 export type { Eval };
@@ -27,6 +30,7 @@ export interface PlyGrade {
   lines: EngineLine[];
 }
 
+/** A review as the app draws it: version 1, or a version 2 header and its parts joined. */
 export interface GameReview {
   version: 1;
   engine: string;
@@ -109,16 +113,90 @@ export function parseReview(value: unknown): Grading {
     : { status: "invalid", problem };
 }
 
-/** This grader's reviews by run; other feedback under the same key is ignored. */
+/** LangSmith stores a feedback value over its size cap as null, and says nothing. */
+export const EMPTY = "it is empty; LangSmith may have dropped it for being over its size cap";
+
+const isInteger = (v: unknown): v is number => Number.isInteger(v);
+
+/** A version 2 header's parts of its generation, joined into a version 1 review. */
+function joined(header: Json, parts: readonly unknown[]): Json | string {
+  const { generation, parts: count, plies } = header;
+  if (typeof generation !== "string" || !isInteger(count) || !isInteger(plies)) {
+    return "its header is malformed";
+  }
+  const ours = new Map<unknown, Json>();
+  for (const part of parts) {
+    if (!isJson(part) || part.generation !== generation) continue;
+    if (part.version !== 2) return `part ${String(part.part)} has an unsupported version`;
+    const twin = ours.get(part.part);
+    if (twin && JSON.stringify(twin) !== JSON.stringify(part)) {
+      return `part ${String(part.part)} is stored twice, differently`;
+    }
+    ours.set(part.part, part);
+  }
+  const evals: unknown[] = [];
+  const grades: unknown[] = [];
+  for (let i = 0; i < count; i++) {
+    const part = ours.get(i);
+    if (!part) return `part ${i + 1} of ${count} is missing`;
+    const fits =
+      part.from === grades.length &&
+      Array.isArray(part.plies) &&
+      Array.isArray(part.evals) &&
+      part.evals.length === part.plies.length;
+    if (!fits) return `part ${i + 1} of ${count} is malformed`;
+    evals.push(...(part.evals as unknown[]));
+    grades.push(...(part.plies as unknown[]));
+  }
+  if (grades.length !== plies) return `its parts hold ${grades.length} of its ${plies} plies`;
+  const { engine, settings, accuracy } = header;
+  return {
+    version: 1,
+    engine,
+    settings,
+    accuracy,
+    evals: [...evals, header.final_eval],
+    plies: grades,
+  };
+}
+
+/** The review a `game_review` value and the run's `game_review_part` values make. */
+export function readReview(header: unknown, parts: readonly unknown[]): Grading {
+  if (header === null) return { status: "invalid", problem: EMPTY };
+  if (!isJson(header) || header.version !== 2) return parseReview(header);
+  const review = joined(header, parts);
+  return typeof review === "string" ? { status: "invalid", problem: review } : parseReview(review);
+}
+
+/** `created_at` that sorts as time does, the fraction padded to microseconds; "" if it isn't one. */
+function instant(at = ""): string {
+  const parts = /^(.*T\d\d:\d\d:\d\d)(?:\.(\d+))?(.*)$/.exec(at);
+  return parts ? `${parts[1]}.${(parts[2] ?? "").padEnd(6, "0")}${parts[3]}` : "";
+}
+
+const newer = (a: FeedbackItem, b: FeedbackItem) =>
+  instant(b.created_at) > instant(a.created_at) ? b : a;
+
+/**
+ * This grader's reviews by run; other feedback under the same keys is ignored. A regrade
+ * publishes its header before deleting the last one's, so the newest header is the review.
+ */
 export function reviewsByRun(items: readonly FeedbackItem[]): Map<string, Grading> {
-  const reviews = new Map<string, Grading>();
+  const headers = new Map<string, FeedbackItem>();
+  const parts = new Map<string, unknown[]>();
   for (const item of items) {
     const ours = item.feedback_source?.metadata?.grader === GRADER;
-    if (item.key === REVIEW_KEY && ours && item.run_id) {
-      reviews.set(item.run_id, parseReview(item.value));
+    if (!ours || !item.run_id) continue;
+    if (item.key === REVIEW_KEY) {
+      const header = headers.get(item.run_id);
+      headers.set(item.run_id, header ? newer(header, item) : item);
+    } else if (item.key === PART_KEY) {
+      parts.set(item.run_id, [...(parts.get(item.run_id) ?? []), item.value]);
     }
   }
-  return reviews;
+  return new Map(
+    [...headers].map(([run, header]) => [run, readReview(header.value, parts.get(run) ?? [])]),
+  );
 }
 
 const CP_CEILING = 1000;

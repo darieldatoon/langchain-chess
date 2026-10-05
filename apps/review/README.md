@@ -33,7 +33,7 @@ flowchart LR
   app["Review app<br/>(sandboxed)"] -- "window.langsmith.call" --> api[("LangSmith API")]
   api --> threads["Threads in the project<br/>= games"]
   api --> runs["Each game's last root run<br/>= the game record"]
-  api --> fb["game_review feedback<br/>= evals and grades"]
+  api --> fb["game_review + game_review_part<br/>feedback = evals and grades"]
 ```
 
 ## Analyze
@@ -59,7 +59,7 @@ sequenceDiagram
   app->>ls: grade_status: analyzing
   app->>ls: create sandbox (snapshot, delegation)
   app->>box: execute: nohup lcchess grade … &
-  box->>ls: game_review + per-move feedback, as you
+  box->>ls: game_review, its parts + per-move feedback, as you
   box->>ls: clear grade_status
   box->>ls: delete own sandbox
   app->>ls: Refresh: read games + marks
@@ -104,9 +104,10 @@ Custom apps depend on your LangSmith plan: Plus gets one per org.
   `window.langsmith.call`, and navigates with `window.langsmith.openUrl`. The theme follows
   `metadata.mode`. There is no localStorage, so what the reply card shows lasts only the
   session: they carry from game to game, but not across a reload.
-- **Data.** Each page of games is one threads query, then one call each for the threads' last
-  root runs and the grader's `game_review` and `grade_status` feedback. `game_review` carries every eval and grade
-  and the run that played each move, so replaying a game reads nothing more.
+- **Data.** Each page of games is one threads query, one runs query for the threads' last root
+  runs, and two paged listings of the grader's feedback: `game_review` and `grade_status`, then
+  `game_review_part`. The header and its parts carry every eval and grade and the run that played
+  each move, so replaying a game reads nothing more.
 
 ## Test
 

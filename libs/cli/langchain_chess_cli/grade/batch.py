@@ -7,6 +7,7 @@ written, first. A crash keeps every game already written; a re-run skips them.
 
 import asyncio
 import time
+import uuid
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
@@ -157,7 +158,7 @@ async def grade_batch(
                 zip(unsettled, await asyncio.gather(*(tasks[f] for f in unsettled)), strict=True)
             )
             grade = grade_game(record.positions, record.moves, analyses)
-            entries = feedback(record, grade, grader)
+            entries = feedback(record, grade, grader, uuid.uuid4().hex)
             await asyncio.to_thread(store.replace, record.runs, entries)
             report(Graded(record, grade, done, len(fens), clock() - started))
 
