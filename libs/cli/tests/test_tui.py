@@ -145,7 +145,8 @@ async def test_thinking_counts_the_seconds_and_analysis_streams(monkeypatch):
         assert "Thinking…" in text(app, "#reply-head")
         assert "Thinking hard" in analysis(app)
         assert text(app, "#top .status").startswith("Thinking… ")
-        later = app.since + 65
+        # Half a second past 65: `since + 65 - since` can round to 64.999… and truncate to 64s.
+        later = app.since + 65.5
         monkeypatch.setattr("langchain_chess_cli.tui.widgets.monotonic", lambda: later)
         for _ in range(50):  # the clock ticks once a second
             if text(app, "#top .status") == "Thinking… 65s":

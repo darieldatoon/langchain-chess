@@ -6,6 +6,7 @@ help shows at the bottom. Play is held until the opponent is playable.
 """
 
 import asyncio
+import contextlib
 import json
 from collections.abc import Callable
 from dataclasses import dataclass, replace
@@ -17,6 +18,7 @@ from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.content import Content
+from textual.css.query import NoMatches
 from textual.events import DescendantFocus
 from textual.screen import ModalScreen
 from textual.widget import Widget
@@ -301,7 +303,9 @@ class NewGameScreen(ModalScreen[NewGame | None]):
         # Dropped when another model was picked meanwhile.
         if model == self.checked:
             self.summarize = "no" if limit is None else "yes"
-            self._update()
+            # Quitting removes this screen's widgets before it cancels this worker.
+            with contextlib.suppress(NoMatches):
+                self._update()
 
     def _set(self, setup: Setup) -> None:
         self.setup = setup
