@@ -17,9 +17,9 @@ from langchain_chess_systemone import GatewayRanker, Ranker
 from langchain_chess_systemone.describe import DescriptionStyle
 from langchain_chess_systemone.settings import ChessContext, load_file
 
-# The gateway caps SemIf at about 70 rankings a minute, then refuses everything for 40 s or more,
-# with no Retry-After. Retry for up to ~2 minutes (backoff caps at 4 s): a rate limit is not a
-# ranking failure and must not score as a miss.
+# The gateway capped SemIf at about 70 rankings a minute, then refused everything for 40 s or
+# more, with no Retry-After, and may do the same to any classifier. Retry for up to ~2 minutes
+# (backoff caps at 4 s): a rate limit is not a ranking failure and must not score as a miss.
 MAX_CONCURRENCY = 4
 MAX_ATTEMPTS = 30
 STYLES: tuple[DescriptionStyle, ...] = ("rich", "terse")

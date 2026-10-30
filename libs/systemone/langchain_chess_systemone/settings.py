@@ -21,11 +21,15 @@ from langchain_chess_systemone.types import Gate
 
 type Policy = Literal["llm", "systemone", "hybrid"]
 
-VERSION = 2
+VERSION = 3
 MAX_SEED = 2**53 - 1
 """The largest integer a browser's JSON keeps exactly."""
 
 _SYSTEMONE = "SystemOneMiddleware.before_model"
+
+JEV = "typesafe/jev-latest"
+RETIRED_PREFIX = "semif-"
+"""SemIf's models, which the gateway no longer serves."""
 
 
 def _integral(value: object) -> object:
@@ -37,14 +41,14 @@ class SystemOneSettings(Settings):
     systemone_model: Annotated[
         str,
         setting(
-            "System 1 model: `semif-qwen3.5-4b` (SemIf) or `typesafe/jev-latest` (Jev). Another "
-            "TypeSafe classifier works too, with a conservative cap on the moves per request.",
+            "System 1 model: `typesafe/jev-latest` (Jev). Another TypeSafe classifier works too, "
+            "with a conservative cap on the moves per request.",
             _SYSTEMONE,
             min_length=1,
             label="System 1",
             help="The fast move ranker. It scores every legal move in about a second.",
         ),
-    ] = "semif-qwen3.5-4b"
+    ] = JEV
     style: Annotated[
         DescriptionStyle,
         setting(
@@ -174,7 +178,7 @@ class SystemOneSettings(Settings):
 
 
 class _Head(Settings):
-    version: Annotated[Literal[2], Field(description="The settings file's version.")] = VERSION
+    version: Annotated[Literal[3], Field(description="The settings file's version.")] = VERSION
     policy: Annotated[
         Policy,
         setting(
@@ -247,6 +251,31 @@ DEFAULTS: Mapping[int, Mapping[str, JSONValue]] = MappingProxyType(
                 "seed": 0,
             }
         ),
+        3: MappingProxyType(
+            {
+                "version": 3,
+                "policy": "hybrid",
+                "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
+                "model_kwargs": {},
+                "reasoning_effort": None,
+                "system_prompt": None,
+                "show_fen": True,
+                "show_board": True,
+                "move_list": "both",
+                "memory": False,
+                "draw_claims": "auto",
+                "systemone_model": "typesafe/jev-latest",
+                "style": "rich",
+                "with_eval": False,
+                "with_nouls": False,
+                "gate": "margin",
+                "threshold": 0.9,
+                "tournament_threshold": None,
+                "k": 5,
+                "top_p": None,
+                "seed": 0,
+            }
+        ),
     }
 )
 """Each version's keys and defaults, frozen: never edit a released version's entry."""
@@ -261,8 +290,17 @@ def _adds_prompt_and_model_options(values: dict[str, Any], complete: bool) -> di
     return {**added, **values}
 
 
+def _retires_semif(values: dict[str, Any], complete: bool) -> dict[str, Any]:
+    """Version 3 makes Jev the default: the gateway retired SemIf (#79). Settings that name a
+    SemIf model play Jev, and a partial that omits the key gets Jev too, not the old default."""
+    model = values.get("systemone_model")
+    if isinstance(model, str) and model.startswith(RETIRED_PREFIX):
+        return {**values, "systemone_model": JEV}
+    return values
+
+
 MIGRATIONS: Mapping[int, Callable[[dict[str, Any], bool], dict[str, Any]]] = MappingProxyType(
-    {1: _adds_prompt_and_model_options}
+    {1: _adds_prompt_and_model_options, 2: _retires_semif}
 )
 """Version n's keys to version n + 1's. For partial settings (`complete` false) a step writes
 only what it must: an added key's default would override a source merged under this one, while

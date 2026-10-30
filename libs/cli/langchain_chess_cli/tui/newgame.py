@@ -46,7 +46,7 @@ from langchain_chess_cli.tui.setup import (
     MOVE_LISTS,
     NONE,
     STYLES,
-    SYSTEM_ONE_LABELS,
+    SYSTEM_ONE_NAMES,
     Setup,
     SideChoice,
     Summarize,
@@ -169,7 +169,7 @@ class NewGameScreen(ModalScreen[NewGame | None]):
         super().__init__()
         self.setup, self.start = setup, start
         self.limit = limit
-        self.other = setup.system_one if setup.system_one not in SYSTEM_ONE_LABELS else ""
+        self.other = setup.system_one if setup.system_one not in SYSTEM_ONE_NAMES else ""
         self.summarize: Summarize = "checking"
         self.checked: str | None = None
         """The model `summarize` answers for."""
@@ -266,14 +266,14 @@ class NewGameScreen(ModalScreen[NewGame | None]):
         )
 
     def _system_ones(self) -> list[tuple[str, str]]:
-        presets = [(f"{label} — {model}", model) for model, label in SYSTEM_ONE_LABELS.items()]
+        presets = [(f"{label} — {model}", model) for model, label in SYSTEM_ONE_NAMES.items()]
         other = [(self.other, OTHER)] if self.other else []
         return [*presets, *other, ("None — The LLM plays alone", NONE)]
 
     def _system_one_key(self) -> str:
         if self.setup.system_one_off:
             return NONE
-        return self.setup.system_one if self.setup.system_one in SYSTEM_ONE_LABELS else OTHER
+        return self.setup.system_one if self.setup.system_one in SYSTEM_ONE_NAMES else OTHER
 
     def _llms(self) -> list[tuple[str, str]]:
         return [
@@ -495,7 +495,7 @@ def _help(widget: Widget) -> str:
 
 
 def _summary(side: SideChoice, ready: ChessContext | Unplayable) -> str:
-    """What Advanced holds while it's closed: "White · SemIf + GLM-5.3 Flash · 3 settings
+    """What Advanced holds while it's closed: "White · Jev + GLM-5.3 Flash · 3 settings
     changed"."""
     name = side.capitalize()
     if isinstance(ready, Unplayable):

@@ -39,7 +39,7 @@ def turn(status="committed", calls=()):
 def meta(status, **extra):
     return {
         "status": status,
-        "model": "semif",
+        "model": "jev",
         "top": [{"uci": "c7c5", "probability": 0.7}, {"uci": "e7e5", "probability": 0.2}],
         "shortlist": [],
         "gate": "margin",

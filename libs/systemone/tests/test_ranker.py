@@ -29,7 +29,7 @@ def rank(request: pytest.FixtureRequest):
 
 def ranker(client, **kwargs):
     return GatewayRanker(
-        kwargs.pop("model", "semif-qwen3.5-4b"),
+        kwargs.pop("model", "other/ranker"),
         client=client,
         sleep=lambda s: None,
         asleep=_nosleep,
@@ -49,7 +49,7 @@ async def test_a_single_ranking(rank):
     assert result.confidence == 0.4
     assert len(result.calls) == 1
     call = result.calls[0]
-    assert call["model"] == "typesafe:semif-qwen3.5-4b"
+    assert call["model"] == "other:ranker"
     assert call["input_tokens"] is None
     assert call["cost_usd"] is None
     assert client.run_names == ["systemone.rank"]
@@ -150,7 +150,7 @@ async def test_exhausted_retries_fail_with_the_completed_calls(rank):
 
 async def test_other_errors_fail_immediately(rank):
     client = FakeTypeSafeClient(errors=[api_error(422)])
-    with pytest.raises(RankingFailed, match="invalid SemIf request") as caught:
+    with pytest.raises(RankingFailed, match="invalid request") as caught:
         await rank(ranker(client), rank_request())
     assert caught.value.calls == ()
     assert caught.value.elapsed_ms > 0
@@ -180,7 +180,7 @@ async def test_a_missing_choice_is_malformed(rank):
 
 async def test_jev_is_priced(rank):
     client = FakeTypeSafeClient(
-        semif=False,
+        capped=False,
         input_tokens=1000,
         output_tokens=3,
         model="jev-1.13.0",
@@ -193,7 +193,7 @@ async def test_jev_is_priced(rank):
 
 
 def test_max_options():
-    assert default_max_options("semif-qwen3.5-4b") == 16
+    assert default_max_options("other/ranker") == 16
     assert default_max_options("typesafe/jev-latest") == 255
     assert default_max_options("mystery") == 16
     assert ranker(FakeTypeSafeClient(), max_options=2).max_options == 2
@@ -206,7 +206,7 @@ def test_max_options():
 def test_the_default_client_is_built_on_first_use(monkeypatch):
     monkeypatch.setenv("TYPESAFE_API_KEY", "test-key")
     monkeypatch.setenv("TYPESAFE_BASE_URL", "https://gateway.smith.langchain.com")
-    ranking = GatewayRanker("semif-qwen3.5-4b")
+    ranking = GatewayRanker("other/ranker")
     assert ranking._client is None
     client = ranking.client
     assert isinstance(client, TypeSafeClassifier)

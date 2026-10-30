@@ -27,6 +27,7 @@ import {
   LLM_PRESETS,
   changedKnobs,
   opponentLabel,
+  SYSTEM_ONE_NAMES,
   SYSTEM_ONE_PRESETS,
   importedSetup,
   matchupLine,
@@ -82,11 +83,6 @@ const SIDES: { value: SideChoice; label: string; icon: React.ReactNode }[] = [
   { value: "black", label: "Black", icon: <CrownIcon aria-hidden size={24} weight="fill" /> },
 ];
 
-const SYSTEM_ONE_LABELS: Record<(typeof SYSTEM_ONE_PRESETS)[number], string> = {
-  "semif-qwen3.5-4b": "SemIf",
-  "typesafe/jev-latest": "Jev (experimental)",
-};
-
 /** Picker keys, not model names: a model from elsewhere may be named anything. */
 const OTHER_SYSTEM_ONE = "other";
 const NO_SYSTEM_ONE = "none";
@@ -99,7 +95,7 @@ function systemOnes(other: string): SelectOption<string>[] {
   return [
     ...SYSTEM_ONE_PRESETS.map((value) => ({
       value,
-      label: SYSTEM_ONE_LABELS[value],
+      label: SYSTEM_ONE_NAMES[value],
       description: value,
     })),
     ...(other === "" ? [] : [{ value: OTHER_SYSTEM_ONE, label: other }]),
@@ -130,7 +126,7 @@ const LLMS: SelectOption<LlmChoice>[] = [
 
 const SIDE_NAMES: Record<SideChoice, string> = { white: "White", black: "Black", random: "Random" };
 
-/** What Advanced holds while it's collapsed: "White · SemIf + GLM-5.3 Flash · 3 settings changed". */
+/** What Advanced holds while it's collapsed: "White · Jev + GLM-5.3 Flash · 3 settings changed". */
 function advancedSummary(side: SideChoice, ready: Matchup): string {
   if (!ready.ok) return SIDE_NAMES[side];
   const changed = changedKnobs(ready.context).length;

@@ -51,7 +51,7 @@ class Call(TypedDict):
     model: str
     """Canonical `provider:model`."""
     input_tokens: int | None
-    """None when the provider reports none (SemIf)."""
+    """None when the provider reports none."""
     output_tokens: int | None
     reasoning_tokens: int
     cache_read_tokens: int | None

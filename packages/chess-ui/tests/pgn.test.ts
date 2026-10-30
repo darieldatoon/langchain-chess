@@ -15,7 +15,7 @@ const META: PgnMeta = {
   site: "http://localhost",
   date: new Date("2026-09-30T10:00:00Z"),
   white: "You",
-  black: "SemIf + GLM-5.3 Flash",
+  black: "Jev + GLM-5.3 Flash",
   comment: null,
 };
 const HEADERS = (result: string, extra = "", termination = "Unterminated") =>
@@ -25,7 +25,7 @@ const HEADERS = (result: string, extra = "", termination = "Unterminated") =>
     '[Date "2026.09.30"]',
     '[Round "-"]',
     '[White "You"]',
-    '[Black "SemIf + GLM-5.3 Flash"]',
+    '[Black "Jev + GLM-5.3 Flash"]',
     `[Result "${result}"]`,
     ...(extra ? [extra] : []),
     `[Termination "${termination}"]`,

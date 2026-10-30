@@ -97,7 +97,7 @@ describe("apiUrl", () => {
 describe("configurableOf and withKnob", () => {
   it("sends exactly the ChessContext keys, version included", () => {
     expect(configurableOf(DEFAULT_CONTEXT)).toEqual(DEFAULT_CONTEXT);
-    expect(configurableOf(DEFAULT_CONTEXT)).toHaveProperty("version", 2);
+    expect(configurableOf(DEFAULT_CONTEXT)).toHaveProperty("version", 3);
     expect(configurableOf(DEFAULT_CONTEXT)).not.toBe(DEFAULT_CONTEXT);
     const extra = { ...DEFAULT_CONTEXT, human_side: "black" } as typeof DEFAULT_CONTEXT;
     expect(configurableOf(extra)).not.toHaveProperty("human_side");

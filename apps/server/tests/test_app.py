@@ -62,7 +62,7 @@ def test_shutdown_closes_the_clients_of_the_graph_langgraph_loads(env):
     assert loaded is not graph_module
     with TestClient(create_app(static_dir=None)):
         classifier = loaded._classifier(
-            "semif-qwen3.5-4b", "k", "https://gateway.smith.langchain.com"
+            "typesafe/jev-latest", "k", "https://gateway.smith.langchain.com"
         )
     assert classifier.client.is_closed
     assert classifier.async_client.is_closed

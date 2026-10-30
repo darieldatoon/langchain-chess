@@ -287,12 +287,12 @@ describe("games", () => {
   });
 
   it("describes the matchup by policy", () => {
-    const models = { model: "anthropic:claude-opus-5-5", systemone_model: "semif-qwen3.5-4b" };
+    const models = { model: "anthropic:claude-opus-5-5", systemone_model: "typesafe/jev-latest" };
     expect(matchup({ policy: "llm", ...models })).toBe("claude-opus-5-5");
     expect(matchup({ policy: "llm" })).toBe("LLM");
-    expect(matchup({ policy: "systemone", ...models })).toBe("semif-qwen3.5-4b");
+    expect(matchup({ policy: "systemone", ...models })).toBe("jev-latest");
     expect(matchup({ policy: "systemone" })).toBe("System 1");
-    expect(matchup({ policy: "hybrid", ...models })).toBe("claude-opus-5-5 + semif-qwen3.5-4b");
+    expect(matchup({ policy: "hybrid", ...models })).toBe("claude-opus-5-5 + jev-latest");
     expect(matchup({ policy: "hybrid" })).toBe("Hybrid");
     expect(matchup(null)).toBe("Unknown setup");
   });
@@ -550,7 +550,7 @@ describe("reviewPgn", () => {
       grades: undefined,
     });
     expect(meta).toMatchObject({ site: "LangSmith", white: "Human", black: "Human" });
-    expect(meta.comment).toBe("claude-opus-5-5 + semif-qwen3.5-4b · Thread thread-1");
+    expect(meta.comment).toBe("claude-opus-5-5 + jev-latest · Thread thread-1");
     expect(reviewPgn(game(), {}, null, null).game.moves).toEqual([]);
   });
 

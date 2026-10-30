@@ -22,8 +22,7 @@ type SideChoice = Side | Literal["random"]
 type Summarize = Literal["checking", "yes", "no"]
 """Whether the LLM can summarize its memory: only a model with a known input limit can."""
 
-SYSTEM_ONE_NAMES = {"semif-qwen3.5-4b": "SemIf", "typesafe/jev-latest": "Jev"}
-SYSTEM_ONE_LABELS = {"semif-qwen3.5-4b": "SemIf", "typesafe/jev-latest": "Jev (experimental)"}
+SYSTEM_ONE_NAMES = {"typesafe/jev-latest": "Jev"}
 
 LLM_NAMES = {
     "langsmith:baseten/zai-org/GLM-5.3-Flash": "GLM-5.3 Flash",
@@ -169,7 +168,7 @@ def effort_overridden(model_kwargs: Mapping[str, Any]) -> bool:
 
 
 def matchup_line(context: ChessContext) -> str:
-    """The matchup in plain words: "SemIf plays confident moves; GLM-5.3 Flash decides the
+    """The matchup in plain words: "Jev plays confident moves; GLM-5.3 Flash decides the
     rest."."""
     system_one = system_one_name(context.systemone_model)
     llm = model_name(context.model)
@@ -181,7 +180,7 @@ def matchup_line(context: ChessContext) -> str:
 
 
 def opponent_label(context: ChessContext) -> str:
-    """The opponent on the game screen, e.g. "SemIf + GLM-5.3 · medium"."""
+    """The opponent on the game screen, e.g. "Jev + GLM-5.3 · medium"."""
     system_one = system_one_name(context.systemone_model)
     effort = sent(context)["reasoning_effort"]
     llm = model_name(context.model) + (f" · {effort}" if effort else "")

@@ -25,8 +25,6 @@ BASELINE = Path(__file__).parents[2] / "experiments" / "systemone-baseline.toml"
 def test_the_baseline_grid():
     specs = grid(tomllib.loads(BASELINE.read_text()), BASELINE.parent)
     assert [(s.model, s.style, s.max_options) for s in specs] == [
-        ("semif-qwen3.5-4b", "rich", None),
-        ("semif-qwen3.5-4b", "terse", None),
         ("typesafe/jev-latest", "rich", None),
         ("typesafe/jev-latest", "terse", None),
         ("typesafe/jev-latest", "rich", 16),
@@ -113,7 +111,7 @@ async def test_run_experiment(tmp_path):
         return captured["result"]
 
     done = await run_experiment(
-        ExperimentSpec("semif-rich", "semif-qwen3.5-4b"),
+        ExperimentSpec("jev-rich", "typesafe/jev-latest"),
         client=client(),
         dataset="d",
         tag="v1",
@@ -125,13 +123,13 @@ async def test_run_experiment(tmp_path):
         report=notes.append,
     )
     assert len(ranker.requests) == 2
-    assert done.name == "systemone-semif-rich-1234"
+    assert done.name == "systemone-jev-rich-1234"
     assert done.summary["recall@1|all"] == 0.0
     assert done.summary["human_match@1|all"] == 1.0
     kwargs = captured["result"].kwargs
     assert kwargs["metadata"] == {
         "eval": "systemone",
-        "model": "semif-qwen3.5-4b",
+        "model": "typesafe/jev-latest",
         "style": "rich",
         "max_options": 16,
         "with_eval": False,
@@ -149,7 +147,7 @@ async def test_run_experiment(tmp_path):
     record = json.loads((tmp_path / f"{done.name}.json").read_text())
     assert record["url"] == "https://smith/compare"
     assert record["summary"]["n|all"] == 2.0
-    assert notes[0] == "semif-rich: 2 examples from d@v1, split dev"
+    assert notes[0] == "jev-rich: 2 examples from d@v1, split dev"
 
 
 async def test_run_experiment_requires_a_summary(tmp_path):
@@ -158,7 +156,7 @@ async def test_run_experiment_requires_a_summary(tmp_path):
 
     with pytest.raises(RuntimeError, match="summary evaluator didn't run"):
         await run_experiment(
-            ExperimentSpec("x", "semif-qwen3.5-4b"),
+            ExperimentSpec("x", "typesafe/jev-latest"),
             client=client(),
             dataset="d",
             tag="v1",

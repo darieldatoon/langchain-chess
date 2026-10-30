@@ -1,4 +1,4 @@
-"""`GatewayRanker`: SemIf or Jev over the LLM Gateway's `/v1/systemone` route.
+"""`GatewayRanker`: Jev or another TypeSafe classifier over the LLM Gateway's `/v1/systemone` route.
 
 One Choice asks for the strongest move; its option criteria are board-verified move facts.
 Optionally the final request also carries a Score (position evaluation) and two Nouls (does the
@@ -57,7 +57,7 @@ MAX_BACKOFF_S = 4.0
 
 # The gateway advertises no limits; these are its validation caps. Unknown models get 16,
 # which costs only an extra round if their real cap is larger.
-MAX_OPTIONS_BY_PREFIX: tuple[tuple[str, int], ...] = (("semif-", 16), ("typesafe/jev-", 255))
+MAX_OPTIONS_BY_PREFIX: tuple[tuple[str, int], ...] = (("typesafe/jev-", 255),)
 DEFAULT_MAX_OPTIONS = 16
 CHOICE_LIMIT = 255
 

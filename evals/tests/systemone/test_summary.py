@@ -76,9 +76,9 @@ def test_summarize_splits_every_metric():
 
 
 def test_headline_table():
-    table = headline_table([("semif-rich", "https://x", summarize(ROWS)), ("bare", None, {})])
+    table = headline_table([("jev-rich", "https://x", summarize(ROWS)), ("bare", None, {})])
     lines = table.splitlines()
     assert lines[0].startswith("| Run | recall@1 | recall@5 |")
-    assert lines[2].startswith("| [semif-rich](https://x) | 50.0% | 0.0% |")
+    assert lines[2].startswith("| [jev-rich](https://x) | 50.0% | 0.0% |")
     assert "| 0 |" in lines[2]
     assert lines[3].startswith("| bare | - | - |")

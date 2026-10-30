@@ -28,9 +28,9 @@ describe("pgnOf", () => {
     expect(meta).toEqual({
       site: "https://chess.example",
       date: new Date("2026-09-29T08:00:00Z"),
-      white: "SemIf + GLM-5.3 Flash",
+      white: "Jev + GLM-5.3 Flash",
       black: "You",
-      comment: "SemIf + GLM-5.3 Flash · k 3 · Thread t1",
+      comment: "Jev + GLM-5.3 Flash · k 3 · Thread t1",
     });
   });
 

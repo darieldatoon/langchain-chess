@@ -53,7 +53,7 @@ def turn(tid, status="committed", calls=(), latency=3000.0, allowed=20, illegal=
 def meta(status="shortlist", latency=800.0, **extra):
     return {
         "status": status,
-        "model": "semif",
+        "model": "jev",
         "top": [{"uci": "e7e5", "probability": 0.6}, {"uci": "c7c5", "probability": 0.3}],
         "shortlist": [],
         "gate": "margin",

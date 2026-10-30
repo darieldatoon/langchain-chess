@@ -51,7 +51,7 @@ describe("App", () => {
     const traceUrl = vi.fn().mockResolvedValue("https://smith/trace");
     const api = fakeApi({ traceUrl });
     const openUrl = show(api);
-    await screen.findAllByText("claude-opus-5-5 + semif-qwen3.5-4b");
+    await screen.findAllByText("claude-opus-5-5 + jev-latest");
     expect(api.games).toHaveBeenCalledWith("p-app", "2026-09-18T12:00:00.000Z");
     expect(screen.getByText("Pick a game")).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole("button", { name: /1-0/ })[0]);

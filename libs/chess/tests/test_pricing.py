@@ -54,13 +54,13 @@ def test_anthropic_one_hour_writes_use_total_plus_subset():
     assert complete
 
 
-def test_jev_is_priced_under_typesafe_and_semif_is_not():
+def test_jev_is_priced_under_typesafe_and_another_classifier_is_not():
     tokens = tokens_from_usage(usage(1000, 5))
     jev = make_call("systemone", "typesafe/jev-latest", tokens, AT)
     assert jev["model"] == "typesafe:jev-latest"
     assert jev["cost_usd"] == pytest.approx(0.000042)
-    semif = make_call("systemone", "semif-qwen3.5-4b", tokens, AT, provider="typesafe")
-    assert semif["cost_usd"] is None
+    other = make_call("systemone", "other-ranker", tokens, AT, provider="typesafe")
+    assert other["cost_usd"] is None
 
 
 @pytest.mark.parametrize(

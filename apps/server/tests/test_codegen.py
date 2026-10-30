@@ -22,7 +22,7 @@ def test_the_resolved_schema_requires_every_key_and_the_file_only_the_version():
     resolved, file = settings_schema(), input_schema()
     assert resolved["required"] == list(resolved["properties"])
     assert file["required"] == ["version"]
-    assert file["properties"]["version"]["enum"] == [1, 2]
+    assert file["properties"]["version"]["enum"] == [1, 2, 3]
     assert {"type": "null"} in file["properties"]["k"]["anyOf"]
     assert file["properties"]["k"]["default"] == 5
     assert file["additionalProperties"] is False

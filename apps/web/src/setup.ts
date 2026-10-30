@@ -21,7 +21,7 @@ import {
 export type SideChoice = Side | "random";
 
 /** The System 1 models the dialog offers; any other name is kept and shown as itself. */
-export const SYSTEM_ONE_PRESETS = ["semif-qwen3.5-4b", "typesafe/jev-latest"] as const;
+export const SYSTEM_ONE_PRESETS = ["typesafe/jev-latest"] as const;
 export type SystemOnePreset = (typeof SYSTEM_ONE_PRESETS)[number];
 
 /** Inexpensive models only; anything else is a custom spec. */
@@ -69,7 +69,6 @@ export const DEFAULT_SETUP: Setup = {
 };
 
 export const SYSTEM_ONE_NAMES: Record<SystemOnePreset, string> = {
-  "semif-qwen3.5-4b": "SemIf",
   "typesafe/jev-latest": "Jev",
 };
 
@@ -198,7 +197,7 @@ export function effortOverridden(knobs: Pick<Knobs, "model_kwargs">): boolean {
   );
 }
 
-/** The opponent on the game screen, e.g. "SemIf + GLM-5.3 · medium". */
+/** The opponent on the game screen, e.g. "Jev + GLM-5.3 · medium". */
 export function opponentLabel(context: ChessContext): string {
   const systemOne = systemOneName(context.systemone_model);
   const effort = sentEffort(context);
@@ -284,9 +283,8 @@ export function sanitizeSetup(stored: unknown): Setup {
   const knobs = isRecord(record.knobs) ? record.knobs : {};
   return {
     side: isSideChoice(record.side) ? record.side : DEFAULT_SETUP.side,
-    systemOne: isSetting("systemone_model", record.systemOne)
-      ? record.systemOne
-      : DEFAULT_SETUP.systemOne,
+    systemOne: sanitizeContext({ systemone_model: record.systemOne, version: record.version })
+      .systemone_model,
     systemOneOff: record.systemOneOff === true,
     llm: isLlmChoice(record.llm) ? record.llm : DEFAULT_SETUP.llm,
     customModel: typeof record.customModel === "string" ? record.customModel : "",

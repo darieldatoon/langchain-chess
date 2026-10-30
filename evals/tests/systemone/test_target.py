@@ -55,7 +55,7 @@ def test_outputs_of_a_tournament():
     assert outputs["finalists"] == ["e7e5", "d7d5"]
     assert outputs["heats"] == dict(tournament)
     assert (outputs["requests"], outputs["input_tokens"], outputs["output_tokens"]) == (2, 150, 6)
-    # SemIf reports no input tokens: any unknown call makes the total unknown
+    # A call that reports no input tokens makes the total unknown
     assert outputs_of(replace(d, calls=(call(1), call(None))))["input_tokens"] is None
 
 

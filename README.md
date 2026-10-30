@@ -5,7 +5,7 @@ or any chess GUI, then grade every move with Stockfish and replay the game in La
 
 ![A game in the web UI: the LLM's move, System 1's top moves and the model's reasoning](docs/images/web-game.png)
 
-The agent is a **System 1 + System 2** player. A fast move ranker (System 1: SemIf or Jev)
+The agent is a **System 1 + System 2** player. A fast move ranker (System 1: Jev)
 scores the legal moves. When it is confident it plays straight away and the LLM never runs.
 Otherwise it hands the LLM (System 2) a shortlist, and the LLM thinks the position through.
 Every decision, its cost and its latency are recorded on the game.
@@ -34,7 +34,7 @@ flowchart LR
   server["Agent Server<br/>apps/server: the chess graph"]
   agent["create_chess_agent<br/>libs/chess"]
   s1["SystemOneMiddleware<br/>libs/systemone"]
-  gw[("LangSmith LLM Gateway<br/>LLMs, SemIf, Jev")]
+  gw[("LangSmith LLM Gateway<br/>LLMs, Jev")]
   ls[("LangSmith<br/>traces + feedback")]
   grade["lcchess grade<br/>+ Stockfish"]
   review["Review app<br/>apps/review"]
@@ -82,8 +82,7 @@ You need:
   |---|---|
   | GLM-5.3 Flash (the default LLM, `baseten/...`) | A Baseten provider secret |
   | The other web presets (Baseten, Fireworks, OpenAI, Anthropic models) | That provider's secret |
-  | SemIf (the default System 1) | Nothing: LangChain-hosted |
-  | Jev (`typesafe/jev-latest`) | A TypeSafe provider secret |
+  | Jev (`typesafe/jev-latest`, the default System 1) | A TypeSafe provider secret |
 
 ## Set up
 
@@ -130,7 +129,7 @@ This starts the Agent Server on `:2024` and the web UI on `:5173`. Once both ans
      Studio:  https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024
 ```
 
-Open the web UI and pick a side and an opponent in the New game dialog. The defaults are SemIf
+Open the web UI and pick a side and an opponent in the New game dialog. The defaults are Jev
 for System 1 and GLM-5.3 Flash for the LLM. Click a piece, then its target. When you play Black,
 the agent opens.
 
@@ -190,7 +189,7 @@ from langchain_chess_systemone import SystemOneMiddleware
 
 agent = create_chess_agent(
     init_chat_model("langsmith:baseten/zai-org/GLM-5.3-Flash"),
-    middleware=[SystemOneMiddleware("semif-qwen3.5-4b", threshold=0.9)],
+    middleware=[SystemOneMiddleware("typesafe/jev-latest", threshold=0.9)],
     checkpointer=InMemorySaver(),
 )
 config = {"configurable": {"thread_id": "game-1"}}
@@ -224,7 +223,7 @@ covers the inputs, the game record and writing your own middleware. The
 mise run check       # ruff, ty, and the web lint, format and type checks
 mise run test        # pytest and Vitest, both gated at 100% line and branch coverage
 mise run test:live   # against the real gateway, a real `langgraph dev` included (a few cents)
-mise run test:uci    # two SemIf-only games under fastchess
+mise run test:uci    # two System 1-only games under fastchess
 mise tasks           # every task
 ```
 

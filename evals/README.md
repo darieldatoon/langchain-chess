@@ -46,11 +46,11 @@ version (`v2`), never an edit of `v1`.
 ## Run it
 
 ```sh
-mise run eval:positions:upload                                  # the committed JSONL into your LangSmith workspace, tagged v1
-mise run eval:systemone -- --model semif-qwen3.5-4b --style rich # one experiment on the dev split
+mise run eval:positions:upload                                      # the committed JSONL into your LangSmith workspace, tagged v1
+mise run eval:systemone -- --model typesafe/jev-latest --style rich # one experiment on the dev split
 mise run eval:systemone -- --model typesafe/jev-latest --split full
-mise run eval:systemone -- --opponent experiments/opponents/semif-terse.json
-mise run eval:systemone:baseline                                 # the five baseline runs on full
+mise run eval:systemone -- --opponent experiments/opponents/jev-terse.json
+mise run eval:systemone:baseline                                    # the three baseline runs on full
 ```
 
 `upload` and the experiments need `LANGSMITH_API_KEY` in `.env`, and the experiments need the
@@ -98,7 +98,7 @@ top move, `finalist_recall` and `finalist_top3` (tournament rows only: did the h
 Stockfish's best, or any of its top 3), and `requests`, `latency_ms`, `input_tokens`, `error`.
 
 **Summary metrics**, keyed `metric|group`: every row score for `all` rows, by band, by phase,
-and by legal move count (`legal<=16`, a single ranking; `legal>16`, a SemIf tournament). For
+and by legal move count (`legal<=16`, a single ranking; `legal>16`, a tournament for a model capped at 16). For
 `all` and each legal-count group, also the gate table (share of moves kept and top-1 accuracy
 at margin and confidence thresholds 0.5 to 0.95) and confidence and margin calibration by
 decile.
@@ -107,10 +107,10 @@ Means are plain means over the stratified set: every band and phase weighs the s
 often as it occurs on Lichess.
 
 After a tournament only the finalists come back, so recall@k counts a move knocked out in the
-heats as a miss. The capped Jev run in the baseline forces SemIf's 16-option tournament onto
+heats as a miss. The capped Jev run in the baseline forces a 16-option tournament onto
 Jev, so comparing it with plain Jev rich shows what the tournament alone costs.
 
 ## Tests
 
 `mise run test` covers this package at 100%, with fakes for Stockfish, Lichess and LangSmith.
-`mise run test:live` includes one real SemIf ranking through the target.
+`mise run test:live` includes one real Jev ranking through the target.

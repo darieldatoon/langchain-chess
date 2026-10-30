@@ -18,8 +18,7 @@ TYPESAFE_API_KEY=${LC_GATEWAY_KEY}
 
 | Model | Use it for |
 |---|---|
-| `semif-qwen3.5-4b` | The default in the app and CLI. LangChain-hosted; use it for anything user-facing. |
-| `typesafe/jev-latest` | Experiments only. Needs a TypeSafe provider secret in the gateway workspace. |
+| `typesafe/jev-latest` | The default in the app and CLI. Needs a TypeSafe provider secret in the gateway workspace. |
 
 ## Use it
 
@@ -33,14 +32,14 @@ from langchain_chess_systemone import SystemOneMiddleware
 # System 1 plays confident moves; the LLM decides the rest.
 hybrid = create_chess_agent(
     init_chat_model("langsmith:baseten/zai-org/GLM-5.3-Flash"),
-    middleware=[SystemOneMiddleware("semif-qwen3.5-4b", gate="margin", threshold=0.9, k=5)],
+    middleware=[SystemOneMiddleware("typesafe/jev-latest", gate="margin", threshold=0.9, k=5)],
     checkpointer=InMemorySaver(),
 )
 
 # System 1 alone: it always plays, and there is no LLM to fall back to.
 system_one_alone = create_chess_agent(
     None,
-    middleware=[SystemOneMiddleware("semif-qwen3.5-4b", threshold=0.0, has_model=False)],
+    middleware=[SystemOneMiddleware("typesafe/jev-latest", threshold=0.0, has_model=False)],
 )
 
 config = {"configurable": {"thread_id": "game-1"}}
@@ -79,8 +78,8 @@ flowchart TD
   `threshold` for tournament turns.
 - **Shortlist.** The top `k` moves, or with `top_p` the smallest prefix reaching that probability
   mass, capped at `k`. The LLM sees them as suggestions; every legal move stays allowed.
-- **Tournaments.** SemIf takes at most 16 options per question (Jev: 255) and 32 questions per
-  request. With more legal moves, balanced heats run in as few requests as possible, the best of
+- **Tournaments.** Jev takes up to 255 options per question. Another classifier gets a
+  conservative 16 options per question and 32 questions per request. With more legal moves, balanced heats run in as few requests as possible, the best of
   each heat go to a final, and the seed makes the draw repeatable within a turn.
 - **Retries.** The decision is frozen per turn, so a retried turn replays it instead of
   re-ranking and flipping the gate.

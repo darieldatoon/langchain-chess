@@ -18,14 +18,14 @@ ITALIAN = "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"
 OPTIONS = tuple(m.uci() for m in chess.Board(ITALIAN).legal_moves)
 
 
-def test_semif_runs_a_tournament_over_more_than_sixteen_moves():
+def test_jev_capped_at_sixteen_runs_a_tournament_over_more_moves():
     assert len(OPTIONS) > 16
-    ranker = GatewayRanker("semif-qwen3.5-4b", with_eval=True)
+    ranker = GatewayRanker("typesafe/jev-latest", with_eval=True, max_options=16)
     result = ranker.rank(RankRequest(ITALIAN, (), OPTIONS, seed=1))
     assert result.tournament is not None
     assert len(result.candidates) == 16
     assert len(result.calls) == 2
-    assert all(c["input_tokens"] is None and c["cost_usd"] is None for c in result.calls)
+    assert all(c["cost_usd"] for c in result.calls)
     assert result.eval_score is not None
 
 
@@ -48,8 +48,8 @@ async def test_a_hybrid_move():
         reasoning_effort="low",
         max_tokens=32000,
     )
-    # threshold=1 always hands the SemIf shortlist to Opus.
-    systemone = SystemOneMiddleware("semif-qwen3.5-4b", threshold=1.0, k=3)
+    # threshold=1 always hands the Jev shortlist to Opus.
+    systemone = SystemOneMiddleware("typesafe/jev-latest", threshold=1.0, k=3)
     agent = create_chess_agent(opus, middleware=[systemone], checkpointer=InMemorySaver())
     out = await agent.ainvoke(position(start_fen=ITALIAN), {"configurable": {"thread_id": "h"}})
     ply = out["plies"][0]
@@ -57,7 +57,7 @@ async def test_a_hybrid_move():
     meta = ply["meta"]["SystemOneMiddleware"]
     assert meta["status"] == "shortlist"
     assert len(meta["shortlist"]) == 3
-    assert meta["finalist_conditional"] is True
+    assert meta["finalist_conditional"] is False
     kinds = [c["kind"] for c in out["turns"][0]["calls"]]
     assert kinds.count("llm") >= 1
-    assert kinds.count("systemone") == 2
+    assert kinds.count("systemone") == 1

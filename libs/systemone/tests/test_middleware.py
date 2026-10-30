@@ -46,7 +46,7 @@ def gateway(client=None, **kwargs):
         return None
 
     return GatewayRanker(
-        kwargs.pop("model", "semif-qwen3.5-4b"),
+        kwargs.pop("model", "other/ranker"),
         client=client or FakeTypeSafeClient(),
         sleep=lambda s: None,
         asleep=nosleep,
@@ -151,7 +151,7 @@ def malformed(kind):
 async def test_malformed_distributions(run, cfg, kind):
     client = FakeTypeSafeClient(answer=malformed(kind))
     model = ScriptedModel(script=["MOVE: e4"])
-    systemone = SystemOneMiddleware("semif-qwen3.5-4b", ranker=gateway(client))
+    systemone = SystemOneMiddleware("other/ranker", ranker=gateway(client))
     out = await run(agent(model, systemone), position(), cfg)
     meta = out["plies"][0]["meta"][META]
     assert meta["status"] == "skipped"
@@ -163,7 +163,7 @@ async def test_malformed_distributions(run, cfg, kind):
     assert [c["kind"] for c in out["turns"][0]["calls"]] == ["llm", "systemone"]
 
     alone = SystemOneMiddleware(
-        "semif-qwen3.5-4b", threshold=0.0, has_model=False, ranker=gateway(client)
+        "other/ranker", threshold=0.0, has_model=False, ranker=gateway(client)
     )
     lonely = agent(None, alone)
     with pytest.raises(Exception, match="malformed"):
@@ -230,7 +230,7 @@ async def test_a_confident_ranking_plays_and_skips_the_model(run, cfg):
 async def test_a_rounded_away_shortfall_cannot_clear_the_margin_gate(run, cfg):
     # Jev rounds 0.85 plus 32 x (0.15 / 32) to 0.85 plus zeros; the true margin is below 0.9.
     client = FakeTypeSafeClient(
-        answer=lambda name, options: {"c4f7": 0.85}, semif=False, model="typesafe/jev-1"
+        answer=lambda name, options: {"c4f7": 0.85}, capped=False, model="typesafe/jev-1"
     )
     model = ScriptedModel(script=["MOVE: O-O"])
     systemone = SystemOneMiddleware(
@@ -256,7 +256,7 @@ async def test_a_thirty_move_tournament(run, cfg):
     options = ITALIAN_MOVES[:30]
     client = FakeTypeSafeClient()
     systemone = SystemOneMiddleware(
-        "semif-qwen3.5-4b",
+        "other/ranker",
         threshold=0.95,
         tournament_threshold=0.005,
         with_eval=True,
@@ -288,7 +288,7 @@ async def test_tournament_candidates_are_finalists_only(run, cfg):
     client = FakeTypeSafeClient()
     model = ScriptedModel(script=["MOVE: O-O"])
     systemone = SystemOneMiddleware(
-        "semif-qwen3.5-4b", threshold=0.0, tournament_threshold=1.0, k=255, ranker=gateway(client)
+        "other/ranker", threshold=0.0, tournament_threshold=1.0, k=255, ranker=gateway(client)
     )
     out = await run(agent(model, systemone), position(start_fen=ITALIAN, restrict=options), cfg)
     meta = out["plies"][0]["meta"][META]
@@ -308,7 +308,7 @@ async def test_tournament_candidates_are_finalists_only(run, cfg):
 async def test_the_tournament_threshold_defaults_to_the_threshold(run, cfg):
     options = ITALIAN_MOVES[:30]
     systemone = SystemOneMiddleware(
-        "semif-qwen3.5-4b", threshold=0.0, has_model=False, ranker=gateway()
+        "other/ranker", threshold=0.0, has_model=False, ranker=gateway()
     )
     out = await run(agent(None, systemone), position(start_fen=ITALIAN, restrict=options), cfg)
     assert out["plies"][0]["meta"][META]["threshold_used"] == 0.0
@@ -317,7 +317,7 @@ async def test_the_tournament_threshold_defaults_to_the_threshold(run, cfg):
 async def test_a_cap_of_two_with_three_moves(run, cfg):
     client = FakeTypeSafeClient()
     systemone = SystemOneMiddleware(
-        "semif-qwen3.5-4b", threshold=0.0, has_model=False, ranker=gateway(client, max_options=2)
+        "other/ranker", threshold=0.0, has_model=False, ranker=gateway(client, max_options=2)
     )
     out = await run(agent(None, systemone), position(restrict=["e2e4", "d2d4", "g1f3"]), cfg)
     assert [len(q.criteria) for r in client.requests for q in r["questions"].values()] == [2, 2]
@@ -328,7 +328,7 @@ async def test_a_cap_of_two_with_three_moves(run, cfg):
 async def test_a_cap_of_four_with_twenty_moves(run, cfg):
     client = FakeTypeSafeClient()
     systemone = SystemOneMiddleware(
-        "semif-qwen3.5-4b", threshold=0.0, has_model=False, ranker=gateway(client, max_options=4)
+        "other/ranker", threshold=0.0, has_model=False, ranker=gateway(client, max_options=4)
     )
     out = await run(agent(None, systemone), position(), cfg)
     assert out["plies"][0]["source"] == "systemone"
@@ -346,7 +346,7 @@ async def test_a_failed_final_keeps_the_heat_call(run, cfg):
 
     client._respond = respond
     model = ScriptedModel(script=["MOVE: O-O"])
-    systemone = SystemOneMiddleware("semif-qwen3.5-4b", ranker=gateway(client))
+    systemone = SystemOneMiddleware("other/ranker", ranker=gateway(client))
     out = await run(agent(model, systemone), position(start_fen=ITALIAN), cfg)
     meta = out["plies"][0]["meta"][META]
     assert meta["status"] == "skipped"
@@ -358,7 +358,7 @@ async def test_a_failed_final_keeps_the_heat_call(run, cfg):
 async def test_narrowed_to_one_move_ranks_locally(run, cfg, threshold, source):
     ranker = gateway(FakeTypeSafeClient())
     model = ScriptedModel(script=["MOVE: e4"])
-    systemone = SystemOneMiddleware("semif-qwen3.5-4b", threshold=threshold, ranker=ranker)
+    systemone = SystemOneMiddleware("other/ranker", threshold=threshold, ranker=ranker)
     out = await run(agent(model, Pruner(["e2e4"]), systemone), position(), cfg)
     assert ranker.client.requests == []
     assert out["plies"][0]["source"] == source
@@ -368,7 +368,7 @@ async def test_narrowed_to_one_move_ranks_locally(run, cfg, threshold, source):
 async def test_a_tournament_is_not_rerun_on_retry(run, cfg):
     client = FakeTypeSafeClient()
     model = ScriptedModel(script=["MOVE: Qh5", "MOVE: O-O"])
-    systemone = SystemOneMiddleware("semif-qwen3.5-4b", threshold=1.0, ranker=gateway(client))
+    systemone = SystemOneMiddleware("other/ranker", threshold=1.0, ranker=gateway(client))
     out = await run(agent(model, systemone), position(start_fen=ITALIAN), cfg)
     assert len(client.requests) == 2
     assert out["moves"][-1] == "e1g1"
@@ -453,7 +453,7 @@ def test_argument_validation():
     ):
         with pytest.raises(ValueError, match="must be within"):
             SystemOneMiddleware("fake", ranker=FakeRanker([]), **kwargs)
-    assert isinstance(SystemOneMiddleware("semif-qwen3.5-4b").ranker, GatewayRanker)
+    assert isinstance(SystemOneMiddleware("other/ranker").ranker, GatewayRanker)
 
 
 def test_turn_seed_is_stable_and_turn_specific():
@@ -484,17 +484,17 @@ def test_played_result_for_a_move_that_was_not_an_option():
     assert systemone._played_result({**frozen, "tournament": tournament}, "a2a3") is None
 
 
-def test_fakes_enforce_semif_limits():
+def test_fakes_enforce_a_capped_classifiers_limits():
     from langchain_typesafe import Choice
 
     from langchain_chess_systemone.types import MoveDistribution
 
     client = FakeTypeSafeClient()
     many = {f"q{i}": Choice(instructions="x", criteria={"a": "a", "b": "b"}) for i in range(33)}
-    with pytest.raises(Exception, match="invalid SemIf request"):
+    with pytest.raises(Exception, match="invalid request"):
         client.invoke({"state": {}, "questions": many})
     one = {"q": Choice(instructions="x", criteria={"a": "a"})}
-    with pytest.raises(Exception, match="invalid SemIf request"):
+    with pytest.raises(Exception, match="invalid request"):
         client.invoke({"state": {}, "questions": one})
     with pytest.raises(ValueError, match="at least one candidate"):
         MoveDistribution(candidates=(), confidence=1.0, model="m", latency_ms=0.0, calls=())
