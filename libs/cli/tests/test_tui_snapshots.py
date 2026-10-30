@@ -84,7 +84,7 @@ def test_the_promotion_dialog(snap_compare):
 
 
 def hybrid_game(monkeypatch, *script):
-    """SemIf hands e4's reply to the LLM, then plays Nf3's reply alone."""
+    """Jev hands e4's reply to the LLM, then plays Nf3's reply alone."""
     # The screen prints measured latencies; a slow runner would change them.
     monkeypatch.setattr(
         "langchain_chess.middleware.core.time", SimpleNamespace(perf_counter=lambda: 0.0)

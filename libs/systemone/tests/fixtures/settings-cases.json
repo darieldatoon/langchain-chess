@@ -149,7 +149,7 @@
     {
       "name": "a newer version",
       "input": {
-        "version": 3
+        "version": 4
       },
       "error": true
     },
@@ -181,6 +181,18 @@
         "system_prompt": "You play the Caro-Kann.",
         "show_fen": false,
         "show_board": false
+      }
+    },
+    {
+      "name": "a version 2 file naming SemIf plays Jev",
+      "input": {
+        "version": 2,
+        "systemone_model": "semif-qwen3.5-4b",
+        "style": "terse"
+      },
+      "output": {
+        "systemone_model": "typesafe/jev-latest",
+        "style": "terse"
       }
     },
     {
@@ -268,6 +280,39 @@
         "move_list": "legal",
         "draw_claims": "never",
         "systemone_model": "someone/custom-ranker",
+        "style": "terse",
+        "with_eval": true,
+        "gate": "confidence",
+        "tournament_threshold": 0.4,
+        "top_p": 0.8
+      }
+    },
+    {
+      "name": "a version 1 game played with SemIf plays Jev",
+      "input": {
+        "version": 1,
+        "policy": "systemone",
+        "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
+        "reasoning_effort": null,
+        "move_list": "legal",
+        "memory": false,
+        "draw_claims": "never",
+        "systemone_model": "semif-qwen3.5-4b",
+        "style": "terse",
+        "with_eval": true,
+        "with_nouls": false,
+        "gate": "confidence",
+        "threshold": 0.9,
+        "tournament_threshold": 0.4,
+        "k": 5,
+        "top_p": 0.8,
+        "seed": 0
+      },
+      "output": {
+        "policy": "systemone",
+        "move_list": "legal",
+        "draw_claims": "never",
+        "systemone_model": "typesafe/jev-latest",
         "style": "terse",
         "with_eval": true,
         "gate": "confidence",
@@ -573,7 +618,7 @@
     },
     "systemone_model": {
       "valid": [
-        "semif-qwen3.5-4b",
+        "typesafe/jev-latest",
         "custom"
       ],
       "invalid": [

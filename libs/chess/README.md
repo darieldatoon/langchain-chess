@@ -144,8 +144,8 @@ from langchain_chess import turn_cost
 turn_cost(state["turns"][-1]["calls"])  # {"usd": 0.0027, "complete": True}, or None
 ```
 
-`complete` is `False` when some call couldn't be priced. SemIf reports no token counts, so a
-hybrid move's total is incomplete.
+`complete` is `False` when some call couldn't be priced, such as a classifier that reports no
+token counts.
 
 ## Write your own middleware
 

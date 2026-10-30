@@ -17,7 +17,7 @@ from langchain_chess_server.graph import build_graph, make_graph, model_limit, p
 from langchain_chess_server.settings import ServerSettings
 from langchain_chess_systemone.agent import default_model as chat_model
 from langchain_chess_systemone.settings import ChessContext, dump
-from langchain_chess_systemone.testing import FakeTypeSafeClient
+from langchain_chess_systemone.testing import CAPPED_MODEL, FakeTypeSafeClient
 
 ITALIAN = "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"
 
@@ -76,7 +76,7 @@ def test_the_first_turn_records_the_setup_and_later_runs_keep_it(env):
     agent = build_agent(first, "MOVE: e5", checkpointer=saver)
     out = agent.invoke(position(["e2e4"]), config)
     assert out["setup"] == dump(first)
-    assert out["setup"]["version"] == 2
+    assert out["setup"]["version"] == 3
 
     later = ChessContext(policy="llm", model="langsmith:openai/gpt-6-luna")
     again = build_agent(later, "MOVE: Nc6", checkpointer=saver)
@@ -196,7 +196,12 @@ def test_systemone_needs_typesafe_settings_only_when_it_runs(env):
 
 
 async def test_systemone_alone_always_plays_even_with_a_tournament_threshold(fake_systemone):
-    context = ChessContext(policy="systemone", threshold=0.95, tournament_threshold=0.99)
+    context = ChessContext(
+        policy="systemone",
+        systemone_model=CAPPED_MODEL,
+        threshold=0.95,
+        tournament_threshold=0.99,
+    )
     agent = build_agent(context, checkpointer=InMemorySaver())
     out = await agent.ainvoke(position(start_fen=ITALIAN), {"configurable": {"thread_id": "t"}})
     ply = out["plies"][0]
@@ -208,11 +213,11 @@ async def test_systemone_alone_always_plays_even_with_a_tournament_threshold(fak
 
 def test_classifiers_share_one_connection_pool(env):
     gateway = "https://gateway.smith.langchain.com"
-    semif = graph_module._classifier("semif-qwen3.5-4b", "k", gateway)
+    other = graph_module._classifier("other/ranker", "k", gateway)
     jev = graph_module._classifier("typesafe/jev-latest", "k", gateway)
-    assert semif.client is jev.client
-    assert semif.async_client is jev.async_client
-    assert semif.base_url == gateway
+    assert other.client is jev.client
+    assert other.async_client is jev.async_client
+    assert other.base_url == gateway
 
 
 @pytest.mark.parametrize(

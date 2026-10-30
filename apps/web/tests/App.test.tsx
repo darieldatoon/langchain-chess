@@ -164,7 +164,7 @@ describe("new game", () => {
     await click("Play");
     expect(dialog()).not.toBeInTheDocument();
     expect(board()).toHaveAttribute("data-orientation", "white");
-    expect(strip("black")).toHaveTextContent("SemIf + GLM-5.3 Flash");
+    expect(strip("black")).toHaveTextContent("Jev + GLM-5.3 Flash");
     expect(strip("white")).toHaveTextContent("You");
     expect(strip("white")).toHaveTextContent("Your turn");
     expect(fake.submit).not.toHaveBeenCalled();
@@ -260,7 +260,7 @@ describe("a game's own setup", () => {
 
     // Changing the last setup, in the modal or in storage, leaves the game on screen alone.
     await click("New game");
-    change("System 1", "typesafe/jev-latest");
+    change("System 1", "none");
     await click("Cancel");
     saveSetup({ ...DEFAULT_SETUP, llm: "none" });
     await click("drop e2e4");
@@ -269,7 +269,7 @@ describe("a game's own setup", () => {
 
     // A new game takes the new setup; the old one keeps its own.
     await click("New game");
-    change("System 1", "semif-qwen3.5-4b");
+    change("System 1", "typesafe/jev-latest");
     change("LLM", "none");
     await click("Play");
     expect(window.location.search).toBe("");

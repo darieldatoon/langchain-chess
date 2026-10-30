@@ -163,7 +163,7 @@ class SystemOneMiddleware(ChessMiddleware):
         signal = distribution.margin if self.gate == "margin" else distribution.confidence
         threshold = self.threshold
         if tournament is not None and self.tournament_threshold is not None:
-            # A final over fewer moves inflates the margin, and SemIf's confidence depends on
+            # A final over fewer moves inflates the margin, and confidence can depend on
             # the option count, so a tournament gets its own threshold.
             threshold = self.tournament_threshold
         plays = threshold < 1.0 and signal >= threshold

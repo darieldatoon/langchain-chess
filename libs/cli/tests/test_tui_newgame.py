@@ -60,7 +60,7 @@ async def test_play_returns_the_matchup():
     async with app.run_test(size=(120, 60)) as pilot:
         screen = await opened(pilot)
         assert text(screen, "#matchup") == (
-            "SemIf plays confident moves; GLM-5.3 Flash decides the rest."
+            "Jev plays confident moves; GLM-5.3 Flash decides the rest."
         )
         screen.query_one("#side").query(RadioButton)[2].value = True
         await pilot.pause()
@@ -151,7 +151,7 @@ async def test_advanced_knobs_reach_the_context():
         screen.query_one("#advanced", Collapsible).collapsed = True
         await pilot.pause()
         assert text(screen, "#advanced-summary") == (
-            "White · SemIf + GLM-5.3 Flash · 8 settings changed"
+            "White · Jev + GLM-5.3 Flash · 8 settings changed"
         )
         screen.query_one("#play", Button).press()
         await pilot.pause()
@@ -225,7 +225,7 @@ async def test_a_hidden_field_holds_play_no_longer():
         screen.query_one("#llm", Select).value = "langsmith:baseten/zai-org/GLM-5.3"
         await pilot.pause()
         assert screen.query_one("#play", Button).disabled  # the LLM's kwargs still show
-        screen.query_one("#system-one", Select).value = "semif-qwen3.5-4b"
+        screen.query_one("#system-one", Select).value = "typesafe/jev-latest"
         screen.query_one("#llm", Select).value = NONE
         await pilot.pause()
         assert not screen.query_one("#play", Button).disabled

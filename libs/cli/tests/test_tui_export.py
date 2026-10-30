@@ -60,7 +60,7 @@ def test_the_pgn_has_the_web_apps_headers_and_comments():
         "outcome": {"kind": "checkmate", "winner": "white"},
     }
     opening = opening_at(positions(values), 4, table())
-    pgn = to_pgn(values, white="You", black="SemIf", comment="SemIf · Thread t", opening=opening)
+    pgn = to_pgn(values, white="You", black="Jev", comment="Jev · Thread t", opening=opening)
     game = read(pgn)
     assert list(game.headers.items()) == [
         ("Event", "LangChain Chess"),
@@ -68,12 +68,12 @@ def test_the_pgn_has_the_web_apps_headers_and_comments():
         ("Date", "2026.10.02"),
         ("Round", "-"),
         ("White", "You"),
-        ("Black", "SemIf"),
+        ("Black", "Jev"),
         ("Result", "1-0"),
         ("Termination", "Normal"),
         ("Annotator", "LangChain Chess"),
     ]
-    assert game.comment == "SemIf · Thread t"
+    assert game.comment == "Jev · Thread t"
     assert [m.uci() for m in game.mainline_moves()] == SICILIAN
     assert game.end().comment == "B30 Sicilian Defense: Old Sicilian"
     assert pgn.endswith("1-0\n")

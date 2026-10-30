@@ -169,20 +169,18 @@ def test_run_rejects_an_unknown_style(experiments):
 
 
 def test_default_name():
-    assert cli.default_name("semif-qwen3.5-4b", "rich", None) == "semif-qwen3.5-4b-rich"
+    assert cli.default_name("typesafe/jev-latest", "rich", None) == "jev-latest-rich"
 
 
 def test_baseline(experiments):
     result = runner.invoke(cli.app, ["systemone", "baseline", "--split", "dev"])
     assert result.exit_code == 0, result.output
     assert [s.name for s, _ in experiments] == [
-        "semif-rich",
-        "semif-terse",
         "jev-rich",
         "jev-terse",
         "jev-rich-cap16",
     ]
-    assert result.output.count("https://smith/x") == 5
+    assert result.output.count("https://smith/x") == 3
 
 
 def test_upload_error_exits_cleanly(dirs, monkeypatch):

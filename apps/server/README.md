@@ -26,7 +26,7 @@ it. Check it is up with `curl http://127.0.0.1:2024/ok`.
 
 Each run's settings pick the opponent. They come from the assistant's `context`, then any keys
 present in the run's `configurable`, which win (an explicit `null` clears a nullable knob). Every
-field has a default, so no settings plays the hybrid SemIf + GLM-5.3 Flash agent.
+field has a default, so no settings plays the hybrid Jev + GLM-5.3 Flash agent.
 
 ```python
 from langgraph_sdk import get_sync_client

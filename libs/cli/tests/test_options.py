@@ -22,7 +22,7 @@ def test_run_config_names_the_trace_by_surface_and_records_every_setting():
     assert metadata["surface"] == "tui"
     assert metadata["draw_claims"] == "auto"
     assert {k: metadata[k] for k in ("version", "policy", "model", "k", "seed")} == {
-        "version": 2,
+        "version": 3,
         "policy": "llm",
         "model": "langsmith:baseten/zai-org/GLM-5.3-Flash",
         "k": 7,

@@ -1,7 +1,7 @@
 [project]
 name = "langchain-chess-systemone"
 version = "0.1.0"
-description = "A System 1 move ranker (SemIf or Jev) as langchain-chess middleware"
+description = "A System 1 move ranker (Jev) as langchain-chess middleware"
 readme = "README.md"
 requires-python = ">=3.13"
 license = "MIT"

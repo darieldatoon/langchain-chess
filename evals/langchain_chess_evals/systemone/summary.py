@@ -2,7 +2,7 @@
 
 Means are plain means over the stratified set: every rating band and phase weighs the same,
 not as often as it occurs on Lichess. Every metric is reported for all rows, by band, by phase,
-and by legal move count: 16 or fewer is one ranking; more is a SemIf tournament.
+and by legal move count: 16 or fewer is one ranking; more is a tournament for a model capped at 16.
 """
 
 from collections.abc import Callable, Mapping, Sequence

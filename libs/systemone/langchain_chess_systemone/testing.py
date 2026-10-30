@@ -23,14 +23,14 @@ from langchain_chess_systemone.types import (
     RankRequest,
 )
 
-SEMIF_OPTIONS = (2, 16)
-SEMIF_QUESTIONS = 32
+CAPPED_MODEL = "other/ranker"
+"""A classifier the ranker doesn't know: capped at 16 options, so it runs tournaments."""
+CAPPED_OPTIONS = (2, 16)
+CAPPED_QUESTIONS = 32
 
 
 def api_error(status: int = 422, kind: type[TypeSafeAPIError] = TypeSafeAPIError) -> Exception:
-    return kind(
-        status, {"error": "invalid SemIf request"}, httpx2.Headers(), "invalid SemIf request"
-    )
+    return kind(status, {"error": "invalid request"}, httpx2.Headers(), "invalid request")
 
 
 def distribution(
@@ -101,15 +101,15 @@ def by_option_order(name: str, options: list[str]) -> dict[str, float]:
 
 @dataclass
 class FakeTypeSafeClient:
-    """Stands in for `TypeSafeClassifier`. Enforces SemIf's real limits when `semif` is set:
-    2 to 16 options per Choice and at most 32 questions per request."""
+    """Stands in for `TypeSafeClassifier`. Enforces a capped classifier's limits when `capped` is
+    set: 2 to 16 options per Choice and at most 32 questions per request."""
 
     answer: Answerer = by_option_order
-    semif: bool = True
+    capped: bool = True
     confidence: float = 0.4
     input_tokens: int | None = None
     output_tokens: int | None = None
-    model: str = "semif-qwen3.5-4b"
+    model: str = CAPPED_MODEL
     errors: list[BaseException] = field(default_factory=list)
     requests: list[ClassifierRequest] = field(default_factory=list)
     run_names: list[str | None] = field(default_factory=list)
@@ -119,14 +119,14 @@ class FakeTypeSafeClient:
         if self.errors:
             raise self.errors.pop(0)
         questions = request["questions"]
-        if self.semif and len(questions) > SEMIF_QUESTIONS:
+        if self.capped and len(questions) > CAPPED_QUESTIONS:
             raise api_error()
         answers: dict[str, Any] = {}
         for name, question in questions.items():
             if isinstance(question, Choice):
                 options = list(question.criteria)
-                low, high = SEMIF_OPTIONS
-                if self.semif and not low <= len(options) <= high:
+                low, high = CAPPED_OPTIONS
+                if self.capped and not low <= len(options) <= high:
                     raise api_error()
                 result = self.answer(name, options)
                 answers[name] = (

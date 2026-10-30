@@ -82,8 +82,8 @@
   "description": "A game's opponent. The settings before `systemone_model` affect only the LLM.",
   "properties": {
     "version": {
-      "const": 2,
-      "default": 2,
+      "const": 3,
+      "default": 3,
       "description": "The settings file's version.",
       "title": "Version",
       "type": "integer"
@@ -215,8 +215,8 @@
       "x-label": "Claim draws"
     },
     "systemone_model": {
-      "default": "semif-qwen3.5-4b",
-      "description": "System 1 model: `semif-qwen3.5-4b` (SemIf) or `typesafe/jev-latest` (Jev). Another TypeSafe classifier works too, with a conservative cap on the moves per request.",
+      "default": "typesafe/jev-latest",
+      "description": "System 1 model: `typesafe/jev-latest` (Jev). Another TypeSafe classifier works too, with a conservative cap on the moves per request.",
       "langgraph_nodes": [
         "SystemOneMiddleware.before_model"
       ],

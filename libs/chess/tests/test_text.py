@@ -86,7 +86,7 @@ def test_model_identity_prefers_the_gateway_prefix():
     assert model_identity("anthropic:claude-opus-5") == ("anthropic", "claude-opus-5")
     assert model_identity("typesafe/jev-latest") == ("typesafe", "jev-latest")
     assert model_identity("claude-opus-5", "anthropic") == ("anthropic", "claude-opus-5")
-    assert canonical_model("semif-qwen3.5-4b") == "unknown:semif-qwen3.5-4b"
+    assert canonical_model("other-ranker") == "unknown:other-ranker"
 
 
 def view(allowed=None, candidates=None, *, start_fen=chess.STARTING_FEN, moves=()):

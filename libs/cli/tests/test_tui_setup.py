@@ -112,8 +112,8 @@ def test_effort_overridden_by_model_arguments():
 
 def test_the_matchup_and_opponent_in_words():
     hybrid = ChessContext(reasoning_effort="medium")
-    assert matchup_line(hybrid) == "SemIf plays confident moves; GLM-5.3 Flash decides the rest."
-    assert opponent_label(hybrid) == "SemIf + GLM-5.3 Flash · medium"
+    assert matchup_line(hybrid) == "Jev plays confident moves; GLM-5.3 Flash decides the rest."
+    assert opponent_label(hybrid) == "Jev + GLM-5.3 Flash · medium"
     alone = ChessContext(policy="systemone", systemone_model="other/ranker")
     assert matchup_line(alone) == "other/ranker plays every move."
     assert opponent_label(alone) == "other/ranker"

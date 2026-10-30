@@ -23,7 +23,7 @@ from langchain_chess_systemone.types import (
 )
 
 MAX_QUESTIONS = 32
-"""Per request, counting every question (SemIf's limit)."""
+"""Per request, counting every question: a conservative cap for classifiers we don't know."""
 
 FINAL = "move"
 

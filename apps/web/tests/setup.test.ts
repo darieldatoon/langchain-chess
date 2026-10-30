@@ -38,7 +38,7 @@ describe("matchupOf", () => {
     expect(contextOf(setup())).toEqual(DEFAULT_CONTEXT);
     expect(contextOf(setup({ llm: "none" }))).toMatchObject({
       policy: "systemone",
-      systemone_model: "semif-qwen3.5-4b",
+      systemone_model: "typesafe/jev-latest",
     });
     expect(
       contextOf(setup({ systemOneOff: true, llm: "langsmith:baseten/zai-org/GLM-5.3" })),
@@ -119,18 +119,16 @@ describe("matchupOf", () => {
 describe("matchup wording", () => {
   it("describes the matchup in plain words", () => {
     expect(matchupLine(DEFAULT_CONTEXT)).toBe(
-      "SemIf plays confident moves; GLM-5.3 Flash decides the rest.",
+      "Jev plays confident moves; GLM-5.3 Flash decides the rest.",
     );
-    expect(matchupLine({ ...DEFAULT_CONTEXT, policy: "systemone" })).toBe(
-      "SemIf plays every move.",
-    );
+    expect(matchupLine({ ...DEFAULT_CONTEXT, policy: "systemone" })).toBe("Jev plays every move.");
     expect(matchupLine({ ...DEFAULT_CONTEXT, policy: "llm", model: "openai:gpt-5.6-sol" })).toBe(
       "openai:gpt-5.6-sol plays every move.",
     );
   });
 
   it("labels the opponent with the effort only when an LLM plays", () => {
-    expect(opponentLabel(DEFAULT_CONTEXT)).toBe("SemIf + GLM-5.3 Flash");
+    expect(opponentLabel(DEFAULT_CONTEXT)).toBe("Jev + GLM-5.3 Flash");
     expect(
       opponentLabel({
         ...DEFAULT_CONTEXT,
@@ -309,8 +307,13 @@ describe("sanitizeSetup", () => {
   });
 
   it("resets a setup without a version to the defaults", () => {
-    const unversioned = { side: "black", systemOne: "typesafe/jev-latest", knobs: { k: 3 } };
+    const unversioned = { side: "black", systemOne: "someone/ranker", knobs: { k: 3 } };
     expect(sanitizeSetup(unversioned)).toEqual(DEFAULT_SETUP);
+  });
+
+  it("plays Jev for a setup saved with SemIf", () => {
+    const saved = { ...storedSetup(DEFAULT_SETUP), version: 2, systemOne: "semif-qwen3.5-4b" };
+    expect(sanitizeSetup(saved).systemOne).toBe("typesafe/jev-latest");
   });
 });
 

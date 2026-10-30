@@ -51,7 +51,7 @@ lcchess play --config opponent.json --k 3 --reset reasoning_effort
 ## Play in the terminal
 
 ```sh
-mise run dev:tui                                  # hybrid: SemIf + GLM-5.3 Flash
+mise run dev:tui                                  # hybrid: Jev + GLM-5.3 Flash
 mise run dev:tui -- --side black --policy llm     # the LLM alone, you play Black
 mise run dev:tui -- --fen "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1"   # from a position
 ```
@@ -110,7 +110,7 @@ id name langchain-chess
 option name Config type string default <empty>
 option name Model type string default langsmith:baseten/zai-org/GLM-5.3-Flash
 option name ReasoningEffort type combo default default var default var low var medium var high
-option name SystemOneModel type string default semif-qwen3.5-4b
+option name SystemOneModel type string default typesafe/jev-latest
 option name Policy type combo default systemone var llm var systemone var hybrid
 option name Threshold type string default 0.9
 option name K type spin default 5 min 1 max 255
@@ -148,7 +148,7 @@ repo root:
   fastchess scores as an illegal-move loss for the engine that played it: the intended forfeit.
   Draw claims are left to the GUI. `go ponder` and `ponderhit` work, but the engine advertises no
   `Ponder` option and never suggests a ponder move.
-- `mise run test:uci` plays two SemIf-only games under fastchess as a smoke test.
+- `mise run test:uci` plays two System 1-only games under fastchess as a smoke test.
 
 ## Grade games
 

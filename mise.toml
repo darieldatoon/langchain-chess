@@ -209,12 +209,12 @@ tools = { "npm:openwiki" = "0.6.0" }
 run = "openwiki visualize"
 
 [tasks."test:uci"]
-description = "Smoke match under fastchess: SemIf-only lcchess against itself with another seed"
+description = "Smoke match under fastchess: System 1-only lcchess (Jev) against itself with another seed"
 # Runs inside .uci-match/ (gitignored): fastchess writes its config.json to the working directory.
 run = [
   '''mkdir -p .uci-match && cd .uci-match && fastchess \
-    -engine name=semif-seed1 cmd=uv args="run --all-packages --env-file ../.env lcchess uci --policy systemone --seed 1" \
-    -engine name=semif-seed2 cmd=uv args="run --all-packages --env-file ../.env lcchess uci --policy systemone --seed 2" \
+    -engine name=jev-seed1 cmd=uv args="run --all-packages --env-file ../.env lcchess uci --policy systemone --seed 1" \
+    -engine name=jev-seed2 cmd=uv args="run --all-packages --env-file ../.env lcchess uci --policy systemone --seed 2" \
     -each proto=uci st=3 timemargin=2000 \
     -rounds 1 -games 2 -maxmoves 60 -autosaveinterval 0 \
     -pgnout file=games.pgn append=false \

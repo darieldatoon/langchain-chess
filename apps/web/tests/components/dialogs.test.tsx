@@ -128,13 +128,13 @@ describe("NewGameDialog", () => {
     open({ ...DEFAULT_SETUP, knobs: { ...DEFAULT_SETUP.knobs, k: 3, threshold: 0.5 } });
     await settled();
     expect(screen.getByLabelText("advanced summary")).toHaveTextContent(
-      "White · SemIf + GLM-5.3 Flash · 2 settings changed",
+      "White · Jev + GLM-5.3 Flash · 2 settings changed",
     );
     change("LLM", "none");
     change("System 1", "none");
     expect(screen.getByLabelText("advanced summary")).toHaveTextContent(/^White$/);
-    change("System 1", "semif-qwen3.5-4b");
-    expect(screen.getByLabelText("advanced summary")).toHaveTextContent("White · SemIf");
+    change("System 1", "typesafe/jev-latest");
+    expect(screen.getByLabelText("advanced summary")).toHaveTextContent("White · Jev");
     advanced();
     expect(screen.queryByLabelText("advanced summary")).not.toBeInTheDocument();
   });
@@ -165,7 +165,7 @@ describe("NewGameDialog", () => {
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "White" })).toBeChecked();
     expect(matchup()).toHaveTextContent(
-      "SemIf plays confident moves; GLM-5.3 Flash decides the rest.",
+      "Jev plays confident moves; GLM-5.3 Flash decides the rest.",
     );
     expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
@@ -278,7 +278,7 @@ describe("NewGameDialog", () => {
   it("derives the policy from the pickers and disables Play when both are None", async () => {
     const { onPlay } = open();
     change("LLM", "none");
-    expect(matchup()).toHaveTextContent("SemIf plays every move.");
+    expect(matchup()).toHaveTextContent("Jev plays every move.");
     change("System 1", "none");
     expect(matchup()).toHaveTextContent("Pick a System 1, an LLM, or both.");
     expect(play()).toBeDisabled();
@@ -320,7 +320,7 @@ describe("NewGameDialog", () => {
     change("System 1", "");
     await clickPlay();
     expect(onPlay.mock.calls[0][1].model).toBe("langsmith:baseten/zai-org/GLM-5.3-Flash");
-    expect(onPlay.mock.calls[0][1].systemone_model).toBe("semif-qwen3.5-4b");
+    expect(onPlay.mock.calls[0][1].systemone_model).toBe("typesafe/jev-latest");
   });
 
   it("takes any model spec as a custom LLM, and needs one to play", async () => {
@@ -331,7 +331,7 @@ describe("NewGameDialog", () => {
     expect(matchup()).toHaveTextContent("Enter a model spec for the custom LLM.");
     change("Model Spec", "openai:gpt-5.6-sol");
     expect(matchup()).toHaveTextContent(
-      "SemIf plays confident moves; openai:gpt-5.6-sol decides the rest.",
+      "Jev plays confident moves; openai:gpt-5.6-sol decides the rest.",
     );
     await clickPlay();
     expect(onPlay).toHaveBeenCalledWith(

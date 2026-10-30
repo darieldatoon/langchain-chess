@@ -55,7 +55,7 @@ def test_a_chat_game_on_the_server(client: SyncLangGraphClient):
     assert out["moves"][0] == "e2e4"
     assert len(out["moves"]) == 2
     ply = out["plies"][1]
-    assert (ply["source"], ply["model"]) == ("systemone", "semif-qwen3.5-4b")
+    assert (ply["source"], ply["model"]) == ("systemone", "typesafe/jev-latest")
     assert {c["kind"] for c in out["turns"][0]["calls"]} == {"systemone"}
     again = client.runs.wait(thread, "chess", input=human("e4", id="m1"), config=SYSTEM_ONE)
     assert again["moves"] == out["moves"]  # a resend is a no-op

@@ -188,12 +188,21 @@ function addsPromptAndModelOptions(values: Values, complete: boolean): Values {
   return { ...Object.fromEntries(added.map((key) => [key, VERSION_DEFAULTS[2][key]])), ...values };
 }
 
+/** Version 3 makes Jev the default: the gateway retired SemIf (see settings.py). */
+function retiresSemif(values: Values): Values {
+  const model = values.systemone_model;
+  return typeof model === "string" && model.startsWith("semif-")
+    ? { ...values, systemone_model: VERSION_DEFAULTS[3].systemone_model }
+    : values;
+}
+
 /**
  * Version n's keys to version n + 1's. For partial settings (`complete` false) a step writes only
  * what it must: an added key's default would override a source merged under this one.
  */
 const MIGRATIONS: Record<number, (values: Values, complete: boolean) => Values> = {
   1: addsPromptAndModelOptions,
+  2: retiresSemif,
 };
 
 /** The keys partial settings set, carried to the current version, `version` excluded. */

@@ -55,7 +55,7 @@ export function ply(overrides: Partial<Ply> = {}): Ply {
 export function systemOne(overrides: Partial<SystemOneMeta> = {}): SystemOneMeta {
   return {
     status: "played",
-    model: "semif-qwen3.5-4b",
+    model: "typesafe/jev-latest",
     shortlist: [],
     top: [
       { uci: "e7e5", probability: 0.95 },
@@ -80,7 +80,7 @@ export function live(overrides: Partial<SystemOneLive> = {}): SystemOneLive {
   return {
     turn_id: "turn-1",
     status: "shortlist",
-    model: "semif-qwen3.5-4b",
+    model: "typesafe/jev-latest",
     top: [
       { uci: "e7e5", probability: 0.4 },
       { uci: "c7c5", probability: 0.38 },
@@ -101,7 +101,7 @@ export function live(overrides: Partial<SystemOneLive> = {}): SystemOneLive {
     eval_score: null,
     needs_calculation: null,
     tactics_present: null,
-    calls: [call({ kind: "systemone", model: "semif-qwen3.5-4b", cost_usd: 0.0001 })],
+    calls: [call({ kind: "systemone", model: "typesafe/jev-latest", cost_usd: 0.0001 })],
     ...overrides,
   };
 }
@@ -118,7 +118,7 @@ export const E4_E5 = {
       san: "e5",
       source: "systemone",
       turn_id: "turn-1",
-      model: "semif-qwen3.5-4b",
+      model: "typesafe/jev-latest",
       latency_ms: 240,
       meta: { SystemOneMiddleware: { ...systemOne() } },
     }),
