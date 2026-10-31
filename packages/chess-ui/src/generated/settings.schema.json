@@ -216,7 +216,7 @@
     },
     "systemone_model": {
       "default": "typesafe/jev-latest",
-      "description": "System 1 model: `typesafe/jev-latest` (Jev). Another TypeSafe classifier works too, with a conservative cap on the moves per request.",
+      "description": "System 1 model: `typesafe/jev-latest` (Jev) or `openai/gpt-6-luna` (OpenAI Decisions). Another TypeSafe classifier works too, with a conservative cap on the moves per request.",
       "langgraph_nodes": [
         "SystemOneMiddleware.before_model"
       ],

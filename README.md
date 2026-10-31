@@ -5,7 +5,7 @@ or any chess GUI, then grade every move with Stockfish and replay the game in La
 
 ![A game in the web UI: the LLM's move, System 1's top moves and the model's reasoning](docs/images/web-game.png)
 
-The agent is a **System 1 + System 2** player. A fast move ranker (System 1: Jev)
+The agent is a **System 1 + System 2** player. A fast move ranker (System 1: Jev or OpenAI Decisions)
 scores the legal moves. When it is confident it plays straight away and the LLM never runs.
 Otherwise it hands the LLM (System 2) a shortlist, and the LLM thinks the position through.
 Every decision, its cost and its latency are recorded on the game.
@@ -34,7 +34,7 @@ flowchart LR
   server["Agent Server<br/>apps/server: the chess graph"]
   agent["create_chess_agent<br/>libs/chess"]
   s1["SystemOneMiddleware<br/>libs/systemone"]
-  gw[("LangSmith LLM Gateway<br/>LLMs, Jev")]
+  gw[("LangSmith LLM Gateway<br/>LLMs, Jev, OpenAI Decisions")]
   ls[("LangSmith<br/>traces + feedback")]
   grade["lcchess grade<br/>+ Stockfish"]
   review["Review app<br/>apps/review"]
@@ -83,6 +83,7 @@ You need:
   | GLM-5.3 Flash (the default LLM, `baseten/...`) | A Baseten provider secret |
   | The other web presets (Baseten, Fireworks, OpenAI, Anthropic models) | That provider's secret |
   | Jev (`typesafe/jev-latest`, the default System 1) | A TypeSafe provider secret |
+  | Luna Decisions (`openai/gpt-6-luna`, the other System 1) | An OpenAI provider secret |
 
 ## Set up
 

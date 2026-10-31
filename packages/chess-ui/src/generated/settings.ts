@@ -34,7 +34,7 @@ export interface ChessContext {
   memory: boolean;
   /** `auto` ends the game on a threefold repetition or the fifty-move rule; `never` plays on until a draw is forced. */
   draw_claims: DrawClaims;
-  /** System 1 model: `typesafe/jev-latest` (Jev). Another TypeSafe classifier works too, with a conservative cap on the moves per request. */
+  /** System 1 model: `typesafe/jev-latest` (Jev) or `openai/gpt-6-luna` (OpenAI Decisions). Another TypeSafe classifier works too, with a conservative cap on the moves per request. */
   systemone_model: string;
   /** How each legal move is described to System 1. `rich` adds captures, checks and exchange results; `terse` names the move only. */
   style: DescriptionStyle;

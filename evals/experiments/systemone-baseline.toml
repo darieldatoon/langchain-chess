@@ -1,5 +1,5 @@
-# `mise run eval:systemone:baseline`: the description style grid, plus a control that forces a
-# 16-option tournament onto Jev, so the tournament's own cost shows on one model.
+# `mise run eval:systemone:baseline`: Jev in both description styles, OpenAI Decisions, and a
+# control that forces a 16-option tournament onto Jev, so the tournament's own cost shows.
 # An entry names System 1 with `model` and `style`, or with `opponent`: an opponent settings
 # file, relative to this one, as every surface reads them.
 
@@ -11,6 +11,11 @@ style = "rich"
 [[experiment]]
 name = "jev-terse"
 opponent = "opponents/jev-terse.json"
+
+[[experiment]]
+name = "luna-rich"
+model = "openai/gpt-6-luna"
+style = "rich"
 
 [[experiment]]
 name = "jev-rich-cap16"

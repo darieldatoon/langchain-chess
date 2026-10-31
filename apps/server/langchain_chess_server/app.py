@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from langchain_chess.efforts import takes_effort
-from langchain_chess_server.clients import POOL
+from langchain_chess_server.clients import DECISIONS_POOL, POOL
 from langchain_chess_server.graph import model_limit
 from langchain_chess_systemone.settings import ChessContext, dump
 
@@ -40,6 +40,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
     finally:
         await POOL.aclose()
+        await DECISIONS_POOL.aclose()
 
 
 def create_app(static_dir: Path | None = STATIC_DIR) -> FastAPI:

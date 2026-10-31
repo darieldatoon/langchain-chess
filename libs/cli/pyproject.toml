@@ -8,7 +8,7 @@ license = "MIT"
 authors = [{ name = "Dariel Dato-on" }]
 dependencies = [
     "langchain-chess[systemone]",
-    "langchain-openai>=1.6.2",
+    "langchain-openai>=1.7.0",
     "langsmith>=0.14.9",
     "rich>=15",
     "textual>=6",

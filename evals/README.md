@@ -50,7 +50,7 @@ mise run eval:positions:upload                                      # the commit
 mise run eval:systemone -- --model typesafe/jev-latest --style rich # one experiment on the dev split
 mise run eval:systemone -- --model typesafe/jev-latest --split full
 mise run eval:systemone -- --opponent experiments/opponents/jev-terse.json
-mise run eval:systemone:baseline                                    # the three baseline runs on full
+mise run eval:systemone:baseline                                    # the four baseline runs on full
 ```
 
 `upload` and the experiments need `LANGSMITH_API_KEY` in `.env`, and the experiments need the

@@ -40,6 +40,18 @@ async def test_jev_ranks_every_move_in_one_request_and_is_priced():
     assert call["cost_usd"] > 0
 
 
+async def test_openai_decisions_ranks_every_move_with_the_aux_questions_and_is_priced():
+    ranker = GatewayRanker("openai/gpt-6-luna", with_eval=True, with_nouls=True)
+    result = await ranker.arank(RankRequest(ITALIAN, (), OPTIONS, seed=1))
+    assert result.tournament is None
+    assert len(result.candidates) == len(OPTIONS)
+    assert None not in (result.eval_score, result.needs_calculation, result.tactics_present)
+    (call,) = result.calls
+    assert call["model"] == "openai:gpt-6-luna"
+    assert call["cost_usd"] is not None
+    assert call["cost_usd"] > 0
+
+
 async def test_a_hybrid_move():
     opus = init_chat_model(
         "langsmith:anthropic/claude-opus-5-5",

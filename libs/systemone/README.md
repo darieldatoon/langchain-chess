@@ -19,6 +19,7 @@ TYPESAFE_API_KEY=${LC_GATEWAY_KEY}
 | Model | Use it for |
 |---|---|
 | `typesafe/jev-latest` | The default in the app and CLI. Needs a TypeSafe provider secret in the gateway workspace. |
+| `openai/gpt-6-luna` | OpenAI Decisions through LangChain's `OpenAIDecisions`, on `LANGSMITH_GATEWAY` and its key like the chat models. Needs an OpenAI provider secret in the gateway workspace. More confident than it should be: at the default `threshold` of 0.9, about 1 in 9 moves it plays alone loses a pawn or more, so raise it to 0.95 to play alone less often. |
 
 ## Use it
 
@@ -78,9 +79,10 @@ flowchart TD
   `threshold` for tournament turns.
 - **Shortlist.** The top `k` moves, or with `top_p` the smallest prefix reaching that probability
   mass, capped at `k`. The LLM sees them as suggestions; every legal move stays allowed.
-- **Tournaments.** Jev takes up to 255 options per question. Another classifier gets a
-  conservative 16 options per question and 32 questions per request. With more legal moves, balanced heats run in as few requests as possible, the best of
-  each heat go to a final, and the seed makes the draw repeatable within a turn.
+- **Tournaments.** Jev and OpenAI Decisions take up to 255 options per question. Another
+  classifier gets a conservative 16 options per question and 32 questions per request. With
+  more legal moves, balanced heats run in as few requests as possible, the best of each heat go
+  to a final, and the seed makes the draw repeatable within a turn.
 - **Retries.** The decision is frozen per turn, so a retried turn replays it instead of
   re-ranking and flipping the gate.
 

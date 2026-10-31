@@ -19,7 +19,7 @@ That starts `langgraph dev` on `:2024` and this app on `:5173`, then prints the 
 ## Play a game
 
 1. **New game.** The dialog opens by itself when the URL has no game. Pick White, Random or
-   Black, a System 1 (Jev, another classifier, or none) and an LLM (a preset, a custom `init_chat_model`
+   Black, a System 1 (Jev, Luna Decisions, another classifier, or none) and an LLM (a preset, a custom `init_chat_model`
    spec, or none). Advanced holds the rest: the system prompt, what each turn shows, memory,
    model arguments (JSON), reasoning effort, how confident System 1 must be to play alone and
    how many candidates the LLM sees. Every setting has an info icon that says what it does and

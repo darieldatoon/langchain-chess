@@ -150,6 +150,7 @@ describe("matchup wording", () => {
       "someone/ranker + GLM-5.3 Flash",
     );
     expect(systemOneName("typesafe/jev-latest")).toBe("Jev");
+    expect(systemOneName("openai/gpt-6-luna")).toBe("Luna Decisions");
     const kwargs = { reasoning_effort: "high" };
     expect(opponentLabel({ ...DEFAULT_CONTEXT, policy: "llm", model_kwargs: kwargs })).toBe(
       "GLM-5.3 Flash · high",

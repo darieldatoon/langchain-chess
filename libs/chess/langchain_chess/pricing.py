@@ -8,6 +8,7 @@ only when the pinned package is bumped.
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
+from types import MappingProxyType
 from typing import Any, TypedDict
 
 import genai_prices
@@ -25,6 +26,11 @@ _INPUT_DETAILS = frozenset(
     {"cache_read", "cache_creation", "ephemeral_5m_input_tokens", "ephemeral_1h_input_tokens"}
 )
 _OUTPUT_DETAILS = frozenset({"reasoning"})
+
+# The one exception to genai-prices: it has no OpenAI Decisions rates and would price these calls
+# at the model's chat rate. Input only, output is free, per
+# https://developers.openai.com/api/docs/guides/decisions (read 2026-10-31).
+DECISIONS_USD_PER_MTOK: Mapping[str, float] = MappingProxyType({"gpt-6-luna": 0.10})
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,6 +104,14 @@ def price(provider: str, model: str, tokens: Tokens, at: datetime) -> tuple[floa
     return float(result.total_price), not tokens.approximated
 
 
+def decisions_price(model: str, tokens: Tokens) -> tuple[float | None, bool]:
+    """(cost in USD, complete) for an OpenAI Decisions call."""
+    rate = DECISIONS_USD_PER_MTOK.get(model)
+    if rate is None or tokens.input is None:
+        return None, False
+    return tokens.input * rate / 1_000_000, not tokens.approximated
+
+
 def context_window(model: str) -> int | None:
     """Input and output tokens together, from the same snapshot as prices; None if unknown."""
     vendor, name = model_identity(model)
@@ -112,7 +126,10 @@ def make_call(
 ) -> Call:
     """A priced `Call`. `model` may be a spec, a gateway name or a bare name with `provider`."""
     vendor, name = model_identity(model, provider)
-    cost, complete = price(vendor, name, tokens, at)
+    if kind == "systemone" and vendor == "openai":
+        cost, complete = decisions_price(name, tokens)
+    else:
+        cost, complete = price(vendor, name, tokens, at)
     return Call(
         kind=kind,
         model=f"{vendor}:{name}",
