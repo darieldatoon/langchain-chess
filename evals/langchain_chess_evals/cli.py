@@ -103,8 +103,9 @@ def build_command(
 RendererUrl = Annotated[
     str | None,
     typer.Option(
-        help="Your deployment's https://<host>/ui/render.html: draws experiment outputs as a "
-        "board in LangSmith. Omitted leaves the dataset's setting as it is."
+        help="The web UI's render.html, e.g. "
+        "https://darieldatoon.github.io/langchain-chess/render.html: draws experiment outputs "
+        "as a board in LangSmith. Omitted leaves the dataset's setting as it is."
     ),
 ]
 

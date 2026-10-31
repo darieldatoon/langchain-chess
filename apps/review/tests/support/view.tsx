@@ -40,7 +40,7 @@ export const viewProps = (
   onOpenTrace = vi.fn(),
   extras: ViewExtras = {},
 ): ViewProps => ({
-  projectName: "langchain-chess-app",
+  projectName: "langchain-chess-production",
   game: g,
   values: g.values!,
   view: extras.view ?? DEFAULT_TURN_VIEW,

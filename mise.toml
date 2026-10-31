@@ -176,15 +176,18 @@ description = "Ask each recorded model, and any given after --, whether it takes
 run = "uv run --all-packages --env-file .env python -m langchain_chess.efforts"
 
 [tasks.build]
-description = "Build the web UI into the server package so the image can serve it under /ui"
+description = "Build the web UI into the server package, which serves it under /ui for local runs and the e2e tests"
 run = "pnpm --dir apps/web exec vp build"
 
 [tasks.deploy]
-description = "Build the UI, then build and push the image to LangSmith Deployments"
-run = [
-  "mise run build",
-  "uv run --all-packages langgraph deploy --no-remote --name langchain-chess-app --deployment-type dev",
-]
+description = "Build and push the agent image to the langchain-chess agent's production environment"
+# The UI ships separately, to GitHub Pages. Deploy from CI: `langgraph deploy` sends .env as the
+# deployment's secrets, and a local .env names the local environment.
+run = "uv run --all-packages langgraph deploy --no-remote --agent-id langchain-chess --agent-environment production --deployment-type dev"
+
+[tasks."agent:tag"]
+description = "Tag the positions dataset and the agent's tracing projects to the langchain-chess agent"
+run = "bash scripts/agent-tags.sh"
 
 # OpenWiki is pinned per task, not in [tools]: every CI job runs `mise install`, which skips
 # task tools, so only the wiki tasks install it. Bump these three pins and the one in

@@ -27,7 +27,7 @@ describe("entry", () => {
   it("keeps the chosen project across host updates", async () => {
     const projects = [
       { id: "p-local", name: "langchain-chess-local" },
-      { id: "p-app", name: "langchain-chess-app" },
+      { id: "p-app", name: "langchain-chess-production" },
     ];
     const call = vi.fn(async (operation: string) =>
       operation === "GET /api/v1/sessions" ? projects : { items: [], next_cursor: null },

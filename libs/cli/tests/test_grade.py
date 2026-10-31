@@ -43,6 +43,7 @@ from langchain_chess_cli.grade.store import (
     LangSmithStore,
     ProjectQuery,
     UnstoredReviewError,
+    environment_project,
     run_filter,
 )
 from langchain_chess_cli.main import app
@@ -286,6 +287,20 @@ def test_find_threads_newest_first_and_distinct():
     assert kw["is_root"] is True
     assert "surface" in kw["filter"]
     assert store.find_threads(ProjectQuery("proj")) == ["b", "a", "c"]
+
+
+def test_an_agent_environment_names_its_project():
+    environments = [
+        SimpleNamespace(environment="LOCAL", tracer_session_name="chess-local"),
+        SimpleNamespace(environment="PRODUCTION", tracer_session_name="chess-production"),
+    ]
+    assert environment_project(environments, "production") == "chess-production"
+    with pytest.raises(LookupError, match="'staging'"):
+        environment_project(environments, "staging")
+    client = SimpleNamespace(
+        agents=SimpleNamespace(retrieve=lambda agent_id: SimpleNamespace(environments=environments))
+    )
+    assert LangSmithStore(client).agent_project("chess", "local") == "chess-local"
 
 
 def test_thread_runs():
@@ -577,6 +592,12 @@ class FakeStore:
         self.queries.append(query)
         return self.threads
 
+    def agent_project(self, agent_id, environment):
+        if environment == "staging":
+            msg = "the agent has no 'staging' environment"
+            raise LookupError(msg)
+        return f"{agent_id}-{environment}"
+
     def thread_runs(self, project, thread_id):
         return self.games.get(thread_id, [])
 
@@ -786,7 +807,7 @@ def test_selection():
     assert query.since.tzinfo is not None
     assert query.since == local.astimezone()
     assert query.until == T0
-    with pytest.raises(cli.OptionError, match="LANGSMITH_PROJECT"):
+    with pytest.raises(cli.OptionError, match="LANGSMITH_AGENT_ENVIRONMENT"):
         cli.selection(None, ("a",), since=None, until=None, limit=None, metadata=())
     with pytest.raises(cli.OptionError, match="not --thread"):
         cli.selection("p", ("a",), since=None, until=None, limit=2, metadata=())
@@ -884,6 +905,20 @@ def test_delete_own_sandbox(monkeypatch):
         "not in a sandbox: nothing to delete",
         "could not delete sandbox lcchess-grade-a: 403 forbidden",
     ]
+
+
+def test_grade_command_finds_the_project_from_the_agent_environment(monkeypatch, tmp_path):
+    store = FakeStore({"a": web_game("a", ITALIAN)}, threads=["a"])
+    monkeypatch.setattr(main, "make_client", lambda: "client")
+    monkeypatch.setattr("langchain_chess_cli.grade.store.LangSmithStore", lambda client: store)
+    monkeypatch.setenv("LANGSMITH_AGENT_ENVIRONMENT", "local")
+    args = ["grade", "--engine", fake_engine(tmp_path), "--depth", "1", "--dry-run"]
+    result = CliRunner().invoke(app, args)
+    assert result.exit_code == 0, result.output
+    assert store.queries[0].project == "langchain-chess-local"
+    result = CliRunner().invoke(app, [*args, "--environment", "staging"])
+    assert result.exit_code == 2
+    assert "no 'staging' environment" in result.output
 
 
 def test_grade_command_rejects_bad_options():

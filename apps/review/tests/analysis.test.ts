@@ -16,7 +16,7 @@ import { reviewFeedback, statusFeedback } from "./support/fixtures";
 const NOW = new Date("2026-09-25T12:00:00Z");
 const TARGET: Target = {
   projectId: "p1",
-  projectName: "langchain-chess-app",
+  projectName: "langchain-chess-production",
   threadId: "01a0dc23-15b8-7960-8f23-4079156516c0",
   runId: "run-3",
   runStartTime: "2026-09-25T11:00:00Z",
@@ -96,7 +96,7 @@ describe("the launch", () => {
 
   it("launches the grader detached, quoting what it's given", () => {
     expect(gradeCommand(TARGET, false)).toBe(
-      "nohup setsid lcchess grade --project 'langchain-chess-app' " +
+      "nohup setsid lcchess grade --project 'langchain-chess-production' " +
         "--thread '01a0dc23-15b8-7960-8f23-4079156516c0' --workers 4 --sandbox-job " +
         "</dev/null >/tmp/grade.log 2>&1 &",
     );

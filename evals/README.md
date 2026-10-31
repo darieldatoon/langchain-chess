@@ -69,17 +69,16 @@ Labels are cached as they finish, so an interrupted build resumes.
 
 ## See outputs as a board
 
-LangSmith shows an experiment's outputs as JSON. The web UI's deployment also serves a
+LangSmith shows an experiment's outputs as JSON. The web UI's GitHub Pages site also serves a
 [custom output renderer](https://docs.langchain.com/langsmith/custom-output-rendering) that draws
 them on a board: Stockfish's best move and top 3 as arrows with every move's eval, and System 1's
 picks as arrows with probability bars, confidence, margin and its tournament. It shows in
 experiment runs, the compare view and annotation queues, not the dataset's Examples tab.
 
-Point the dataset at your own deployment's copy. Its URL is the deployment's API URL (LangSmith
-→ Deployments → your deployment) plus `/ui/render.html`:
+Point the dataset at the site's copy, or your own fork's:
 
 ```sh
-mise run eval:positions:upload -- --renderer-url https://<your deployment>/ui/render.html
+mise run eval:positions:upload -- --renderer-url https://darieldatoon.github.io/langchain-chess/render.html
 ```
 
 `upload` merges the setting into the dataset's metadata (`iframe_config`) and rejects anything

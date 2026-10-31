@@ -296,7 +296,7 @@ describe("GameView", () => {
     renderView(game({ grading: UNGRADED }), vi.fn(), { onAnalyze });
     expect(screen.getByText("Not graded yet")).toBeInTheDocument();
     expect(
-      screen.getByText("lcchess grade --project 'langchain-chess-app' --thread thread-1"),
+      screen.getByText("lcchess grade --project 'langchain-chess-production' --thread thread-1"),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText(/^evaluation/)).toBeNull();
     expect(screen.queryByLabelText("engine")).toBeNull();
@@ -311,7 +311,9 @@ describe("GameView", () => {
     renderView(g, vi.fn(), { onAnalyze });
     expect(screen.getByText(/evaluation 3 is malformed/)).toBeInTheDocument();
     expect(
-      screen.getByText("lcchess grade --project 'langchain-chess-app' --thread thread-1 --force"),
+      screen.getByText(
+        "lcchess grade --project 'langchain-chess-production' --thread thread-1 --force",
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText(/^evaluation/)).toBeNull();
     expect(current()).toBe("Qxf7#");

@@ -54,6 +54,15 @@ RUNS_PER_LIST = 25
 READ_BACK_TRIES = 5
 
 
+def environment_project(environments: Iterable[Any], environment: str) -> str:
+    """The tracing project of an agent's environment, e.g. `local` or `production`."""
+    for env in environments:
+        if env.environment.lower() == environment.lower():
+            return env.tracer_session_name
+    msg = f"the agent has no {environment!r} environment"
+    raise LookupError(msg)
+
+
 class UnstoredReviewError(RuntimeError):
     """LangSmith accepted a review's feedback but didn't store it as written."""
 
@@ -102,6 +111,9 @@ class LangSmithStore:
         self._client = client
         self._write_concurrency = write_concurrency
         self._sleep = sleep
+
+    def agent_project(self, agent_id: str, environment: str) -> str:
+        return environment_project(self._client.agents.retrieve(agent_id).environments, environment)
 
     def find_threads(self, query: ProjectQuery) -> list[str]:
         """Newest first, each thread once."""

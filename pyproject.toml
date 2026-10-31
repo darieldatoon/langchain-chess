@@ -19,7 +19,7 @@ dev = [
     "pytest>=9.1",
     "pytest-asyncio>=1.4",
     "pytest-cov>=7",
-    "langgraph-cli[inmem]==0.4.31",
+    "langgraph-cli[inmem]==0.4.40",
     "httpx>=0.28.1",
     "pytest-textual-snapshot>=1.0.0",
     "pytest-xdist>=3.8",

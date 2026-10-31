@@ -63,7 +63,7 @@ def selection(
     metadata: tuple[tuple[str, str], ...],
 ) -> Selection:
     if not project:
-        msg = "set --project or LANGSMITH_PROJECT"
+        msg = "set --project, or --environment (LANGSMITH_AGENT_ENVIRONMENT)"
         raise OptionError(msg)
     if ids:
         if since or until or limit or metadata:
