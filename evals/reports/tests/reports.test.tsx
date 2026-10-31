@@ -13,10 +13,15 @@ describe("reports", () => {
     expect(Object.keys(reports).length).toBeGreaterThan(0);
   });
 
-  it.each(Object.entries(reports))("%s renders", (_, report) => {
-    const Report = report.default;
-    render(<Report />);
-    expect(report.title).toBeTruthy();
-    expect(screen.getAllByRole("heading").length).toBeGreaterThan(0);
-  });
+  // A whole report page takes 4-6 s on a CI runner (0.2 s locally), past the 5 s default.
+  it.each(Object.entries(reports))(
+    "%s renders",
+    (_, report) => {
+      const Report = report.default;
+      render(<Report />);
+      expect(report.title).toBeTruthy();
+      expect(screen.getAllByRole("heading").length).toBeGreaterThan(0);
+    },
+    30_000,
+  );
 });
