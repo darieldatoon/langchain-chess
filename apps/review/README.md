@@ -15,8 +15,9 @@ LangSmith sandbox.
 
 After the [repository setup](../../README.md#set-up):
 
-1. **Play a game** in the web UI with tracing on. Local games go to `langchain-chess-local`
-   (`LANGSMITH_PROJECT` in `.env`). The thread id is under Opponent.
+1. **Play a game** in the web UI with tracing on. Local games go to the `langchain-chess`
+   agent's local environment (`LANGSMITH_AGENT_ENVIRONMENT` in `.env`). The thread id is under
+   Opponent.
 2. **Grade it:** `uv run --all-packages --env-file .env lcchess grade --thread <thread-id>`. For
    a terminal game, see [grading a batch](../../libs/cli#grade-games). Or skip this and use
    [Analyze](#analyze) in the app.
@@ -25,8 +26,8 @@ After the [repository setup](../../README.md#set-up):
    `LANGSMITH_WORKSPACE_ID`. `mise run dev:review` doesn't read `.env`.
 4. **Preview:** `mise run dev:review`. It builds the app, opens it in a local sandbox like the one
    in LangSmith, and rebuilds on save. API calls go through your CLI credentials.
-5. **Pick the project** (top right; the deployment's `langchain-chess-app` is preselected when it
-   exists), a time window, and a game. Ungraded games say "Not graded".
+5. **Pick the environment's project** (top right: `langchain-chess-production`, the deployment's,
+   is preselected; `langchain-chess-local` holds local games), a time window, and a game. Ungraded games say "Not graded".
 
 ```mermaid
 flowchart LR

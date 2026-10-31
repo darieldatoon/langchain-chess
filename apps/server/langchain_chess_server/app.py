@@ -1,9 +1,9 @@
 """Serves the built web UI and its settings schema next to the graph API.
 
 Mounted under `/ui`, never `/`: custom routes shadow the server's own, and `/` is its health
-check. The static directory is the Vite build output, produced in CI right before
-`langgraph deploy`; it is absent in a plain checkout, so the mount is conditional and
-`/ui/config` still answers.
+check. The static directory is the Vite build output (`mise run build`), for local runs and the
+e2e tests; the deployment ships without it, since GitHub Pages hosts the UI. So the mount is
+conditional and `/ui/config` and `/ui/model` still answer.
 """
 
 from collections.abc import AsyncIterator

@@ -13,13 +13,15 @@ export interface Project {
   name: string;
 }
 
-/** The deployment's project first, then any other chess project, then the most recent. */
+/** The langchain-chess agent's tracing projects, one per environment it uses: the deployment's first. */
+export const AGENT_PROJECTS = ["langchain-chess-production", "langchain-chess-local"] as const;
+
+export function agentProjects(projects: readonly Project[]): Project[] {
+  return AGENT_PROJECTS.flatMap((name) => projects.filter((p) => p.name === name));
+}
+
 export function defaultProject(projects: readonly Project[]): string | null {
-  const pick =
-    projects.find((p) => p.name === "langchain-chess-app") ??
-    projects.find((p) => p.name.includes("chess")) ??
-    projects[0];
-  return pick?.id ?? null;
+  return projects[0]?.id ?? null;
 }
 
 export interface GamesPage {
@@ -121,9 +123,9 @@ export function createApi(call: Call): Api {
   return {
     async projects() {
       const items = (await call("GET /api/v1/sessions", {
-        params: { limit: "100", sort_by: "last_run_start_time", sort_by_desc: "true" },
+        params: { limit: "100", name_contains: "langchain-chess-" },
       })) as Project[];
-      return items.map(({ id, name }) => ({ id, name }));
+      return agentProjects(items.map(({ id, name }) => ({ id, name })));
     },
 
     /** One page of threads, their last root runs, and this grader's reviews and marks on them. */

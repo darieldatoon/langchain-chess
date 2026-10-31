@@ -1,0 +1,133 @@
+name: pages
+
+on:
+  push:
+    branches: [main]
+    # A path missing here is a silent stale deploy: when the UI gains a dependency, add it.
+    # Over-include rather than under.
+    paths:
+      - apps/web/**
+      - packages/chess-ui/**
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - package.json
+      - vite.config.ts
+      - tsconfig.json
+      - mise.toml
+      - mise.lock
+      - .github/actions/setup/**
+      - .github/workflows/ci.yml
+      - .github/workflows/pages.yml
+      - scripts/superseded.sh
+  # Ignores the path filters: the way to publish after changing VITE_API_URL, or to retry.
+  # Runs only from main; the jobs skip on any other ref.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# The whole run, CI included, holds the lock, so publishes go out in push order.
+concurrency:
+  group: pages-${{ github.ref }}
+  # Every run waits its turn: a newer arrival must never cancel a pending deploy.
+  queue: max
+
+jobs:
+  # Inside the lock, so a retried or replaced older run still ships main as it is now. CI and
+  # the build both use this SHA, so what publishes is exactly what passed.
+  tip:
+    # Skipped until VITE_API_URL (the agent deployment's URL) is set.
+    if: github.ref == 'refs/heads/main' && vars.VITE_API_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      sha: ${{ steps.main.outputs.sha }}
+    steps:
+      - id: main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          echo "main is at $sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+  ci:
+    needs: tip
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.tip.outputs.sha }}
+
+  build:
+    needs: [tip, ci]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    timeout-minutes: 15
+    outputs:
+      superseded: ${{ steps.guard.outputs.superseded }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ needs.tip.outputs.sha }}
+
+      - uses: ./.github/actions/setup
+        with:
+          python: false
+
+      # Re-running only this job reuses the earlier tip and CI. Main may have moved since; that
+      # is fine unless it changed the UI, whose newer run then publishes instead.
+      - name: Check no newer commit changes the UI
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TESTED: ${{ needs.tip.outputs.sha }}
+        run: |
+          main=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          git -c "http.extraheader=AUTHORIZATION: basic $auth" fetch --quiet --depth 1 origin "$main"
+          changed=$(bash scripts/superseded.sh .github/workflows/pages.yml "$TESTED" "$main")
+          if [[ -n "$changed" ]]; then
+            summary="main moved from $TESTED to $main and changed the UI (${changed//$'\n'/, })"
+            # Skip only when a newer run exists: a push that triggers none (e.g. [skip ci]) must stay red.
+            newer=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/pages.yml/runs?branch=main" \
+              --jq "[.workflow_runs[] | select(.run_number > $GITHUB_RUN_NUMBER and .conclusion != \"cancelled\")] | length")
+            if (( newer > 0 )); then
+              echo "::notice::$summary; a newer run publishes it, so this one skips."
+              echo "superseded=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "::error::$summary; re-run all jobs, not just this one."
+            exit 1
+          fi
+
+      # The site lives under /<repo>/, so every asset URL is prefixed with it.
+      - name: Build the web UI
+        if: steps.guard.outputs.superseded != 'true'
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
+          OUT_DIR: dist
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+        run: pnpm --dir apps/web exec vp build
+
+      - if: steps.guard.outputs.superseded != 'true'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: apps/web/dist
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.superseded != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

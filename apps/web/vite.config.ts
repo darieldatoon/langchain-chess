@@ -4,12 +4,12 @@ import { defineConfig, lazyPlugins } from "vite-plus";
 
 const page = (name: string) => fileURLToPath(new URL(name, import.meta.url));
 
-// Served by the Agent Server under /ui (see apps/server/langchain_chess_server/app.py), so the bundle is
-// built straight into the Python package and every asset URL is prefixed.
+// GitHub Pages hosts the UI (.github/workflows/pages.yml sets BASE_PATH and OUT_DIR). By default
+// the bundle goes into the Python package, which serves it under /ui for local runs and the e2e tests.
 export default defineConfig({
-  base: "/ui/",
+  base: process.env.BASE_PATH ?? "/ui/",
   build: {
-    outDir: "../server/langchain_chess_server/static",
+    outDir: process.env.OUT_DIR ?? "../server/langchain_chess_server/static",
     emptyOutDir: true,
     // Vendor code in its own long-lived chunks, so an app-only change re-downloads only the
     // app. Markdown is loaded lazily (components/Analysis.tsx) and gets its own chunk anyway.

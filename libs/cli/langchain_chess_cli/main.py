@@ -261,8 +261,18 @@ def grade(
         typer.Option(exists=True, dir_okay=False, help="Thread ids, one per line."),
     ] = None,
     project: Annotated[
-        str | None, typer.Option(envvar="LANGSMITH_PROJECT", help="The tracing project.")
+        str | None, typer.Option(help="The tracing project; overrides --environment.")
     ] = None,
+    environment: Annotated[
+        str | None,
+        typer.Option(
+            envvar="LANGSMITH_AGENT_ENVIRONMENT",
+            help="The agent environment whose games to grade: local or production.",
+        ),
+    ] = None,
+    agent: Annotated[
+        str, typer.Option(envvar="LANGSMITH_AGENT_ID", help="The LangSmith agent.")
+    ] = "langchain-chess",
     since: Annotated[
         datetime | None, typer.Option(help="Games with a turn at or after this (local time).")
     ] = None,
@@ -310,7 +320,10 @@ def grade(
     from langchain_chess_cli.grade.batch import Event, Threads, grade_batch
     from langchain_chess_cli.grade.store import LangSmithStore
 
+    store = LangSmithStore(make_client())
     try:
+        if project is None and environment:
+            project = store.agent_project(agent, environment)
         chosen = cli.selection(
             project,
             cli.thread_ids(thread or [], threads_file),
@@ -329,13 +342,11 @@ def grade(
         if sandbox_job and not isinstance(chosen, Threads):
             msg = "--sandbox-job grades the games given with --thread"
             raise cli.OptionError(msg)
-    except cli.OptionError as e:
+    except (cli.OptionError, LookupError) as e:
         raise typer.BadParameter(str(e)) from e
 
     def echo(line: str) -> None:
         typer.echo(line, err=True)
-
-    store = LangSmithStore(make_client())
 
     def batch(report: "Callable[[Event], None]") -> "Coroutine[None, None, Summary]":
         return grade_batch(

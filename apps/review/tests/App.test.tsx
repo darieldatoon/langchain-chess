@@ -14,9 +14,10 @@ vi.mock("@langchain/macaw-components/Select", async () =>
 );
 
 const NOW = new Date("2026-09-25T12:00:00Z");
+// In the order `projects()` returns them: the deployment's first.
 const PROJECTS = [
+  { id: "p-app", name: "langchain-chess-production" },
   { id: "p-local", name: "langchain-chess-local" },
-  { id: "p-app", name: "langchain-chess-app" },
 ];
 
 function fakeApi(overrides: Partial<Api> = {}): Api & { games: ReturnType<typeof vi.fn> } {
@@ -256,7 +257,7 @@ describe("App", () => {
     expect(analyze).toHaveBeenCalledWith(
       {
         projectId: "p-app",
-        projectName: "langchain-chess-app",
+        projectName: "langchain-chess-production",
         threadId: "thread-1",
         runId: "run-3",
         runStartTime: "2026-09-25T12:30:00Z",

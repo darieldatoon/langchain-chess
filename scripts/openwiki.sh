@@ -21,6 +21,8 @@ export OPENWIKI_LANGSMITH_API_KEY="${LANGSMITH_API_KEY:?set LANGSMITH_API_KEY in
 # Both spellings: .env sets LANGSMITH_* for the app, and OpenWiki documents LANGCHAIN_*.
 export LANGSMITH_TRACING=true LANGCHAIN_TRACING_V2=true
 export LANGSMITH_PROJECT=langchain-chess-openwiki LANGCHAIN_PROJECT=langchain-chess-openwiki
+# .env names the app's agent; with a project set too, the SDK would trace nothing.
+unset LANGSMITH_AGENT_ID LANGSMITH_AGENT_ENVIRONMENT
 export OPENWIKI_TELEMETRY_DISABLED=1
 
 exec openwiki "$@"

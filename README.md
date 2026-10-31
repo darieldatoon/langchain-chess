@@ -100,7 +100,7 @@ Fill in `.env`:
 |---|---|
 | `LANGSMITH_API_KEY` | Your tracing key |
 | `LANGSMITH_WORKSPACE_ID` | The tracing workspace's id ([Settings](https://smith.langchain.com/settings) → General). Without it, the SDK may use another workspace and get 403s. |
-| `LANGSMITH_PROJECT` | Where local games are traced. Default: `langchain-chess-local`. |
+| `LANGSMITH_AGENT_ID`, `LANGSMITH_AGENT_ENVIRONMENT` | Where local games are traced: the `langchain-chess` agent's `local` environment (the template's values). Don't also set `LANGSMITH_PROJECT`. |
 
 Keep `LANGSMITH_TRACING=true` (the template's value): grading and the review app read games from
 their traces.
@@ -235,8 +235,9 @@ mise tasks           # every task
   plus `ty` and the web checks over the whole repo, and a secret scan. Pre-push runs
   `mise run test`.
 - **CI and deploys.** Pull requests that change more than Markdown run `check` and `test`. A push to `main` that changes the
-  agent (`langchain-chess-app` on LangSmith Deployments, web UI included), the review app or
-  its grader snapshot runs them again, then deploys what changed. See
+  agent (the `langchain-chess` agent's production environment on LangSmith Deployments), the
+  web UI ([GitHub Pages](https://darieldatoon.github.io/langchain-chess/)), the review app or its grader snapshot runs them again, then
+  deploys what changed. See
   [apps/server](apps/server#deploy) and [apps/review](apps/review#publish).
 - **OpenWiki.** [`openwiki/`](openwiki) is a generated wiki of this repo for coding agents.
   `mise run wiki:update` refreshes stale pages; `mise run wiki:view` browses it.
@@ -251,7 +252,7 @@ Design decisions and measurements live in the [OpenWiki](openwiki/index.md).
 | The server exits: gateway key is empty | Export `LC_GATEWAY_KEY` in the shell that runs `mise`. |
 | 403 on traces or grading | Set `LANGSMITH_WORKSPACE_ID` to the tracing key's workspace. |
 | `Memory: Summarize` is disabled in the web UI | That model's input limit is unknown, so summarizing can't be scheduled. |
-| `lcchess grade` can't find the game | Pass the project it was traced to: `--project langchain-chess-local` locally, `langchain-chess-app` for the deployment. |
+| `lcchess grade` can't find the game | Pass the environment it was traced to: `--environment local` (the default from `.env`) or `--environment production` for the deployment. |
 
 ## License
 

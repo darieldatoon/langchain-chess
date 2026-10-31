@@ -1,7 +1,7 @@
 # langchain-chess web UI
 
-Play the `chess` agent in the browser. The Agent Server serves this React app at `/ui`, locally
-and in the deployment.
+Play the `chess` agent in the browser at <https://darieldatoon.github.io/langchain-chess/>. Locally, `mise run dev` serves this
+React app at `/ui`.
 
 ![A game in the web UI](../../docs/images/web-game.png)
 
@@ -48,13 +48,18 @@ That starts `langgraph dev` on `:2024` and this app on `:5173`, then prints the 
 
 ## Against a deployed server
 
+The site is built by [`.github/workflows/pages.yml`](../../.github/workflows/pages.yml) on pushes to
+`main` that change the UI. The repository variable `VITE_API_URL` names the deployment it talks
+to (LangSmith → Deployments → the `langchain-chess` agent's production deployment → API URL);
+after changing it, run the workflow by hand.
+
 A deployed Agent Server needs a LangSmith API key. When the server answers 401 or 403, the app
 asks for one (the gear, Settings). It stays in this browser's localStorage and is sent as
 `X-Api-Key`. The local `langgraph dev` needs none: the server's own `.env` holds the model keys.
 
 ## The LangSmith renderer
 
-`render.html`, served at `/ui/render.html`, is the positions dataset's custom output renderer in
+`render.html`, served at <https://darieldatoon.github.io/langchain-chess/render.html>, is the positions dataset's custom output renderer in
 LangSmith (see [evals](../../evals/README.md#see-outputs-as-a-board)). LangSmith embeds it in an
 iframe and posts each run's outputs or reference outputs, with the example's inputs, as
 `{type: "output" | "reference", data, metadata: {inputs}}`. The page fetches nothing and accepts

@@ -164,7 +164,7 @@ uv run --all-packages --env-file .env lcchess grade --thread <thread-id>
 uv run --all-packages --env-file .env lcchess grade --metadata surface=tui --limit 1
 
 # A batch from the deployment, listed but not written
-uv run --all-packages --env-file .env lcchess grade --project langchain-chess-app \
+uv run --all-packages --env-file .env lcchess grade --environment production \
   --since 2026-09-01 --metadata surface=web --limit 50 --dry-run
 ```
 
@@ -186,8 +186,9 @@ flowchart LR
   game --> fb
 ```
 
-- **Which project.** `--project` defaults to `LANGSMITH_PROJECT`: `langchain-chess-local` for
-  local games, `langchain-chess-app` for the deployment.
+- **Which project.** `--environment` picks the `langchain-chess` agent's environment and grades
+  its project: `local` (the default, from `LANGSMITH_AGENT_ENVIRONMENT`) or `production` for the
+  deployment. `--project` names a project directly.
 - **Skips.** Games already graded with the same engine and settings are skipped; `--force`
   re-grades. Re-grading replaces this grader's earlier feedback and leaves other feedback alone.
 - **Search.** `--depth` (default 16), `--nodes` or `--movetime`; also `--multipv`, `--hash`,

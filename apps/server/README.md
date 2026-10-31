@@ -84,7 +84,7 @@ the shell variable is missing, and langchain-core would otherwise fall back to t
 ## Deploy
 
 Deploying needs Docker (with buildx) running locally: the image is built on your machine.
-CI deploys `langchain-chess-app` on pushes to `main` that change the agent
+CI deploys the `langchain-chess` agent's production environment on pushes to `main` that change the agent
 ([`.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml)). It needs two repository
 secrets: `LANGSMITH_API_KEY` (to deploy) and `LC_GATEWAY_KEY` (written into the revision's
 secrets). By hand:

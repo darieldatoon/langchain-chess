@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from "vite-plus/test";
-import { appended, createApi, defaultProject, firstPages, threadUrl } from "../src/api";
+import {
+  agentProjects,
+  appended,
+  createApi,
+  defaultProject,
+  firstPages,
+  threadUrl,
+} from "../src/api";
 import { matchup, modelName, resultText, sideLabel, toGame, type ThreadItem } from "../src/games";
 import {
   EMPTY,
@@ -383,20 +390,29 @@ describe("pages", () => {
 });
 
 describe("api", () => {
-  it("picks the deployment's project, then a chess one, then the first", () => {
+  it("keeps the agent's projects, the deployment's first, and picks the first", () => {
     const p = (id: string, name: string) => ({ id, name });
-    expect(
-      defaultProject([p("1", "x"), p("2", "chess-local"), p("3", "langchain-chess-app")]),
-    ).toBe("3");
-    expect(defaultProject([p("1", "x"), p("2", "chess-local")])).toBe("2");
-    expect(defaultProject([p("1", "x")])).toBe("1");
+    const listed = [
+      p("1", "langchain-chess-local"),
+      p("2", "langchain-chess-staging"),
+      p("3", "langchain-chess-production"),
+      p("4", "langchain-chess-app"),
+    ];
+    expect(agentProjects(listed)).toEqual([listed[2], listed[0]]);
+    expect(defaultProject(agentProjects(listed))).toBe("3");
     expect(defaultProject([])).toBeNull();
   });
 
-  it("lists projects", async () => {
-    const call = vi.fn().mockResolvedValue([{ id: "1", name: "a", extra: true }]);
-    expect(await createApi(call).projects()).toEqual([{ id: "1", name: "a" }]);
-    expect(call.mock.calls[0][0]).toBe("GET /api/v1/sessions");
+  it("lists the agent's projects", async () => {
+    const call = vi.fn().mockResolvedValue([
+      { id: "1", name: "langchain-chess-local", extra: true },
+      { id: "2", name: "langchain-chess-openwiki" },
+    ]);
+    expect(await createApi(call).projects()).toEqual([{ id: "1", name: "langchain-chess-local" }]);
+    expect(call.mock.calls[0]).toEqual([
+      "GET /api/v1/sessions",
+      { params: { limit: "100", name_contains: "langchain-chess-" } },
+    ]);
   });
 
   it("loads the page when a review is malformed, marking just that review", async () => {
