@@ -211,6 +211,17 @@ async def test_systemone_alone_always_plays_even_with_a_tournament_threshold(fak
     assert len(list(chess.Board(ITALIAN).legal_moves)) > 16
 
 
+def test_a_decisions_model_needs_no_typesafe_credentials_and_shares_its_own_pool(env):
+    env.delenv("TYPESAFE_API_KEY")
+    ranker = pooled_ranker(ServerSettings())(ChessContext(systemone_model="openai/gpt-6-luna"))
+    again = pooled_ranker(ServerSettings())(ChessContext(systemone_model="openai/gpt-6-luna"))
+    first, second = ranker.client.decisions, again.client.decisions
+    assert first.model == "gpt-6-luna"
+    assert first.base_url == "https://gateway.smith.langchain.com/openai/v1"
+    assert first.http_client is second.http_client
+    assert first.http_async_client is second.http_async_client
+
+
 def test_classifiers_share_one_connection_pool(env):
     gateway = "https://gateway.smith.langchain.com"
     other = graph_module._classifier("other/ranker", "k", gateway)

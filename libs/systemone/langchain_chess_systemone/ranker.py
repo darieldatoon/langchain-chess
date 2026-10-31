@@ -1,4 +1,5 @@
-"""`GatewayRanker`: Jev or another TypeSafe classifier over the LLM Gateway's `/v1/systemone` route.
+"""`GatewayRanker`: Jev or another TypeSafe classifier, or an OpenAI Decisions model, over the LLM
+Gateway.
 
 One Choice asks for the strongest move; its option criteria are board-verified move facts.
 Optionally the final request also carries a Score (position evaluation) and two Nouls (does the
@@ -14,6 +15,8 @@ from datetime import UTC, datetime
 from typing import Any, Protocol
 
 import chess
+import openai
+from langchain_openai.decisions import OpenAIDecisions
 from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
 from langchain_typesafe.client import (
     TypeSafeAPIConnectionError,
@@ -32,6 +35,8 @@ from langchain_typesafe.types import (
 
 from langchain_chess.pricing import Tokens, make_call
 from langchain_chess.state import Call
+from langchain_chess_systemone.decisions import PREFIX as DECISIONS
+from langchain_chess_systemone.decisions import DecisionsClassifier
 from langchain_chess_systemone.describe import DescriptionStyle, describe_moves, material_balance
 from langchain_chess_systemone.tournament import FINAL, Batch, ChoiceSpec, adrive, drive, plan
 from langchain_chess_systemone.types import (
@@ -51,13 +56,16 @@ TRANSIENT_ERRORS = (
     TypeSafeAPIConnectionError,
     TypeSafeAPITimeoutError,
     TypeSafeInternalServerError,
+    openai.RateLimitError,
+    openai.APIConnectionError,
+    openai.InternalServerError,
 )
 BASE_BACKOFF_S = 0.5
 MAX_BACKOFF_S = 4.0
 
 # The gateway advertises no limits; these are its validation caps. Unknown models get 16,
 # which costs only an extra round if their real cap is larger.
-MAX_OPTIONS_BY_PREFIX: tuple[tuple[str, int], ...] = (("typesafe/jev-", 255),)
+MAX_OPTIONS_BY_PREFIX: tuple[tuple[str, int], ...] = (("typesafe/jev-", 255), (DECISIONS, 255))
 DEFAULT_MAX_OPTIONS = 16
 CHOICE_LIMIT = 255
 
@@ -136,6 +144,18 @@ class Classifier(Protocol):
     def invoke(self, input: ClassifierRequest, config: Any = None) -> ClassifierResponse: ...
 
     async def ainvoke(self, input: ClassifierRequest, config: Any = None) -> ClassifierResponse: ...
+
+
+def classifier(model: str, *, timeout_s: float, **kwargs: Any) -> Classifier:
+    """The client for a System 1 model: `openai/<model>` is OpenAI Decisions, anything else
+    TypeSafe. `kwargs` (credentials, base URL, shared HTTP clients) go to that client."""
+    if model.startswith(DECISIONS):
+        # No retries in the OpenAI client: the ranker retries, with its own backoff and calls.
+        decisions = OpenAIDecisions(
+            model=model.removeprefix(DECISIONS), timeout=timeout_s, max_retries=0, **kwargs
+        )
+        return DecisionsClassifier(decisions)
+    return TypeSafeClassifier(model=model, timeout=timeout_s, **kwargs)
 
 
 def default_max_options(model: str) -> int:
@@ -293,7 +313,7 @@ class GatewayRanker:
     def client(self) -> Classifier:
         """Built on first use, so constructing a graph needs no credentials."""
         if self._client is None:
-            self._client = TypeSafeClassifier(model=self.model, timeout=self._timeout_s)
+            self._client = classifier(self.model, timeout_s=self._timeout_s)
         return self._client
 
     # ---- one request --------------------------------------------------------------------------

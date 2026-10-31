@@ -164,7 +164,7 @@ description = "One System 1 experiment: -- --model ... --style ... [--split dev]
 run = "uv run --all-packages --env-file .env lcchess-evals systemone run"
 
 [tasks."eval:systemone:baseline"]
-description = "The five System 1 baseline experiments in evals/experiments/systemone-baseline.toml"
+description = "The System 1 baseline experiments in evals/experiments/systemone-baseline.toml"
 run = "uv run --all-packages --env-file .env lcchess-evals systemone baseline"
 
 [tasks."generate:settings"]

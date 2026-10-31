@@ -41,8 +41,9 @@ class SystemOneSettings(Settings):
     systemone_model: Annotated[
         str,
         setting(
-            "System 1 model: `typesafe/jev-latest` (Jev). Another TypeSafe classifier works too, "
-            "with a conservative cap on the moves per request.",
+            "System 1 model: `typesafe/jev-latest` (Jev) or `openai/gpt-6-luna` (OpenAI "
+            "Decisions). Another TypeSafe classifier works too, with a conservative cap on the "
+            "moves per request.",
             _SYSTEMONE,
             min_length=1,
             label="System 1",

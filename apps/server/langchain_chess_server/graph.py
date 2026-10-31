@@ -17,7 +17,7 @@ from langgraph_sdk.runtime import ServerRuntime
 from langchain_chess import create_chess_agent
 from langchain_chess.chat_models import chat_model
 from langchain_chess.middleware.summarization import input_limit
-from langchain_chess_server.clients import POOL
+from langchain_chess_server.clients import DECISIONS_POOL, POOL, TIMEOUT_S
 from langchain_chess_server.context import resolve_context
 from langchain_chess_server.game_setup import GameSetupMiddleware
 from langchain_chess_server.settings import ServerSettings
@@ -30,6 +30,8 @@ from langchain_chess_systemone.agent import (
     default_model,
     sent,
 )
+from langchain_chess_systemone.decisions import PREFIX as DECISIONS
+from langchain_chess_systemone.ranker import Classifier, classifier
 from langchain_chess_systemone.settings import ChessContext, ChessContextInput
 
 
@@ -53,6 +55,14 @@ def _classifier(model: str, api_key: str, base_url: str) -> TypeSafeClassifier:
     )
 
 
+def _decisions(model: str) -> Classifier:
+    """Credentials and the gateway URL come from `LANGSMITH_GATEWAY*`, as for the chat models."""
+    client, async_client = DECISIONS_POOL.get()
+    return classifier(
+        model, timeout_s=TIMEOUT_S, http_client=client, http_async_client=async_client
+    )
+
+
 def server_model(settings: ChessContext) -> BaseChatModel:
     """The model with only the `model_kwargs` the server allows."""
     return chat_model(settings.model, arguments(settings, "server"))
@@ -62,7 +72,12 @@ def pooled_ranker(server: ServerSettings) -> RankerFactory:
     """System 1 on the process's shared connections, with the server's credentials."""
 
     def ranker(settings: ChessContext) -> Ranker:
-        client = _classifier(settings.systemone_model, *server.typesafe())
+        model = settings.systemone_model
+        client = (
+            _decisions(model)
+            if model.startswith(DECISIONS)
+            else _classifier(model, *server.typesafe())
+        )
         return GatewayRanker(
             settings.systemone_model,
             style=settings.style,

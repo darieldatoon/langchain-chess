@@ -1,30 +1,39 @@
-"""The System 1 classifiers' HTTP connection pool: one per process, closed by the app's lifespan.
+"""The System 1 classifiers' HTTP connection pools: one per process and client library, closed by
+the app's lifespan. TypeSafe takes `httpx2` clients, OpenAI Decisions `httpx` ones.
 
 A module of its own, always imported by package name: langgraph loads graph.py from its file
 path under a generated module name, so a pool kept there would exist once per copy.
 """
 
+from collections.abc import Callable
 from threading import Lock
+from typing import Any, Protocol
 
+import httpx
 import httpx2
 
-type Clients = tuple[httpx2.Client, httpx2.AsyncClient]
+TIMEOUT_S = 15.0
 
 
-class ClientPool:
-    def __init__(self, timeout: float) -> None:
-        self._timeout = timeout
+class _Sync(Protocol):
+    def close(self) -> None: ...
+
+
+class _Async(Protocol):
+    async def aclose(self) -> None: ...
+
+
+class ClientPool[S: _Sync, A: _Async]:
+    def __init__(self, make: Callable[[], tuple[S, A]]) -> None:
+        self._make = make
         self._lock = Lock()
-        self._clients: Clients | None = None
+        self._clients: tuple[S, A] | None = None
 
-    def get(self) -> Clients:
+    def get(self) -> tuple[S, A]:
         """The shared pair, created on first use; the lock keeps concurrent first uses to one."""
         with self._lock:
             if self._clients is None:
-                self._clients = (
-                    httpx2.Client(timeout=self._timeout),
-                    httpx2.AsyncClient(timeout=self._timeout),
-                )
+                self._clients = self._make()
             return self._clients
 
     async def aclose(self) -> None:
@@ -37,4 +46,9 @@ class ClientPool:
             await async_client.aclose()
 
 
-POOL = ClientPool(timeout=15.0)
+POOL: ClientPool[Any, Any] = ClientPool(
+    lambda: (httpx2.Client(timeout=TIMEOUT_S), httpx2.AsyncClient(timeout=TIMEOUT_S))
+)
+DECISIONS_POOL: ClientPool[Any, Any] = ClientPool(
+    lambda: (httpx.Client(timeout=TIMEOUT_S), httpx.AsyncClient(timeout=TIMEOUT_S))
+)

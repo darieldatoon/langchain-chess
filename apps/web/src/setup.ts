@@ -21,7 +21,7 @@ import {
 export type SideChoice = Side | "random";
 
 /** The System 1 models the dialog offers; any other name is kept and shown as itself. */
-export const SYSTEM_ONE_PRESETS = ["typesafe/jev-latest"] as const;
+export const SYSTEM_ONE_PRESETS = ["typesafe/jev-latest", "openai/gpt-6-luna"] as const;
 export type SystemOnePreset = (typeof SYSTEM_ONE_PRESETS)[number];
 
 /** Inexpensive models only; anything else is a custom spec. */
@@ -70,6 +70,7 @@ export const DEFAULT_SETUP: Setup = {
 
 export const SYSTEM_ONE_NAMES: Record<SystemOnePreset, string> = {
   "typesafe/jev-latest": "Jev",
+  "openai/gpt-6-luna": "Luna Decisions",
 };
 
 const isSystemOnePreset = oneOf(...SYSTEM_ONE_PRESETS);

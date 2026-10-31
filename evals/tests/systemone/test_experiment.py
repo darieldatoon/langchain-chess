@@ -27,6 +27,7 @@ def test_the_baseline_grid():
     assert [(s.model, s.style, s.max_options) for s in specs] == [
         ("typesafe/jev-latest", "rich", None),
         ("typesafe/jev-latest", "terse", None),
+        ("openai/gpt-6-luna", "rich", None),
         ("typesafe/jev-latest", "rich", 16),
     ]
     with pytest.raises(ValueError, match="style must be"):

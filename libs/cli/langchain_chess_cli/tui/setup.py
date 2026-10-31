@@ -22,7 +22,7 @@ type SideChoice = Side | Literal["random"]
 type Summarize = Literal["checking", "yes", "no"]
 """Whether the LLM can summarize its memory: only a model with a known input limit can."""
 
-SYSTEM_ONE_NAMES = {"typesafe/jev-latest": "Jev"}
+SYSTEM_ONE_NAMES = {"typesafe/jev-latest": "Jev", "openai/gpt-6-luna": "Luna Decisions"}
 
 LLM_NAMES = {
     "langsmith:baseten/zai-org/GLM-5.3-Flash": "GLM-5.3 Flash",

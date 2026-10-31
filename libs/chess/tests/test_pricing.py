@@ -4,7 +4,9 @@ import pytest
 
 from langchain_chess.pricing import (
     PRICED_WITH,
+    Tokens,
     context_window,
+    decisions_price,
     make_call,
     price,
     tokens_from_usage,
@@ -52,6 +54,17 @@ def test_anthropic_one_hour_writes_use_total_plus_subset():
     # 600 uncached at $5/M, 100 at the 5-minute $6.25/M, 300 at the 1-hour $10/M.
     assert cost == pytest.approx(0.003 + 0.000625 + 0.003)
     assert complete
+
+
+def test_openai_decisions_is_priced_at_its_own_rate_not_the_chat_one():
+    tokens = Tokens(input=2_000_000, output=0)
+    decisions = make_call("systemone", "openai/gpt-6-luna", tokens, AT)
+    chat = make_call("llm", "langsmith:openai/gpt-6-luna", tokens, AT)
+    assert (decisions["model"], decisions["cost_usd"]) == ("openai:gpt-6-luna", pytest.approx(0.2))
+    assert chat["cost_usd"] == pytest.approx(0.4)
+    assert decisions_price("gpt-6-sol", tokens) == (None, False)
+    assert decisions_price("gpt-6-luna", Tokens(input=None, output=None)) == (None, False)
+    assert decisions_price("gpt-6-luna", Tokens(input=10, output=0, approximated=True))[1] is False
 
 
 def test_jev_is_priced_under_typesafe_and_another_classifier_is_not():

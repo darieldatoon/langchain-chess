@@ -1,4 +1,4 @@
-"""A System 1 move ranker (Jev) as langchain-chess middleware."""
+"""A System 1 move ranker (Jev or OpenAI Decisions) as langchain-chess middleware."""
 
 from langchain_chess_systemone.middleware import NoSystemOne, SystemOneMiddleware
 from langchain_chess_systemone.ranker import GatewayRanker

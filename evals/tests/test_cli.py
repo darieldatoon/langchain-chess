@@ -178,9 +178,10 @@ def test_baseline(experiments):
     assert [s.name for s, _ in experiments] == [
         "jev-rich",
         "jev-terse",
+        "luna-rich",
         "jev-rich-cap16",
     ]
-    assert result.output.count("https://smith/x") == 3
+    assert result.output.count("https://smith/x") == 4
 
 
 def test_upload_error_exits_cleanly(dirs, monkeypatch):

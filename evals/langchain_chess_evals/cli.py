@@ -163,7 +163,10 @@ Concurrency = Annotated[int, typer.Option(help="Rankings in flight at once.")]
 @systemone.command("run")
 def run_command(
     model: Annotated[
-        str | None, typer.Option(help="typesafe/jev-latest or another TypeSafe classifier.")
+        str | None,
+        typer.Option(
+            help="typesafe/jev-latest, openai/gpt-6-luna, or another TypeSafe classifier."
+        ),
     ] = None,
     style: Annotated[
         str | None, typer.Option(help="rich (default) or terse move descriptions.")

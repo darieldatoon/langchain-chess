@@ -11,7 +11,7 @@ dependencies = [
     "httpx2>=2.13.0",
     "langchain-chess",
     "langchain-chess-systemone",
-    "langchain-openai>=1.6.2",
+    "langchain-openai>=1.7.0",
     "pydantic-settings>=2.10",
 ]
 
