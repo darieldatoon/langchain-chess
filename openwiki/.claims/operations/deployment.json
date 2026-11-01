@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:85282e7bea8d5303295f83dd8f8da1f9444a15ff68c3e923fb426a3527acbf24",
+  "pageVersion": "sha256:ce2b11faed859daeafde4027fde0521c89c4f241dd40ac21223aec1eb22c9616",
   "claims": [
     {
       "id": "claim_43f5f214bfd64eabb5ac8d4b69f8cc47",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://langgraph.json#L1-L23",
-          "version": "repo-lines-v1:sha256:3eca7f9ddbb493cfbbae4a1d8192257fb7b7921c5df2a43886d138b3dee39eab:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:d62d48db600263b8a6a15e4c301f2bc156d1be09cb47ef99f7b968c6d13f70d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -40,7 +40,7 @@
         },
         {
           "resource": "repo://apps/server/pyproject.toml",
-          "version": "repo-file-v1:sha256:d6039b9fd85d4f7385267ecf9b1666de869f554a20c649eeb9e33876caf933d7"
+          "version": "repo-file-v1:sha256:41782048b81e796a82d88430b2a9d1bbc23ff221c92542c6a67c047016193391"
         },
         {
           "resource": "repo://evals/pyproject.toml#L1-L15",
@@ -94,7 +94,7 @@
         },
         {
           "resource": "repo://.github/workflows/deploy.yml#L78-L124",
-          "version": "repo-lines-v1:sha256:9399ca350f4984c5deef6fcbe7b12d24fffb26c221ef1d47dbe6f201a510e6a8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzEwZTYzYzQwMDRkMTk5NTAyNGRjODY2Y2JlYzAxOGNiNjdlMWRiMWNmMDZmNzMxNjA2ZDg5N2I0NzI2MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkMGU5OGJkMzYzMDZkYzM5OGQ0NGM1M2UxNWU1YmJmMWQ3NTQ1ZDJjOTI3ZGI0OTAwMTkyYmViOWUwMzU3OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMjhmZjJjN2M2NjFjODdjMjhiYTg1NTI1OTIyZmRjMDIyMzNhZTE5YTFkMjEyOTE1NjQ1YWQxYTQzMzIyOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3NTdhZDU2N2Q1YzZkNTdiOWFmZDcwMzA5ZjhiNzkyNjJlYjE0OGU5ZDY0MDI0OTM4N2FlMzdlOTgyZjE4NzcifQ"
+          "version": "repo-lines-v1:sha256:bd3fecb6d8d7f80be4e0298ab9964ba2b708d4956c6e9ba05c277f06607e769c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzEwZTYzYzQwMDRkMTk5NTAyNGRjODY2Y2JlYzAxOGNiNjdlMWRiMWNmMDZmNzMxNjA2ZDg5N2I0NzI2MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkMGU5OGJkMzYzMDZkYzM5OGQ0NGM1M2UxNWU1YmJmMWQ3NTQ1ZDJjOTI3ZGI0OTAwMTkyYmViOWUwMzU3OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMjhmZjJjN2M2NjFjODdjMjhiYTg1NTI1OTIyZmRjMDIyMzNhZTE5YTFkMjEyOTE1NjQ1YWQxYTQzMzIyOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3NTdhZDU2N2Q1YzZkNTdiOWFmZDcwMzA5ZjhiNzkyNjJlYjE0OGU5ZDY0MDI0OTM4N2FlMzdlOTgyZjE4NzcifQ"
         },
         {
           "resource": "repo://mise.toml#L182-L186",
@@ -162,11 +162,11 @@
     },
     {
       "id": "claim_10c5095247c84c1dbfa85c0085595c1c",
-      "statement": "The agent deploy job sets up without web dependencies, writes a .env with LANGSMITH_GATEWAY, LANGSMITH_GATEWAY_API_KEY, TYPESAFE_BASE_URL and TYPESAFE_API_KEY (keys from the LC_GATEWAY_KEY secret) because langgraph deploy re-sends the env file as the revision's secrets on every deploy, then, unless superseded, runs mise run deploy -- --no-input (image only) and mise run agent:tag, both with the LANGSMITH_API_KEY secret.",
+      "statement": "The agent deploy job sets up without web dependencies, writes a .env with LANGSMITH_GATEWAY, LANGSMITH_GATEWAY_API_KEY, TYPESAFE_BASE_URL, TYPESAFE_API_KEY (keys from the LC_GATEWAY_KEY secret), OAUTH_CLIENT_ID (from the OAUTH_CLIENT_ID repository variable) and ALLOWED_ORGANIZATION_ID (from the LANGSMITH_ORGANIZATION_ID repository variable) because langgraph deploy re-sends the env file as the revision's secrets on every deploy, then, unless superseded, runs mise run deploy -- --no-input (image only) and mise run agent:tag, both with the LANGSMITH_API_KEY secret.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/deploy.yml#L78-L131",
-          "version": "repo-lines-v1:sha256:bbcb654377aeb6b9e163099c73424211b3ccc82926a1a0a6c959bccaee2fbaf4:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzEwZTYzYzQwMDRkMTk5NTAyNGRjODY2Y2JlYzAxOGNiNjdlMWRiMWNmMDZmNzMxNjA2ZDg5N2I0NzI2MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhMWFjMzYzZTUzNjllOGFmYzZiYWZkMjE2NmM0MTQyM2Q5M2QxMTFiMjYxMjBmZjE1NzM3MzA2NjU5Mzg5MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMjhmZjJjN2M2NjFjODdjMjhiYTg1NTI1OTIyZmRjMDIyMzNhZTE5YTFkMjEyOTE1NjQ1YWQxYTQzMzIyOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://.github/workflows/deploy.yml#L78-L133",
+          "version": "repo-lines-v1:sha256:a592873aff9c9882d2cb6d3e964adfcffdc4ee3ca8f887b714c97f2af6181b6e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzEwZTYzYzQwMDRkMTk5NTAyNGRjODY2Y2JlYzAxOGNiNjdlMWRiMWNmMDZmNzMxNjA2ZDg5N2I0NzI2MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhMWFjMzYzZTUzNjllOGFmYzZiYWZkMjE2NmM0MTQyM2Q5M2QxMTFiMjYxMjBmZjE1NzM3MzA2NjU5Mzg5MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMjhmZjJjN2M2NjFjODdjMjhiYTg1NTI1OTIyZmRjMDIyMzNhZTE5YTFkMjEyOTE1NjQ1YWQxYTQzMzIyOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -227,8 +227,8 @@
       "statement": "A local image smoke build is run with `uv run --all-packages langgraph build -t langchain-chess:smoke`, and deploying needs Docker with buildx because the image is built locally.",
       "evidence": [
         {
-          "resource": "repo://apps/server/README.md#L84-L96",
-          "version": "repo-lines-v1:sha256:ca9639f82bfa8594546f02da2857986e984caaf80d4769206e8671d8f288f082:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNWNhZGJiZTgzODM3M2ViMGVjZDQwMmJlY2Y3NDY1NGYzMmEwNTczZjM2Nzg5ZWFjYWQwMzllMzYxNGE2ZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyNWJjNzBiZTBiODg1YWI0MjMxZDQ2NzhhY2QxYThlMDBhNzlkMGJiMWEzM2U4NTBhODI0Zjc2NDhjZWE0NzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjZTYxOGQ3NWYyNzc3MGZiNGM1MzAwZmIyZGI1NDRlZDhlYjAxOGY4NDE5MzFiOWJkNDk3NmRhNzBjNmRjNmEifQ"
+          "resource": "repo://apps/server/README.md#L85-L98",
+          "version": "repo-lines-v1:sha256:f2fd99133eef72bd500fc86a0a9eab6b9b18296f0e1fa52cbe748ed1b70178db:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNWNhZGJiZTgzODM3M2ViMGVjZDQwMmJlY2Y3NDY1NGYzMmEwNTczZjM2Nzg5ZWFjYWQwMzllMzYxNGE2ZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyNWJjNzBiZTBiODg1YWI0MjMxZDQ2NzhhY2QxYThlMDBhNzlkMGJiMWEzM2U4NTBhODI0Zjc2NDhjZWE0NzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjZTYxOGQ3NWYyNzc3MGZiNGM1MzAwZmIyZGI1NDRlZDhlYjAxOGY4NDE5MzFiOWJkNDk3NmRhNzBjNmRjNmEifQ"
         }
       ]
     },
@@ -261,16 +261,16 @@
       "statement": "ServerSettings reads the shell then .env and rejects LANGSMITH_GATEWAY_API_KEY, TYPESAFE_API_KEY or TYPESAFE_BASE_URL when set but blank; make_graph constructs ServerSettings for each run (calls without an execution runtime get a credential-free shape graph), so an empty value written into the deployment .env fails runs rather than falling back silently.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/deploy.yml#L88-L95",
-          "version": "repo-lines-v1:sha256:8e2a86831266fcd6a3bb6f61ac8c6b7f6263a75a5012279cbeda0955cfdee5a4:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjZkZDliZGVkYjNjMWQ0OGNkMmFlY2Q0OTM3MjA3NjA5NjVhOTBmYmFmNDllOWM5ZTQ0YTgxMzYzNzUzNGE1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDU3NzI5NjMzNmE2ZTg2NDYxYzUxOWU1MzQ5NTdiZDQ5MDVkOTQ5NTZlNDI0ZTk3ZDc4YmI4ZmM1NDM5N2NiNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWExNDA2YTM5YjBjM2IwYjVkZjkwNGUxMDhmOGU1NjRkZTI0YTdmYzI3MjFhNDE5NTZhNjM1MTdhY2QwOTcwMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2MzNTdmMzhhYjMyMWUyNzg4MjlkNWYzNjhkMDE1YmJlYzY2MTRkYzYzMDk1NGJjMDdhY2Q3OWFjODE0MzEzZSJ9"
+          "resource": "repo://.github/workflows/deploy.yml#L84-L93",
+          "version": "repo-lines-v1:sha256:c33f836274340bf06fd246aa6703001d6fce6e3fcab795d0cf555945fdb9aedc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2ZGQ5YmRlZGIzYzFkNDhjZDJhZWNkNDkzNzIwNzYwOTY1YTkwZmJhZjQ5ZTljOWU0NGE4MTM2Mzc1MzRhNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1NzcyOTYzMzZhNmU4NjQ2MWM1MTllNTM0OTU3YmQ0OTA1ZDk0OTU2ZTQyNGU5N2Q3OGJiOGZjNTQzOTdjYjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhMTQwNmEzOWIwYzNiMGI1ZGY5MDRlMTA4ZjhlNTY0ZGUyNGE3ZmMyNzIxYTQxOTU2YTYzNTE3YWNkMDk3MDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjMzU3ZjM4YWIzMjFlMjc4ODI5ZDVmMzY4ZDAxNWJiZWM2NjE0ZGM2MzA5NTRiYzA3YWNkNzlhYzgxNDMxM2UifQ"
         },
         {
-          "resource": "repo://apps/server/langchain_chess_server/graph.py#L97-L117",
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L112-L132",
           "version": "repo-lines-v1:sha256:f9dd586336783ea839119964e9e8fd7bb960a6afbeb33e7d47041a5166f5c7f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMDM5ZjcyMGI0MWY4YzJmODE0MjI2YmM4MmM0MzIzZDVmYzA4YjM1NjkzN2FjY2E2MWQ4Nzg5Y2VjNTFmZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4YjVmZjlhZmFhYzY4N2E3ZDI1Njc0ZDlmOGU2YjUzMjViNTVkYjgxZDg0MjQzYjMwNWI4ODYzM2M2YzM4OWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlODJiOTVkZGYzYTY1NjI4YjlhYmU2MmQyYTM4NTE4OWU5NDg0ODllZTkzZjA1ZjRmZmYxZWIxN2Q1M2QyOGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://apps/server/langchain_chess_server/settings.py#L1-L36",
-          "version": "repo-lines-v1:sha256:43f2d5c7d0d2b9d310093c189a7fa8f0014437cf444d5baff60b5ff708f5f99f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExYTIwZDAzNTMxODAyY2ZiZDc0OGQ0ZTVlOGFhZjA5NWU5ZTU5ODIyYjE3NmE0ZWM4YWE0YWNjYmEzOTYzMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlM2NmY2ViMzNlMDExZjliNjk1MDg4ZTBiM2FhODNiMTYwM2Q2OWRiNGRjNjU4MDNhYTgzNjM1M2U4MWIwZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwMTI4YTdkNjUzOTNiMDU1YWQyNDk1NWI1ODgyNWVhNDk5NTU2ZGMwM2YzNzYzOTBiMGVhZThiN2NhZmI0ZjEifQ"
+          "resource": "repo://apps/server/langchain_chess_server/settings.py#L1-L47",
+          "version": "repo-lines-v1:sha256:e549ebdea7c90121e2849869e2c1a181336a47485a1dd378c5846faae5ac0f32:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExYTIwZDAzNTMxODAyY2ZiZDc0OGQ0ZTVlOGFhZjA5NWU5ZTU5ODIyYjE3NmE0ZWM4YWE0YWNjYmEzOTYzMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlM2NmY2ViMzNlMDExZjliNjk1MDg4ZTBiM2FhODNiMTYwM2Q2OWRiNGRjNjU4MDNhYTgzNjM1M2U4MWIwZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwMTI4YTdkNjUzOTNiMDU1YWQyNDk1NWI1ODgyNWVhNDk5NTU2ZGMwM2YzNzYzOTBiMGVhZThiN2NhZmI0ZjEifQ"
         }
       ]
     },
@@ -310,7 +310,7 @@
         },
         {
           "resource": "repo://.github/workflows/pages.yml#L79-L121",
-          "version": "repo-lines-v1:sha256:6136e09bcc21c196d10f3cab3dc9faa083aca6eb6dee8a1c15fdb45b54d076a5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMjk3ODI3YjkwZDY5NWUzOTZmODE2OWU1NDNjZjUzOTMyMmUyMTkzMmY5ZDllMWU4MWE4ZDNlZWU3YjcxNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2NmY4OWYyNzY0MGVkZmMxNjExMWYzODg4ZGMyMzJkNTFlMDhmZjY4OTlkY2JjYWZkNWIzYjIxZTY0Mjc0MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmZDg2MzRlN2NjNTE4OTNiNGQ1ODQ5MDk2NzVmMTM1MzlhNjJiYTRiNTMyOTE0NjIwODc0Zjk2ZDk0MDk4NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkZjMyNjM4MTZjYjk2YjMyYmM1OGU1ZjgwNWYzZTg3MDdkOWIxZmQ5ZmJmZDBjNmViMjk2NTc0ODJmZjAyYjEifQ"
+          "version": "repo-lines-v1:sha256:696edad6067c2c3deb7693c5d17fe041614d0a5bdc620c2d9652ee73fac3d60a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMjk3ODI3YjkwZDY5NWUzOTZmODE2OWU1NDNjZjUzOTMyMmUyMTkzMmY5ZDllMWU4MWE4ZDNlZWU3YjcxNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2NmY4OWYyNzY0MGVkZmMxNjExMWYzODg4ZGMyMzJkNTFlMDhmZjY4OTlkY2JjYWZkNWIzYjIxZTY0Mjc0MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmZDg2MzRlN2NjNTE4OTNiNGQ1ODQ5MDk2NzVmMTM1MzlhNjJiYTRiNTMyOTE0NjIwODc0Zjk2ZDk0MDk4NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkZjMyNjM4MTZjYjk2YjMyYmM1OGU1ZjgwNWYzZTg3MDdkOWIxZmQ5ZmJmZDBjNmViMjk2NTc0ODJmZjAyYjEifQ"
         },
         {
           "resource": "repo://scripts/superseded.sh#L1-L15",
@@ -384,25 +384,25 @@
     },
     {
       "id": "claim_446fb7aec2c546af81f677ff7ca5597f",
-      "statement": "pages.yml publishes the web UI to GitHub Pages: its tip job requires main and a non-empty VITE_API_URL repository variable; the build job runs vp build in apps/web with BASE_PATH=/<repo>/, OUT_DIR=dist and VITE_API_URL, uploads apps/web/dist as a Pages artifact, and a deploy job (skipped when superseded) runs configure-pages and deploy-pages in the github-pages environment; its concurrency group is pages-<ref> with queue: max.",
+      "statement": "pages.yml publishes the web UI to GitHub Pages: its tip job requires main and a non-empty VITE_API_URL repository variable; the build job runs vp build in apps/web with BASE_PATH=/<repo>/, OUT_DIR=dist, VITE_API_URL and the sign-in variables VITE_OAUTH_CLIENT_ID, VITE_LANGSMITH_ORGANIZATION_ID and VITE_LANGSMITH_SSO_SLUG (from repository variables OAUTH_CLIENT_ID, LANGSMITH_ORGANIZATION_ID, LANGSMITH_SSO_SLUG), uploads apps/web/dist as a Pages artifact, and a deploy job (skipped when superseded) runs configure-pages and deploy-pages in the github-pages environment; its concurrency group is pages-<ref> with queue: max.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/pages.yml#L26-L133",
-          "version": "repo-lines-v1:sha256:289d8359da8e5a8eee582629330a3c017825c8765520c15362a5f77bcd3cf708:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNTI2MjQ3ZWRlMDA2ZTliZGFiOWM2ODUwNzI4NDI1ZDFiNDE2NmNhZjVjYWM1MGNmMDk1NWM0NGQyNGMxYThkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2OGVkNzQwOTdmOTUxOWE1YTdmYmE0ZmI2MGI5MWFjNjZlOWU2MDdiYzVhODYxMWQ4YjAxMzA5OGQ0YzIwOGM4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiNDIwOGI1NmU0ZGI4NGI4MGI5MThhNjMyZDYzZGQ4NjljYzZlZjZhYWMzNWFhMThiMDYzZDU4ZGQ5NzkyZDE1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://.github/workflows/pages.yml#L26-L137",
+          "version": "repo-lines-v1:sha256:7744ed348309b4fe335898c5683a498c73e4c6fb4f66b42c878f54d136b2075f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNTI2MjQ3ZWRlMDA2ZTliZGFiOWM2ODUwNzI4NDI1ZDFiNDE2NmNhZjVjYWM1MGNmMDk1NWM0NGQyNGMxYThkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2OGVkNzQwOTdmOTUxOWE1YTdmYmE0ZmI2MGI5MWFjNjZlOWU2MDdiYzVhODYxMWQ4YjAxMzA5OGQ0YzIwOGM4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiNDIwOGI1NmU0ZGI4NGI4MGI5MThhNjMyZDYzZGQ4NjljYzZlZjZhYWMzNWFhMThiMDYzZDU4ZGQ5NzkyZDE1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
     {
       "id": "claim_3fd06c30323843f1b879a5573b237454",
-      "statement": "Changing VITE_API_URL touches no watched path, so the Pages site must be republished by dispatching pages.yml manually; the built UI uses VITE_API_URL as its API base so it talks to the deployed agent.",
+      "statement": "Changing VITE_API_URL or the OAuth repository variables touches no watched path, so they take effect only after manually dispatching the workflows (pages.yml for VITE_API_URL; both pages.yml and deploy.yml for the OAuth variables, which both read); the built UI uses VITE_API_URL as its API base so it talks to the deployed agent.",
       "evidence": [
         {
           "resource": "repo://.github/workflows/pages.yml#L22-L24",
           "version": "repo-lines-v1:sha256:91d527d606061549a178e9acbb55a1b56ef970d6702679a0a582f539fc06c741:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE2Mjg3OTYwMDM4NzkxODQ1NjE4YzRmZTA0ZWFkMDJiNzBmYmYwODE0Yzk3ZmU2Mzc1ZGM5NmUwOTMwYzI5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2YyZmE3M2YwNzA0ODlkOTcyNGEwMjlkZmI1MDJhYTA4ODUwN2QwODU3OWJiYmNjOTRlZDkzNWMxYTA1MzMxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjllYWFlNjk1YTY3N2VmZDE1ZTQ5NTIxYmE1YjdlYjA5ZWYzNjFiOWMwYzRkNGE1M2NmMmJlYjJmNDQwNDY1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2UyNzQyMjRlOTgyODgxZDk4MWI4YWRkZmRkYzk4ODBiMmYxZDA3ODAzMTVkNzBkNWQ1MTkxYzc1Zjk1YTViMiJ9"
         },
         {
-          "resource": "repo://apps/web/README.md#L49-L58",
-          "version": "repo-lines-v1:sha256:bba6cac5932bfc9bb73ad5794c7ef14d9efb5cbedc6e6f6cbf8bfffc6c75fffe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlOTNkZTFjMmM4NTk4NmU1NWY5MjgwMzllM2QzNzQzZGU4N2IxYjY2NDA3MzE3MGIyMGFiZTY4YmFlNjc4N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlOGMwMjI3ZDg4MDhlNTY3ZDlkODg3ZjAxYzZlOTJjMTc0ODE1OTAxOTA0ZTQ0MGMyYTYyMzI0Mzc3N2U0MzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhY2IxMDQxZGI5ZDI5N2EzZDcyNGRkZGJjZDNkMDAyNTdmOTdmZjYyY2M3NzQ1YzgzMzlhYzc1OGNkYzlmMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjNmIxZTQ0MWNiN2EwMDkxYWMyODQ3YjkxODdjYzFkNWY2YzY5ZmZlYzQ3MzliYmEwOTI1NjYxZTBkYTA4NWYifQ"
+          "resource": "repo://apps/web/README.md#L49-L82",
+          "version": "repo-lines-v1:sha256:37d76bf59ff2f485a646092a5d2c0d11743efc890cba60a4d510533a9db543df:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlOTNkZTFjMmM4NTk4NmU1NWY5MjgwMzllM2QzNzQzZGU4N2IxYjY2NDA3MzE3MGIyMGFiZTY4YmFlNjc4N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMTFkMjQ2ZWEwYmRmNzRhOTBmNDQ0ZGYyZmM0MTk1NjY2YWJjMDhkNzE0ZTQ2YjdkZDgwMTA3Zjk0ZWQwNzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhY2IxMDQxZGI5ZDI5N2EzZDcyNGRkZGJjZDNkMDAyNTdmOTdmZjYyY2M3NzQ1YzgzMzlhYzc1OGNkYzlmMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1YWI3MDk1ZDk4MDliODU0N2I2MDg4NTJlNmNkOWU0OWExNTliODlkZjYwNTY5M2I0NzkwM2U2Y2IwOTMwZWEifQ"
         },
         {
           "resource": "repo://apps/web/src/settings.ts#L61-L66",
@@ -427,10 +427,80 @@
           "version": "repo-lines-v1:sha256:325988dff0834fb0ef3400e1be06e7a3df46a28e0b8617062f480af6024f20d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_c76b4cf8fbc547e2b1b41c94ffd9f954",
+      "statement": "langgraph.json registers custom auth at apps/server auth.py:auth with allow_langsmith_api_keys true: requests without an Authorization header go to LangSmith's API-key check, while Bearer tokens are verified by auth.py against LangSmith's JWKS and admitted only when issued to the configured OAuth client for a member of the allowed organization.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/auth.py#L1-L99",
+          "version": "repo-lines-v1:sha256:fad36f42e6ba353ee203fc5cf1adf8fdfb4e927fc8f3164373b1ada02c8a9b8a:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmMGY0N2I5YzRmMGZmYzAzMzk0NDA4YmJiYTQzY2U0NWE0MGI2NGEyOTM1M2RiMzNkMGRmOTQzOTk5OWQ3MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjQ5NzUzMzdjM2NjZjkwZGI3ZmU1NTJmN2RmYzU0MjkxMGE0MGIwMGE4NGIxNjVjMTJkYTM3NjdjM2EzNmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://langgraph.json#L20-L23",
+          "version": "repo-lines-v1:sha256:f33a570b10658ab7387cf72803da7879566f2cbde73f72eae17c54e000f83c9f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU2ZTYzOTY4N2EzZjNlYTdmZDdlOWJlZDZlZGM3ODkzMGEyMGZjMzI0NWZjMDA3ZGYwZmE5OGQyYjVkYmMxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTJiNjAwMGIzNTViMTE4MmI0ODJiNzBhOWNkMTQwNjllM2EwOGUxMjdhZWU4YTgzYjQ2MTg3Mzg5MTMxNGVkOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjZjMTg5NDcyOGJiMTY5NjY3ZGYwMDRjMDZlMzAxYjMyN2E2MTEwYzA4N2U0ZjU2ZDVmMTc2NjcwM2ZhNzU4NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b9a864c0a4c24f96bda027f87f01faa0",
+      "statement": "ServerSettings treats blank OAUTH_CLIENT_ID or ALLOWED_ORGANIZATION_ID as unset (unlike the gateway keys), because the deploy workflow writes both before the OAuth app exists; with either unset auth.py refuses every Bearer token while API keys still work, and the policy is cached per process.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/auth.py#L27-L45",
+          "version": "repo-lines-v1:sha256:4b9f05dfd1f9a1978dbc7e8911f6d5dfc2905b93ee2a2caf36b2b171a828cefc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2OWExMzk3NWMyNTZlYzgzMjBlMjAxNjA4M2M5NmRmNjM3Y2EzZDM1YmViZGUyMzE0YmVlM2E0NzExYjU2Y2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0N2NkY2M0MDYzNWE5NjZlYmNhOTRkZTcxMzYyZGI0ZTM0YzhmMGNkMjEwOGZlMWExN2Y4NjU1Y2IyOGM3MGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlYTk1YWQxZDRlODQwN2ExYTgzOTY3ZDUyNDEwNGI1ZDhlMTRmMWRiMTNhNzI2NTg1MTFjM2I2ZWNmNjQxMTcifQ"
+        },
+        {
+          "resource": "repo://apps/server/langchain_chess_server/auth.py#L79-L81",
+          "version": "repo-lines-v1:sha256:bb5485e6dd8f4f9582ca19801d7a5f10f9a046808a4da97a6ed30bcea2c1feaf:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjNlZGZhMjdlMDE0YTYzZTA1OTY4MWE5ZjQxYmMxODUxMGExMjNkYzQxYTVlNDhhZDBlMmU2ZDE3YWJiM2ViMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdmNTU0MTQwOTYwMzhlMzk0YWE4Yjk0N2JlNWEwYTg5MjY4NzkzMDdiZWJjYzFiYjFjMjdhMzRlOWEyMmIyZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzgxYmUzMjViNTNmMTlkN2Q2MmU3NmFkZTk2OWY4YjE3ODM0NGI2MjAyNzUwYjA1N2Y1OTBiYTE5ZWFmOTM3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2E4NTQyOThiZmQxZWE5YWJmYTkxMTNiZjdmMTNmNTEyMjgxZTk3M2E1ZTUxNDU0ODZmNWExMDdjOWE5YmEzOSJ9"
+        },
+        {
+          "resource": "repo://apps/server/langchain_chess_server/settings.py#L28-L38",
+          "version": "repo-lines-v1:sha256:ef7594927982b3fdc1cd2b65e14ee0d086753a47cf45337e24b9e5aec88de88a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1MTZlMWFmMDlmODMyNWVhZGQ0NTA3NmE5ZGI1YTYwNzEyNjM1MGFmYTJhMzVkMzcyNTk2YjFiNDZiMGQ1YjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhZjE3ZmY3MDZhMThhNTgxOWY4MzkzYjhkYTIxMDE4ZWE5YmE5YTlhODFmYzFlYTVhYmNjNzZmYjFkNTRjN2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiMDMwNmEyNjUxNzg4N2QwNzJhNjRiOWJkN2E5MDYyYzcyNWEzNWNiNjNjOTM0YjlhODdkYjdlYWI3MjYxMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1MGYyMmMyNDI1YWY0Y2FmYmU3NTBiNDJhNzk2ODExYTM1ZWNmMDhhN2EwNDUzMjZmYTQ3ZGE4ZWI4NzY2ZDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bc44452fe2d045ec96ee29459bdb9e7c",
+      "statement": "The web UI offers Sign in with LangSmith only when built with VITE_OAUTH_CLIENT_ID; without it, it offers API keys only, and a client id without VITE_LANGSMITH_ORGANIZATION_ID is reported as a configuration problem.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/README.md#L56-L72",
+          "version": "repo-lines-v1:sha256:91e0fcbb5629e05853e6dec3dfca1322e0e1174a6dfed7bb27d103c05e3dfd49:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZjM1OTVhNGY2MGZmZjNmYWFiM2RlNmQ0ZGIxM2M0ZTNhYWVlYjE2MjdlZjEyZTlmYzE1OThlZmNjZjViNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyNTU4MDhlM2MzZDAzYmZmZjA5YmMzYzNlYjA2ZjNiNTY5M2UyYTU1MzVkNzZkNGNhYzFiYjgzZTk1Y2ExMGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlMjg2NDU5NjFlNDNkZjUzYzJkM2FmNDc2OWMwMzRlMDA2ZWM5ZWJkNmIxNDYxMTRiYTVkM2IxMzVhOTQ2MmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2YmY1OGRhNWI5MDliOTM1ODI2MDUxZTg4ZTI2YmY2OTQ2ZjBiMGY1MzFiN2U4YTgwYzUxZDZkYzY4NmQ0NjQifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/config.ts#L1-L34",
+          "version": "repo-lines-v1:sha256:3580a3f8946878547d3f8f5306e87375b1715f82a81635ee4248f962d6ea4209:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlZjQzYWVkNTA5YTc1MjcwMjQ5OTgwYjY5ZWVhY2Y0Y2VkMTE1MmUxM2U0MmQ4YzZiYTRiMzA3OTExNDEzYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f8a68ef1a03f481cbcecd01ecd6e46c9",
+      "statement": "The langchain-chess-server distribution depends on pyjwt[crypto] and pydantic-settings alongside fastapi, httpx2, langchain-openai, langchain-chess and langchain-chess-systemone, and declares no [tool.uv.sources] of its own.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/pyproject.toml#L1-L25",
+          "version": "repo-lines-v1:sha256:41782048b81e796a82d88430b2a9d1bbc23ff221c92542c6a67c047016193391:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMmE4MWMzODM2ZWRlZjJkMGJhMTFkMjM1M2ZiNmRhYmM3NzcxNTBhN2NhODNlYTBkOWU5YTcwMzEzZmVhYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhM2U1NTAwODQ1ODg3NTg0NTU1ZWU0MzkwYjI5MGM3ZmE1MjRlNjE5ZmIzZTgyMzA1M2MxZGIyZjU3ZjNkZDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_42ed67050efb4d35b9a74060a09b33af",
+      "statement": "apps/server/README.md's comment that `mise run deploy` builds the web UI into the server's static directory is out of date: the mise deploy task only runs langgraph deploy --no-remote for the langchain-chess agent's production environment, and the UI ships to GitHub Pages.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/README.md#L95-L98",
+          "version": "repo-lines-v1:sha256:429a2ce75a6ba836d7512422069b5387bd8b3bc97cbf68563b67b694ecd59b91:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM0M2ZiODlkZDcxMzkxNzA2YmI2NTUzMzcxMzlhZTY2YWMxMGZhY2M0MjYyYmNkMjQ4YzIyOWNmMGUyNWQwNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFkNGNlZjUxOTQ4MzFhMThkN2VjNGFkOTk2ZWYwMjYwNGE2YTdhMDJmZjE0NmRjZjNiNWE5OGM3ZDg0MmQxYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2NlNjE4ZDc1ZjI3NzcwZmI0YzUzMDBmYjJkYjU0NGVkOGViMDE4Zjg0MTkzMWI5YmQ0OTc2ZGE3MGM2ZGM2YSJ9"
+        },
+        {
+          "resource": "repo://mise.toml#L182-L186",
+          "version": "repo-lines-v1:sha256:ce044db067d0a05577e104089f4851456a6f9157b4b68f36fe52e2278b2e1667:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGUyYjVjM2MzMjVkMDcwMjM2NDBkZDEzZGMxZmFjZDQ0OGJkOTRiMGM2MzY3NDFjMjNhZmIxYWM5NmE2ZWEwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWM2NzM2NTkxMjQwNWU5NGJkOTZkZTVkNjE3NGE3NGI1NmUzZjRkZmMwYjUxZGQ2NWUyYWZiN2JlYTk1YTU4ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWVjZjA2OWI1MjJmOWM2MTVlMmZhN2JjM2JmMDRkNzMwNTBkNTMwN2I0MjcxZDhhN2JlNzY2MjAyOTM1ZDM0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmZmOGQ3MWRjM2QyOGJlYzY3ZmJjNWExMGRlNmY0Y2M4ODUyMWJmZDg2MDFmYmY3MzBmZDFiMjYxNjYzN2QxMCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-11-01T01:10:29.908Z"
+    "at": "2026-11-01T03:07:46.931Z"
   }
 }

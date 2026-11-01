@@ -1,14 +1,13 @@
 ---
 type: operations runtime evidence
 title: Runtime behavior and failure modes
-description: How a turn of the chess graph (deployed as langchain-chess-app) fails and recovers at runtime. Covers stalled-stream retries, provider errors (context overflow, rejected reasoning effort), illegal-reply retries, the pending-turn resume path, System 1 ranking failures, settings validation, memory eligibility, the System 1 HTTP client pools' lifetime, what the web UI and the UCI adapter do on failure, and how to read LangSmith traces and recorded cost against the code.
-tags: [runtime, failure-modes, retries, langsmith, traces, latency, operations, systemone, turn-lifecycle]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T01:10:29.908Z
+description: How a turn of the chess graph (deployed as langchain-chess-app) fails and recovers at runtime. Covers stalled-stream retries, provider errors (context overflow, rejected reasoning effort), illegal-reply retries, the pending-turn resume path, System 1 ranking failures, settings validation, memory eligibility, the System 1 HTTP client pools' lifetime, what the web UI and the UCI adapter do on failure, sign-in failures (refused or expired sign-in, unreachable server), and how to read LangSmith traces and recorded cost against the code.
+tags: [runtime, failure-modes, retries, langsmith, traces, latency, operations, systemone, turn-lifecycle, sign-in]
 sources:
   - id: openwiki-source-b9886f4aee6bc16bdaea61ff
     resource: repo://apps/server/langchain_chess_server/app.py
+  - id: openwiki-source-d6b546398e3b1c03ecb0494a
+    resource: repo://apps/server/langchain_chess_server/auth.py
   - id: openwiki-source-72cff634549a72fbc164bc15
     resource: repo://apps/server/langchain_chess_server/clients.py
   - id: openwiki-source-65aad166aa88a58cc7a8319a
@@ -19,8 +18,18 @@ sources:
     resource: repo://apps/server/langchain_chess_server/settings.py
   - id: openwiki-source-85a241004b3536de61fe173c
     resource: repo://apps/server/tests/test_clients.py
+  - id: openwiki-source-fde4d91838391ae51474c06b
+    resource: repo://apps/web/src/auth/check.ts
+  - id: openwiki-source-5709a1f77481433dd9c7eea2
+    resource: repo://apps/web/src/auth/oauth.ts
+  - id: openwiki-source-719b637a177dbbcf7dbcdcbb
+    resource: repo://apps/web/src/auth/SignIn.tsx
+  - id: openwiki-source-080933253640cf8c93f7692b
+    resource: repo://apps/web/src/auth/useSession.ts
   - id: openwiki-source-6c16a0bf13a1dee1d6a311ca
     resource: repo://apps/web/src/commands.ts
+  - id: openwiki-source-122f779bf6eb18ae91667e7f
+    resource: repo://apps/web/src/components/NewGameDialog.tsx
   - id: openwiki-source-63a59ecdfb2c0567127b7b6f
     resource: repo://apps/web/src/format.ts
   - id: openwiki-source-7f2e3520a656d432bb97cc86
@@ -71,7 +80,10 @@ sources:
     resource: repo://libs/systemone/langchain_chess_systemone/settings.py
   - id: openwiki-source-0e44d1e7d0101f3027cd3f67
     resource: repo://libs/systemone/tests/test_middleware.py
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-11-01T03:07:46.931Z
 ---
 
 # Runtime behavior and failure modes
@@ -316,9 +328,11 @@ stateDiagram-v2
   Each new command re-arms the banner.
 - **Failed runs.** A run failure arrives as the stream's error, or as a submit error if it
   failed before reaching the stream. It is shown as an inline error message, and a stopped
-  pending reply card shows it too. A 401 or 403 from the Agent Server shows a "LangSmith API key
-  needed" banner instead. The check is anchored so that a model provider's 401 inside a failed
-  run does not look like the browser's key. A "run already in flight" rejection is dropped
+  pending reply card shows it too. A 401 or 403 from the Agent Server also shows a "Sign-in
+  needed" warning banner, which says the server refused the request and offers "Open settings"
+  so the user can sign out and sign in again. The check (`isAuthError` in
+  `apps/web/src/format.ts`) is anchored so that a model provider's 401 inside a failed run does
+  not look like the browser's credentials. A "run already in flight" rejection is dropped
   silently.
 - **Pending turns.** When the last turn is `pending`, the board locks and the opponent's strip
   offers a **Retry** button instead of "Ask opponent to move". It sends empty input (`retry`),
@@ -442,5 +456,54 @@ could be inspected in this refresh.
 - **Observed:** no figures, because the raw sample was not accessible to this refresh. When a
   later refresh can read it, record here the bucket counts (error / outlier / baseline), baseline
   medians, per-kind (`llm`, `summary`, `systemone`) call counts and latency or token totals, and
+  the results of the checks above. Bucket counts describe how the anomaly-weighted sample was
+  built. They are not fleet rates.
+ counts and latency or token totals, and
+  the results of the checks above. Bucket counts describe how the anomaly-weighted sample was
+  built. They are not fleet rates.
+ turns before the LLM starts.** (Correlated, checks 6
+   and 7.) With a 15 s timeout and 3 attempts, a failing System 1 can add tens of seconds. The
+   elapsed time appears in `SystemOneMeta.latency_ms` and in the turn's latency. Before tuning
+   `timeout_s`, `max_attempts` or the backoff, measure System 1 span time in outlier roots.
+3. **Illegal-reply retries repeat the most expensive call.** (Correlated, check 2.) Before
+   changing `SYSTEM_PROMPT`, `feedback_text`, `move_list` or `max_retries`, count LLM spans per
+   root and classify the rejection signature. A reply truncated at the length cap needs a
+   different fix from a disallowed move, and a stall retry is neither.
+4. **Recorded turn cost is a lower bound.** (Correlated.) Errored and stalled provider attempts
+   are not recorded, hosted-tool calls are marked incomplete, and System 1 calls from a
+   classifier other than Jev or a priced Decisions model are unpriced. Use LangSmith spans to
+   reconcile spend. Read the `CallRecorder` docstring about run-tree keying before changing it.
+5. **The gate may act as a pruner in practice.** (Hypothesis, check 4.) If sampled hybrid turns
+   almost always reach the LLM, System 1 adds latency without saving LLM calls.
+6. **Summarization is unlikely to appear in production traces.** (Correlated, check 8.) It is
+   opt-in and needs a model with a known input limit. For coverage, rely on `libs/chess/tests`.
+
+## Focused tests
+
+- `libs/chess/tests/test_contract.py`: a stalled stream is retried within the turn; a second
+  stall fails the turn and Retry resumes it; only a stall is retried; without `langchain_openai`
+  nothing is a stall; completed calls survive a wrapper failure; a resume calls the model again;
+  overflow after a completed call is still `ContextBudgetError`.
+- `libs/chess/tests/test_lifecycle.py`: overflow surfaces as `ContextBudgetError` and a rejected
+  effort as `ReasoningEffortError`, both leaving the turn pending; a fresh `go` while a turn is
+  pending is rejected; a new position abandons a pending turn.
+- `libs/chess/tests/test_commands.py`: resigning abandons a pending turn without playing its
+  saved move; a draw offer while a turn is pending is rejected.
+- `libs/chess/tests/test_chat_models.py`: a model without an effort is refused one before its
+  first call; output budgets stay within model limits.
+- `libs/systemone/tests/test_middleware.py`: ranking time counts once across retries; a skipped
+  ranking carries its elapsed time.
+- `libs/systemone/tests/test_ranker.py`: `RankingFailed.elapsed_ms` is set.
+- `apps/server/tests/test_clients.py`: concurrent first use makes one client pair; closing
+  resets each pool.
+
+## This pull
+
+- **Observed:** no figures, because the raw sample was not accessible to this refresh. When a
+  later refresh can read it, record here the bucket counts (error / outlier / baseline), baseline
+  medians, per-kind (`llm`, `summary`, `systemone`) call counts and latency or token totals, and
+  the results of the checks above. Bucket counts describe how the anomaly-weighted sample was
+  built. They are not fleet rates.
+ counts and latency or token totals, and
   the results of the checks above. Bucket counts describe how the anomaly-weighted sample was
   built. They are not fleet rates.

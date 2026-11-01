@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7d607b63bf04be23fe27602941639b0cfd616f038f11fb67eccdce369ca00b7d",
+  "pageVersion": "sha256:ebf7b933846d6cf5dfd10d601bd5f7d24707def836b9bf348e31a96a1cc5b3cc",
   "claims": [
     {
       "id": "claim_495217e2e42746a0869773e28b35d924",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://langgraph.json#L16-L22",
-          "version": "repo-lines-v1:sha256:adb701bd7ac10f4fc19030d66791d97479c52efc82bf0466d92b0fd11f54bc3b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQzMDI2NDY0ODUyNzc2Y2FkMmQyNzljMTYwMzBhM2IyYzU3YjgzYzExMjA1OTJlNmFmODFiNjliNjg0YmFhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzU0N2ZlZGI5ZmRlMWZkMDY4NGY3ZWZhYjgxM2Y2Y2ZkYWVmNzU0MmMwZDMwOGUxZDExYTBjMWFhMjAwOTg3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+          "version": "repo-lines-v1:sha256:ab68b43f457c71be8f2d31aea0d0dc85517643aa2c543b702b3d96ba990a08ac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0MzAyNjQ2NDg1Mjc3NmNhZDJkMjc5YzE2MDMwYTNiMmM1N2I4M2MxMTIwNTkyZTZhZjgxYjY5YjY4NGJhYTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1NDdmZWRiOWZkZTFmZDA2ODRmN2VmYWI4MTNmNmNmZGFlZjc1NDJjMGQzMDhlMWQxMWEwYzFhYTIwMDk4NzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         }
       ]
     },
@@ -204,11 +204,15 @@
     },
     {
       "id": "claim_4d3cf5444b724f59810868fe8b9d4d69",
-      "statement": "ServerSettings reads the shell then `.env`, rejects any of LANGSMITH_GATEWAY_API_KEY, TYPESAFE_API_KEY or TYPESAFE_BASE_URL that is set but blank, and holds no model credentials itself.",
+      "statement": "ServerSettings reads the shell then `.env`, holds no model credentials itself, rejects any of LANGSMITH_GATEWAY_API_KEY, TYPESAFE_API_KEY or TYPESAFE_BASE_URL that is set but blank, and also reads OAUTH_CLIENT_ID and ALLOWED_ORGANIZATION_ID, which are stripped and treated as unset when blank.",
       "evidence": [
         {
-          "resource": "repo://apps/server/langchain_chess_server/settings.py#L1-L36",
-          "version": "repo-lines-v1:sha256:43f2d5c7d0d2b9d310093c189a7fa8f0014437cf444d5baff60b5ff708f5f99f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExYTIwZDAzNTMxODAyY2ZiZDc0OGQ0ZTVlOGFhZjA5NWU5ZTU5ODIyYjE3NmE0ZWM4YWE0YWNjYmEzOTYzMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlM2NmY2ViMzNlMDExZjliNjk1MDg4ZTBiM2FhODNiMTYwM2Q2OWRiNGRjNjU4MDNhYTgzNjM1M2U4MWIwZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwMTI4YTdkNjUzOTNiMDU1YWQyNDk1NWI1ODgyNWVhNDk5NTU2ZGMwM2YzNzYzOTBiMGVhZThiN2NhZmI0ZjEifQ"
+          "resource": "repo://apps/server/langchain_chess_server/settings.py#L1-L54",
+          "version": "repo-lines-v1:sha256:23dd03498af7fa35898cb46c91cf2a19ed7d1e8e2e48787f8a53c4aacce57b0f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExYTIwZDAzNTMxODAyY2ZiZDc0OGQ0ZTVlOGFhZjA5NWU5ZTU5ODIyYjE3NmE0ZWM4YWE0YWNjYmEzOTYzMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMzdiYzZhMTc4YmQ0YmZjNThhZDVmYzk1YjI5ZGQyYzJiNjUxZWM0OTYzY2M4MGFhNDBmOTNjZDA1ODUyODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://apps/server/tests/test_settings.py#L21-L35",
+          "version": "repo-lines-v1:sha256:32878edab87be20ff885d92fc9a6b32bbb5cc9127ca4319d706e7c3c06de9ab8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmMzQ1ODNhNTk4NzY3YmY1NmFlZmViNjVlMjAzM2ExNjUxY2M0YzhkN2U2ZjBhZjNlNWNmZDMyOTNmOTMzYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkOTc1MzViOGZlN2U4MGNiNzkzZjFiMjM5ODc5NmU5NmJiNjgwM2Y2ZDQ0ZDRjY2EzMzdiYTc2YzQyYTIyZDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzM2EzYTIwNzIzMTQ3MDYwZmFiOTA5NWM5MjhjMWY3NzczOTE2YTEwNjA1NjQzYjUxZmFhNDk1ZTAwNzY4YmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMzU2MGRlMTJjZTc5YWVjZTYxOGIxYmQ3YmFkNWI1OGFjODk0NjFmZjI0NTk4Y2M5ZDZlZmVkNzQ0ZDY5NDYifQ"
         }
       ]
     },
@@ -300,7 +304,7 @@
     },
     {
       "id": "claim_ef09334b1e3e4ffbbdd46836f884b9f5",
-      "statement": "model_limit builds default_model(ChessContext(model=model)) through the shared chat_model factory and returns its input limit, or None when the model has no known limit or cannot be built; GET /ui/model (which requires a `model` query parameter) returns it as max_input_tokens together with takes_effort, and the web client's fetchModelFacts maps the answer to known or failed (request or body error) so the new-game dialog can decide whether to offer memory and a reasoning effort.",
+      "statement": "model_limit builds default_model(ChessContext(model=model)) through the shared chat_model factory and returns its input limit, or None when the model has no known limit or cannot be built; GET /ui/model (which requires a `model` query parameter) returns it as max_input_tokens together with takes_effort, and the web client's fetchModelFacts calls it with the session's headers and maps the answer to known or failed (request or body error) so the new-game dialog can decide whether to offer memory and a reasoning effort.",
       "evidence": [
         {
           "resource": "repo://apps/server/langchain_chess_server/app.py#L59-L63",
@@ -319,8 +323,8 @@
           "version": "repo-lines-v1:sha256:db0d80cbffcf2d113784018d542a64b305034c3193d430ddb733a6e816f0c6b5:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzBhOTQxZTc3MmM4MmVmMTc2YmM1OWUwMWQ3NmI1ZGRkN2E2MTE2ZmEwN2M2Mjg1Y2JhZjcxMjU3NzIyMWFlNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDIxNDY5ZDA5Y2Q1YmZiYjUxMWZjMTUxYTIwOThhOTdhNzhlMjk5NWRhMDkwMzE4Mjc0MGVlN2UwOWVmYTdjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTVhMWFjYTI1NTNiY2RkY2YwZjdhZjJkMjNkNzJmZDU4YmU1MGFhNzAyNTg0NDdhYzMxYTA0ZDc1MjQ5NWI2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWViZWNlZTQ1NzhiZTE5MGQ2ZGJkOTBhMjZlZjIxMjEwY2Q4MDU4YzAyMTdiN2E5OWVhYTJlMjYxMDM3N2U5YiJ9"
         },
         {
-          "resource": "repo://apps/web/src/modelFacts.ts#L1-L41",
-          "version": "repo-lines-v1:sha256:401e8763e1ae5c4565e37a932a517a898509d1bdd30387955acab2f6c18d21f5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwNjU0NGI1MmM1ODEwNWZjMGVkZjdiMGYxZjg5OWViYTMyN2YwNjE4ZjU0OThiNDY1ZTdjODY3MTIzZDRkODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://apps/web/src/modelFacts.ts#L1-L42",
+          "version": "repo-lines-v1:sha256:b75a15e14a883fea2398940edf41f3c2a90948a493ccded7cddd327e32381a1e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMThhMTBmMDAzMjUyNTdiZTc5Mjc0YmE2N2Q4YmE0Y2FhMThhYmRhMjUyZDA0N2U5NTA5YTNlM2YwMDU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -586,11 +590,11 @@
     },
     {
       "id": "claim_82d08f5f954d4a82b56841668aeabb6b",
-      "statement": "The hosted web UI is built by the Pages workflow with BASE_PATH, OUT_DIR and VITE_API_URL overridden and published to GitHub Pages (skipped until VITE_API_URL is set); the client's apiUrl uses VITE_API_URL when set, localhost:2024 under vp dev, and otherwise the page's own origin.",
+      "statement": "The hosted web UI is built by the Pages workflow with BASE_PATH, OUT_DIR and VITE_API_URL overridden plus the sign-in variables VITE_OAUTH_CLIENT_ID, VITE_LANGSMITH_ORGANIZATION_ID and VITE_LANGSMITH_SSO_SLUG from repository variables, and published to GitHub Pages (skipped until VITE_API_URL is set); the client's apiUrl uses VITE_API_URL when set, localhost:2024 under vp dev, and otherwise the page's own origin.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/pages.yml#L105-L117",
-          "version": "repo-lines-v1:sha256:1d3b36560aea6a913f33de523241f91cd063904d1a65983d614f59706162e683:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkZTRhYTMwNzU0NGZhYzQ5MTFkYTk5ODc0ZDliYWVlNGRkNTg0MGE0ZDM5NjI0MjJhMWRjNjg3ZmE0NmEwMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkOWQ0NTM4NzM2NDFkNTJhOTQwODI2MmE2NGFlZWJmN2NlZjQ5Nzk4NzRmMTBlNDc1MDA2NzIwZjRiMmU1OTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3ZGQ2MDMwOTYxYzY2ZWRhNmQ0NjE5MzJiOGFmNjEyNTZhZTI4M2ViNDNlZjZiOTkyZDQ1YWY4NDc5MmEwZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhOWEyMmVmZTc2MWE0YzM4OTFiMjQwODZiM2IxZmFlODE1OWUyYmNhNjIyN2UxNDE3NGE5OTg4NDhkNWQ3ODgifQ"
+          "resource": "repo://.github/workflows/pages.yml#L105-L116",
+          "version": "repo-lines-v1:sha256:47c043c8cf6265ad22f8e948faf67a304bc37df6d767dbd08f89408b1b595323:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkZTRhYTMwNzU0NGZhYzQ5MTFkYTk5ODc0ZDliYWVlNGRkNTg0MGE0ZDM5NjI0MjJhMWRjNjg3ZmE0NmEwMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkOTI1ODY2MzQ0NWVjMTM0ZjEzZTU0ZGVkZmNmNWMyNGY1ZmY2Mjc0NDBiMGEyMGY5NjU2MTNiM2MwYThhY2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3ZGQ2MDMwOTYxYzY2ZWRhNmQ0NjE5MzJiOGFmNjEyNTZhZTI4M2ViNDNlZjZiOTkyZDQ1YWY4NDc5MmEwZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1OWY5NTJjZTc0ODY5ZTdkNDRhNTNlMjIzNDRmMGRjMWZjY2MyMjRmZTI3Zjk1ZjIxOTRhODY2NzYyYTA0NDMifQ"
         },
         {
           "resource": "repo://.github/workflows/pages.yml#L38-L40",
@@ -619,10 +623,44 @@
           "version": "repo-lines-v1:sha256:58652068306895ccb6dfc46c220e1ab1863bbec7f26f17c880772f95e9d7b22e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4MGUzY2ZjN2MxMmY5NGIwMDAzODFmM2ZjNDRlODhkNjYyN2M1NmIzNzYxNjNjNjViYWQwYzM4ZjI3MTU5OWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiYTY4YWE2MjI2MWU2M2I1YzU2NzA0NGQ5ZDZhMmI1OTFjMDM1YjE0NGRmNGE5M2JlYjRhODA1YmI3NWQzNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0OTE0YzY2ZmI0MzQyNjYxOTc2NjVlOGM0ZjVkNjBkMmQyNjQ4MzA1YjlmOGI0NzIyYmEzMTdhZjQ3YjI0ZWIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_a489e6802e7b4a608abdaae8de2271fe",
+      "statement": "langgraph.json registers `apps/server/langchain_chess_server/auth.py:auth` as the custom auth handler with `allow_langsmith_api_keys: true`, so requests without an Authorization header are checked by LangSmith's API-key check and never reach the handler.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/auth.py#L1-L7",
+          "version": "repo-lines-v1:sha256:1f8ca325e3c5df959f1539d92b881c234c118499f6a7b16ccb32537e061a11ec:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmYwZjQ3YjljNGYwZmZjMDMzOTQ0MDhiYmJhNDNjZTQ1YTQwYjY0YTI5MzUzZGIzM2QwZGY5NDM5OTk5ZDcxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDY0MDBmMGU1OGYwOTYxZDhmMjQxMjQ2ODE1ZTYwMjc1OGJkYzhiYzNlMWE0YWRlZGQ3MGQyNzY4NDYyNTFhOCJ9"
+        },
+        {
+          "resource": "repo://langgraph.json#L20-L23",
+          "version": "repo-lines-v1:sha256:f33a570b10658ab7387cf72803da7879566f2cbde73f72eae17c54e000f83c9f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU2ZTYzOTY4N2EzZjNlYTdmZDdlOWJlZDZlZGM3ODkzMGEyMGZjMzI0NWZjMDA3ZGYwZmE5OGQyYjVkYmMxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTJiNjAwMGIzNTViMTE4MmI0ODJiNzBhOWNkMTQwNjllM2EwOGUxMjdhZWU4YTgzYjQ2MTg3Mzg5MTMxNGVkOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjZjMTg5NDcyOGJiMTY5NjY3ZGYwMDRjMDZlMzAxYjMyN2E2MTEwYzA4N2U0ZjU2ZDVmMTc2NjcwM2ZhNzU4NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_595373b2e5c14ca880b0a9cf49792985",
+      "statement": "The auth handler verifies a Bearer JWT against LangSmith's JWKS (EdDSA, LangSmith issuer and audience) and admits it only when its client_id equals OAUTH_CLIENT_ID and its organization_id equals ALLOWED_ORGANIZATION_ID, returning the token's sub as identity; missing or invalid tokens get 401, policy mismatches get 403, and an unset client or organization refuses every token.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/auth.py#L27-L99",
+          "version": "repo-lines-v1:sha256:4fc153f5a05dd8a549630ac020322a17362665b49ca962580f8b76be4b602bce:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2OWExMzk3NWMyNTZlYzgzMjBlMjAxNjA4M2M5NmRmNjM3Y2EzZDM1YmViZGUyMzE0YmVlM2E0NzExYjU2Y2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjQ5NzUzMzdjM2NjZjkwZGI3ZmU1NTJmN2RmYzU0MjkxMGE0MGIwMGE4NGIxNjVjMTJkYTM3NjdjM2EzNmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0N2NkY2M0MDYzNWE5NjZlYmNhOTRkZTcxMzYyZGI0ZTM0YzhmMGNkMjEwOGZlMWExN2Y4NjU1Y2IyOGM3MGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_82282b7ca9f549ba93ae6edbbfc9e7e3",
+      "statement": "The web client sends credentials per its session: no headers for a credential-free server, `x-api-key` for a LangSmith API key, or `Authorization: Bearer` with a freshly requested access token when signed in with LangSmith.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/session.ts#L3-L27",
+          "version": "repo-lines-v1:sha256:4281dc5ce7bcaa0d5b5e019bfa0b5798d8f423155c68dc2fa606215e17540db0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNjJhMzhhNDVmOTcwN2JjNTZhZDg1NzQyZGY4OTFiNjRhYjM2NTJiYTYzMjY3ZTFhZGJiNzljYjA1NTA4MzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmZDRhOTFlZDNmNmQyOGVlOWUxMWM0ZWZkZTljY2NiYTEyZDA2YTZjYTcwODAzNGQ0MzUyY2U5NGQ0ODIxMTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyZjRmOTg1MGJmYjYwYzYxNDY1NjdkMzdlYTA2N2RlOWRhMDhmYzkzYzM0ZDhhNTMxNDcxMWE5Y2Q5YTMyOGMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-11-01T01:10:29.908Z"
+    "at": "2026-11-01T03:07:46.931Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9d007aa41752b564de10947edd2b977f1007ba7d1a6394043668d2b2330b17b4",
+  "pageVersion": "sha256:2a0b57675eb05e42c4c9472b1d849b346263c7b82f58cdce072386a7a2c3ff1a",
   "claims": [
     {
       "id": "claim_5188d39d5c014fee917832dd8d3d6921",
@@ -275,10 +275,88 @@
           "version": "repo-lines-v1:sha256:f35911ae539bf875f26d7a1d154c6b82b3a11d5767d6eb0dd0894bc94b806270:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxYTJmOWE3NDM1YTg0OTIwMmQxNDg2Y2M2OTQ0OTBlNWNlYzgzN2I1N2U3OWRjOGVmZTU5Y2RhZWUzZDM2ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkNjc5ZjAxMDFjN2MwMzk3Mjc4NDI1OGM2YWI4NzhhMDc0ZWRmYTQ0YWEwYTRjNWRmZDRmYTJiNWZkMGQxMjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyNjcxYTk1ZDY2ZTI2NDY0NTA0YTI0NGJiOTljZjA1YWE3MzZiM2IzZDZhNjNkNTQ4OTRiZmM1NDc2NjBiNzkifQ"
         }
       ]
+    },
+    {
+      "id": "claim_56e2769f20194cc48e477882be34f409",
+      "statement": "ServerSettings is a pydantic-settings class that reads the shell environment first and .env second, ignores undeclared variables, and requires none of its variables; model credentials are read by the chat model itself, not by ServerSettings.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/settings.py#L1-L27",
+          "version": "repo-lines-v1:sha256:2ce267f8c8149469a002fca2eff79b1242fd6f333882340d357b94e4bb37b290:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExYTIwZDAzNTMxODAyY2ZiZDc0OGQ0ZTVlOGFhZjA5NWU5ZTU5ODIyYjE3NmE0ZWM4YWE0YWNjYmEzOTYzMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxMWY4MDQwZjYxNjczYzdlODRiMTFiODVmNTQzZmZkMjZmYzc3MzBlYjNkNTU3MzQxOWZjYTUyNWVhZDNhYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3NWU0MzI1MTAyYWVkMWMwMTdiYWVkZTEwZDU1ODFkNGM5ZTI0MDZjY2U3M2Y1ZmRmMmM5YjRlNzVmZDQwZWYifQ"
+        },
+        {
+          "resource": "repo://apps/server/tests/test_settings.py#L13-L18",
+          "version": "repo-lines-v1:sha256:cfb8ccb6e4c152a3acce5e7a0c21b39edad07d602fcadde778e0dffd25087b5d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmJiNDQ0NTU5YmVjYjllZmI5YTJkNmNiOWIyOTJiMTM3YmZjYzNjMDFkMTFjNmQ5MGZlMTg3NDVkOTdhY2IwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODdlMjZlNGEwZGE4OWQ2ZDQwYzk2YWI1ZjRkZWMxMTcwMDU5ZDM1OTllNzhlZGQ0ZGM0ZWIwOTVjNDIzNTYzMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzY3ZjU5ZTQ4Njk2OWQyZGVkOGQ0NDEzZDMxNTFhMzVmNzZmNDE3ODY1NmMxODEyZWVkZDFhZDIwZTNhZjc4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTY4MGIwZjI5MjhhYzBkYmYzZGQ0YTMxZDVjMTZlOTE5OGEyOWE2MDg2ZDM5Y2ZiNTdjMjBmNjBiZTMzYTY1ZCJ9"
+        },
+        {
+          "resource": "repo://apps/server/tests/test_settings.py#L38-L41",
+          "version": "repo-lines-v1:sha256:b790520a1e94b93b63550140376ebd5b1a516fe69df88921729d5b76cbe4319d:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTBiMmFlMWFhYjc2NDZkMzRmNTI1ZWJhNjc2ZGRjMGEyNTczYWEyNTAzYjdlYTNkMjFmOWZkOGM0Yzg3YzY4YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTA4MDI0N2IwZjI0Y2RjNTAwZDc5YjY3MmZhZmQ0YzM1OWE4MmViYWU4YTVkMWQ2OTE1ZjcwNmRmY2RlMzdiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjAxMGY5ODU5MTdkOTYyMjhjMjQ4ZjIzY2ZjYjNlOWQyYmQ1OGU4YmNkNDdhOTFiNTVjOTdiNjVmZTExMTA4MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_349a908c08be4cffb0626f444fcabea3",
+      "statement": "LANGSMITH_GATEWAY_API_KEY, TYPESAFE_API_KEY and TYPESAFE_BASE_URL fail ServerSettings construction with a ValidationError when set but blank, because an empty gateway key would make langchain-core silently fall back to the tracing key.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/settings.py#L40-L47",
+          "version": "repo-lines-v1:sha256:8ebe69efbea4ec4493ed0f2abe19ad14ffa5c38341e9f1a846e1a8c12c03698a:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDA1ZGM5YWJhMWVkNjYyNDNmYWRmYWE2OWI3NGZhMjM1MzA0Y2Y3YmYwNjg2MzM3NGMwOTQzNGYxN2ZiNjFlNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWUzY2ZjZWIzM2UwMTFmOWI2OTUwODhlMGIzYWE4M2IxNjAzZDY5ZGI0ZGM2NTgwM2FhODM2MzUzZTgxYjBkNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmRjN2I4NTI3ZmE2YjJjZmJkOGE3NWM4NzQ1M2Y0ZWYxZjA0YzgwMzkxMTgxOGFhZjVjMzVmNTdhMzUyNjgzNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzAxMjhhN2Q2NTM5M2IwNTVhZDI0OTU1YjU4ODI1ZWE0OTk1NTZkYzAzZjM3NjM5MGIwZWFlOGI3Y2FmYjRmMSJ9"
+        },
+        {
+          "resource": "repo://apps/server/langchain_chess_server/settings.py#L6-L8",
+          "version": "repo-lines-v1:sha256:431fa28d5fd37a101c0552bc41d9cf885ad4feb92bf3e066c69c07fc77a527b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODk2NTkyYTJmNzliOTQzYTY1NjE3MzI4MTdjZTM5OTMzY2Q5NGZhOGQxOWRmZGFiYmY3NWY1MzU3MGE1NGQ5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGM3OGY4MjQwOGViNGQwZTQ2NmJlNzA1OGMwNjgwNjljN2EzZDY0ZTQ2YjNjNGYyZTE4NjUyYmY0ZTlkMzgwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTJjNjVjZTE4ZjQxMDI3MzRjMGQ2NDU0NDJlMTUxMzdlOGZhMGJmOTZiZTEzNmU0ZTRjODQxNmI1YWRjMGFhMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWU5ODEzM2RlOTljYmZlYzU5MDk4MmM4Y2Q2YjA0OWRmNjQwNWE4ODliYWUyOGU5ZGMwZTg5MDJlMjI2YzE3ZCJ9"
+        },
+        {
+          "resource": "repo://apps/server/tests/test_settings.py#L21-L27",
+          "version": "repo-lines-v1:sha256:5dd4449b683f56e2c0a3c5ad99ce4d2b7c95577ea9f1192f1f836ffdb2e91b7c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWYzNDU4M2E1OTg3NjdiZjU2YWVmZWI2NWUyMDMzYTE2NTFjYzRjOGQ3ZTZmMGFmM2U1Y2ZkMzI5M2Y5MzNiMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWE4NzViMjhjOTJmZjMxOTZiYjg2MTc4ZmEwZWFmMmYxNTI5ODdhNTc5N2VhNTZiNTNkNjE4ZWNmN2ZhZTFkNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzMzYTNhMjA3MjMxNDcwNjBmYWI5MDk1YzkyOGMxZjc3NzM5MTZhMTA2MDU2NDNiNTFmYWE0OTVlMDA3NjhiZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjE3ZWMxMjA1M2Q5MDZiM2YzZjg3OWY0YWY4NTJkY2E1NDJmMmMwYzFiY2M4MDNiMzc2MDNkNWRkNmJhODIyYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1808d971de0e43dd9be7a72dcba7c82e",
+      "statement": "ServerSettings.typesafe() returns the TypeSafe API key and base URL and raises ValueError when either is unset; the server's pooled System 1 ranker is built from ServerSettings.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/graph.py#L132-L132",
+          "version": "repo-lines-v1:sha256:98b5ff9afaac687a7d25674d9f8e6b5325b55db81d84243b305b88633c6c389a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOThiNWZmOWFmYWFjNjg3YTdkMjU2NzRkOWY4ZTZiNTMyNWI1NWRiODFkODQyNDNiMzA1Yjg4NjMzYzZjMzg5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOThiNWZmOWFmYWFjNjg3YTdkMjU2NzRkOWY4ZTZiNTMyNWI1NWRiODFkODQyNDNiMzA1Yjg4NjMzYzZjMzg5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTM0MzBiNWE2NTY2MTY3ZjIzZDMwZTgyOGE3M2Q5NzE2MTc1N2I1OWI3OTllMjAzMDZmNTMxNGM3MmFkNTNiMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://apps/server/langchain_chess_server/settings.py#L49-L54",
+          "version": "repo-lines-v1:sha256:d8327abfeefb87a1020babd26351e3eafa74e8cdbc3062bb6872adbb28eba470:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDE4MWVmNWFmZjYwNTg4M2NkNDI3MmIzOTMxMTA3MGI4MmUxM2UwZmQ1Y2QzMWEwMDYxOTc2YjdiNGUyMjMwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmUzN2JjNmExNzhiZDRiZmM1OGFkNWZjOTViMjlkZDJjMmI2NTFlYzQ5NjNjYzgwYWE0MGY5M2NkMDU4NTI4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGM1ZWUyMmFkYTFhNDEyZTQ2YmE2YzY2MWRhOTE5MWQzNDU0ZDk0MjdhYzcyY2FkNTc4MTE3YTg0YzIxMjM0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_28991d9671994d4eb4965af0068e3b22",
+      "statement": "OAUTH_CLIENT_ID and ALLOWED_ORGANIZATION_ID are stripped and a blank value is treated as unset (None) rather than an error, because the deploy workflow writes both before the OAuth app exists.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/settings.py#L28-L38",
+          "version": "repo-lines-v1:sha256:ef7594927982b3fdc1cd2b65e14ee0d086753a47cf45337e24b9e5aec88de88a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1MTZlMWFmMDlmODMyNWVhZGQ0NTA3NmE5ZGI1YTYwNzEyNjM1MGFmYTJhMzVkMzcyNTk2YjFiNDZiMGQ1YjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhZjE3ZmY3MDZhMThhNTgxOWY4MzkzYjhkYTIxMDE4ZWE5YmE5YTlhODFmYzFlYTVhYmNjNzZmYjFkNTRjN2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiMDMwNmEyNjUxNzg4N2QwNzJhNjRiOWJkN2E5MDYyYzcyNWEzNWNiNjNjOTM0YjlhODdkYjdlYWI3MjYxMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1MGYyMmMyNDI1YWY0Y2FmYmU3NTBiNDJhNzk2ODExYTM1ZWNmMDhhN2EwNDUzMjZmYTQ3ZGE4ZWI4NzY2ZDEifQ"
+        },
+        {
+          "resource": "repo://apps/server/tests/test_settings.py#L30-L35",
+          "version": "repo-lines-v1:sha256:b9309951272c14817374c017ae8ba3c548c58e638af66d53d81e8040da06764d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2U0OTNjMWQ0YjU5NTM1ZDkxNDQ4ZWRlZGE5OWE3NDBkN2U2NGJhNmViMjU1N2RlMGU0ZjEwMTUzZDA3ZTBlNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWQ5NzUzNWI4ZmU3ZTgwY2I3OTNmMWIyMzk4Nzk2ZTk2YmI2ODAzZjZkNDRkNGNjYTMzN2JhNzZjNDJhMjJkOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2E1NjE0MjEyNzJjZDU2YzgxMzE0NjZhOWIxNTFkYzNkMGNkNjFiMWJlZmU4M2I4MGNjYzY2M2RiZTI4Nzc2NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzIzNTYwZGUxMmNlNzlhZWNlNjE4YjFiZDdiYWQ1YjU4YWM4OTQ2MWZmMjQ1OThjYzlkNmVmZWQ3NDRkNjk0NiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_36ffa420e3af420fbd3087d9e4a06454",
+      "statement": "The sign-in AccessPolicy is built from ServerSettings.oauth_client_id and allowed_organization_id, and when either is unset every LangSmith sign-in token is refused, leaving API keys as the only access.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/auth.py#L27-L45",
+          "version": "repo-lines-v1:sha256:4b9f05dfd1f9a1978dbc7e8911f6d5dfc2905b93ee2a2caf36b2b171a828cefc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2OWExMzk3NWMyNTZlYzgzMjBlMjAxNjA4M2M5NmRmNjM3Y2EzZDM1YmViZGUyMzE0YmVlM2E0NzExYjU2Y2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0N2NkY2M0MDYzNWE5NjZlYmNhOTRkZTcxMzYyZGI0ZTM0YzhmMGNkMjEwOGZlMWExN2Y4NjU1Y2IyOGM3MGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlYTk1YWQxZDRlODQwN2ExYTgzOTY3ZDUyNDEwNGI1ZDhlMTRmMWRiMTNhNzI2NTg1MTFjM2I2ZWNmNjQxMTcifQ"
+        },
+        {
+          "resource": "repo://apps/server/langchain_chess_server/auth.py#L79-L81",
+          "version": "repo-lines-v1:sha256:bb5485e6dd8f4f9582ca19801d7a5f10f9a046808a4da97a6ed30bcea2c1feaf:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjNlZGZhMjdlMDE0YTYzZTA1OTY4MWE5ZjQxYmMxODUxMGExMjNkYzQxYTVlNDhhZDBlMmU2ZDE3YWJiM2ViMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdmNTU0MTQwOTYwMzhlMzk0YWE4Yjk0N2JlNWEwYTg5MjY4NzkzMDdiZWJjYzFiYjFjMjdhMzRlOWEyMmIyZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzgxYmUzMjViNTNmMTlkN2Q2MmU3NmFkZTk2OWY4YjE3ODM0NGI2MjAyNzUwYjA1N2Y1OTBiYTE5ZWFmOTM3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2E4NTQyOThiZmQxZWE5YWJmYTkxMTNiZjdmMTNmNTEyMjgxZTk3M2E1ZTUxNDU0ODZmNWExMDdjOWE5YmEzOSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-11-01T01:10:29.908Z"
+    "at": "2026-11-01T03:07:46.931Z"
   }
 }

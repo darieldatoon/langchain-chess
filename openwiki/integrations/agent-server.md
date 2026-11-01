@@ -3,14 +3,13 @@ type: integration adapter
 title: Agent Server graph and /ui app
 description: How the LangGraph Agent Server builds the `chess` graph (make_graph, the runless shape(), build_graph over the shared build_agent in libs/systemone, a fixed topology for every policy), how a run's ChessContext is resolved from assistant context and `configurable` through migrate/resolve, how GameSetupMiddleware records a game's settings in thread state, the shared System 1 HTTP client pools (TypeSafe and OpenAI Decisions), what ServerSettings validates, and how a custom FastAPI app serves /ui/config, /ui/model and (locally) the built web UI, while the hosted UI lives on GitHub Pages.
 tags: [agent-server, langgraph, graph-factory, context, configuration, fastapi, web-ui]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T01:10:29.908Z
 sources:
   - id: openwiki-source-5f219f204b3e870beec929d9
     resource: repo://.github/workflows/pages.yml
   - id: openwiki-source-b9886f4aee6bc16bdaea61ff
     resource: repo://apps/server/langchain_chess_server/app.py
+  - id: openwiki-source-d6b546398e3b1c03ecb0494a
+    resource: repo://apps/server/langchain_chess_server/auth.py
   - id: openwiki-source-72cff634549a72fbc164bc15
     resource: repo://apps/server/langchain_chess_server/clients.py
   - id: openwiki-source-9e73cfc78a8aeac72fc36a15
@@ -37,8 +36,12 @@ sources:
     resource: repo://apps/server/tests/test_live.py
   - id: openwiki-source-c5be26edbecc900286e62bd7
     resource: repo://apps/server/tests/test_server.py
+  - id: openwiki-source-f3c191b904053bff31100758
+    resource: repo://apps/server/tests/test_settings.py
   - id: openwiki-source-db33746522a03b766fdba194
     resource: repo://apps/web/README.md
+  - id: openwiki-source-958c86b14cece0555a5ab2c3
+    resource: repo://apps/web/src/auth/session.ts
   - id: openwiki-source-7f2e3520a656d432bb97cc86
     resource: repo://apps/web/src/modelFacts.ts
   - id: openwiki-source-3cb426dd15d324cb1ef8679d
@@ -71,7 +74,10 @@ sources:
     resource: repo://mise.toml
   - id: openwiki-source-c81a61ad418f9c19c518d61d
     resource: repo://packages/chess-ui/src/settings.ts
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-11-01T03:07:46.931Z
 ---
 
 # Agent Server graph and the /ui app
@@ -291,9 +297,9 @@ sequenceDiagram
 ```
 *The web client's two kinds of calls: model facts for the new-game dialog, and graph runs.*
 
-- **Where the UI lives.** `apps/web/vite.config.ts` defaults to `base: "/ui/"` and writes into the server's static directory. The Pages workflow (`.github/workflows/pages.yml`) overrides `BASE_PATH` (`/<repo>/`), `OUT_DIR` and `VITE_API_URL`, and publishes the bundle to GitHub Pages; it is skipped until the repository variable `VITE_API_URL` names the deployment.
-- **Which server it calls.** `apiUrl` in `apps/web/src/settings.ts` uses `VITE_API_URL` when set (the Pages build), `http://localhost:2024` under `vp dev`, and otherwise `window.location.origin` (when this server serves the UI under `/ui`). A deployed server needs a LangSmith API key, which the app sends as `x-api-key`.
-- **Model facts.** `fetchModelFacts` in `apps/web/src/modelFacts.ts` calls `/ui/model` and returns `known` (a number or `null` limit plus a boolean `takes_effort`) or `failed` (non-OK response, malformed body or network error), which says nothing about the model. The dialog offers Summarize only for a known limit and drops the reasoning effort for a model that takes none.
+- **Where the UI lives.** `apps/web/vite.config.ts` defaults to `base: "/ui/"` and writes into the server's static directory. The Pages workflow (`.github/workflows/pages.yml`) overrides `BASE_PATH` (`/<repo>/`), `OUT_DIR` and `VITE_API_URL`, and also passes the sign-in variables `VITE_OAUTH_CLIENT_ID`, `VITE_LANGSMITH_ORGANIZATION_ID` and `VITE_LANGSMITH_SSO_SLUG`, taken from repository variables. If they are unset, the UI offers API keys only; the server gets the same client and organization values. The workflow publishes the bundle to GitHub Pages and is skipped until the repository variable `VITE_API_URL` names the deployment.
+- **Which server it calls.** `apiUrl` in `apps/web/src/settings.ts` uses `VITE_API_URL` when set (the Pages build), `http://localhost:2024` under `vp dev`, and otherwise `window.location.origin` (when this server serves the UI under `/ui`). The client's session decides the credentials on each request: none (for `langgraph dev` or a local server), a LangSmith API key sent as `x-api-key`, or a fresh sign-in access token sent as `Authorization: Bearer`.
+- **Model facts.** `fetchModelFacts` in `apps/web/src/modelFacts.ts` calls `/ui/model` with the session's headers and returns `known` (a number or `null` limit plus a boolean `takes_effort`) or `failed` (non-OK response, malformed body or network error), which says nothing about the model. The dialog offers Summarize only for a known limit and drops the reasoning effort for a model that takes none.
 - **`render.html`** is the second Vite build input, LangSmith's custom output renderer for the positions dataset. It ships with the bundle, so it is served from GitHub Pages (and, in a local build, at `/ui/render.html` through the same static mount, with no route of its own). It fetches nothing from the server; it draws what LangSmith posts to it. See [web frontends](/openwiki/architecture/web-frontends.md).
 
 ## Runtime note (LangSmith pull)
@@ -311,6 +317,11 @@ Labels follow [runtime behavior](/openwiki/operations/runtime-behavior.md): **Ob
 - `apps/server/tests/test_context.py` covers the migrate, merge, validation and bounds rules of `resolve_context`.
 - `apps/server/tests/test_server.py` runs an offline `langgraph dev` with no System 1 keys: a paused run reads back as the graph that ran (via run config and via assistant context), an unversioned assistant takes a versioned partial override, and a run that fails at build leaves a readable, empty thread.
 - `apps/server/tests/test_clients.py` covers single creation under concurrent first use and closing/recreating both pools.
+- `apps/server/tests/test_app.py` covers the `/ui/config` payload, the routes without a build (redirect, 404), the `/ui/model` route (known limit, model taking no effort, unknown model, missing parameter), serving a static build, and shutdown closing the clients of a path-loaded `graph.py`.
+- `apps/server/tests/test_codegen.py` fails when the generated settings files in `packages/chess-ui` are stale.
+- `apps/server/tests/test_live.py` is opt-in (`-m live`) and costs money. It runs a real `langgraph dev` from `langgraph.json` and checks that the `/ui` app is mounted, that assistant context reaches the factory through `runtime`, that a full game plays on the server, and that the recorder prices LLM calls there.
+- `apps/server/tests/e2e` (`mise run test:e2e`) builds the web UI into the static directory and plays games in Chromium against `langgraph dev` at `/ui/`.
+ creation under concurrent first use and closing/recreating both pools.
 - `apps/server/tests/test_app.py` covers the `/ui/config` payload, the routes without a build (redirect, 404), the `/ui/model` route (known limit, model taking no effort, unknown model, missing parameter), serving a static build, and shutdown closing the clients of a path-loaded `graph.py`.
 - `apps/server/tests/test_codegen.py` fails when the generated settings files in `packages/chess-ui` are stale.
 - `apps/server/tests/test_live.py` is opt-in (`-m live`) and costs money. It runs a real `langgraph dev` from `langgraph.json` and checks that the `/ui` app is mounted, that assistant context reaches the factory through `runtime`, that a full game plays on the server, and that the recorder prices LLM calls there.

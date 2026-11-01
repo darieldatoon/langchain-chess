@@ -3,10 +3,9 @@ type: quickstart
 title: "Quickstart: working in langchain-chess"
 description: Entry point for coding agents changing langchain-chess. Covers what the repo is, the Python/JS package map and dependency direction (including the never-published evals member), the mise dev/check/test/eval commands, the rules every change must keep, and a task-routing table to the rest of the wiki, including settings and System 1 evals.
 tags: [quickstart, overview, package-map, development, routing, settings, evals]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T01:10:29.908Z
 sources:
+  - id: openwiki-source-d6b546398e3b1c03ecb0494a
+    resource: repo://apps/server/langchain_chess_server/auth.py
   - id: openwiki-source-9e73cfc78a8aeac72fc36a15
     resource: repo://apps/server/langchain_chess_server/codegen.py
   - id: openwiki-source-65aad166aa88a58cc7a8319a
@@ -19,6 +18,14 @@ sources:
     resource: repo://apps/server/langchain_chess_server/settings.py
   - id: openwiki-source-f5485618fdea35eba238fd7b
     resource: repo://apps/server/pyproject.toml
+  - id: openwiki-source-fde4d91838391ae51474c06b
+    resource: repo://apps/web/src/auth/check.ts
+  - id: openwiki-source-fe293e29941663c7d6f751f0
+    resource: repo://apps/web/src/auth/config.ts
+  - id: openwiki-source-958c86b14cece0555a5ab2c3
+    resource: repo://apps/web/src/auth/session.ts
+  - id: openwiki-source-f2887a22b7d95aeb9307ea2d
+    resource: repo://apps/web/src/Root.tsx
   - id: openwiki-source-611421396243f4b643f6d94a
     resource: repo://apps/web/src/useGame.ts
   - id: openwiki-source-c5b4e34d336b7c9431470f11
@@ -61,7 +68,10 @@ sources:
     resource: repo://pyproject.toml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-11-01T03:07:46.931Z
 ---
 
 # Quickstart: working in langchain-chess
@@ -109,7 +119,7 @@ flowchart TD
 | `libs/cli` (`langchain-chess-cli`) | `lcchess` | The UCI engine, the Textual TUI, `lcchess grade` |
 | `apps/server` (private) | `langchain_chess_server` | The `chess` graph factory (`make_graph`), context resolution, `GameSetupMiddleware`, settings codegen, and the FastAPI app that serves `/ui` |
 | `evals` (private, never published) | `lcchess-evals` | The Lichess + Stockfish positions dataset and System 1 experiments. `evals/reports` holds the static reports |
-| `apps/web` | — | React UI that talks to the `chess` graph over the Agent Server API |
+| `apps/web` | — | React UI that signs in (`src/auth/`) and then talks to the `chess` graph over the Agent Server API |
 | `apps/review` | — | LangSmith custom app that replays graded games |
 | `packages/chess-ui` | `@langchain-chess/chess-ui` | Board, move list, ply details, state types and the generated settings schemas, shared by both web apps |
 
@@ -208,8 +218,10 @@ Tips:
 - `TYPESAFE_API_KEY` and `TYPESAFE_BASE_URL`: the credentials for TypeSafe System 1 models such as Jev. The server requires them only when a run uses a System 1 policy (`systemone` or `hybrid`) with a non-`openai/` System 1 model.
 - `LANGSMITH_GATEWAY`: gateway passthrough for bare or `provider:model` specs.
 - `STOCKFISH_PATH`: optional, for grading.
+- `OAUTH_CLIENT_ID` and `ALLOWED_ORGANIZATION_ID`: server-side "Sign in with LangSmith" settings. If they are unset, the server accepts API keys only.
+- `VITE_OAUTH_CLIENT_ID`, `VITE_LANGSMITH_ORGANIZATION_ID` and the optional `VITE_LANGSMITH_SSO_SLUG`: web build variables, set in the Pages workflow and in `apps/web/.env.development.local`. Without a client id, the UI offers API-key sign-in only. If the client id is set without the organization id, the UI shows a "misconfigured build" error.
 
-Create `.env` by copying `.env.example`, and never commit values. The server's settings reject `LANGSMITH_GATEWAY_API_KEY`, `TYPESAFE_API_KEY` or `TYPESAFE_BASE_URL` when one is set but empty, so the graph build fails instead of silently falling back. → [Local development](operations/local-development.md)
+Create `.env` by copying `.env.example`, and never commit values. The server's settings reject `LANGSMITH_GATEWAY_API_KEY`, `TYPESAFE_API_KEY` or `TYPESAFE_BASE_URL` when one is set but empty, so the graph build fails instead of silently falling back. The two OAuth settings are the opposite: a blank value counts as unset, because the deploy workflow writes them before the OAuth app exists. → [Local development](operations/local-development.md)
 
 ## Task routing
 
@@ -236,3 +248,13 @@ Create `.env` by copying `.env.example`, and never commit values. The server's s
 | Find out why something that looks like a gap was left out on purpose, the measurements behind it, and when to revisit | [Decisions and measurements](concepts/decisions.md) |
 
 Memory is a single on/off setting. When it is off, the model sees only the current position. When it is on, earlier turns are kept and summarized as the conversation nears the model's input limit. Design decisions and their measurements live on the [Decisions and measurements](concepts/decisions.md) page, which the README also points to. No other page in this wiki repeats those numbers.
+repeats those numbers.
+ers.
+evelopment.md) |
+| Understand how turns fail and recover at runtime: model errors, stalls, System 1 failures, context validation, what the UI shows | [Runtime behavior and failure modes](operations/runtime-behavior.md) |
+| Add tests, use the fakes, update TUI snapshots, or run e2e, live and fastchess tests | [Testing conventions](testing/testing-conventions.md) |
+| Find out why something that looks like a gap was left out on purpose, the measurements behind it, and when to revisit | [Decisions and measurements](concepts/decisions.md) |
+
+Memory is a single on/off setting. When it is off, the model sees only the current position. When it is on, earlier turns are kept and summarized as the conversation nears the model's input limit. Design decisions and their measurements live on the [Decisions and measurements](concepts/decisions.md) page, which the README also points to. No other page in this wiki repeats those numbers.
+repeats those numbers.
+ers.

@@ -3,9 +3,6 @@ type: "Reference"
 title: "Model specs, the LLM Gateway and cost"
 description: "How chess agents name models (init_chat_model specs and the langsmith: gateway provider), the default models, which models take a reasoning effort (the probed efforts.json snapshot), how model_kwargs resolve into the shared chat_model builder's output budget and input-limit profile, how CallRecorder captures and locally prices every provider response (genai-prices plus the OpenAI Decisions rate), why stalled calls record nothing, and when a turn's cost is incomplete."
 tags: [models, llm-gateway, langsmith, pricing, cost, callbacks, genai-prices, model-kwargs, reasoning-effort]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T01:10:29.908Z
 sources:
   - id: openwiki-source-5f5b95b3d6a215fa02ceb945
     resource: repo://.env.example
@@ -21,6 +18,8 @@ sources:
     resource: repo://apps/server/tests/test_app.py
   - id: openwiki-source-08efc3f1935724156208ec17
     resource: repo://apps/server/tests/test_graph.py
+  - id: openwiki-source-f3c191b904053bff31100758
+    resource: repo://apps/server/tests/test_settings.py
   - id: openwiki-source-3ae14faf8cc85a90b40ed182
     resource: repo://libs/chess/langchain_chess/agent.py
   - id: openwiki-source-65bee4ff16ecbe51243c1e47
@@ -77,7 +76,10 @@ sources:
     resource: repo://libs/systemone/langchain_chess_systemone/settings.py
   - id: openwiki-source-72b5d686f860ea86c8592080
     resource: repo://mise.toml
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-11-01T03:07:46.931Z
 ---
 
 # Model specs, the LLM Gateway and cost
@@ -299,8 +301,12 @@ are:
 **Set-but-empty is an error.** If `LC_GATEWAY_KEY` is missing, the template's expansion
 produces an empty string. langchain-core would then silently fall back to `LANGSMITH_API_KEY` and
 send model calls to the tracing org's gateway. `ServerSettings` (pydantic-settings, reading the
-shell first and `.env` second) rejects a blank `LANGSMITH_GATEWAY_API_KEY`, `TYPESAFE_API_KEY` or
-`TYPESAFE_BASE_URL`. `make_graph` instantiates it only for a run: reads, state updates and
+shell first and `.env` second) fails validation ("is set but empty; unset it or give it a value")
+when `LANGSMITH_GATEWAY_API_KEY`, `TYPESAFE_API_KEY` or `TYPESAFE_BASE_URL` is set to an empty or
+whitespace-only value. Leaving them unset is fine: all three default to `None`, and the gateway key
+is read only for this check (the chat model reads the variable itself). The sign-in settings in
+the same class (`OAUTH_CLIENT_ID`, `ALLOWED_ORGANIZATION_ID`) deliberately do the opposite: blank
+means unset, and values are stripped. `make_graph` instantiates `ServerSettings` only for a run: reads, state updates and
 introspection (no `execution_runtime`) get the credential-free `shape()` graph, so they need none
 of these variables. `ServerSettings.typesafe()` raises when either TypeSafe variable is unset;
 only System 1 policies (`hybrid`, `systemone`) with a TypeSafe model call it, so an OpenAI

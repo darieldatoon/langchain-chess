@@ -2,10 +2,7 @@
 type: operations guide
 title: Deployment and image build
 description: How CI gates merges and how four workflows ship from main — deploy.yml (Agent Server image for the langchain-chess agent's production environment), pages.yml (web UI to GitHub Pages), deploy-review.yml (review app) and deploy-grader.yml (grader sandbox snapshot) — with a tip SHA resolved inside a queued concurrency lock, on.push path filters, and a superseded check. Also how langgraph.json builds the image from the uv workspace, why dockerfile_lines lists member pyproject.toml files while workspace sources live only in the root pyproject.toml, and why evals changes never redeploy anything.
-tags: [deployment, ci, docker, langgraph, uv-workspace, github-actions, github-pages]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T01:10:29.908Z
+tags: [deployment, ci, docker, langgraph, uv-workspace, github-actions, github-pages, oauth]
 sources:
   - id: openwiki-source-715dace563ef484b6e8bd1e2
     resource: repo://.dockerignore
@@ -23,6 +20,8 @@ sources:
     resource: repo://.github/workflows/pages.yml
   - id: openwiki-source-b9886f4aee6bc16bdaea61ff
     resource: repo://apps/server/langchain_chess_server/app.py
+  - id: openwiki-source-d6b546398e3b1c03ecb0494a
+    resource: repo://apps/server/langchain_chess_server/auth.py
   - id: openwiki-source-c9b903d37e22daedc4499a4b
     resource: repo://apps/server/langchain_chess_server/graph.py
   - id: openwiki-source-e3b0d2af80ee0702b2be4a6b
@@ -35,6 +34,8 @@ sources:
     resource: repo://apps/server/tests/test_app.py
   - id: openwiki-source-db33746522a03b766fdba194
     resource: repo://apps/web/README.md
+  - id: openwiki-source-fe293e29941663c7d6f751f0
+    resource: repo://apps/web/src/auth/config.ts
   - id: openwiki-source-3cb426dd15d324cb1ef8679d
     resource: repo://apps/web/src/settings.ts
   - id: openwiki-source-03f6dd3375679341910a29c1
@@ -55,7 +56,10 @@ sources:
     resource: repo://scripts/grader-snapshot.py
   - id: openwiki-source-5d3885b801ad37ac84a9169b
     resource: repo://scripts/superseded.sh
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-11-01T03:07:46.931Z
 ---
 
 # Deployment and image build
@@ -194,9 +198,11 @@ Re-running only the deploy job in the Actions UI reuses the earlier `tip` output
 
 At runtime `ServerSettings` (`apps/server/langchain_chess_server/settings.py`) reads the shell, then `.env`, and rejects `LANGSMITH_GATEWAY_API_KEY`, `TYPESAFE_API_KEY` or `TYPESAFE_BASE_URL` when set but blank. `make_graph` constructs it for each run (reads, updates and introspection without an execution runtime get a credential-free graph shape instead), so an empty secret written into the deployment `.env` makes runs fail loudly instead of falling back silently to another key.
 
+The two sign-in variables are handled the other way: `ServerSettings` treats a blank `OAUTH_CLIENT_ID` or `ALLOWED_ORGANIZATION_ID` as unset. The workflow writes both even before the OAuth app exists, so an unset repository variable expands to an empty value. With either value unset, `auth.py` refuses every Bearer token, but API keys still work. The deployment therefore starts safely before sign-in is configured. `auth.py` caches its access policy for the life of the process, so changing these variables takes effect only after a redeploy.
+
 ### `pages` workflow (`pages.yml`)
 
-The whole workflow is skipped until the repository variable `VITE_API_URL` (the agent deployment's API URL) is set: `tip` requires both `main` and a non-empty `VITE_API_URL`. The `build` job (15-minute timeout) sets up without Python (`python: false`), runs the superseded check against `pages.yml`, and then, unless superseded, runs `pnpm --dir apps/web exec vp build` with `BASE_PATH=/<repository name>/` (the site lives under that path), `OUT_DIR=dist` and `VITE_API_URL`, and uploads `apps/web/dist` with `actions/upload-pages-artifact`. A separate `deploy` job, skipped when `build` reported `superseded`, runs `actions/configure-pages` and `actions/deploy-pages` in the `github-pages` environment with `pages: write` and `id-token: write`.
+The whole workflow is skipped until the repository variable `VITE_API_URL` (the agent deployment's API URL) is set: `tip` requires both `main` and a non-empty `VITE_API_URL`. The `build` job (15-minute timeout) sets up without Python (`python: false`), runs the superseded check against `pages.yml`, and then, unless superseded, runs `pnpm --dir apps/web exec vp build` with `BASE_PATH=/<repository name>/` (the site lives under that path), `OUT_DIR=dist`, `VITE_API_URL`, and the sign-in build variables `VITE_OAUTH_CLIENT_ID`, `VITE_LANGSMITH_ORGANIZATION_ID` and `VITE_LANGSMITH_SSO_SLUG`. These three take their values from the repository variables `OAUTH_CLIENT_ID`, `LANGSMITH_ORGANIZATION_ID` and `LANGSMITH_SSO_SLUG`. The job then uploads `apps/web/dist` with `actions/upload-pages-artifact`. A separate `deploy` job, skipped when `build` reported `superseded`, runs `actions/configure-pages` and `actions/deploy-pages` in the `github-pages` environment with `pages: write` and `id-token: write`.
 
 The UI uses `VITE_API_URL` as its API base when set, so the Pages site talks to the deployed agent. A deployed Agent Server needs a LangSmith API key, which the UI asks for and sends as `X-Api-Key`. Changing `VITE_API_URL` does not touch a watched path, so republish by dispatching the workflow by hand.
 
@@ -253,4 +259,14 @@ Package caches (the uv cache and uv-managed Python, keyed on `uv.lock` and `.pyt
 - **Adding a runtime environment variable:** add it to the `.env` heredoc in the `agent` job. Otherwise the next deploy won't carry it.
 - **New build input for the server, UI, review app or grader:** add its path to the matching workflow's `on.push.paths`. UI inputs belong in `pages.yml`, not `deploy.yml`. `superseded.sh` reads the same list, so it needs no separate change.
 - **Adding another deploy target:** give it its own workflow and concurrency group. Queued-run replacement is safe only when every run of a workflow deploys the same target.
+- **Excluding files from the image:** edit `.dockerignore`.
+pp or grader:** add its path to the matching workflow's `on.push.paths`. UI inputs belong in `pages.yml`, not `deploy.yml`. `superseded.sh` reads the same list, so it needs no separate change.
+- **Adding another deploy target:** give it its own workflow and concurrency group. Queued-run replacement is safe only when every run of a workflow deploys the same target.
+- **Excluding files from the image:** edit `.dockerignore`.
+g in `pages.yml`, not `deploy.yml`. `superseded.sh` reads the same list, so it needs no separate change.
+- **Adding another deploy target:** give it its own workflow and concurrency group. Queued-run replacement is safe only when every run of a workflow deploys the same target.
+- **Excluding files from the image:** edit `.dockerignore`.
+t is safe only when every run of a workflow deploys the same target.
+- **Excluding files from the image:** edit `.dockerignore`.
+ run of a workflow deploys the same target.
 - **Excluding files from the image:** edit `.dockerignore`.

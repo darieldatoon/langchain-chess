@@ -1,11 +1,8 @@
 ---
 type: Reference
 title: Testing conventions
-description: How langchain-chess is tested — 100% line and branch coverage gates for Python (pytest) and JS (Vitest via Vite+), fakes instead of mocks (the testing.py helpers in each package and chess-ui's testing.ts), Textual snapshot and Playwright e2e tests, and opt-in paid live tests selected with -m live.
-tags: [testing, coverage, pytest, vitest, fakes, snapshots, e2e, live-tests, ci]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T01:10:29.908Z
+description: How langchain-chess is tested — 100% line and branch coverage gates for Python (pytest) and JS (Vitest via Vite+), fakes instead of mocks (the testing.py helpers in each package and chess-ui's testing.ts), auth tests with injected fakes (Root props, locally signed JWTs and a fake JWKS) that need no LangSmith, Textual snapshot and Playwright e2e tests, and opt-in paid live tests selected with -m live.
+tags: [testing, coverage, pytest, vitest, fakes, snapshots, e2e, live-tests, ci, auth]
 sources:
   - id: openwiki-source-164e2da859b5277df81c7d94
     resource: repo://.github/workflows/ci.yml
@@ -17,6 +14,8 @@ sources:
     resource: repo://apps/review/tests/support/fixtures.ts
   - id: openwiki-source-1c7945f632aab9aad6118b88
     resource: repo://apps/review/vite.config.ts
+  - id: openwiki-source-d6b546398e3b1c03ecb0494a
+    resource: repo://apps/server/langchain_chess_server/auth.py
   - id: openwiki-source-9e73cfc78a8aeac72fc36a15
     resource: repo://apps/server/langchain_chess_server/codegen.py
   - id: openwiki-source-399df37e47710a2e15d69670
@@ -25,12 +24,28 @@ sources:
     resource: repo://apps/server/tests/e2e/graph.py
   - id: openwiki-source-64a074f8a0917e42ea22836a
     resource: repo://apps/server/tests/e2e/test_browser.py
+  - id: openwiki-source-daa789a353368f895ac8507a
+    resource: repo://apps/server/tests/test_auth.py
   - id: openwiki-source-bae425afdb2f1082f5506562
     resource: repo://apps/server/tests/test_codegen.py
   - id: openwiki-source-81f430313af7099d0ab0f750
     resource: repo://apps/server/tests/test_live.py
   - id: openwiki-source-c5be26edbecc900286e62bd7
     resource: repo://apps/server/tests/test_server.py
+  - id: openwiki-source-f2887a22b7d95aeb9307ea2d
+    resource: repo://apps/web/src/Root.tsx
+  - id: openwiki-source-ce9d87d357473b2ebfdaecec
+    resource: repo://apps/web/tests/auth/check.test.ts
+  - id: openwiki-source-78f5994ff398c837a6b55da7
+    resource: repo://apps/web/tests/auth/config.test.ts
+  - id: openwiki-source-16ba215f9b5ba6aa66f202e1
+    resource: repo://apps/web/tests/auth/oauth.test.ts
+  - id: openwiki-source-c3741451389bf6079436c971
+    resource: repo://apps/web/tests/auth/stored.test.ts
+  - id: openwiki-source-698c2e78aee276db111805ab
+    resource: repo://apps/web/tests/auth/useSession.test.tsx
+  - id: openwiki-source-a06d35dc7d18008ca7875af5
+    resource: repo://apps/web/tests/Root.test.tsx
   - id: openwiki-source-af065fe99821f520742e70e5
     resource: repo://apps/web/tests/support/fakeStream.ts
   - id: openwiki-source-0f3cd019710b6ba7315199c5
@@ -77,7 +92,10 @@ sources:
     resource: repo://pyproject.toml
   - id: openwiki-source-5e1b077422a94ae165e88e4e
     resource: repo://vite.config.ts
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-11-01T03:07:46.931Z
 ---
 
 # Testing conventions
@@ -128,7 +146,7 @@ The repo-root `conftest.py` is shared by every package's tests. It forces plain 
 Package-level fixtures worth knowing:
 
 - `libs/chess/tests/conftest.py` — the `run` fixture is parametrized over sync and async, so agent tests exercise both `invoke` and `ainvoke`; `make_agent` defaults to an `InMemorySaver` checkpointer.
-- `apps/server/tests/conftest.py` — `env` clears the gateway variables and `LC_GATEWAY_KEY`, chdirs to `tmp_path` (isolating tests from the repo `.env`) and sets known-good settings. The session-scoped `langgraph_dev` fixture returns a factory that starts a real `langgraph dev --no-browser --no-reload` on a free port from a work directory, using an absolute-path copy of `langgraph.json` (optionally replacing the env file, process environment and graph specs). It polls `/ok` for up to 90 s, fails with the server log if startup fails, and on exit terminates the server, killing it after 15 s.
+- `apps/server/tests/conftest.py` — `env` clears the gateway variables, `LC_GATEWAY_KEY` and the sign-in policy variables (`OAUTH_CLIENT_ID`, `ALLOWED_ORGANIZATION_ID`), chdirs to `tmp_path` (isolating tests from the repo `.env`) and sets known-good fake gateway settings (`lsv2_test` keys). The session-scoped `langgraph_dev` fixture returns a factory that starts a real `langgraph dev --no-browser --no-reload` on a free port from a work directory, using a copy of `langgraph.json` whose graph, `http.app` and `auth.path` specs are made absolute (optionally replacing the env file, process environment and graph specs). Running from a temp directory keeps the server's local `.langgraph_api/` state out of a developer's own dev server. It polls `/ok` for up to 90 s, fails with the server log if the process exits or never comes up, and on exit terminates the server, killing it after 15 s.
 
 `apps/server/tests/test_server.py` uses that fixture in the *default* suite: with fake gateway keys, tracing off and `LANGSMITH_`/`LANGCHAIN_`/`TYPESAFE_`/`LC_` variables stripped, it checks that paused runs read back with the same `next`/setup and graph topology (via run config or assistant context), that versioned partial overrides resolve on unversioned assistants, and that a hybrid run without System 1 keys errors before writing state. `test_codegen` compares every file `codegen.files()` produces with the committed `packages/chess-ui/src/generated` files byte for byte, and tells you to run `mise run generate:settings` when one is stale.
 
@@ -167,6 +185,27 @@ Each package ships its own fakes in a non-runtime module, so tests in other pack
 - The review app's `tests/support/fixtures.ts` builds on these: a Scholar's-mate game state, a Stockfish review, gradings, game list entries, version-2 (header plus parts) reviews, and review, part and status feedback, all from overridable factories.
 - The web app's `tests/support/fakeStream.ts` replaces `@langchain/react`'s `useStream` via `vi.mock` with a mutable fake (including `hydrationPromise` and `getThread`) supporting per-thread overrides, a late-bound `submit`, option logging, and `resetFake` for cleanup.
 
+## Testing auth without LangSmith
+
+"Sign in with LangSmith" (see [LangSmith sign-in](/openwiki/integrations/langsmith-sign-in.md)) is tested end to end in the default suite without any LangSmith account, network call or real token. Both sides are written so their outside dependencies can be injected.
+
+**Server (`apps/server/tests/test_auth.py`).** The auth handler's logic, `user_for(authorization, policy, signing_key)`, takes the `AccessPolicy` and a signing-key lookup as arguments. The tests generate throwaway Ed25519 keys, sign EdDSA JWTs locally with LangSmith's issuer and audience, and pass a lookup that returns the test key's public key. They cover:
+
+- a member of the configured app and organization gets in as `{"identity": sub}`, with a case-insensitive, whitespace-tolerant `Bearer` scheme;
+- a missing or non-bearer header, and tokens with the wrong signature, expired, the wrong audience or issuer, no `sub`, or garbage, are all **401**;
+- a verified token from another app or organization is **403** with the reason;
+- an `AccessPolicy` with either field unset refuses every token, and `policy_of` reads (and trims) `OAUTH_CLIENT_ID` / `ALLOWED_ORGANIZATION_ID` via the `env` fixture.
+
+The registered `authenticate` handler is tested by setting the policy variables, clearing the cached `_policy`, and swapping the cached `_jwks` client for a hand-written `FakeJwks` whose `get_signing_key_from_jwt` returns the test key as a `PyJWK` and records the token it was asked about. Only `test_keys_come_from_langsmith` touches the real `PyJWKClient`, and only to check its URI is LangSmith's JWKS URL (it fetches nothing).
+
+**Web (`apps/web/tests/Root.test.tsx`, `apps/web/tests/auth/`).** `Root` takes its dependencies as props — documented as "injectable so tests need no LangSmith" and "no server": `config` (the build's OAuth app config), `signIn` (the `makeSignIn` factory), `check` (the server access check), and `tab`/`local` storages. Root tests pass a misconfigured config to see the error banner, a `check` that answers `ok` or `missing` to drive the session state machine, and a spy-wrapped real `makeSignIn` to confirm the OAuth button appears only when an app is configured; `App` is replaced with a stub so only the sign-in flow is exercised. When no `check` is injected, the test stubs global `fetch` and asserts the default check POSTs to `/assistants/search`.
+
+The `tests/auth/` suite follows the same pattern one level down:
+
+- `oauth.test.ts` drives `langsmithSignIn` with a fake `oidc-client-ts` manager (`getUser`, `signinSilent`, `signinRedirectCallback`, `revokeTokens`, …) and unsigned fake access tokens whose payload names an `organization_id` (the client only reads the org; the server verifies signatures). It covers resume, wrong-organization sign-outs, a single redirect callback for concurrent resumes, token refresh deduplication and expiry, and sign-out racing a refresh.
+- `useSession.test.tsx` gives `useSession` a fake `makeSignIn` whose `LangSmithSignIn` returns scripted `Resumed` values, plus an injected `check`, and asserts states (`checking`, `signed-in`, `signed-out` with a problem), API-key storage in the tab only, and the remembered account.
+- `check.test.ts` passes a fake fetcher to `checkAccess`; `SignIn.test.tsx` renders the form with a stub `LangSmithSignIn` and `checkKey`; `config.test.ts` passes an explicit env object to `langsmithAppConfig`; `stored.test.ts` uses jsdom storages and a `broken` storage that throws `SecurityError`.
+
 ## Snapshot tests (Textual TUI)
 
 `libs/cli/tests/test_tui_snapshots.py` uses `pytest-textual-snapshot`'s `snap_compare`. Board-only cases cover three terminal sizes, a selected piece showing its moves, Black's view with the cursor, and the promotion dialog. Full-app cases run a hybrid game built from a `ScriptedModel` and a `FakeRanker` (System 1 hands e4's reply to the LLM, then plays Nf3's reply alone) and cover the game screen, the light theme on a narrow terminal, stepping back, game over after resigning, the new-game screen, a stopped turn offering retry, advanced settings with an invalid field, and short and narrow terminals. `perf_counter` is stubbed so measured latencies are stable on slow runners.
@@ -196,6 +235,11 @@ Tests marked `live` are deselected by default. They are selected only with `-m l
 The lefthook pre-push hook runs `mise run test`; pre-commit stays on staged files (format, lint, type check, secret scan). `.github/workflows/ci.yml` runs on pull requests (ignoring Markdown, `plans/**` and `openwiki/**`) and is called via `workflow_call` by the deploy workflows, so a deploy is gated on the same checks for its ref. It has three jobs:
 
 - **python** — `check:python`, `test:python`, and the snapshot report artifact on failure.
+- **web** — `check:web`, `test:web`, and `review:size` (the review app's upload budget).
+- **e2e** — installs Playwright Chromium and runs `test:e2e`.
+
+CI does not run live tests or the UCI smoke match.
+ct on failure.
 - **web** — `check:web`, `test:web`, and `review:size` (the review app's upload budget).
 - **e2e** — installs Playwright Chromium and runs `test:e2e`.
 

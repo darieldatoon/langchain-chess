@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:04c45502275621dddceb8d3fed294ac61812312976aa8534b8e5bc90d4ae836a",
+  "pageVersion": "sha256:539498521d9ecd74f43313b2cf1c8cd32d1e32489969d3527e831b442c3499d8",
   "claims": [
     {
       "id": "claim_1ecbc2d3d50a4a449821ccdc61c6422b",
@@ -280,7 +280,7 @@
         },
         {
           "resource": "repo://apps/server/langchain_chess_server/settings.py#L22-L43",
-          "version": "repo-lines-v1:sha256:2183494454ee491b9556717d07f0fd8203a6b6f5efe0acf77ee96cda2ef2d120:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyNGNkYTM0YzY4OTQ4ZjlkNjIwY2JhYjVhYWEyMWYxOWU4ZGY3ZjVkNzFmNWYxMWJhZmU2MDcyZmU5ZmEzOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMzdiYzZhMTc4YmQ0YmZjNThhZDVmYzk1YjI5ZGQyYzJiNjUxZWM0OTYzY2M4MGFhNDBmOTNjZDA1ODUyODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkODA1NTViMDI1YTUxNDEwZThhOTBmNmIyODY4ZTdmNTZlZjQ5M2ZiMDk1OThiOTUxYzUxNGNkNzI5ZWQ5OGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:9d3dfa317d8a3867ac42a45b6d1721c90c6cd02952fd41bf88fb4b979d259670:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyNGNkYTM0YzY4OTQ4ZjlkNjIwY2JhYjVhYWEyMWYxOWU4ZGY3ZjVkNzFmNWYxMWJhZmU2MDcyZmU5ZmEzOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMzdiYzZhMTc4YmQ0YmZjNThhZDVmYzk1YjI5ZGQyYzJiNjUxZWM0OTYzY2M4MGFhNDBmOTNjZDA1ODUyODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkODA1NTViMDI1YTUxNDEwZThhOTBmNmIyODY4ZTdmNTZlZjQ5M2ZiMDk1OThiOTUxYzUxNGNkNzI5ZWQ5OGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -340,23 +340,19 @@
     },
     {
       "id": "claim_e84b7119de344391b0dc2ea82d79ce68",
-      "statement": "The web table shows a ChessCore rejection (state error) as a dismissible \"Move rejected\" banner, a failed run or submit as an inline error message, a 401/403 from the Agent Server as an API-key banner, silently drops a busy-run rejection, and for a pending turn locks the board and offers a Retry button instead of asking the opponent to move.",
+      "statement": "The web table shows a ChessCore rejection (state error) as a dismissible \"Move rejected\" banner, a failed run or submit as an inline error message, a 401/403 from the Agent Server (detected by an anchored check so a provider's 401 inside a run does not match) as a \"Sign-in needed\" banner offering Open settings, silently drops a busy-run rejection, and for a pending turn locks the board and offers a Retry button instead of asking the opponent to move.",
       "evidence": [
         {
           "resource": "repo://apps/web/src/Table.tsx#L124-L187",
-          "version": "repo-lines-v1:sha256:181acb5ac859cdfe198a902274f83a4955557bd46e4d2cf6530c47406ca93dcd:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1ZDkxMTQ1MjIzNWIyZGEzNmVlOGZhM2E1NGRmNDJlZmMxNzcwMzAzMGUxZWUyNTIxODczNGZkOGI0NjVjNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkMjM4MzNmYmQ0N2I0YjQ4ZWY4ODBhMmI0OWVlYTExYmVjMDZkYTI5Y2FjZmY4YjRlZjIxZGI3ZWUxOTA4NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1Y2E1ZDA2OTAxMzNjYWEzNTczYzdjODUwZTMwODhmNDdlNjA4Y2VkYjE4NmYzNjNmZjdkZmJkMWY2N2I5YjgifQ"
+          "version": "repo-lines-v1:sha256:5e5a2daf5aef261932db949f4498645f18e215dbee40fb099330e95906a7a5ae:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4OGE2ZDdjZTY0Mzk0ZDk2ZTgwMDgxZTIyNzEwODNiMzQ1NGM1ZmMxNmRkMWJjODFiOGRmZDY2ZmIyMmUyY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYWYyYTk3OGFlOWRiZmRjZmMxNjNmNTk0YjZiMTc5OGMxOGY1ZjUxODk3NzQzMmE1OTllMDlkYzI3NjkyZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0Yzc5NzNkZTBhNTIwMTM1YWIyNWU3ZDRlZThmNDg4N2Q3MmEyNzE2YTU1MWI4ZWRjNzQ4OGUxYWU1N2U5ZGUifQ"
         },
         {
           "resource": "repo://apps/web/src/Table.tsx#L225-L249",
-          "version": "repo-lines-v1:sha256:59621da1b48cac5553a9f70f434692a47335f9adbc50df8ee33769fc6da25723:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZmExNmI0NzhlNjIyNDE2NzkwMzc3OWNlMjgzZDQ5MWU1M2Q1NTQ2NWM0ODY1MDE3NWYyN2E5MmY5MGExNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiOGRlY2RjYjk2NDBhODkzNDBmZmM0ZGU5ZjMzMTVjY2NhNzUyYjU2ODI4ZTAyMjVjYTg5ODc0YjNlY2U1OTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2ZWQ2OGY1MDExYTMyYTkyZjQ4MDI5MGI5NjlhMzI1YzZhYWUzOGMzNTE4Y2EwMjg1ZGNhMTAxNDllZWQzMGMifQ"
+          "version": "repo-lines-v1:sha256:b7dc631e192338a29db2ea7cb54d1e55c9744d643517575320e6a8e3deeb51c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlZjY5MDA3YTdlNzVjY2RiMmMxOWVmYTlkOTVjNDNiZjc4N2YzM2EyYjljODI2NWM0YTVjZTY0MmZlNmRiZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2NjhiNjg3MWQ5YjJmZDcxMzkwZmZiOTNhNWExYmNiMzU2MjlkMTRkOGRmMzk4MzdiNzgxNTBmZjhjNmE4M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3ODI5YjFhNDYyNjI2NWI3ZTA5OWFhOWM4NzU2MjM3N2I4ZTVlZWM5OTIyOTY5NzY4MGNmMGVhZTJhMzAzYWUifQ"
         },
         {
-          "resource": "repo://apps/web/src/Table.tsx#L367-L374",
-          "version": "repo-lines-v1:sha256:8c7c89e2d7091e2d918914df333c629517a96bf5b1db9526abe5fa5dd71f7368:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmUyODdlZjU3ZjNjZDAyMDY4MzRjNWExOGQ1MzBjNGUzNjc5ZmM5NWQ4ZDI2OWI4MWNhZmU0NGFhMmFmNjBhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODgwMDVkNTcxMDZhMzYyZWIwMDBkYWYzZGE0Njc0YzgyYjUxOGZmNWEyZTJmNjdlZThlNzU3YTMzM2MyYWY2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTIwYWI1ZDUxMWFkMTcwMjE4M2UwOGRhY2YxZDI5ODQ4ODEwMTEyZDcxNDRkZTBlMTk2YTljZjQ2NDY1YzVhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGRjNzI3MzU0YTI1YTg0MDkyZGE5MTYwNzE5MTBmYjA2YWM0MjY0OGQyNmZiODZhNzU2ZTlhZTljM2RjYTg3YSJ9"
-        },
-        {
-          "resource": "repo://apps/web/src/Table.tsx#L520-L567",
-          "version": "repo-lines-v1:sha256:70e1d379f1099f4254485dc35f7157ac2df1ce48fbc52de625c627ff2fc99fc5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MzY2NWU0MWY5ZWIzMmEwMDA4MjM3NDZiZTE5Yjk5NWJmNjc4MTY5NzM3ZTQyYmIyMWMyNGRkY2Y4YTY0MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMzAwNDg0N2UwNGQ4ODQxMmY5NGVhYjZiMDU2NDlkNjJiMDQyM2QwNDliYjRiMzI3YTgxNjMxNmQ2NDQzY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0NDVlMmZiYTMzYTVmMzdiNDQ1MjZjMTgzMGQwZmQ2YTFjYzMxMWRlODE2ODRlMGExZTJiYmVlNTUxZTJmMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5Njg5ZDM4MTU4OTMxYmFmYjQwYmUwYTQyYzUzZjUxOWM0ZjgxZDA1NTc0MzU2ZTIyMGFjMDExMzIzYjQ4ZDkifQ"
+          "resource": "repo://apps/web/src/Table.tsx#L521-L567",
+          "version": "repo-lines-v1:sha256:71017db735086d4cdc7fccfe0418e3e7e39b7e2117d0c5e07783bbd63160aa56:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MzY2NWU0MWY5ZWIzMmEwMDA4MjM3NDZiZTE5Yjk5NWJmNjc4MTY5NzM3ZTQyYmIyMWMyNGRkY2Y4YTY0MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmMjE1ZmQwM2NmYzJiZWViZjgwNGExN2FjNWU5NDc5NTFmN2NkMmRjMDU2MDUyMjQ5OWM2MDZmZGJjZDcxODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0NDVlMmZiYTMzYTVmMzdiNDQ1MjZjMTgzMGQwZmQ2YTFjYzMxMWRlODE2ODRlMGExZTJiYmVlNTUxZTJmMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMDFmNzk1OTZiYTRkYTcyYjJjNWNhMGUzYWZjMGQ0MzMxNjg0YjY5MGQ4OTQ1OWRkYjFlNTdkNmNmNTEyMGUifQ"
         },
         {
           "resource": "repo://apps/web/src/format.ts#L9-L28",
@@ -366,7 +362,7 @@
     },
     {
       "id": "claim_a62fbec4cc7a4b5fb182851ade8bf9cc",
-      "statement": "The web new-game dialog asks GET /ui/model, which returns max_input_tokens from the cached model_limit and takes_effort; it offers memory only for a known input limit and sends no reasoning effort to a model known to take none, and a failed request is treated as knowing nothing.",
+      "statement": "The web new-game dialog asks GET /ui/model (with the tab's session headers), which returns max_input_tokens from the cached model_limit and takes_effort; it offers memory only for a known input limit and sends no reasoning effort to a model known to take none, and a non-OK response, malformed body or network error is treated as knowing nothing.",
       "evidence": [
         {
           "resource": "repo://apps/server/langchain_chess_server/app.py#L59-L63",
@@ -377,8 +373,8 @@
           "version": "repo-lines-v1:sha256:bdc21aaf71b3cc731ef7683a464860476d6f30283c45fee4aca0ede8556fe3d1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODE2ZGMxOGRmZTIwNjRhMWVkZTk1MDE0YjNmZGIzOWUyZWU4OGE2NDUwYTA4OTVhYjYwNmNlOWRkODQ1YTA1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWU3Yzk1N2JjYjQ0ZmI2NzNjOThiMDA1MGE3NWQzODA4MmRiODFkOTE4ZGUzMTNhM2YwN2MxMjM1MzA2ZDdlYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGMyNGQ5YzJmMTgwYjY3ZThkMTljZDI5Mjg0YzFjNzFiMWEzNjFmZDhkNTEzMzgwZDE4OTgzY2ExZGQ3ODAwNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzJkYTE2N2M5MDljMTkwYWExZjc0N2UxNzY4Yzg1MThmNDQzZmUzNGE0ZjQzZGI2NTJmNzRjYTM3NTMwZGRlOSJ9"
         },
         {
-          "resource": "repo://apps/web/src/modelFacts.ts#L1-L41",
-          "version": "repo-lines-v1:sha256:401e8763e1ae5c4565e37a932a517a898509d1bdd30387955acab2f6c18d21f5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwNjU0NGI1MmM1ODEwNWZjMGVkZjdiMGYxZjg5OWViYTMyN2YwNjE4ZjU0OThiNDY1ZTdjODY3MTIzZDRkODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://apps/web/src/modelFacts.ts#L1-L42",
+          "version": "repo-lines-v1:sha256:b75a15e14a883fea2398940edf41f3c2a90948a493ccded7cddd327e32381a1e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMThhMTBmMDAzMjUyNTdiZTc5Mjc0YmE2N2Q4YmE0Y2FhMThhYmRhMjUyZDA0N2U5NTA5YTNlM2YwMDU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -589,10 +585,98 @@
           "version": "repo-lines-v1:sha256:f819e17a18b87379f29b84f0246e9e6c4daf150952e5afed4aac767be026183c:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTlkZWZhOGU3MjA1ODkzODZmMmYxNGI0OTg5ODgzZDNlMDhjOTQ1NTAyNGYxODFhNjQ4M2NmMDk2OTgwZTgwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTUzNTc5ODQ3ZTliMDhjNjg5ZWQ3MGMzNGEwZmM0OGNmMmU0YjZhODJiZWEwZmI2ZDA5ZmQ2OTU0MGUyZTliYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDFhZDU0YzJlMzY2NzI2NGMzZTAyMDVhOGVkYmE4NTA0YmFkYzRjMmUxZjE3ZjZlYjFmNWQ2NTA4OThhNzc4NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODNiMDMyYmMwYWEwZjNhMTU2OWQ0NjU0Yzk0YjJkNWVlNTBiMWFiNjRhZTZkOGM5NDdhYTE5YmY0NTRiMWRhYSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_07e669d3cffd4f60b54013d0d7e8fc06",
+      "statement": "Blank OAUTH_CLIENT_ID or ALLOWED_ORGANIZATION_ID values are treated as unset, and with either unset the server refuses every LangSmith sign-in token, so the deployment accepts API keys only.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/auth.py#L27-L45",
+          "version": "repo-lines-v1:sha256:4b9f05dfd1f9a1978dbc7e8911f6d5dfc2905b93ee2a2caf36b2b171a828cefc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2OWExMzk3NWMyNTZlYzgzMjBlMjAxNjA4M2M5NmRmNjM3Y2EzZDM1YmViZGUyMzE0YmVlM2E0NzExYjU2Y2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0N2NkY2M0MDYzNWE5NjZlYmNhOTRkZTcxMzYyZGI0ZTM0YzhmMGNkMjEwOGZlMWExN2Y4NjU1Y2IyOGM3MGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlYTk1YWQxZDRlODQwN2ExYTgzOTY3ZDUyNDEwNGI1ZDhlMTRmMWRiMTNhNzI2NTg1MTFjM2I2ZWNmNjQxMTcifQ"
+        },
+        {
+          "resource": "repo://apps/server/langchain_chess_server/settings.py#L28-L38",
+          "version": "repo-lines-v1:sha256:ef7594927982b3fdc1cd2b65e14ee0d086753a47cf45337e24b9e5aec88de88a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1MTZlMWFmMDlmODMyNWVhZGQ0NTA3NmE5ZGI1YTYwNzEyNjM1MGFmYTJhMzVkMzcyNTk2YjFiNDZiMGQ1YjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhZjE3ZmY3MDZhMThhNTgxOWY4MzkzYjhkYTIxMDE4ZWE5YmE5YTlhODFmYzFlYTVhYmNjNzZmYjFkNTRjN2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiMDMwNmEyNjUxNzg4N2QwNzJhNjRiOWJkN2E5MDYyYzcyNWEzNWNiNjNjOTM0YjlhODdkYjdlYWI3MjYxMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1MGYyMmMyNDI1YWY0Y2FmYmU3NTBiNDJhNzk2ODExYTM1ZWNmMDhhN2EwNDUzMjZmYTQ3ZGE4ZWI4NzY2ZDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f1c0affc2aa54791bb1661698ee117a8",
+      "statement": "The server's sign-in handler returns 401 for a missing bearer token or one that fails signature, issuer, audience or expiry verification, and 403 for a valid token issued to another OAuth app or to an account outside the allowed organization; requests without an Authorization header (API keys) go to LangSmith's own key check instead.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/auth.py#L1-L99",
+          "version": "repo-lines-v1:sha256:fad36f42e6ba353ee203fc5cf1adf8fdfb4e927fc8f3164373b1ada02c8a9b8a:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmMGY0N2I5YzRmMGZmYzAzMzk0NDA4YmJiYTQzY2U0NWE0MGI2NGEyOTM1M2RiMzNkMGRmOTQzOTk5OWQ3MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjQ5NzUzMzdjM2NjZjkwZGI3ZmU1NTJmN2RmYzU0MjkxMGE0MGIwMGE4NGIxNjVjMTJkYTM3NjdjM2EzNmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ad66d8be662147fb902ca2f78a862fd3",
+      "statement": "The web access check probes the server with POST /assistants/search (limit 1): any status other than 401/403 is accepted, 401/403 with no session is \"Sign-in needed\", 401/403 with a session is \"Sign-in refused\" showing the server's detail, and a thrown fetch is \"Server unreachable\".",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/check.ts#L1-L67",
+          "version": "repo-lines-v1:sha256:b791b95282d77a2cfa6b5c488ec8d72ac04e179bc9a8cf0e0dbd233907b844f8:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlMjliYmEwM2Y3Nzc0YWFhYzcxZmRlNDUwYjdmMzdkMGIwODQwNWVmY2Q2NTVhNjRmNTJjYzg5ZDcwMGU1MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4df6c06ddf5c4ff9a90abc6eccc590aa",
+      "statement": "On load the web app resumes an OAuth sign-in, then a stored API key, then checks whether the server needs no credentials; an unreachable server leaves the user signed out with a \"Couldn't reach the server\" message and a Try again button, and the new-game dialog re-checks access on Play and shows the problem instead of starting the game.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/SignIn.tsx#L195-L218",
+          "version": "repo-lines-v1:sha256:653c8cd8a480b6c5a5beb2c837940762bbae513aed8c4a7d5625d682d81b41bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwNzYzM2ZiYzlkNzI0YjRhZjQ4ODM2NDNiZWZkODZiYTRiMjBhM2MwMTQ4M2NhOGEzMDBkODJkMTdmMDYwZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzYzc3OGZiMjk4YzU2MDVkZDgyYTExZGZhZmJhZmY0NjczYTQ4ODEyZWNjZWM4N2E1Mjg5MTcxNDExNzVjZTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczZTJiZGE5NzM4ZGIyOTI1YmIzNTJiYTNkNDlmOTkwNDY2N2NlMDA5NmI5OGY4ZGYxODYxNTAwMDMxNDIyYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4MmJiMTgxYmYwZmFhODlhZDU2ZGQyN2Q1M2I1YTZmY2JlZTZmOWNiYmRkNzcxM2RkYjFjNTM1ZThkZmJmMzAifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/useSession.ts#L40-L96",
+          "version": "repo-lines-v1:sha256:bdde4480115392eb97910d43d2a927471605b6cd548b22940c0e18515a02f710:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NjI5Y2M0MWY4ZGI1ZGZmMzUyYzY2NWQ0YmExZjczNjRhZTUzMTY1NjQxYWUwNWEzNzU3NmMyOWYxNTY1ZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkYzUyZjA4YjM5YjA4YjAxYzhkMzA4YmY4ODBiMGJlZjAyZmQxZGZjYzlkOWFhOTNhNGQxYjVmNGQ1OGI2Y2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxYjY2NzQ2MDM1ZjZjOGFiNmRkMGFmYTc3YjIzNzY1N2RiOThiZjk2Y2UxZWMxMTk3OTY3Y2U4ZTAwMTBmNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkMTA3NDM0NWI2OGE0OTdlYWRmZGYyY2NhYzMzMDViYmMzYjMwMjE0NDY3ODhiYmMyODI3MTYxMjkzMmY1YWUifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/components/NewGameDialog.tsx#L243-L259",
+          "version": "repo-lines-v1:sha256:de4aa52ef0ce4c47c75d22815e92bf03065a60a1f023d09da926940bf0bd7ad8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNmI2NjE1ZjQ3NTliYjAzNzI5NWNjNzk2NjlhYzM2ZDhlYmU4MjViMjYxOTcxMTRhNzQ5YTk3ODE0MGM3YjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NDhmNjI0MzEyMDRhMGI3NzQ4YjRhNTUxODQyZTZjMDU5ZWMzNWQwY2Y1YTI3NWU2ZDZjZTRiODI1YTEyNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0YzFjNjc3MmRiNWY0ODViNDVmYzVjYTE1ZTkyOTk4N2E4MDFmZTJjOTNiNzExNmNkODRhZTI5MWJhMjZmNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4NTgyNzA4OWFmMTdjZWM1M2IzMWQ4Yzg0YWI1N2U5MjUwZGM0MDYwM2IyNjEwYmYzNjYwODEyOTA1MWJmYTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_244cce081b804198962389ce64776f6d",
+      "statement": "The OAuth session refreshes its access token on demand within 30 seconds of expiry with only one refresh in flight; a failed refresh removes the stored user, signs the tab out with an expired problem shown as a \"Signed out\" banner, and fails the request with a sign-in-expired error.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/SignIn.tsx#L214-L218",
+          "version": "repo-lines-v1:sha256:904d9451c92ee578accfefcddc53df6eeda4ef809d00b4f137bb9099f8aeabc0:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjA1Y2Q3M2NkYTZhNWQwY2ZmZjA1YjBjODIxMGY4YWViMDZiNGVkY2U2OTQxMGQ5ZDEzMzY3YzAzYzU4Zjg1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNjNzc4ZmIyOThjNTYwNWRkODJhMTFkZmFmYmFmZjQ2NzNhNDg4MTJlY2NlYzg3YTUyODkxNzE0MTE3NWNlNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQ5YjE0ZTUxNjMwMmNmYTFhNGFkMDJlYjhjMmVjNWU5YTUwZWRhNDlkMzlkNGYzZjMxNWE2MDg0MDQ3MzI1OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjgyYmIxODFiZjBmYWE4OWFkNTZkZDI3ZDUzYjVhNmZjYmVlNmY5Y2JiZGQ3NzEzZGRiMWM1MzVlOGRmYmYzMCJ9"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/oauth.ts#L125-L165",
+          "version": "repo-lines-v1:sha256:2c9745d9b3cbb7a34ef6d28d5e2bf7c6f3742206fa7db307902aa3e49c7c496c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNmM3ZjUyZDZjZGFmNmRiNDY1MjgzMmQxODEyYWUzM2VhNzc5NTQ4NThmZWRiZTQ0MWZiYTg3MDE2Y2VlODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5ODZiZjU3ZmM3NTUzM2IyZDVmMzBjMjdkYzZjMzQ3ZjQ3MWJmYWFiOGQ0Y2UwNzU5OTA5MDQxYTkxYmVkYTYifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/useSession.ts#L67-L74",
+          "version": "repo-lines-v1:sha256:e4eb3d260c36838850eb74ff2e295f729d2437578e5a051ade039ece8c0cd583:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGRkYjRiZjNiZmEwZTM5YzdlYTMwYjRkOGFmYTI5YjBiOTY0NDJkNDM2OTEzZTU5YWIxNDI4MjZkZjQ5M2E1NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlZjAxYmMwOGRiYzNiNjNlNGU3NWVhM2QyNmE1Yjk0MTg5MTg3N2UyN2FkODkxMzI5Yzg0MTFkN2Q4ZGM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTFiZjlhNTI5OWYzZjRmN2E1Yjk1MTZlYzQ1YzVjMTcyODM5NjM0OWM4Y2JmNWVjYmUxNDBjYThlMGFlYTY3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDljZGIxMzBiMzc1MTE2MjliYzI5Y2FmZTIyMWI0MWJiM2M5ZGIyYzYwYmRiY2VmYWI4NjVkODY3MDkyMDE5NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0c8999edb19c4981afc37c816397647a",
+      "statement": "After an OAuth redirect the web app compares the token's unverified organization_id claim with the build's organization and, on mismatch, signs out and reports a wrong-organization problem; a later attempt forces LangSmith's consent page to choose another organization.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/SignIn.tsx#L37-L53",
+          "version": "repo-lines-v1:sha256:99cb2f902d982df18f98dcfb2824792b192614a29dc7686916204b3401adb9f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2Y2M5MmNjZGRkOWNjZWMzM2ZkYjVlMGNlZTJkYzg3MjgyMDM4MDVlZTA2NTFlMmQ2ZmQ5OTkzYmQ0ZWQxYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiMDZmYjU5OGEyYmIzYmZiMmEyMTFmNzE2MDEwZjFiMDhlNzU2MTk2ZDE4NmY1Y2YwNGRmOTkxZTMzZWU1ZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhZWEyMWVmYjA2MDU2Yjg2MTg5MzU3OTdhNzFlYmIwOTA2MzQyMWQ5MzdiZTc3NjQwMTMwZjgzMDYxNGYxOWQifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/oauth.ts#L166-L188",
+          "version": "repo-lines-v1:sha256:dbeef3479b2826b3ff58459aa7329bfeb929bb21ddc48f2aaeaaa1fbab74c5b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwZDU4MDgxNzRlNmJhZWQ1NGM5ZGE4YTU2YTgxMWEwYTRkZjQyZTAyZWIzNGM1OGVmZWI1M2E4ZWYwZGE2YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NzdkMmYwMzFlOThiNWU5MTFjNWFkNGZiOWIyMTg2YTkzMjUyMmU4ZjQ2ZWU0MGJhYmZhZTNkYTAwZmMxMjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxZTkyNWNjNWM0YzkyNGY0ZjA1OWZhNzg0MmVhOThmYTBmYmFmY2I3MGQ2ZWU5ODUzNTQ4MGM1ZDM0OWMwZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5N2JhMGVkNDViMjQ4YjdmMTgwZWVhODU2NGU3ZWZiZWYwZTRjMDc3ODhkYjVmNmRkMmY0MjFhYzM0YWU0NzcifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/oauth.ts#L86-L95",
+          "version": "repo-lines-v1:sha256:3c23b2871edb24917cb02b510a2912e680ff2b7c50ac0c2e9a6bfecdb0afb5ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljMWJhMjNhN2RkNGZkYTFjNjg2MDIzZmU2NjhhMzVhY2EwNDI4OWU3ZmI4MjA4NTdkYjE1Y2IxYTYyZmJhMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhNTA1NzA2Yjg0M2U5MjAwMjY1YzQ2NmNiNWU4OTYxMjgyMTBhZThmZGRkOTk5ODZiMjIwY2RiNGU4MmJjMjkifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-11-01T01:10:29.908Z"
+    "at": "2026-11-01T03:07:46.931Z"
   }
 }

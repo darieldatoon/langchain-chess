@@ -1,11 +1,8 @@
 ---
 type: architecture overview
-title: Web frontends (apps/web, apps/review, packages/chess-ui)
-description: How the React play UI (apps/web) drives the chess graph through useStream with one thread per game, starts games from any position, continues any game from the setup recorded in its thread, and exports settings and PGN; how its render.html page draws positions-dataset runs inside LangSmith over postMessage; how the LangSmith review app (apps/review) reads and launches game grading; and how both share packages/chess-ui, including the settings schema generated from the Python ChessContext, inside a Vite+ pnpm workspace.
-tags: [frontend, react, web-ui, review-app, chess-ui, vite-plus, useStream, game-setup, output-renderer, settings-schema]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T01:10:29.908Z
+title: Web frontends
+description: How the React play UI (apps/web) gates on a sign-in session, then drives the chess graph through useStream on a session-authenticated SDK client with one thread per game, starts games from any position, continues any game from the setup recorded in its thread, and exports settings and PGN; how its render.html page draws positions-dataset runs inside LangSmith over postMessage; how the LangSmith review app (apps/review) reads and launches game grading; and how both share packages/chess-ui, including the settings schema generated from the Python ChessContext, inside a Vite+ pnpm workspace.
+tags: [frontend, react, web-ui, review-app, chess-ui, vite-plus, useStream, game-setup, output-renderer, settings-schema, sign-in]
 sources:
   - id: openwiki-source-5f219f204b3e870beec929d9
     resource: repo://.github/workflows/pages.yml
@@ -47,8 +44,16 @@ sources:
     resource: repo://apps/web/render.html
   - id: openwiki-source-1b589132a05fcfdecd7cc1d4
     resource: repo://apps/web/src/App.tsx
-  - id: openwiki-source-6bcec85ddd7955325f5b1865
-    resource: repo://apps/web/src/auth.ts
+  - id: openwiki-source-fde4d91838391ae51474c06b
+    resource: repo://apps/web/src/auth/check.ts
+  - id: openwiki-source-fe293e29941663c7d6f751f0
+    resource: repo://apps/web/src/auth/config.ts
+  - id: openwiki-source-958c86b14cece0555a5ab2c3
+    resource: repo://apps/web/src/auth/session.ts
+  - id: openwiki-source-bcef43de392e407e18431d20
+    resource: repo://apps/web/src/auth/stored.ts
+  - id: openwiki-source-080933253640cf8c93f7692b
+    resource: repo://apps/web/src/auth/useSession.ts
   - id: openwiki-source-6c16a0bf13a1dee1d6a311ca
     resource: repo://apps/web/src/commands.ts
   - id: openwiki-source-69320542b148a0b7ce9830b7
@@ -67,6 +72,8 @@ sources:
     resource: repo://apps/web/src/format.ts
   - id: openwiki-source-f78d0b7d64a02f657382652c
     resource: repo://apps/web/src/index.css
+  - id: openwiki-source-8e8b395281c4996e784ae3b5
+    resource: repo://apps/web/src/main.tsx
   - id: openwiki-source-7f2e3520a656d432bb97cc86
     resource: repo://apps/web/src/modelFacts.ts
   - id: openwiki-source-317427f883fe1e61687ad02b
@@ -79,6 +86,8 @@ sources:
     resource: repo://apps/web/src/render/RenderApp.tsx
   - id: openwiki-source-19a42ef883802736914257fc
     resource: repo://apps/web/src/render/useParentMessage.ts
+  - id: openwiki-source-f2887a22b7d95aeb9307ea2d
+    resource: repo://apps/web/src/Root.tsx
   - id: openwiki-source-3cb426dd15d324cb1ef8679d
     resource: repo://apps/web/src/settings.ts
   - id: openwiki-source-be4a82601d4a0ee9e1634703
@@ -119,7 +128,10 @@ sources:
     resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-5e1b077422a94ae165e88e4e
     resource: repo://vite.config.ts
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-11-01T03:07:46.931Z
 ---
 
 # Web Frontends
@@ -130,7 +142,7 @@ The JavaScript side of the repository is a pnpm workspace. Its frontend packages
 - `apps/review` is a LangSmith custom app for looking at graded games and starting new grading jobs.
 - `packages/chess-ui` holds the board, move list, layout shell, types, selectors, PGN/opening helpers and the settings model that both apps use.
 
-None of them import Python. The play UI reaches the agent over the Agent Server HTTP API. The renderer fetches nothing: it only reads messages that LangSmith posts to it. The review app only talks to the LangSmith API. For the server side of that boundary, see [Agent Server integration](/openwiki/integrations/agent-server.md). For the thread values the UIs read, see [State record](/openwiki/concepts/state-record.md). For the settings themselves, see [Settings and model arguments](/openwiki/concepts/settings-and-model-arguments.md).
+None of them import Python. The play UI reaches the agent over the Agent Server HTTP API, signed in with LangSmith or an API key (see [LangSmith sign-in](/openwiki/integrations/langsmith-sign-in.md)). The renderer fetches nothing: it only reads messages that LangSmith posts to it. The review app only talks to the LangSmith API. For the server side of that boundary, see [Agent Server integration](/openwiki/integrations/agent-server.md). For the thread values the UIs read, see [State record](/openwiki/concepts/state-record.md). For the settings themselves, see [Settings and model arguments](/openwiki/concepts/settings-and-model-arguments.md).
 
 ```mermaid
 flowchart LR
@@ -140,8 +152,9 @@ flowchart LR
     Review["apps/review"]
     UI["packages/chess-ui (TS source)"]
   end
-  Web -->|"useStream on graph chess"| AS["Agent Server"]
-  Web -->|"GET /ui/model"| AS
+  Web -->|"useStream on graph chess, session headers"| AS["Agent Server"]
+  Web -->|"GET /ui/model, POST /assistants/search"| AS
+  Web -->|"OAuth sign-in"| LSO["LangSmith sign-in"]
   Pages["GitHub Pages or server /ui/"] -->|"serves the build"| Web
   LSR["LangSmith dataset view"] -->|"postMessage in iframe"| Render
   Review -->|"window.langsmith.call"| LS["LangSmith API"]
@@ -155,11 +168,11 @@ flowchart LR
 
 ### Entry and served location
 
-`src/main.tsx` mounts `App` inside `StrictMode`, `AppThemeProvider` and `TooltipProvider`. There are two build inputs: `index.html` (the play UI) and `render.html` (the output renderer, see [below](#renderhtml-the-langsmith-output-renderer)).
+`src/main.tsx` mounts `Root` inside `StrictMode`, `AppThemeProvider` and `TooltipProvider`. There are two build inputs: `index.html` (the play UI) and `render.html` (the output renderer, see [below](#renderhtml-the-langsmith-output-renderer)).
 
 The bundle is built for one of two homes (`apps/web/vite.config.ts`):
 
-- **GitHub Pages (the deployment).** `.github/workflows/pages.yml` builds with `BASE_PATH=/<repo>/`, `OUT_DIR=dist` and `VITE_API_URL` set to the agent deployment's URL, and publishes `apps/web/dist`. The job is skipped until `VITE_API_URL` is configured.
+- **GitHub Pages (the deployment).** `.github/workflows/pages.yml` builds with `BASE_PATH=/<repo>/`, `OUT_DIR=dist`, `VITE_API_URL` set to the agent deployment's URL, and the sign-in variables `VITE_OAUTH_CLIENT_ID`, `VITE_LANGSMITH_ORGANIZATION_ID` and `VITE_LANGSMITH_SSO_SLUG` (left unset, the build offers API keys only), and publishes `apps/web/dist`. The workflow is skipped until `VITE_API_URL` is configured. It runs CI on the current tip of `main` first, holds a queueing concurrency lock so publishes go out in push order, and a re-run build skips itself when a newer commit changed the UI and a newer run will publish it.
 - **The Python server (local runs and e2e tests).** By default the build uses `base: "/ui/"` and writes into `apps/server/langchain_chess_server/static`. `apps/server/langchain_chess_server/app.py` mounts that directory at `/ui` when it exists and redirects `/ui` to `/ui/`. It mounts under `/ui` rather than `/` because `/` is the server's health check. When no build exists (as in the deployment), `/ui/` returns a 404 that tells you to run `mise run build` or `vp dev`, while `/ui/config` and `/ui/model` still answer.
 
 `apiUrl()` in `src/settings.ts` decides where the API is:
@@ -170,9 +183,21 @@ The bundle is built for one of two homes (`apps/web/vite.config.ts`):
 
 The build splits vendor code into long-lived chunks (react, langchain, chessboard, ui). Vite's preload helper gets a chunk of its own, because otherwise it lands in the langchain chunk and `render.html`, which needs no LangChain code, would download all of it. There is deliberately no catch-all vendor group, so the lazily loaded Markdown chunk stays separate.
 
+### Root: sign-in first, then App with a session
+
+`Root` (`src/Root.tsx`) decides whether the page may play at all. It reads the build's sign-in configuration (`langsmithAppConfig`): a client id without an organization id shows a "This build is misconfigured" banner and nothing else. Otherwise `useSession` resolves the tab's `Session` and `Root` renders by its status:
+
+- `checking`: an empty, busy page.
+- `signed-out`: the `SignIn` screen (Sign in with LangSmith when the build has an OAuth app, or an API key that is checked against the server before it is kept), with the reason it opened, such as an expired sign-in.
+- `signed-in`: `App` with that `session` and an `onSignOut` callback.
+
+A `Session` (`src/auth/session.ts`) is one of three kinds: `none` (the server takes no credential, as with `langgraph dev` or a local server), `apiKey` (a LangSmith API key kept in `sessionStorage` for this tab only), or `oauth` (an email and an `accessToken()` function, called per request because access tokens last five minutes). `sessionHeaders` turns it into `x-api-key` or `Authorization: Bearer …`. `useSession` resumes in order: a LangSmith sign-in, this tab's API key, else `none` if the server accepts an unauthenticated `/assistants/search`. The OAuth flow, the organization check and the stored account are described in [LangSmith sign-in](/openwiki/integrations/langsmith-sign-in.md).
+
+Everything below `Root` takes the session as a value: `App` passes it to every `Table`, the key check, the model-facts request and the Settings dialog. Signing out returns to the sign-in screen, which unmounts `App`.
+
 ### App, seats and the Table
 
-`App` (`src/App.tsx`) owns the page-level state: the stored app settings, last setup, reply-card view (`TurnView`) and display preferences, the current `Seat`, and an `Overlay` (New game dialog, Settings, or none). It computes the board layout from the container size (`layoutFor`/`allocate` from chess-ui) and renders either a `Table` for the seat or, before any game, an `EmptyTable` behind the dialog.
+`App` (`src/App.tsx`) owns the page-level state: the last setup, reply-card view (`TurnView`) and display preferences, the current `Seat`, and an `Overlay` (New game dialog, Settings, or none). It computes the board layout from the container size (`layoutFor`/`allocate` from chess-ui) and renders either a `Table` for the seat or, before any game, an `EmptyTable` behind the dialog. Off phones, the header shows the signed-in email for a LangSmith session.
 
 A `Seat` (`src/Table.tsx`) has a `number`, an `autoStart` flag and `chosen`, a `GameRecord` (`side`, `context`, `startFen`) or `null`. The `Table` is keyed by the seat number, so a new number remounts it and its `useGame`:
 
@@ -185,7 +210,7 @@ On mount, a table whose seat has `autoStart` sends `start` once. A ref guards th
 
 ### useGame: one useStream, one thread, one game
 
-`useGame(apiKey, chosen)` in `src/useGame.ts` is the only connection to the agent. It opens one `useStream<ChessValues>` from `@langchain/react` with `assistantId: "chess"`, the chosen `apiKey` (omitted when empty) and the current `threadId`. `chosen` is used only until the thread records its own setup. Everything the page renders is derived from `stream.values`:
+`useGame(session, chosen)` in `src/useGame.ts` is the only connection to the agent. It builds one SDK `Client` per session with `sessionClient(apiUrl(), session)` and opens one `useStream<ChessValues>` from `@langchain/react` with that `client`, `assistantId: "chess"` and the current `threadId`. The client sets `apiKey: null` (so the SDK never looks for a key in the environment) and adds the session's headers, freshly computed, to every request and stream through `onRequest`; an OAuth session therefore asks for a current access token on each request. `chosen` is used only until the thread records its own setup. Everything the page renders is derived from `stream.values`:
 
 - `startFen` comes from `startFenOf(values, chosen)`: the thread's `start_fen` once the server has accepted the root (any turn exists, `rootAccepted`), else the new game's pick. `start_fen` alone proves nothing, because a rejected first command still writes the standard one.
 - It replays `startFen` plus `moves` with chess.js (`replay` from chess-ui) to get the board FEN, the FEN after every move, and fallback SANs.
@@ -221,7 +246,7 @@ A game from the URL can only be played once it has loaded. `restore` tracks each
 - `failed` when the load rejects,
 - `ready` otherwise.
 
-A superseded load that settles late can't overwrite the current one's outcome. A changed API key creates a new client, which loads the thread again. The `Table` shows a "Couldn't load this game" banner with a Reload button for `failed`, and a "This game isn't on the server" banner for `missing`.
+A superseded load that settles late can't overwrite the current one's outcome. A new session (a new sign-in) creates a new client, which loads the thread again with a new hydration promise. The `Table` shows a "Couldn't load this game" banner with a Reload button for `failed`, and a "This game isn't on the server" banner for `missing`.
 
 ```mermaid
 sequenceDiagram
@@ -292,7 +317,7 @@ Errors come from these places:
 
 - `values.error` is a move rejection recorded in graph state. It appears as a dismissible "Move rejected" banner and comes back on the next command. A "the game is over" refusal of a resent first packet after the game ended is not shown.
 - `stream.error` and submit failures appear as an `ErrorMessage`; a stopped pending turn also shows that error on the reply card.
-- Auth failures show a "LangSmith API key needed" banner that links to Settings. `isAuthError` (`src/format.ts`) detects them from HTTP status 401/403, or from SDK request messages that *start* with `HTTP 401/403`, `Protocol request failed: 401/403` or `Thread state request failed: 401/403`. The match is anchored so that a failed run's message, such as a model provider's 401, isn't mistaken for the browser's key being refused.
+- Auth failures show a "Sign-in needed" banner ("Sign out in Settings and sign in again") with an "Open settings" action. `isAuthError` (`src/format.ts`) detects them from HTTP status 401/403, or from SDK request messages that *start* with `HTTP 401/403`, `Protocol request failed: 401/403` or `Thread state request failed: 401/403`. The match is anchored so that a failed run's message, such as a model provider's 401, isn't mistaken for the browser's sign-in being refused.
 - Load failures show the `failed` / `missing` banners described above.
 
 ### Game export: FEN, PGN and Lichess
@@ -313,16 +338,16 @@ The dialog edits a `Setup`: side (White, Black or Random), System 1 model or non
 
 Number fields and the model-arguments JSON field in Advanced settings keep their own text; while that text isn't a valid value, Play is blocked ("Fix the Advanced settings marked invalid"); an invalid starting position blocks it too ("Fix the starting position."). Advanced settings only show the sections that matter for the chosen matchup; gate and shortlist knobs appear only for hybrid. Collapsed, Advanced shows a one-line summary (side, opponent, number of changed settings). Each setting's label and tooltip come from the generated `SETTING_LABELS` and `SETTING_HELP`.
 
-**Model facts.** The dialog asks the server about the chosen LLM through `GET /ui/model?model=…` (`src/modelFacts.ts`), sending `x-api-key` when a key is set. It waits 300 ms (`LIMIT_DELAY_MS`) so typing a custom spec doesn't flood the server. The server answers `{ max_input_tokens, takes_effort }` (`app.py`). A reply with a number or `null` limit and a boolean `takes_effort` is `known`; a non-OK response, a malformed body or a network error is `failed`, which says nothing about the model. The limit maps to `summarize`: a number is `yes`, `null` (no known limit, or the model can't be built) is `no`, and `failed` is `unknown`; a failed request counts as taking an effort, since the server checks again. The Summarize memory option is disabled only for `no`. An answer that arrives for a model that is no longer selected is dropped, Retry asks again, and a changed API key asks again.
+**Model facts.** The dialog asks the server about the chosen LLM through `GET /ui/model?model=…` (`fetchModelFacts` in `src/modelFacts.ts`), sending the session's headers (`sessionHeaders`). It waits 300 ms (`LIMIT_DELAY_MS`) so typing a custom spec doesn't flood the server. The server answers `{ max_input_tokens, takes_effort }` (`app.py`). A reply with a number or `null` limit and a boolean `takes_effort` is `known`; a non-OK response, a malformed body or a network error is `failed`, which says nothing about the model. The limit maps to `summarize`: a number is `yes`, `null` (no known limit, or the model can't be built) is `no`, and `failed` is `unknown`; a failed request counts as taking an effort, since the server checks again. The Summarize memory option is disabled only for `no`. An answer that arrives for a model that is no longer selected is dropped, Retry asks again, and a new session asks again (`App` keeps the facts function stable per session).
 
 Pressing Play does two things:
 
-1. It checks the API key. `checkApiKey` POSTs `{limit: 1}` to `/assistants/search` with `x-api-key` when a key is set. Any status other than 401/403 counts as ok. A 401/403 means `missing` if no key was sent and `rejected` if one was. A network error means `unreachable`. Because `langgraph dev` accepts anything, an empty key only counts as missing when the server says so (`src/auth.ts`). A failed check shows a banner with an "Open settings" action.
-2. If the key is ok, and the picks and starting position on screen are still the ones Play was pressed for and still playable, `App` saves the setup, resolves a Random side once (the game keeps that colour), and seats the game with that side, context and start as `chosen`.
+1. It checks the sign-in. `checkAccess` (`src/auth/check.ts`) POSTs `{limit: 1}` to `/assistants/search` with the session's headers. Any status other than 401/403 counts as ok. A 401/403 means `missing` for a `none` session and `rejected` otherwise (carrying the server's `detail` when it gives one). A network error means `unreachable`. Because `langgraph dev` accepts anything, no credential only counts as missing when the server says so. A failed check shows a banner from `keyCheckMessage` ("Sign-in needed", "Sign-in refused" or "Server unreachable") with an "Open settings" action that keeps the draft. The same check backs the sign-in screen's API-key form and the session resume.
+2. If the check is ok, and the picks and starting position on screen are still the ones Play was pressed for and still playable, `App` saves the setup, resolves a Random side once (the game keeps that colour), and seats the game with that side, context and start as `chosen`.
 
 If the dialog unmounts while the check is running (cancelled, or sent to Settings), a late answer does nothing. If the picks were edited during the check, the answer doesn't start a game and you have to press Play again.
 
-The API key is the only app-level setting. The Settings dialog trims it, stores it under `langchain-chess:app`, and it is sent as `apiKey` to `useStream`, the key check and the model-facts request.
+The Settings dialog (`AppSettingsDialog`) holds no editable setting any more: it describes the current session ("This server needs no sign-in.", "Signed in with a LangSmith API key. It stays in this tab only." or "Signed in with LangSmith as <email>.") and offers Sign out for any session other than `none`. The opponent is chosen per game in the New game dialog.
 
 ### Settings import and export files
 
@@ -335,7 +360,7 @@ The same file format is what the Python side loads (see [Settings and model argu
 
 ### Persistence is untrusted
 
-localStorage holds four things (`src/storage.ts`): the last New game setup (`langchain-chess:setup`), the app settings (`langchain-chess:app`), which reply-card sections are open (`langchain-chess:view`), and display preferences such as board scale, material, mistake notes, wheel stepping and the tab-title alert (`langchain-chess:display`). A game's own setup and starting position live in its thread. Every reader accepts missing, old or corrupt entries, and also blocked storage:
+localStorage holds three things for the game UI (`src/storage.ts`): the last New game setup (`langchain-chess:setup`), which reply-card sections are open (`langchain-chess:view`), and display preferences such as board scale, material, mistake notes, wheel stepping and the tab-title alert (`langchain-chess:display`). A game's own setup and starting position live in its thread. Credentials are not here: an API key lives in `sessionStorage` (`langchain-chess:api-key`), localStorage keeps only the last LangSmith account's email (`langchain-chess:last-account`), and the session resume deletes the key older versions kept under `langchain-chess:app` (`src/auth/stored.ts`). Every reader accepts missing, old or corrupt entries, and also blocked storage:
 
 - `browserStorage()` returns `null` when reading `localStorage` throws or every call on it throws. Writers report whether the write landed. When storage is blocked, or a save fails, `App` shows a "This browser isn't saving" banner.
 - A stored setup carries the settings `version` its knobs are in (`storedSetup`). `sanitizeSetup` treats a setup without a version as the defaults, and otherwise falls back field by field. Its knobs go through `sanitizeContext`, which migrates them from their version dropping unknown keys, then keeps each valid value on its own and gives each failing one its default. If the version itself can't be read, no stored knob is trusted. So obsolete storage can't reach a run.
@@ -436,4 +461,7 @@ Data flow (`src/api.ts`):
 - **Tooling.** Every package uses Vite+ (`vp`): `vp dev`, `vp build`, `vp test --run --coverage`. At the root, `vp check`, `vp run -r test` and `vp run -r build` run across the workspace (`package.json`). The review app's `dev` script is `langsmith apps dev`.
 - **One version per shared dependency.** `pnpm-workspace.yaml` pins shared dependencies in a `catalog`, including `vite` aliased to `@voidzero-dev/vite-plus-core`. Every package refers to them as `catalog:`, so the apps and chess-ui can't drift. An override forces every `vite@*` to the catalog version.
 - **Lint and format.** These are configured only in the root `vite.config.ts`, because Vite+ ignores `lint`/`fmt` blocks in nested configs. Oxlint runs with the react, typescript and oxc plugins, type-aware with type checking. Rules include `react/rules-of-hooks` and `vite-plus/prefer-vite-plus-imports`, which is why tests import `vi` from `vite-plus/test`. Formatting skips `apps/server`, `libs`, the Python parts of `evals`, `openwiki/**`, and the generated `packages/chess-ui/src/generated/**`, which a test compares byte for byte.
-- **Tests.** Each app runs jsdom Vitest over `tests/**/*.test.{ts,tsx}` with a **100% coverage threshold** on lines, functions, branches and statements. The review app writes coverage outside its own directory, because `langsmith apps push` uploads the directory without reading `.gitignore`. Most web tests replace `useStream` with a shared fake (`apps/web/tests/support/fakeStream.ts`). The fake records every option set, supports per-thread overrides so tests can hold two games apart, and exposes `hydrationPromise` and `getThread` so load outcomes can be simulated. `useGame.sdk.test.tsx` runs the real SDK over a stubbed `fetch` to pin how it settles a thread load. `App` takes injectable `random`, `checkKey` and `modelFacts`, so tests are deterministic and need no server. Focused suites include `useGame.test.tsx`, `App.test.tsx`, `commands.test.ts`, `storage.test.ts`, `setup.test.ts`, `settings.test.ts`, `files.test.ts`, `export.test.ts`, `modelFacts.test.ts`, `auth.test.ts`, `title.test.ts`, the dialog and component suites under `tests/components/`, and the renderer's `tests/render/` suites. chess-ui's `settings.test.ts` runs the shared Python settings cases. The review app has `logic.test.ts`, `analysis.test.ts`, `components.test.tsx`, `App.test.tsx` and `entry.test.tsx`. See [Testing conventions](/openwiki/testing/testing-conventions.md).
+- **Tests.** Each app runs jsdom Vitest over `tests/**/*.test.{ts,tsx}` with a **100% coverage threshold** on lines, functions, branches and statements. The review app writes coverage outside its own directory, because `langsmith apps push` uploads the directory without reading `.gitignore`. Most web tests replace `useStream` with a shared fake (`apps/web/tests/support/fakeStream.ts`). The fake records every option set, supports per-thread overrides so tests can hold two games apart, and exposes `hydrationPromise` and `getThread` so load outcomes can be simulated. `useGame.sdk.test.tsx` runs the real SDK over a stubbed `fetch` to pin how it settles a thread load. `App` takes a `session` plus injectable `random`, `checkKey(session)` and `modelFacts(session, model)`, and `Root` takes injectable `config`, `signIn`, `check` and storages, so tests are deterministic and need neither a server nor LangSmith. Focused suites include `useGame.test.tsx`, `App.test.tsx`, `commands.test.ts`, `storage.test.ts`, `setup.test.ts`, `settings.test.ts`, `files.test.ts`, `export.test.ts`, `modelFacts.test.ts`, `format.test.ts`, `Root.test.tsx`, `main.test.tsx`, the sign-in suites under `tests/auth/` (`session`, `check`, `config`, `oauth`, `stored`, `useSession`, `SignIn`), `title.test.ts`, the dialog and component suites under `tests/components/`, and the renderer's `tests/render/` suites. chess-ui's `settings.test.ts` runs the shared Python settings cases. The review app has `logic.test.ts`, `analysis.test.ts`, `components.test.tsx`, `App.test.tsx` and `entry.test.tsx`. See [Testing conventions](/openwiki/testing/testing-conventions.md).
+testing/testing-conventions.md).
+ttings.test.ts` runs the shared Python settings cases. The review app has `logic.test.ts`, `analysis.test.ts`, `components.test.tsx`, `App.test.tsx` and `entry.test.tsx`. See [Testing conventions](/openwiki/testing/testing-conventions.md).
+gic.test.ts`, `analysis.test.ts`, `components.test.tsx`, `App.test.tsx` and `entry.test.tsx`. See [Testing conventions](/openwiki/testing/testing-conventions.md).
