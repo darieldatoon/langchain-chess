@@ -18,7 +18,7 @@ NO_GAME = "The thread has no game in its traces."
 
 
 class MarkStore(Protocol):
-    def thread_runs(self, project: str, thread_id: str) -> list[RootRun]: ...
+    async def thread_runs(self, project: str, thread_id: str) -> list[RootRun]: ...
     def settle(self, runs: Sequence[RootRun], failure: str | None) -> None: ...
 
 
@@ -45,9 +45,10 @@ def verdicts(
     return marks
 
 
-def _settle(store: MarkStore, project: str, marks: dict[str, str | None]) -> None:
+async def _settle(store: MarkStore, project: str, marks: dict[str, str | None]) -> None:
     for thread_id, failure in marks.items():
-        store.settle(store.thread_runs(project, thread_id), failure)
+        runs = await store.thread_runs(project, thread_id)
+        await asyncio.to_thread(store.settle, runs, failure)
 
 
 async def sandbox_job(
@@ -78,11 +79,9 @@ async def sandbox_job(
         except Exception as error:
             log.append(f"{type(error).__name__}: {error}")
             marks = verdicts(selection.ids, events, "\n".join(log))
-            await asyncio.to_thread(_settle, store, selection.project, marks)
+            await _settle(store, selection.project, marks)
             raise
-        await asyncio.to_thread(
-            _settle, store, selection.project, verdicts(selection.ids, events, None)
-        )
+        await _settle(store, selection.project, verdicts(selection.ids, events, None))
         return summary
     finally:
         delete_sandbox()
