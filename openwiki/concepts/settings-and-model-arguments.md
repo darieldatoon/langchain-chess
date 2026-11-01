@@ -1,19 +1,25 @@
 ---
 type: configuration schema
-title: Settings, versions and model arguments
-description: The versioned CoreSettings/ChessContext opponent schema shared by the agent server, CLI, web app and evals. Covers migrate/resolve and merge order (assistant context, then configurable, with null meaning reset), how model_kwargs are checked on each surface, codegen of JSON Schema and TypeScript into packages/chess-ui, and opponent settings files.
-tags: [settings, chess-context, versioning, model-kwargs, codegen, json-schema]
+title: Settings and model arguments
+description: The versioned CoreSettings/ChessContext opponent schema shared by the agent server, CLI, web app and evals. Covers migrate/resolve and merge order (assistant context, then configurable, with null meaning reset), how model_kwargs are checked on each surface, codegen into packages/chess-ui, opponent settings files, and the server's environment ServerSettings, including OAuth sign-in settings for which a blank value means unset.
+tags: [settings, chess-context, versioning, model-kwargs, codegen, json-schema, server-settings, oauth]
 sources:
+  - id: openwiki-source-d6b546398e3b1c03ecb0494a
+    resource: repo://apps/server/langchain_chess_server/auth.py
   - id: openwiki-source-9e73cfc78a8aeac72fc36a15
     resource: repo://apps/server/langchain_chess_server/codegen.py
   - id: openwiki-source-65aad166aa88a58cc7a8319a
     resource: repo://apps/server/langchain_chess_server/context.py
   - id: openwiki-source-c9b903d37e22daedc4499a4b
     resource: repo://apps/server/langchain_chess_server/graph.py
+  - id: openwiki-source-e3b0d2af80ee0702b2be4a6b
+    resource: repo://apps/server/langchain_chess_server/settings.py
   - id: openwiki-source-bae425afdb2f1082f5506562
     resource: repo://apps/server/tests/test_codegen.py
   - id: openwiki-source-0486059a508cedacd209f083
     resource: repo://apps/server/tests/test_context.py
+  - id: openwiki-source-f3c191b904053bff31100758
+    resource: repo://apps/server/tests/test_settings.py
   - id: openwiki-source-be4a82601d4a0ee9e1634703
     resource: repo://apps/web/src/setup.ts
   - id: openwiki-source-aa3e6650e2e2db69113e88b1
@@ -42,10 +48,10 @@ sources:
     resource: repo://mise.toml
   - id: openwiki-source-c81a61ad418f9c19c518d61d
     resource: repo://packages/chess-ui/src/settings.ts
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
 verified:
   - by: openwiki/0.6.0
-    at: 2026-11-01T01:10:29.908Z
+    at: 2026-11-01T03:07:46.931Z
 ---
 
 # Settings, versions and model arguments
@@ -154,6 +160,23 @@ For how the resolved arguments reach the gateway and affect token accounting, se
 
 The hand-written `packages/chess-ui/src/settings.ts` mirrors `migrate`, `resolve`, `load` and `load_recorded` on top of those generated values. `libs/systemone/tests/fixtures/settings-cases.json` is a shared fixture (`files`, `recorded`, `values`) that holds the Python and TypeScript readers to the same answers, and a test requires its `values` to cover every setting.
 
+## Server environment settings (`ServerSettings`)
+
+Separate from the per-game `ChessContext`, the agent server reads deployment-level settings from its environment through `ServerSettings` (`apps/server/langchain_chess_server/settings.py`), a pydantic-settings class. It reads the shell first and `.env` second, and ignores variables it doesn't declare. Model credentials are not here: the chat model reads the providers' own variables (or `LANGSMITH_GATEWAY*`) itself. Nothing is required.
+
+| Variable | Used for | Blank value |
+|---|---|---|
+| `LANGSMITH_GATEWAY_API_KEY` | read only to reject a blank value | error |
+| `TYPESAFE_API_KEY` | System 1 ranker | error |
+| `TYPESAFE_BASE_URL` | System 1 ranker | error |
+| `OAUTH_CLIENT_ID` | "Sign in with LangSmith" access policy | unset |
+| `ALLOWED_ORGANIZATION_ID` | "Sign in with LangSmith" access policy | unset |
+
+Blank values are handled in two different ways:
+
+- **Keys: blank is an error.** If one of the gateway or TypeSafe variables is set to an empty or whitespace-only value, construction fails with a `ValidationError` ("is set but empty; unset it or give it a value"). The `.env` template expands `LANGSMITH_GATEWAY_API_KEY=${LC_GATEWAY_KEY}` to `""` when the shell variable is missing, and langchain-core would then quietly fall back to the tracing key. The variables are optional, but `typesafe()` raises `ValueError` ("System 1 needs …") when either TypeSafe variable is unset. Only the policies that run System 1 call it, through the server's pooled ranker.
+- **OAuth settings: blank means unset.** `OAUTH_CLIENT_ID` and `ALLOWED_ORGANIZATION_ID` are stripped, and an empty result becomes `None`. The deploy workflow writes both before the OAuth app exists, and an unset value only refuses sign-in tokens. `auth.py` builds its `AccessPolicy` from these two values, and a policy with either value unset refuses every token, so the deployment accepts LangSmith API keys only. See [langsmith-sign-in](/openwiki/integrations/langsmith-sign-in.md).
+
 ## Rules a change must keep
 
 - Keep settings strict: no coercion beyond the explicit whole-float handling for `k` and `seed`.
@@ -171,4 +194,6 @@ The hand-written `packages/chess-ui/src/settings.ts` mirrors `migrate`, `resolve
 - `apps/server/tests/test_codegen.py`: committed files are current, and the required-keys shape of both schemas.
 tests/test_context.py`: merge order, null reset, versionless sources, bounds, and rejection of newer versions.
 - `libs/chess/tests/test_model_arguments.py`: precedence, collapsing aliases, `extra_body.reasoning` replacement, and the everywhere and server-only hold-backs, checked against captured gateway bodies.
+- `apps/server/tests/test_codegen.py`: committed files are current, and the required-keys shape of both schemas.
+and the everywhere and server-only hold-backs, checked against captured gateway bodies.
 - `apps/server/tests/test_codegen.py`: committed files are current, and the required-keys shape of both schemas.

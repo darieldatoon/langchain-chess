@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5e0cb6e8540be998166ae7ca6b42490cbf688a956eaa3dd43daaa19ddd6eeb2f",
+  "pageVersion": "sha256:993a856f85ba1c20362de5a571d3f38441a1898204365455e27c12c8261fd41b",
   "claims": [
     {
       "id": "claim_a50886a5280b49d4af4fb84597f74dd4",
-      "statement": "useGame opens a single useStream on the `chess` assistant per game, and every submit carries configurable built by configurableOf from the game's record (the settings version first, then every setting key in order, nothing else; DEFAULT_CONTEXT only as a stand-in when there is no record), run_name chess-web with tag web, metadata surface web, and multitaskStrategy reject.",
+      "statement": "useGame opens a single useStream on the `chess` assistant per game, using an SDK client built per session by sessionClient, and every submit carries configurable built by configurableOf from the game's record (the settings version first, then every setting key in order, nothing else; DEFAULT_CONTEXT only as a stand-in when there is no record), run_name chess-web with tag web, metadata surface web, and multitaskStrategy reject.",
       "evidence": [
         {
           "resource": "repo://apps/web/src/settings.ts#L70-L76",
           "version": "repo-lines-v1:sha256:623b8f141e8a9c24eaa73f19fe5c8177f576c8f9ff3d177984b7b52fe043f4d5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTc1MTM5MjIyMjE3ODNhMjU5OTUxMzdiZDg0YTBiOTJlNDgzMzA2YzJhYjUwMDUxN2U3NTQxZGZlYjUwZmRlYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTFhNWRiMWRjZTE4ZDc5NWZmY2E5YmRiMDQwZDU0ZTYzMGQwYjcxZDdmMDUyOWM0YjY0YzNhOWU0ZDM2ZjA3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTliOWY0ZTI1Y2U3Mjg3ZGM3ZTJmMjVlMTMzZGFjOTgxNWVhNzdlZDdlMzI2MGVlZGRjNDA4ODk2YWVkZGY1ZSJ9"
         },
         {
-          "resource": "repo://apps/web/src/useGame.ts#L165-L176",
-          "version": "repo-lines-v1:sha256:618af1c183fb936421b87d8f9a77f1b964652b55d762e62e6a97a5fc9cb56807:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMjJmYjYwMGQzMTFiMzgzNzUwNmNlZTkxODA2MWMzMTYzODI3ODNhYzRkODc2MTBlOTc0NjVjYzViOWUyYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0YzFjNjc3MmRiNWY0ODViNDVmYzVjYTE1ZTkyOTk4N2E4MDFmZTJjOTNiNzExNmNkODRhZTI5MWJhMjZmNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1NjIxM2I0MDY5YzMyMzU2ZTM1MjYwMmY3ZjZiMzRlMzcwZjNkNWE1NDAxOGFjM2M2MGM1NWUyNzQ3ZjUxN2UifQ"
+          "resource": "repo://apps/web/src/useGame.ts#L147-L177",
+          "version": "repo-lines-v1:sha256:3a0cd5c3b2909b5acebbd43dc402bcb8a4c15652f5d4ae0ae8f9206041db6719:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjNjFiMTc0MDY1MDk0YTM0NGFkMjdjMDUzMDhjYmNhMDJhOWJhMzI3NjY2ZjljY2E2ZTEzYTkzYTg3OTUyYjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NWE4OWU1OGQ3N2ZhMWMyOGVhMWM2ZDZmZDU4MzI0NzQ5OWY3YTAyM2Y4MTQ5YmRhNDM2OWI0MTUyNTlkM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5MjdlMjA3ZGYxMzRiMjgzMGIyYWE3NzgwOGQ4ZDQ0ZmMzNTY2ZWU1MmZjNDE1MTlhY2IwNTk2ZTM0ZjAzOTkifQ"
         },
         {
-          "resource": "repo://apps/web/src/useGame.ts#L230-L249",
+          "resource": "repo://apps/web/src/useGame.ts#L231-L250",
           "version": "repo-lines-v1:sha256:3e54dc5edc798e255dde17b335a512d47bc5954c72bc86b42ce0fbaf7867aa93:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3ZmI5ZDQ5Zjc1ZWUxOGUxZjJhZmVkMjk5NmE5ZmIxNjExNjY4Yzk1ZWViZDljYzU1MmNkNzZjZDRiNmVlNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4YWZiYTE5MWQyOGI1YTU3YzU3N2Q1YTdmMmU1OTc5ZjI0MzVhZTY1NWVhMzNkZDMwM2YyZDRmYTYwNjU3Y2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2Nzk5ZDY0MjZjODk3NDgwMTI3MGM0M2QxNzZlZjVjMjA5MDBmNGE5MWE4YmMyODAxZDY2MGU5NGQ2ZTY4ZTgifQ"
         },
         {
-          "resource": "repo://apps/web/src/useGame.ts#L32-L34",
+          "resource": "repo://apps/web/src/useGame.ts#L33-L35",
           "version": "repo-lines-v1:sha256:b4cd75ed715d80abbebaaae21a93a5d4900487ee5ef2c6024c68cf7033400df5:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWViYTVlYjA4MjA2ZGQ1MzUxNGM5ZTVmNDhhOWUwYTQwYzgxZGZmN2RlZWRkZTc1M2U1MDc2OTVmMWNjMjk3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBmNTYyZDQ2NTNmN2Q1NTQxZTI5MmIzZWNlNTZiZTQ2ZGMxMGEzMmVhMjM3ZTRiYWNmMTkwYzIyZDA0ODQxYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjBiYTkzYzJlY2EwNTA0YTc4MmE3MmVjZDU5NDhhOGI1MmJlOTk5MTkyNTIxNjE5ODI4OTU2NGQxYTRjMTcwZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWU5ODI2NmMzNWI0YmRkYjViZmY0MzY1ZWVjNjNlYjI1MWZjYWVhZjY3MGI5N2ZkNTMwZDExMTYyMDg2YWIwZiJ9"
         }
       ]
@@ -30,14 +30,14 @@
       "evidence": [
         {
           "resource": "repo://apps/web/src/storage.ts#L1-L3",
-          "version": "repo-lines-v1:sha256:3aa09d9699b0207cf94fe041b5f3cb577b9b6b6dbec28adf65b94a9f3eb44d02:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGJjNDgyMzFkN2I1MzZiM2M1ZjNjOWNiOGViMmI1MGM4MjNkYmZjNTUyMjU4YWQzZTM5YzY1YjU0Y2Y3N2IwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGZiOTk3NTlkYWZmOGZhM2QzM2Q4NWNlODgyMDIzMDg2MjI5ZDQ3YzNkNmEyNzMwYzVlNGQwMjc4YTc0M2QzYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzA4ODg0N2Q3NmNlNmE3ZWNmMjVmYTU3MTJlYTljYWQ1MWNhMGM2NDRjZTQyZjNlMmNkYWM2MWY3Y2YxNDNhNSJ9"
+          "version": "repo-lines-v1:sha256:73e2174fa951ff50f2517f9b154a2678045a9474b2f81ac454d597538e64be40:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU4YmRhNjlmMGY5YWRiMTVlMzFlZDM3MGUwOWM4ODU4MzI4NDlmM2RkY2JkYmRkMTJmOTk0NWZhMzM3OGE5NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGZiOTk3NTlkYWZmOGZhM2QzM2Q4NWNlODgyMDIzMDg2MjI5ZDQ3YzNkNmEyNzMwYzVlNGQwMjc4YTc0M2QzYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzA4ODg0N2Q3NmNlNmE3ZWNmMjVmYTU3MTJlYTljYWQ1MWNhMGM2NDRjZTQyZjNlMmNkYWM2MWY3Y2YxNDNhNSJ9"
         },
         {
-          "resource": "repo://apps/web/src/useGame.ts#L165-L176",
-          "version": "repo-lines-v1:sha256:618af1c183fb936421b87d8f9a77f1b964652b55d762e62e6a97a5fc9cb56807:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMjJmYjYwMGQzMTFiMzgzNzUwNmNlZTkxODA2MWMzMTYzODI3ODNhYzRkODc2MTBlOTc0NjVjYzViOWUyYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0YzFjNjc3MmRiNWY0ODViNDVmYzVjYTE1ZTkyOTk4N2E4MDFmZTJjOTNiNzExNmNkODRhZTI5MWJhMjZmNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1NjIxM2I0MDY5YzMyMzU2ZTM1MjYwMmY3ZjZiMzRlMzcwZjNkNWE1NDAxOGFjM2M2MGM1NWUyNzQ3ZjUxN2UifQ"
+          "resource": "repo://apps/web/src/useGame.ts#L166-L177",
+          "version": "repo-lines-v1:sha256:562c32ca8dc5a77f4db90905c9b254ebb40eff5cc961c5f2d38f7f8c1ac9d760:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwM2UzNjU2NTZjYmY3NjA2ZDM5MWExYzAzZGJhYmNiMGNhNmYyZGQ5NTgyYmZkOWZlYTYzZTgyZTlkYzhhMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0YzFjNjc3MmRiNWY0ODViNDVmYzVjYTE1ZTkyOTk4N2E4MDFmZTJjOTNiNzExNmNkODRhZTI5MWJhMjZmNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5MjdlMjA3ZGYxMzRiMjgzMGIyYWE3NzgwOGQ4ZDQ0ZmMzNTY2ZWU1MmZjNDE1MTlhY2IwNTk2ZTM0ZjAzOTkifQ"
         },
         {
-          "resource": "repo://apps/web/src/useGame.ts#L37-L46",
+          "resource": "repo://apps/web/src/useGame.ts#L38-L47",
           "version": "repo-lines-v1:sha256:61162e28da57191972a4ff5383d15bec35df07088d152388178c0aece66832e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwNTRkYWVhYTY3MjliOTQwYTUyNDc4OTE1YmFkNjAwNTkxZDdiNzlhOGRmOGJkZjE3YjU3MjVmZjZhMjkwZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlYzg0YTUxYjVmNDU5NDdjY2NhMDRmNzY4YTk3ZGU2NDI3ZTAwYTI3NWI5MDliMTVlNjViOTRkZDIxMjU4MDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwN2FjYmJhNjc3ZmI4MjlkM2NlM2NiNjFmM2U4NTg5YjBhYTlmOWQ4ZTJlMWJkMTJmOWE5YzYyODAzN2NiMGQifQ"
         }
       ]
@@ -47,27 +47,27 @@
       "statement": "On load, App seats the thread found in the URL with no chosen record so its setup comes from the thread; a new game or rematch clears the URL thread and creates a seat with a higher number and a chosen side, context and starting FEN (a rematch swaps sides and keeps context and start), remounting the keyed Table so useStream starts a fresh thread; a seat auto-starts when the opponent is to move in the starting position, and the Table sends that start once on mount guarded by a ref.",
       "evidence": [
         {
-          "resource": "repo://apps/web/src/App.tsx#L154-L169",
-          "version": "repo-lines-v1:sha256:0423b325f80df6b237ed67ad9474c00b147f8b0227629edae6ef85188e6953c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0ZTkxYWUxNjVlMGQ1ZDNhZmJiM2ZlM2NlNTNmZTYzODRjM2Y1ZTAwN2I3NDYwN2M1YzE0YTkxMzMwMGVmODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkYzUyZjA4YjM5YjA4YjAxYzhkMzA4YmY4ODBiMGJlZjAyZmQxZGZjYzlkOWFhOTNhNGQxYjVmNGQ1OGI2Y2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxYjBmNWMzMWM1MDc2YTRjZDUwMjFhYzQxNzc4ODQ2ZTY4MGM4YTU1MjExYWQyMTRkNzUzY2JhMWNkNWE2N2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwNmU3MmZkZGYzOGRkZmQwODFlMGU4ODQ5MjJmODZhNzAyNTI3MDNlN2RlY2FjZTI0ODI1M2JjZjkzZjUyMmIifQ"
+          "resource": "repo://apps/web/src/App.tsx#L146-L167",
+          "version": "repo-lines-v1:sha256:5bf7b03cefec3d8896eb80e72da87275d1cbea5f52b134e8fd7403595d29486c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0ZTkxYWUxNjVlMGQ1ZDNhZmJiM2ZlM2NlNTNmZTYzODRjM2Y1ZTAwN2I3NDYwN2M1YzE0YTkxMzMwMGVmODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxYjBmNWMzMWM1MDc2YTRjZDUwMjFhYzQxNzc4ODQ2ZTY4MGM4YTU1MjExYWQyMTRkNzUzY2JhMWNkNWE2N2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3MTBjNWI3ODRiMTQ5ZTkzZjNlZTQ1MTk1OTA1ODliYmI5MTk1ZTM4ODEzM2MxYmVjZGNkZDRlY2VjZjIzNjkifQ"
         },
         {
-          "resource": "repo://apps/web/src/App.tsx#L243-L258",
-          "version": "repo-lines-v1:sha256:4527c8be72d24f1918c6a89d649e9792776f2aee2477e54f0039b7aef0205afa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmZTgyNmQ1Y2IwZGQ0NTBjZGM1OTJmNWE1ZTE5ZTQwY2M5NGE5ZTExMThiMTY3M2M1OWVjYjMyYjc5YzhjZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiNTkyZTA3YjRjZjUzYTgzODZjNTY4MGNmYjdmM2U0ZTc1NDI5NjljODcyNmFjNWVkMzI3NTNmOGNhOTU5NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlZmUxN2EyMmZlNzgxOGEzMzgwZjhmYzAxZjEwZDhkZjVjNzA4YTg5ZWU4MWVlNjg0ZjI2MWY2MmJkZWFkYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkYjY0Y2ZhMDNlMWI5OTcwZTdhN2IzMzcxYjg2YTkwZmRiNDQyODgyN2Q1YTVmMDVkNTdmNTAwMjQyMTA3MDYifQ"
+          "resource": "repo://apps/web/src/App.tsx#L239-L254",
+          "version": "repo-lines-v1:sha256:d96f80c41e90a419a6950365dec30beedc2bc6dca946d1fd08a852a9e92ded89:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmZTgyNmQ1Y2IwZGQ0NTBjZGM1OTJmNWE1ZTE5ZTQwY2M5NGE5ZTExMThiMTY3M2M1OWVjYjMyYjc5YzhjZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiNTkyZTA3YjRjZjUzYTgzODZjNTY4MGNmYjdmM2U0ZTc1NDI5NjljODcyNmFjNWVkMzI3NTNmOGNhOTU5NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlZmUxN2EyMmZlNzgxOGEzMzgwZjhmYzAxZjEwZDhkZjVjNzA4YTg5ZWU4MWVlNjg0ZjI2MWY2MmJkZWFkYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkYjY0Y2ZhMDNlMWI5OTcwZTdhN2IzMzcxYjg2YTkwZmRiNDQyODgyN2Q1YTVmMDVkNTdmNTAwMjQyMTA3MDYifQ"
         },
         {
-          "resource": "repo://apps/web/src/App.tsx#L61-L73",
-          "version": "repo-lines-v1:sha256:2d6b64786827eab475b90a51794914493fcc6ea1c90d3318c8fe4b362dca0c11:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlZDY1ZjYzM2U3MDg5MDMwNDc2M2RjN2IyMzdjZTE0YTRlNWU3MjM1NDNmYzU4NGRmNzU0ZmNiN2U2YzYxYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3NjY2ZmZmNWFhODYwNzE2NWRmZTU5YTM2MmQwM2JhM2M0ZTc0MDc0NmJmYWRkOWQ5ZDJjYmY5ZTQyYWM5NDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5N2U5ODdiYzJiMjg4MWRkNzY2YjA2NDYxZDdmZmNjZTk5NzI0OTc3MDJiZTUyYmZiOTU1ZmI1YWQ0NjU2YzkifQ"
+          "resource": "repo://apps/web/src/App.tsx#L59-L71",
+          "version": "repo-lines-v1:sha256:2d6b64786827eab475b90a51794914493fcc6ea1c90d3318c8fe4b362dca0c11:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlZDY1ZjYzM2U3MDg5MDMwNDc2M2RjN2IyMzdjZTE0YTRlNWU3MjM1NDNmYzU4NGRmNzU0ZmNiN2U2YzYxYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3NjY2ZmZmNWFhODYwNzE2NWRmZTU5YTM2MmQwM2JhM2M0ZTc0MDc0NmJmYWRkOWQ5ZDJjYmY5ZTQyYWM5NDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmMWQ0NDIxMWVjMGUwODUzZDQ5ZDRjYWQ0MDIxODI1YjI2ZTVkYWM5Zjc2OTgzNTM0YzUzNzUzMWI2OTY5OWEifQ"
         },
         {
-          "resource": "repo://apps/web/src/App.tsx#L96-L100",
+          "resource": "repo://apps/web/src/App.tsx#L97-L101",
           "version": "repo-lines-v1:sha256:bc3b43c6cf9e0e7de4a4ef5035d74fea48e517aa91fe19e8de44ae3b3029b7ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWRhMzFjYjU3YmY5NGFlMzk1ZGI2ODc4MjQzY2U5OTk2ZDVhMThiZTI1ZTI1YTM3NDNkOTI3MjcwYzZlY2Q2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzk3MWFmMWI4OTJhMWE1YjVlZTM3ZjRmYjJiOTEzZTRkZTFlMzkxMTY3M2IzYmFkMjY2ZTQ5NDc3MTM4ZDFjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjM4ODhjMWFmMTI1OTc0OWMxYmZjYTQ3N2Y3MDI5MDg4MDJlMTA0ZGU4MWFmMzJlODM0NzA3ZjgzMDc5MGNkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTgyZGM2NGQyYTk2MDUxZjNlNmZmMWE5NzJmYjJiZTU2OTY2ZTcwYmIwNjk5ZmQxMmMzYjYxOWUzNjUzZjJlZSJ9"
         },
         {
-          "resource": "repo://apps/web/src/Table.tsx#L189-L194",
+          "resource": "repo://apps/web/src/Table.tsx#L190-L195",
           "version": "repo-lines-v1:sha256:4632205383420646b28c3342049f20da2c1355cdbc5ba071a4de31cdaebd1af2:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGYxOTlhYzE0N2E3NTE4OWY3ZjAyNzczM2NmMjM2MmI5NGUxYmU5NzcxYTNmMTVhOTEwNTgzNTZjNDEzM2YwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWZjMTcxMDQ3YTZhYjhhMDI1Njk2NmQzMTA0YTYxZWE2Yjk0OThjNjUwMzJkOGY5ZjQ3ZGYyZTI3M2IzOGIxOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTNlNGJiNzJjZGE5OGQ1ZWFjYzk1ZWU3ODAwZTJlN2YwNjEwYWJlYTU3MmNjOTViNWM2NzhiMjY5OTZmZWQ0NyJ9"
         },
         {
-          "resource": "repo://apps/web/src/Table.tsx#L66-L74",
+          "resource": "repo://apps/web/src/Table.tsx#L67-L75",
           "version": "repo-lines-v1:sha256:26063d7455437e654034558ca82fe7bfd969d8bba3e686a4cedd17e141d1e2bd:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODg4ZTE3NTFhZjZjNWI0MGUzMWIzNTQ0ZWE5YjExOTZlYTE4ZDg3ZDI2MzRiOWZiYzk5MzZhN2RhMjA5YzQ2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjE3N2VmNTk0NzZjYzE2ZGVjMDI0MTdiYmY0YTYwYmRlNmQ0MmJlOTg2ZDYzMjcyOTBjMjUyYTkyY2NlMzFkZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjVkMWVjOTczMzU0MGIyMDc4OTJiNDZjNmZiZjY1ODU4N2E0OWFiYmMwMWVjMDk1ZmIxNTQ3MjAxMDQ3ZWEyYiJ9"
         }
       ]
@@ -132,37 +132,33 @@
     },
     {
       "id": "claim_cc433639c55f47f4bc6427a8c77c264c",
-      "statement": "Auth failures (HTTP status 401/403, or SDK request messages anchored at the start as HTTP/Protocol/Thread state request failures with 401/403, so a model provider's 401 inside a run does not match) show a banner directing the user to Settings, where the only app-level setting is the LangSmith API key stored under langchain-chess:app and passed to useStream.",
+      "statement": "Auth failures (HTTP status 401/403, or SDK request messages anchored at the start as HTTP/Protocol/Thread state request failures with 401/403, so a model provider's 401 inside a run does not match) show a 'Sign-in needed' banner with an Open settings action; the Settings dialog has no editable setting and only describes the current session and offers Sign out for any session other than none.",
       "evidence": [
         {
-          "resource": "repo://apps/web/src/Table.tsx#L520-L538",
-          "version": "repo-lines-v1:sha256:69ca44814b52d5d922e492318579dff45c5177c6b02dabf30951860dbcdc162e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MzY2NWU0MWY5ZWIzMmEwMDA4MjM3NDZiZTE5Yjk5NWJmNjc4MTY5NzM3ZTQyYmIyMWMyNGRkY2Y4YTY0MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMzAwNDg0N2UwNGQ4ODQxMmY5NGVhYjZiMDU2NDlkNjJiMDQyM2QwNDliYjRiMzI3YTgxNjMxNmQ2NDQzY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0NDVlMmZiYTMzYTVmMzdiNDQ1MjZjMTgzMGQwZmQ2YTFjYzMxMWRlODE2ODRlMGExZTJiYmVlNTUxZTJmMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzZjM3Y2UxZTllNGNkYzlhYzQwM2U0MDhjMmU0OTQxZjBiYmViZGNlYjcyYTk2ZTIwMDdjOTI1MjVhY2MxMTgifQ"
+          "resource": "repo://apps/web/src/Table.tsx#L521-L539",
+          "version": "repo-lines-v1:sha256:527b4e091ce7a4f322acc8ba7bd62f0d774d7bc424f15ffd4f309a6c744f30db:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MzY2NWU0MWY5ZWIzMmEwMDA4MjM3NDZiZTE5Yjk5NWJmNjc4MTY5NzM3ZTQyYmIyMWMyNGRkY2Y4YTY0MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMzAwNDg0N2UwNGQ4ODQxMmY5NGVhYjZiMDU2NDlkNjJiMDQyM2QwNDliYjRiMzI3YTgxNjMxNmQ2NDQzY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0NDVlMmZiYTMzYTVmMzdiNDQ1MjZjMTgzMGQwZmQ2YTFjYzMxMWRlODE2ODRlMGExZTJiYmVlNTUxZTJmMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzZjM3Y2UxZTllNGNkYzlhYzQwM2U0MDhjMmU0OTQxZjBiYmViZGNlYjcyYTk2ZTIwMDdjOTI1MjVhY2MxMTgifQ"
         },
         {
-          "resource": "repo://apps/web/src/components/AppSettingsDialog.tsx#L13-L43",
-          "version": "repo-lines-v1:sha256:656c9548c1f77593ac9dd251655830d00529d509053e1a7fb868e6d3f0dc9dd8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyN2VkOTlkMjU1NjBjZTg2MzY2MmExZWRlMmFlNDJlZDdhYTkzZGFlMzNkZDY4ZjdmNjVjMDM2ZjVlNDE1ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MDZjODEyZWRhMDE3ZWUwMzcwNmNmZjQ0N2NmMjg2YmYzMTlkOGMzYTE4ZTBlNzhlNzI4MmFjNjY3Mzk4MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiYWNmYzI1NzNlMDk5YTkzZGI5ZTFjOTY3MGFlNjc1MGJhMWM4M2YxM2RiMGNlNDkxYjJiOGNjN2Y0YjllZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1MmQ3YjQ2MDUzNDY3MDFiZmExN2ZlNDViYTc1N2MxM2RkNGQ5YzgzMzZjNGI1ZGY1NTQ0ZmVkM2I5Y2JlNDMifQ"
+          "resource": "repo://apps/web/src/components/AppSettingsDialog.tsx#L12-L54",
+          "version": "repo-lines-v1:sha256:d469b6fbb7cdd6006dabe722dc243f6d6b7b461d999981ca38814980b08a2621:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4MGM5YjAzZmE0MjM1NjBmZjVkZGMzYjFiMjBjZTMxNDI2NDUzMTA2ZGE5OTNhNmIxNTczN2UxMzFmMzRkNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiYWNmYzI1NzNlMDk5YTkzZGI5ZTFjOTY3MGFlNjc1MGJhMWM4M2YxM2RiMGNlNDkxYjJiOGNjN2Y0YjllZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://apps/web/src/format.ts#L14-L28",
           "version": "repo-lines-v1:sha256:76b5e3581c12f2c8b0947752af194d482b82cbfc5e83f195c53e00ac9e131f2b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyMmNmOWVlNzQ1ZmM3YTc3YzgzNjVjYTA0NzZiNjk3NTA5YjI1OWJjNThkODQ1ZjEyYzgyOWQ2MjlhMDE5ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkZjkzYmU3MmY1YWFmM2M2MmY4NzQ3M2Q2N2Q2ZmRjZGNhYjhkN2FmZWFmZDdhMWE4NDExYWViYzI5YTYzZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0MjllMDU1NjJjM2I2NzJlOTUxMmQ1ZmY3YjY4ZDFmNzY1ZWE2M2I3ZmI2Mzg3OTRiM2IyZjEyYzg1ZWZlY2MifQ"
-        },
-        {
-          "resource": "repo://apps/web/src/storage.ts#L13-L22",
-          "version": "repo-lines-v1:sha256:0a0371fbdf9b30fcd909da33ee64e6cb273156234c609c89802dd55cb3249bfd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZWQxZmQxNWYwZDMxMDY0YjQ1MjY3ZDUwYzE1Y2NlYWNmNjVjN2JmYzFhYTJmYzBjNGE4NTIxODYzOTdmNzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzMjZiMWUxN2UzZDdkMDU4ODQ3NmUxMDgwOGUwYWIzYTBjYWEzNzU1ODc2ZDYzNmZjZTUzMGUwMDhlNDY5MTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxOTJlMDBhYTdiYmU3MjI0NzBmNWM1YTAzOTgxNDZlY2VlZmIwNmJhMzFjY2EwYjA5ODhlYzFiNzdiYTAzZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzYTY3MjZlNDVkMWYzNjU0MWZjYmFiZTM3ZGQ2ZDM5NTMyMTgyYWJhYjBhYzZkNTgxOGI5YzczY2ViNjgxNTYifQ"
-        },
-        {
-          "resource": "repo://apps/web/src/storage.ts#L76-L87",
-          "version": "repo-lines-v1:sha256:a36ec679d1d0caa75543236705f4eaf1885ddd4b9e36b728580f14549535bcbd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0OWNmYWM4MmVjNWNlYTVjYTU4MGY1MTc5OGNmZGU5Zjg2NjVmMWZkMmQwMjZhYzU4YWIyNDdlY2E3Y2ExYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNjY1NzE4YzIyNTM4OGU5MmJmZDk1ODE3MzM1ZWQ5MTg2MDNlNzRiMjk5ODc2ZjI2ZWQxNjk0YzcwZmI3MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5NjgwMjFlNjIxMDIwOWVjZGNjNTAxOTNlODQ3MzI4OWNlZThhOWQyMWZlMGJmZTJmOWU5N2RkNTRlNjYzZWMifQ"
         }
       ]
     },
     {
       "id": "claim_1e49e375dbcc484eb11b8d263f2ab313",
-      "statement": "Pressing Play in the New game dialog first checks the API key by POSTing to /assistants/search: 401/403 is 'missing' without a key and 'rejected' with one, a network failure is 'unreachable', and anything else is ok; the game starts only on ok and only if the picks and starting position on screen are unchanged and still playable, and a late answer after unmount is ignored.",
+      "statement": "Pressing Play in the New game dialog first checks the session with checkAccess, which POSTs to /assistants/search with the session's headers: 401/403 is 'missing' for a none session and 'rejected' (with the server's detail) otherwise, a network failure is 'unreachable', and anything else is ok; the game starts only on ok and only if the picks and starting position on screen are unchanged and still playable, and a late answer after unmount is ignored.",
       "evidence": [
         {
-          "resource": "repo://apps/web/src/auth.ts#L9-L30",
-          "version": "repo-lines-v1:sha256:98f00c8f88a7affbd1d644be76f4fde2b35f6e27f2c005cace05a9cbdee9c95f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjZjZhNDJjNDNmYzZlNjVhZGExMDg2NTVmNTJlNDNmYWMwNmJkNzVjNDFkZjYzODJkYWVhYTljMzU1NTNmYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmNmMxOGUwMThhZDgxZjQ5MDM1ZTIyNzA4ZDNiMWIxY2VlNDcyODg2NDlhMDc5MzUwZDEzMjkxZWRkYzY3Y2UifQ"
+          "resource": "repo://apps/web/src/App.tsx#L84-L93",
+          "version": "repo-lines-v1:sha256:c70ec677f0bb48c385e121613fdabcbafc91479460f96f7e5a8e342769721460:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3YTFmNGU0YjA2ZDcyOGMyZjIwNjJlMzkzMzMyNmMwM2EwNzUwOWIyMGI5NDM0OWRlY2M2NDg2NDA0YmUyNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjZjQzOGVhODdiODkxZTEwMWU2Y2I2OWQzNjg5MjM3ZTMyNTE1N2NiZWU0YWI2ZTdiMWE5ODlkYzNiYzJkODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5OTEwYWIxNmIyNjk1OWNjN2IwN2Y2NDE3ODNlNWE5ZjMyMDdhZWM0MmQ4NjYwNDFkZDEwYzM2YmI2NWYzZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzODg4YzFhZjEyNTk3NDljMWJmY2E0NzdmNzAyOTA4ODAyZTEwNGRlODFhZjMyZTgzNDcwN2Y4MzA3OTBjZDMifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/check.ts#L21-L43",
+          "version": "repo-lines-v1:sha256:70650ab694930225861010e7bf153fb754bf5dbf638402d6a2d3c95fa21deef2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmNmMxOGUwMThhZDgxZjQ5MDM1ZTIyNzA4ZDNiMWIxY2VlNDcyODg2NDlhMDc5MzUwZDEzMjkxZWRkYzY3Y2UifQ"
         },
         {
           "resource": "repo://apps/web/src/components/NewGameDialog.tsx#L209-L214",
@@ -197,15 +193,15 @@
       "statement": "With no game on screen the New game dialog cannot be closed, and opening Settings from it preserves the unsaved picks and typed starting position as a draft that is restored on return.",
       "evidence": [
         {
-          "resource": "repo://apps/web/src/App.tsx#L106-L121",
-          "version": "repo-lines-v1:sha256:76fd1a2183932f437f13973fbbf2b35ff7f4991a3f3d2d19fe4cfd747b28d71c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhMDc5ZGNjYmY2Y2NmODRjYTIzZWNjYWNmOTI2N2JiOTE4ZGQ4NmQ3YWY5MGY4NmRiMzM1ZWM0MDhhZTY2ZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwOTdhNzBjMTNlN2VlYzFiYjhkNjUyOWVmNzFmYmEwM2M2MTUyOTEyMzFhMTExNDkwZTQyYmEyZmIyNTkwYTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjY2Q3NDg2YTc0OTljZjRiNTYzODQ3NDdkZDQ4ZTg3OGI2MWMzZDcxZDgxMjZmY2Q5ZmIzZjljMWMwZDc0NDIifQ"
+          "resource": "repo://apps/web/src/App.tsx#L107-L122",
+          "version": "repo-lines-v1:sha256:76fd1a2183932f437f13973fbbf2b35ff7f4991a3f3d2d19fe4cfd747b28d71c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhMDc5ZGNjYmY2Y2NmODRjYTIzZWNjYWNmOTI2N2JiOTE4ZGQ4NmQ3YWY5MGY4NmRiMzM1ZWM0MDhhZTY2ZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwOTdhNzBjMTNlN2VlYzFiYjhkNjUyOWVmNzFmYmEwM2M2MTUyOTEyMzFhMTExNDkwZTQyYmEyZmIyNTkwYTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzMmRjYmJjYzhiYTYxOTdkZDQzZmYwNmYwMjNmNTU3Y2Q3Njg2MWNmYjNhOGM3MDc4NmE4NTY0MjU4NGRjMTIifQ"
         },
         {
-          "resource": "repo://apps/web/src/App.tsx#L270-L281",
-          "version": "repo-lines-v1:sha256:9dea84aaee19b1c78035bd5098507b1495a5b78576836fcfef304d491ebe921a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5MzcwNTI1YjYwODQ0ZjUzNTMxNjAyMjU3NTcxYmNlMWRjYTNjYzEwMjIxMzZjNThhYjA1ZjcyMzU3MjY2NTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMzAwNDg0N2UwNGQ4ODQxMmY5NGVhYjZiMDU2NDlkNjJiMDQyM2QwNDliYjRiMzI3YTgxNjMxNmQ2NDQzY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4MDllOTExMzI0YTc3OWNiZDE5ZWNiODgyMTk2ZjVkOTYxM2MyMGQyM2MxYzI1YmUzMTI1NjNiYzg2NDcxNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjN2E0NDZlMjAxZWQ5ODU5MzE4ODZlZTgzZDE0ZmNjYmE5MDIxZjRiYWI2M2NlNDhjZWE0MDYwZTY0NWUyMjEifQ"
+          "resource": "repo://apps/web/src/App.tsx#L266-L277",
+          "version": "repo-lines-v1:sha256:f138502e7b209c94b257196d90629ab4cea747490897e5613d7d2bfbffe35d3b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5MzcwNTI1YjYwODQ0ZjUzNTMxNjAyMjU3NTcxYmNlMWRjYTNjYzEwMjIxMzZjNThhYjA1ZjcyMzU3MjY2NTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMzAwNDg0N2UwNGQ4ODQxMmY5NGVhYjZiMDU2NDlkNjJiMDQyM2QwNDliYjRiMzI3YTgxNjMxNmQ2NDQzY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4MDllOTExMzI0YTc3OWNiZDE5ZWNiODgyMTk2ZjVkOTYxM2MyMGQyM2MxYzI1YmUzMTI1NjNiYzg2NDcxNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4OTU5OTlhNDJhNGFkZTEzZDM3ZThlMGVjM2MwMDIxYTk4MTNjZTIyZDAwZTQ4OGFhNTE0ZTI0ZjllYWYzZjUifQ"
         },
         {
-          "resource": "repo://apps/web/src/App.tsx#L50-L59",
+          "resource": "repo://apps/web/src/App.tsx#L48-L57",
           "version": "repo-lines-v1:sha256:60b8160e21a8aacb9846c73a48b0086c126f6b092e3dca597c25ee7edd572c85:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkNjNmYWM4MmJlOTc0ZDQ4ODVhNGY5YmUzM2FjM2VkZTc5ZTQ5NWUzYWJlMjdiMDM2NjFhMmM3YzcyOGEwZTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiMjY2ZDBlNmMyNmYxZmUzYTQ2OGM3Y2MyMjgyYWEwMWJjODgzNjY0M2ZhNzM0ZTIyYzRjMThkMDIyMmQ0MGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZTczOTdmYjI5ZDFlNTZjZDQ1NGMxMjQwZmI1NGI2NDhlNzUyOGMyZDRlYzg3MGYwODAwMjIwM2I4ODY2NmYifQ"
         },
         {
@@ -242,7 +238,7 @@
     },
     {
       "id": "claim_7016d0303a05436787a83a42feebde1a",
-      "statement": "localStorage holds only the last New game setup, the API key, the reply-card view toggles and the display preferences; stored setups are untrusted: they carry their settings version, a setup without a version loads as the defaults, knobs are migrated from their version with unknown keys dropped and each invalid value falls back to its own default, and an unreadable version trusts no stored knob.",
+      "statement": "localStorage holds only the last New game setup, the reply-card view toggles and the display preferences for the game UI; stored setups are untrusted: they carry their settings version, a setup without a version loads as the defaults, knobs are migrated from their version with unknown keys dropped and each invalid value falls back to its own default, and an unreadable version trusts no stored knob.",
       "evidence": [
         {
           "resource": "repo://apps/web/src/settings.ts#L27-L42",
@@ -253,12 +249,12 @@
           "version": "repo-lines-v1:sha256:5f5d43937bc303668eee3a9dc85254116aeddc3f351e2a65e1d5f8901eac77a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlMTMzYTRjOTQ0MmMxNjUzY2EzY2Q3MGRlNGY2Nzk4MDQ1MWFiZWIyODA2ZWNiMjE0YzJjZGRjZmNlYzI1OTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMmI5ODg4ZTYwNjIwNTNjMTU3NzM1YTUxNmQyZDNkYmYyNTgwMGY5OTk0N2RlZGQxNTBjNGQ3MTFiZmQ0NGEifQ"
         },
         {
-          "resource": "repo://apps/web/src/storage.ts#L1-L16",
-          "version": "repo-lines-v1:sha256:41122f0603a984625335cf849edd8caed34af6a6b8792b3b50d65eff23039882:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiYzQ4MjMxZDdiNTM2YjNjNWYzYzljYjhlYjJiNTBjODIzZGJmYzU1MjI1OGFkM2UzOWM2NWI1NGNmNzdiMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2NDgzNmZmZGM1ZTkzMmFkNTFkYjBhMDUzY2RlZWRiNzVjZDI1MjZhZWU5OWQwZGVjNzg2ODQ3ZWYyNjc0MTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5ZTMyOTZiN2RmYWY3M2U4ZjI5YzlhZjA2ZWVkYTJhNmU5NTE2NDA5NzJiY2FiMTlhMTNkNjBkOWQzNDIxNDMifQ"
+          "resource": "repo://apps/web/src/storage.ts#L1-L14",
+          "version": "repo-lines-v1:sha256:7ce3d559bc73c83ba73bc60d52e2152fe95fe8e66ea085e6531efb82382c27a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1OGJkYTY5ZjBmOWFkYjE1ZTMxZWQzNzBlMDljODg1ODMyODQ5ZjNkZGNiZGJkZDEyZjk5NDVmYTMzNzhhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2NDgzNmZmZGM1ZTkzMmFkNTFkYjBhMDUzY2RlZWRiNzVjZDI1MjZhZWU5OWQwZGVjNzg2ODQ3ZWYyNjc0MTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzYTY3MjZlNDVkMWYzNjU0MWZjYmFiZTM3ZGQ2ZDM5NTMyMTgyYWJhYjBhYzZkNTgxOGI5YzczY2ViNjgxNTYifQ"
         },
         {
-          "resource": "repo://apps/web/src/storage.ts#L66-L104",
-          "version": "repo-lines-v1:sha256:d85c60bf059955e84f8a79e0742434c84ef414a0ffc05221bd4ad29b0002e0f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YzgxOGY0YmJjZGZmYWE0ODliMDE4OTkxMjYxZjkxZGQ5YzZlMzlmZWQ5NDE4NDQ5ZWE5NGUxYTdlOGYyNDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://apps/web/src/storage.ts#L58-L83",
+          "version": "repo-lines-v1:sha256:b36cf3a4df066f8e801d2c13056a8360dc41668bcb2174402337cb8cdf0d4938:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YzgxOGY0YmJjZGZmYWE0ODliMDE4OTkxMjYxZjkxZGQ5YzZlMzlmZWQ5NDE4NDQ5ZWE5NGUxYTdlOGYyNDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -482,11 +478,15 @@
     },
     {
       "id": "claim_34260cbe240b4a27a918af56ac683ef4",
-      "statement": "Web tests replace useStream with a shared fake that records options, supports per-thread overrides and simulates thread-load outcomes, a separate suite exercises useGame on the real SDK over stubbed fetch, and App accepts injectable random, checkKey and modelFacts so tests are deterministic without a server.",
+      "statement": "Web tests replace useStream with a shared fake that records options, supports per-thread overrides and simulates thread-load outcomes, a separate suite exercises useGame on the real SDK over stubbed fetch, App takes a session plus injectable random, checkKey and modelFacts, and Root takes injectable config, signIn, check and storages, so tests are deterministic without a server or LangSmith.",
       "evidence": [
         {
-          "resource": "repo://apps/web/src/App.tsx#L75-L91",
-          "version": "repo-lines-v1:sha256:c9246ae8099f82929057155f7f8f01b805209dbded44c683f5c008eca5f46ff8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjNjM0NmM1ZmM2ZGM1MDcyODBkM2ZhMWRmYWFiMzMyNGZlYTNiMzU0NDdkYjdmZTcwYzRiYmNhZjc1ZGQyODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjZjQzOGVhODdiODkxZTEwMWU2Y2I2OWQzNjg5MjM3ZTMyNTE1N2NiZWU0YWI2ZTdiMWE5ODlkYzNiYzJkODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwMWE5NzNjZTU3ODdkMmIzMzdkZmNkMmU2ZGE4M2ZjZWQ0OTY2ODU0MzUzMmMzZmVhZWRlNjY0MTMwODIwM2QifQ"
+          "resource": "repo://apps/web/src/App.tsx#L73-L93",
+          "version": "repo-lines-v1:sha256:e3f80f785c65b8562c805f3040b3a109fd6fb18eb66fa5dd486b0a7d24d78462:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjNjM0NmM1ZmM2ZGM1MDcyODBkM2ZhMWRmYWFiMzMyNGZlYTNiMzU0NDdkYjdmZTcwYzRiYmNhZjc1ZGQyODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjZjQzOGVhODdiODkxZTEwMWU2Y2I2OWQzNjg5MjM3ZTMyNTE1N2NiZWU0YWI2ZTdiMWE5ODlkYzNiYzJkODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzODg4YzFhZjEyNTk3NDljMWJmY2E0NzdmNzAyOTA4ODAyZTEwNGRlODFhZjMyZTgzNDcwN2Y4MzA3OTBjZDMifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/Root.tsx#L16-L35",
+          "version": "repo-lines-v1:sha256:72b0c7500915c1cff7af5749b5f7a11aa1ea330a0b8c37821867dd6f27fc2a98:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjNjM0NmM1ZmM2ZGM1MDcyODBkM2ZhMWRmYWFiMzMyNGZlYTNiMzU0NDdkYjdmZTcwYzRiYmNhZjc1ZGQyODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjZjQzOGVhODdiODkxZTEwMWU2Y2I2OWQzNjg5MjM3ZTMyNTE1N2NiZWU0YWI2ZTdiMWE5ODlkYzNiYzJkODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyM2Y5MzdhNTU1Yjk4MjE5NTZmNjZkZTNhZTM3Njc5ZjIwMmZmYjJkMTdhOGYwNWZmY2YyNzAzNWU2MTY3ODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhYTYwMjhmMjg1ZGNjMzdjYzVhMzUyNzZkZWQ5MWQwZDYxNzY3NjU4ZTBmODM2NDg0OTBhYjRkMDhhODdlNGEifQ"
         },
         {
           "resource": "repo://apps/web/tests/support/fakeStream.ts#L1-L67",
@@ -494,13 +494,13 @@
         },
         {
           "resource": "repo://apps/web/tests/useGame.sdk.test.tsx#L1-L22",
-          "version": "repo-lines-v1:sha256:9980ffb99b31f4d6c1e05cc8e6d33c7d39d4c32f62e012be2ee354846a4993a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3ZGRmMTUzZDY1YmFkOTJkYjFjMmUwNWU1N2JjNzU1ZDQ2ZmIxOTFiODliOWYxOTU5NTAwNjkxMWUyMjUxZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxZWVjMDdmNDYyZmE5ZTI0ZTQ2NTMzZThjOGZmNDhkMmZjMWY0YWQyODdjYTMxM2Q1ZjA3NDI3ODFhOGNkZTgifQ"
+          "version": "repo-lines-v1:sha256:5b75edfa94ad66c1d0b864f334adcb6b7c29d872b867fc24a1805fefc0ea1cc3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3ZGRmMTUzZDY1YmFkOTJkYjFjMmUwNWU1N2JjNzU1ZDQ2ZmIxOTFiODliOWYxOTU5NTAwNjkxMWUyMjUxZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTBlYjZjY2RiMGZlZmNjM2M5YTg4M2M4NzljOTg2NmJlMzM5MzFjYWFhYmYzNjYyZDdhYzRjNDEzZWM4YjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMifQ"
         }
       ]
     },
     {
       "id": "claim_d955eeb07b10421888031f4deb98cac5",
-      "statement": "The New game dialog asks the server about the chosen LLM via GET /ui/model (debounced 300 ms, sending x-api-key when set), which returns max_input_tokens and takes_effort; a number-or-null limit with a boolean takes_effort is known, and non-OK responses, malformed bodies and network errors are 'failed'; a null limit disables the Summarize memory option, a failed check blocks a game with memory on and offers Retry, and late answers for a no-longer-selected model are ignored.",
+      "statement": "The New game dialog asks the server about the chosen LLM via GET /ui/model (debounced 300 ms, sending the session's headers), which returns max_input_tokens and takes_effort; a number-or-null limit with a boolean takes_effort is known, and non-OK responses, malformed bodies and network errors are 'failed'; a null limit disables the Summarize memory option, a failed check blocks a game with memory on and offers Retry, and late answers for a no-longer-selected model are ignored.",
       "evidence": [
         {
           "resource": "repo://apps/server/langchain_chess_server/app.py#L59-L63",
@@ -523,8 +523,8 @@
           "version": "repo-lines-v1:sha256:bc87ae069d0ad348d969c84ce571be9622f423434f32d1089f8b20493c6fb4a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMjY4MjkyMWMxY2ZjYjk1YWMzMzE3Y2FlOTNkNDZhMDE2ZTNmMzIwMjZmZTRjMzhiZDAzNTczODVhMzcwNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4ODNlODNhNjM2NzFlMjhjOTVmZmVmZjA2NTA3ODE3MzU1Mzk3OTBlNTU4MTU1YTk1ZGZiYzJlYjA0ZTQ2NTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlNDM1NDY5YTU0YzA3YjEzY2FkNWE4YmRiN2RmNDk3OGU2NzZkMWRhOWZmYWUxNGU2ZmE4MzZlOWIwMzE3NTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1YTI3MDg2NTQ1NWFmYjYyYWY0MjkxZmQ4OTg4NjQ3YTkwMWVlMWNjN2M5ZWIzZDZjZTljOWY0MDBlZTViODEifQ"
         },
         {
-          "resource": "repo://apps/web/src/modelFacts.ts#L1-L41",
-          "version": "repo-lines-v1:sha256:401e8763e1ae5c4565e37a932a517a898509d1bdd30387955acab2f6c18d21f5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwNjU0NGI1MmM1ODEwNWZjMGVkZjdiMGYxZjg5OWViYTMyN2YwNjE4ZjU0OThiNDY1ZTdjODY3MTIzZDRkODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://apps/web/src/modelFacts.ts#L1-L42",
+          "version": "repo-lines-v1:sha256:b75a15e14a883fea2398940edf41f3c2a90948a493ccded7cddd327e32381a1e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMThhMTBmMDAzMjUyNTdiZTc5Mjc0YmE2N2Q4YmE0Y2FhMThhYmRhMjUyZDA0N2U5NTA5YTNlM2YwMDU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -576,18 +576,18 @@
     },
     {
       "id": "claim_2e773766bf3940f69442e0e73b1271ff",
-      "statement": "useGame tracks each thread load by the SDK hydration promise as loading, missing (a clean load for a thread id that binds no thread), failed (rejected load) or ready, ignores superseded loads settling late, and the Table shows a Reload banner for failed loads and a not-on-server banner for missing threads while keeping the board locked.",
+      "statement": "useGame tracks each thread load by the SDK hydration promise as loading, missing (a clean load for a thread id that binds no thread), failed (rejected load) or ready, ignores superseded loads settling late, reloads with a new promise when a new session creates a new client, and the Table shows a Reload banner for failed loads and a not-on-server banner for missing threads while keeping the board locked.",
       "evidence": [
         {
-          "resource": "repo://apps/web/src/Table.tsx#L488-L513",
+          "resource": "repo://apps/web/src/Table.tsx#L489-L514",
           "version": "repo-lines-v1:sha256:3b229363d6bfe75a6ecc0c0642e290966f92e70d2dea16e5b4c1f7454a7bf1cf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MjE2ZThlOWMwYTFhNjhkMDZjMmZiYWE1ZmQyMTM5NDgyYjhlZmQwYTE5MzE1YjkxNWU2Y2NlODQ5ZDg5ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMzAwNDg0N2UwNGQ4ODQxMmY5NGVhYjZiMDU2NDlkNjJiMDQyM2QwNDliYjRiMzI3YTgxNjMxNmQ2NDQzY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyYTYxZDA1OWI0MzQxZDI4ZGI3MTQ4ODQyNTA2Nzk2ODFjMzdmMWZlOWFmMGNhZWVlNjJmNmU0NDUzM2UyZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4NmJhZGRiNjkwNzdkMGNmMmExZDJmYmIxZWQ2NWJjOTIzNTAwZjA0OThlM2MzY2ZkNWQwODE1YWI4YjA1NmQifQ"
         },
         {
-          "resource": "repo://apps/web/src/useGame.ts#L178-L202",
-          "version": "repo-lines-v1:sha256:57835a8be96034d13ffdf33217ae6b7981d2745002d789fddbc64d2d3167da02:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNDdmZmQ5YWFmOWUyYjFiYWI2YTgyMjUyODczMWM5YTZiYmEzNTM2NTFhMDRhODU3NGRkYWZiN2E3ZjYwY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjODFkOTU2YzUzZDAxMGRmYzNkODhlMTVjYTIwYzc3ZTI2YmMzNDY1YjQwMjI0NmNlMTYxZjU3MTAwMGM0OTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5Y2QzM2E0OWNjY2FjYWQyN2VmMWI0MWMyMmQ2MmMyMjliY2I3NGM0N2MyNzc0OTJkYjgzNDVjZGRkYjhhMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2NjM0YzkxZDQxNDkxNmE5ZDg2MTNhMzUxYmIxYjFlY2EwMmQyYTdmN2JhMTRhYmE0ZDU2MGUxYWU5YTZjMTkifQ"
+          "resource": "repo://apps/web/src/useGame.ts#L179-L203",
+          "version": "repo-lines-v1:sha256:28a86cc4742b490f40ca4650c1aee7ce7ad2568a13df2ca8611c9387f4bd1fc4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZTkyZTQzY2Q3YjNhYzI0YzI0MWRmNDJjYmM1ZmZhMzliYzkwYTljYmEzMGVkZTcwZTFjOTM0MGE0OTM0NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjODFkOTU2YzUzZDAxMGRmYzNkODhlMTVjYTIwYzc3ZTI2YmMzNDY1YjQwMjI0NmNlMTYxZjU3MTAwMGM0OTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5Y2QzM2E0OWNjY2FjYWQyN2VmMWI0MWMyMmQ2MmMyMjliY2I3NGM0N2MyNzc0OTJkYjgzNDVjZGRkYjhhMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2NjM0YzkxZDQxNDkxNmE5ZDg2MTNhMzUxYmIxYjFlY2EwMmQyYTdmN2JhMTRhYmE0ZDU2MGUxYWU5YTZjMTkifQ"
         },
         {
-          "resource": "repo://apps/web/src/useGame.ts#L48-L52",
+          "resource": "repo://apps/web/src/useGame.ts#L49-L53",
           "version": "repo-lines-v1:sha256:f8ce6913d4123dbf112b4678658437d1331c25ffb3b5f8b82c4434026d00a03c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMxZmQ2Y2FjOGUzODlhYWNiZTNhNjA0Mzk3MzM3OTM0MzUyNjhkYWIzMmMyOTgwOTMwZmY4ZjQwYzJkNDhmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODEyMjU5MGYxMTYwMWFhYTJlMGQ3NTg0NTgyOGY5MjU3NjNlZmIzNWFhMDYzY2EwMWZmNWMzY2EwMmIyMWQxYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzNiNzU1MTM2NjY0MmM5NjVjNzZjNTEwMWI5NTQ5NDgzMmU5YjQ1ZjgwMDdlOWNkMmM4NmRiMTEyNjUxM2ViMCJ9"
         }
       ]
@@ -597,16 +597,16 @@
       "statement": "The web app tolerates blocked localStorage: browserStorage returns null when storage access throws, writers report whether a save landed, and App shows a 'This browser isn't saving' banner when storage is blocked or a save fails.",
       "evidence": [
         {
-          "resource": "repo://apps/web/src/App.tsx#L186-L191",
-          "version": "repo-lines-v1:sha256:a820108c63645083e49952e4b7a6a8c2919b9ddcb8086ed7b22ded8ffb82d8ba:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTk3MGM5NGNjZDRjNWMwNTQ3NWUwYTViNGY4ZjI0YjRkZjlkZTIxYjFhYzEwOGVmZmVmNTgxODM4OWU3ZGRmMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdiOGMxMDg1Zjk1YTFhZmFiZTVkMTUyYWQ1OGRiOWRjMjYzMzZjMTIxOGUyYjg0MGFlN2FkODI2YTBkNTc0OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGE5MDQ5NTZhYWI0NjlmOTQ3MGM5NTJmNzE3ZjU0OTIyZTYzOTM3NDIzZTZlZmEwOTExODIxYmMxM2JmYjk0OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjI2Nzk5NGQ0NDYxOWU1NTQxN2ZlZWE5NTE0NjhhYmRhNzZkY2EwYzc3MmVlYmZjNTViZjMyMGFjMjU5OWRmMCJ9"
-        },
-        {
-          "resource": "repo://apps/web/src/App.tsx#L97-L100",
+          "resource": "repo://apps/web/src/App.tsx#L102-L105",
           "version": "repo-lines-v1:sha256:0947e61d34ebe451f28d55b5e056b95d9e0a04cc34bbf80e991142bed8113ff6:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmYxYTg4NzZiN2IzNGFlYzRjOTk5NjQ3NGJmY2ExMjQ2ZDhlMTMzM2MzY2ZjMGE4ZTE3MTVmMWY2MzExMDE4YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmRjNTJmMDhiMzliMDhiMDFjOGQzMDhiZjg4MGIwYmVmMDJmZDFkZmNjOWQ5YWE5M2E0ZDFiNWY0ZDU4YjZjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzE3YmQ5OWM3NjVmZDcxYWRlM2JjZWM4MjkzNTEwNDc0MzcxZWE5ZDMyOGEyNzBiYTcwNDkxYjRjOTUzYThhNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDEyMmQ4MTgxYWZjMjdjYTZlMTcxZTk4ZjM0MDFiMzFkZDU0MmE4NDIzZWQ5MTc2MGEzYTQ0NDgzNWZlYTFiYyJ9"
         },
         {
-          "resource": "repo://apps/web/src/storage.ts#L18-L49",
-          "version": "repo-lines-v1:sha256:fc1e1e433b2e75db3f9df3c1c994799fc9911319f04c14195ebf9fe97a3f03ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2N2E5NWUyMDcwNjlkODRkYzIyMGY4MmVlMGUyYmM3N2I3YWYwYTMxMmE4YWUyMTZiMzk3YzZlZGI3OTU1ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzMjQ5MzdlNmNmNGZhNDM2NzgzYmYwYzNlMzA3MWEwMjA5NzI2ZGM0NDkzMzNlNjRmNzZiY2YyZTFlOTM4MDgifQ"
+          "resource": "repo://apps/web/src/App.tsx#L233-L237",
+          "version": "repo-lines-v1:sha256:91bed000f0f2bc572378eabab3e68d84ae413fc91a0883faf0538c38e84f3491:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTk3MGM5NGNjZDRjNWMwNTQ3NWUwYTViNGY4ZjI0YjRkZjlkZTIxYjFhYzEwOGVmZmVmNTgxODM4OWU3ZGRmMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdiOGMxMDg1Zjk1YTFhZmFiZTVkMTUyYWQ1OGRiOWRjMjYzMzZjMTIxOGUyYjg0MGFlN2FkODI2YTBkNTc0OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODE2NDFkMzM1YWFjNzExMGNiNjZiOTQ3OGRkM2NlNTU4MzY2ZjkwOTBhMmQ0Y2M0ZDljODk2NjFkZmZlZTI3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjI2Nzk5NGQ0NDYxOWU1NTQxN2ZlZWE5NTE0NjhhYmRhNzZkY2EwYzc3MmVlYmZjNTViZjMyMGFjMjU5OWRmMCJ9"
+        },
+        {
+          "resource": "repo://apps/web/src/storage.ts#L16-L47",
+          "version": "repo-lines-v1:sha256:f756181ddc73edd3d7886b5f8f5c08e7ae9b1d9d79cd9af4761af17925e3b944:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1ZTgxMDljMGUxOWNiNGM5N2YxMjZlYWZlMTdmYzBiMzE4MWRmOTE2NGY2OTc5MmQ0NDZlOTdmYjE4MWZkMGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzMjQ5MzdlNmNmNGZhNDM2NzgzYmYwYzNlMzA3MWEwMjA5NzI2ZGM0NDkzMzNlNjRmNzZiY2YyZTFlOTM4MDgifQ"
         }
       ]
     },
@@ -800,11 +800,15 @@
     },
     {
       "id": "claim_8d2a9faea2324825a72bc22117fad8dd",
-      "statement": "The deployed web UI is hosted on GitHub Pages: the pages workflow builds apps/web with BASE_PATH set to the repository path, OUT_DIR dist and VITE_API_URL set to the agent deployment's URL, and the server deployment ships without the static build while still answering /ui/config and /ui/model.",
+      "statement": "The deployed web UI is hosted on GitHub Pages: the pages workflow builds apps/web with BASE_PATH set to the repository path, OUT_DIR dist, VITE_API_URL set to the agent deployment's URL and the VITE_OAUTH_CLIENT_ID, VITE_LANGSMITH_ORGANIZATION_ID and VITE_LANGSMITH_SSO_SLUG sign-in variables, is skipped until VITE_API_URL is set, and the server deployment ships without the static build while still answering /ui/config and /ui/model.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/pages.yml#L105-L117",
-          "version": "repo-lines-v1:sha256:1d3b36560aea6a913f33de523241f91cd063904d1a65983d614f59706162e683:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkZTRhYTMwNzU0NGZhYzQ5MTFkYTk5ODc0ZDliYWVlNGRkNTg0MGE0ZDM5NjI0MjJhMWRjNjg3ZmE0NmEwMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkOWQ0NTM4NzM2NDFkNTJhOTQwODI2MmE2NGFlZWJmN2NlZjQ5Nzk4NzRmMTBlNDc1MDA2NzIwZjRiMmU1OTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3ZGQ2MDMwOTYxYzY2ZWRhNmQ0NjE5MzJiOGFmNjEyNTZhZTI4M2ViNDNlZjZiOTkyZDQ1YWY4NDc5MmEwZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhOWEyMmVmZTc2MWE0YzM4OTFiMjQwODZiM2IxZmFlODE1OWUyYmNhNjIyN2UxNDE3NGE5OTg4NDhkNWQ3ODgifQ"
+          "resource": "repo://.github/workflows/pages.yml#L105-L121",
+          "version": "repo-lines-v1:sha256:4366aa02d41360022a15a8387d760eccd2f18d2ffb7b17d00f08b05fe2ba45ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkZTRhYTMwNzU0NGZhYzQ5MTFkYTk5ODc0ZDliYWVlNGRkNTg0MGE0ZDM5NjI0MjJhMWRjNjg3ZmE0NmEwMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkOWQ0NTM4NzM2NDFkNTJhOTQwODI2MmE2NGFlZWJmN2NlZjQ5Nzk4NzRmMTBlNDc1MDA2NzIwZjRiMmU1OTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3ZGQ2MDMwOTYxYzY2ZWRhNmQ0NjE5MzJiOGFmNjEyNTZhZTI4M2ViNDNlZjZiOTkyZDQ1YWY4NDc5MmEwZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhOWEyMmVmZTc2MWE0YzM4OTFiMjQwODZiM2IxZmFlODE1OWUyYmNhNjIyN2UxNDE3NGE5OTg4NDhkNWQ3ODgifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/pages.yml#L38-L40",
+          "version": "repo-lines-v1:sha256:a93fbea59c4d8f2e01167244476dc0cd295ef82b620438fdf86a964471acbd0f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTQ3OTg2YTIxYTAyZTNiYzFlOTA0ZGVhMDY5MTI2ZDViN2U4YWE4YjFhOTIxNzAxZTNmZjMxZGU5OTNhOThmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmYzNTYzNmI4M2IxNDRjZjI3NjAyZTI3Njc5Y2VlMmFiY2U2OWJlZGZiNjdkZDcwNWZhZWExOTllYWYxMWU2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWJkZjY3NTViZjE2MzZlOGI0YjYyY2M4Yzc1ZWY1NzBjMWI3MTc5MmY2NTI1Y2M4MjQ2YzFiNTUxNjdkNjgzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTI2ZGE1MWQ3OTIwNGUyNGRmN2VkODQzMDhjOGUwM2FjMTRjMDRlNjU1OTQ0MzhhZDVkMGQzZGRiNTNmYjA0OCJ9"
         },
         {
           "resource": "repo://apps/server/langchain_chess_server/app.py#L1-L7",
@@ -917,10 +921,62 @@
           "version": "repo-lines-v1:sha256:d01e433e03a72ec00bd8c8381e1aa5e333986b0d3d85321e75fc4e191f47fc25:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2NTBlMjdjNGQxOGQ0MWU2OThkZTU5NWU1MzdkNTY3ODY2Yjc3ODg1ZDM0NTdiNDQwY2I2YzRjMTdkODVmMmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMmI1MzgwYTQ3NTQ3NDE1YzMyNjAzZjNkYWYzNDdhMzg1MDQyMWY0Nzc4ODZmMTE3ODc2OTNiMzgxZjNkMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_143a76183ab14be4a171c5256b4600e7",
+      "statement": "main.tsx mounts Root, which renders a misconfiguration banner when VITE_OAUTH_CLIENT_ID is set without VITE_LANGSMITH_ORGANIZATION_ID, and otherwise renders by session status: an empty busy page while checking, the SignIn screen when signed out, and App with the session and an onSignOut callback when signed in.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/Root.tsx#L28-L81",
+          "version": "repo-lines-v1:sha256:080c35890f33ada5cefdd63d8aa64ea0aeddcd6bd742cd2bca528a4bc17a8cc0:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiMTdkZWVjNjg5NWNjZDBiYjI5YmVmMGMxNzY0NTZjNzJjMjM4M2I5NWI5ZGRhNGRiOWI4OGFmMmVkMmY3YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0MGYwMGQxZjgyNjcxZTIxNmIzM2E3ZTQ0ZDc3YTU3YWU1ZjE0MDEzNTdlYmY3Y2JiZDQ2ZWIwZjE4MDM5ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/config.ts#L22-L34",
+          "version": "repo-lines-v1:sha256:7fb6774fea65ed0e7d60cebced09e63dc52f91afb7dadeb484e6a85568e88a76:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZDk4YmI0Mzg0Y2RlYjMxZmI3NTYzYTQ1MzdmNWU2OTEyNjQ0YWE4MDRkMmYwNzFjM2RhNTcyMDQ2MmIxMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmYzQ4MjcxODg1ZDlkOTkyYTEzMjU3ZDQ0NzJmN2NjMjk2ZGE2Zjk3M2Q2YTAyYTk2MWZiNTExOGQ2MzkzN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/main.tsx#L1-L21",
+          "version": "repo-lines-v1:sha256:4d3225fc4be112d5922da435a7009e3d768abdb5b37ba837806ee730fd37e75e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1ZWQzMTFhN2I1OWY1Nzc2Mzk5MTAxYWNkNTVlYTlhNzgzZGUxNTgzMmMyMDEwMGFjMTRmZWMyYzE5MzgzZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhZDE0NmMyYTZiNmRkNmFiZTc5ZmU4ODRjNWI5ZWY4ODEzODk0ZWJkZjE5YWY2NTIyMGZlNDEzZGEzZWExOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5fedab0aeef14240bd3cdc8463326798",
+      "statement": "A web Session is none, apiKey or oauth; sessionHeaders maps it to no headers, x-api-key, or an Authorization Bearer token fetched per request, and sessionClient builds an SDK Client with apiKey null that adds those headers to every request and stream via onRequest.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/session.ts#L1-L46",
+          "version": "repo-lines-v1:sha256:54da68458850d7f2c60777e9b0a1be2bf08129c5f90e9778310e80f49e75058f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzOGUyYTYzMmVlYzY2OWJmNWU5MmZjNDM1N2RmNjE3YzM2YWMwYWVkOGFlZWVlNjg4ODc5YjUyOTVhYTI2YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d83ceb54ed064958b30e17ca296555ff",
+      "statement": "useSession resumes a tab's sign-in in order: a LangSmith OAuth sign-in, then this tab's stored API key, then a none session if the server accepts an unauthenticated access check; an unreachable server or a failed resume leaves the user signed out with a problem, and signing out clears the tab's API key.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/useSession.ts#L40-L118",
+          "version": "repo-lines-v1:sha256:a096950ceb1617ccfa5116dfde56a753e4d68ca45449a8a088783035fb2e16c0:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NjI5Y2M0MWY4ZGI1ZGZmMzUyYzY2NWQ0YmExZjczNjRhZTUzMTY1NjQxYWUwNWEzNzU3NmMyOWYxNTY1ZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxYjY2NzQ2MDM1ZjZjOGFiNmRkMGFmYTc3YjIzNzY1N2RiOThiZjk2Y2UxZWMxMTk3OTY3Y2U4ZTAwMTBmNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_45bd88cc1e7f4710ad2c50142abbcea1",
+      "statement": "The web UI keeps an API key only in sessionStorage under langchain-chess:api-key, keeps only the last LangSmith account's email in localStorage, and deletes the legacy localStorage key langchain-chess:app where older versions kept the API key.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/stored.ts#L1-L63",
+          "version": "repo-lines-v1:sha256:a636ff1e5fa95b2b7a7689bdd662edefc1fd938a30ae7813b8d80df119ac53c7:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlNTA4NzI2NGViZTdmY2U0NDk4NTM5YWFiZjBlZmZmMWI1MWI3OTIyYmM4ZWUwNTZjNGVhOWEyM2U2MGNhNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/useSession.ts#L47-L55",
+          "version": "repo-lines-v1:sha256:37db5d087edb73470693da7cbc7d8343c8da9af19634e980b431c8259651af5f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjMwZGJhMDQwNzc3YmNlY2EyNWQyYWQyOGMwNzIyMjM2NzRlZjU0YmU5MDI2ZmYwNTJkOTFiZjdiNGY0MTk1ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTA3NmY0MDRlZDc3ODhiZmY3MGFhNjllNjY2ZWFjNjU1MjIzOWExODA2NTQ2M2NkYTA5ZDYyYzJmNDZkNDg3ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzdlMjNmNGM0YWZjYjk3ODUwMWRlZmI0NDBhYmZjODAyZGQ1Yjg0MjJlZGYzZTFhN2MzMGFjZGNkYjM0NTNjYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzgxZjg4NDAxZDgxMmE4OWMwOGQwNWJmOTRhYzY5MzRlMTg4ZGUxOGU1NDlhZjBkODhlYzM2YTJkZTJjMTU0MCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-11-01T01:10:29.908Z"
+    "at": "2026-11-01T03:07:46.931Z"
   }
 }

@@ -1,0 +1,264 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:943cca87ff753e764a432ea91cbd6f6fa0d6676968ee8c58ef8bc6bff21489ed",
+  "claims": [
+    {
+      "id": "claim_85161f93b8de4483a9fdb46b15f9c351",
+      "statement": "langgraph.json registers auth.py:auth as the Agent Server auth handler and sets allow_langsmith_api_keys, so requests without an Authorization header are checked by LangSmith's own API-key check and never reach the handler.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/auth.py#L1-L7",
+          "version": "repo-lines-v1:sha256:1f8ca325e3c5df959f1539d92b881c234c118499f6a7b16ccb32537e061a11ec:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmYwZjQ3YjljNGYwZmZjMDMzOTQ0MDhiYmJhNDNjZTQ1YTQwYjY0YTI5MzUzZGIzM2QwZGY5NDM5OTk5ZDcxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDY0MDBmMGU1OGYwOTYxZDhmMjQxMjQ2ODE1ZTYwMjc1OGJkYzhiYzNlMWE0YWRlZGQ3MGQyNzY4NDYyNTFhOCJ9"
+        },
+        {
+          "resource": "repo://langgraph.json#L20-L23",
+          "version": "repo-lines-v1:sha256:f33a570b10658ab7387cf72803da7879566f2cbde73f72eae17c54e000f83c9f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU2ZTYzOTY4N2EzZjNlYTdmZDdlOWJlZDZlZGM3ODkzMGEyMGZjMzI0NWZjMDA3ZGYwZmE5OGQyYjVkYmMxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTJiNjAwMGIzNTViMTE4MmI0ODJiNzBhOWNkMTQwNjllM2EwOGUxMjdhZWU4YTgzYjQ2MTg3Mzg5MTMxNGVkOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjZjMTg5NDcyOGJiMTY5NjY3ZGYwMDRjMDZlMzAxYjMyN2E2MTEwYzA4N2U0ZjU2ZDVmMTc2NjcwM2ZhNzU4NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b2577ac512994a97ba63adec9dcbc0e0",
+      "statement": "The server verifies bearer tokens as EdDSA JWTs using signing keys fetched from https://api.smith.langchain.com/.well-known/jwks.json, requiring iss and aud to equal https://api.smith.langchain.com and requiring exp, iss, aud and sub; any verification error yields 401.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/auth.py#L20-L21",
+          "version": "repo-lines-v1:sha256:b4dd667277a479639aa54b4f7086d6f5ddbdc9ab15db3667a6e426e928dc6efc:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGFhMDI5YzAzMDRkYWNmZDcwYmFiYTNjYjE0MDk2NjVkMTZiZjBmMmU0ZDk5YWM2MGIwMTc2NTE0NWZjYjZhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWMwNWFmYTNmM2VkNWMyNzBlNTY5OThkMjEyZWMxYmIzZjA0M2ZjNjcxNjViOTdjMTRjMzYxZjQyNjQ2MGJlZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQ4YTA2MzA0NzJiZDhmODhjMGZiMDM3YzUwMzc3YjY5MWM1MGIyNDM2Y2ExMTg2ZWFhNjY3OWZkNTZhYzJiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODY4MDU3MjBiZTZjNGU4OWFlZTM0YjRmZDliYjllY2JmMGFjNmQ1NzA4YTk2MmRmMjAwMzM3NGJmYmU3NGMwMCJ9"
+        },
+        {
+          "resource": "repo://apps/server/langchain_chess_server/auth.py#L48-L73",
+          "version": "repo-lines-v1:sha256:38d706b5eb97cb5d7a0df9f8878274244440870b3c687d52c8ec1772c2c6109d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3OTBiZGNhM2ZmNmUwM2E0MjUyNDMwZDJlMzUyYWM1MmM5YzY2NmMzNjkxMDgwZmFhNDk0YjE0ZmRlMDQ5MzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjMWU3NzkwYzcyYmI3OTViZmJhYjBkZGQ1NzMzN2UyYWFiZDk4NzUyOTdlN2U5NDZlZGU1ODc3YWRlY2U3YTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0YWE4ZmU5MDBjNzQ4ZDc2ZmYwMDBlMWY3Y2RiMTUwNzg4MWZjOGJmYTA1YmU3MzcyNjVhOWY2NGYzMGI1YmEifQ"
+        },
+        {
+          "resource": "repo://apps/server/tests/test_auth.py#L74-L89",
+          "version": "repo-lines-v1:sha256:e89db53860dfdb88e8a7b5ed04c7599ab28559cb6caeb38f70654004ae881230:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmMzQ1ODNhNTk4NzY3YmY1NmFlZmViNjVlMjAzM2ExNjUxY2M0YzhkN2U2ZjBhZjNlNWNmZDMyOTNmOTMzYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZmQxNjNhM2JkMjVkMjRkNjdiNzcxZjk1MzI5MzU1NzU0MDU2NGI1OTMzYWMwOGI2MTYxYWU1ODhiODFkYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4M2VhNzM2N2Y4N2ExOTNhMWNkYTRhOWQ2MzE5ZWM5MjZjYTUwMmYyYzExMDk2NDZhMGI3MTYzOTI3YTA3NWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmMWJkYjFjMzliY2NiMDcxNWY3N2U5MjFhMjJkMzdjZDZhMDBhZGY0YmMxYzNhNjE0MDZkMjdiY2FmMjZiZWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8065e09f30b04057955378cc968fc66f",
+      "statement": "A missing, non-Bearer, or empty Authorization header yields 401, while a verified token whose client_id or organization_id does not match the access policy yields 403; an admitted token's identity is its sub claim.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/auth.py#L39-L76",
+          "version": "repo-lines-v1:sha256:5f55c45779a45a2787c1388de4deb6c21effee3ada3a79fce97e10aff9a15c53:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNGMxMmYzZTJmZTgzMjUzOWExYzIyZGQ0ZjNhNWQzNTk4ZTBlMGI3YzAzODg5YzM4MjAyYWU5NGM0ZTEyZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5ZjBiMDZjNWJhZjYwNjg2OTgzMmM1OTI4YjIzMDUxNThkMjEyZjIxN2Q5Mjg3M2NjMTJiYTU3ZGRiZWU4N2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjYzczZWMzMDU5NmRiNmM4NDlkMjNkZGQxYmZkY2Y1MDkyOWI4NzZiMDUxY2M1MGFlYWVmZDdkZDk2NTVjY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhODU0Mjk4YmZkMWVhOWFiZmE5MTEzYmY3ZjEzZjUxMjI4MWU5NzNhNWU1MTQ1NDg2ZjVhMTA3YzlhOWJhMzkifQ"
+        },
+        {
+          "resource": "repo://apps/server/tests/test_auth.py#L62-L96",
+          "version": "repo-lines-v1:sha256:ead1f067a3e0b5368381c907021b7eeed4e213a74848ebc89d7894a90b330844:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjN2E0ZmQ4ZDlhNzIzN2MwM2Y1NGJjNWExZWIwYjgwNzQwODZjNTY3YWI1YTNlN2Q0ODZiZjEzMjYwNGE3OTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmZTRjNDYyOWNiNTU4Mzk4MmUxMWVkOGM3MzYwNTg5YjJkZTU0NDgyMDliZTQyZTAyNTlkMzlkYjI5YzQ5MGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlMWYwYWJkZDlhNTQ5OTJjYzA1MGQ5ZDEwZjkzMjY5ZDE0ZWY3MjRmYmI1YzA0ZjRkNjBlMzA5ZTFkNzdkZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4YWM1ZjcxZjJlN2U3YTU4MGI0NGZmZDRmNThmNmVmZGZjMGQzZjE0NzJkMjliZThjMWMzNjgxMDI5NmUzMWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_176edce5d61b4c8dafe544eacb373c38",
+      "statement": "An AccessPolicy with an unset client id or organization id refuses every bearer token, so a deployment without the OAuth app accepts API keys only.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/auth.py#L27-L45",
+          "version": "repo-lines-v1:sha256:4b9f05dfd1f9a1978dbc7e8911f6d5dfc2905b93ee2a2caf36b2b171a828cefc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2OWExMzk3NWMyNTZlYzgzMjBlMjAxNjA4M2M5NmRmNjM3Y2EzZDM1YmViZGUyMzE0YmVlM2E0NzExYjU2Y2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0N2NkY2M0MDYzNWE5NjZlYmNhOTRkZTcxMzYyZGI0ZTM0YzhmMGNkMjEwOGZlMWExN2Y4NjU1Y2IyOGM3MGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlYTk1YWQxZDRlODQwN2ExYTgzOTY3ZDUyNDEwNGI1ZDhlMTRmMWRiMTNhNzI2NTg1MTFjM2I2ZWNmNjQxMTcifQ"
+        },
+        {
+          "resource": "repo://apps/server/tests/test_auth.py#L54-L59",
+          "version": "repo-lines-v1:sha256:de2b5fc9c9541bf7c64cc91735e7c41a86d33cdda40724d53cb1069be54f141f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWYzNDU4M2E1OTg3NjdiZjU2YWVmZWI2NWUyMDMzYTE2NTFjYzRjOGQ3ZTZmMGFmM2U1Y2ZkMzI5M2Y5MzNiMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWU0Zjg1OGY4YzA1NWJiMTNiYjgzNzE0MDU3NDFjNzY2OGY5NmRkOGI2MDc0NzMyOWQ4NDI5NmRiNWI1Y2VmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTc2MzcwMTQ3MjhhY2I5ZGExZjk5ZjZmMWMwNDRiMTc0MmJhYjA1YjE4NWE0NGI0ZDNlYTAwOWRiMzY2ZWEzMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDUxZmUxYWVmZmEwOTYyMzJhNjVkOWI3YjA2OGZjZGFkY2FmNjg3MTBmNGVkNDEwZTg4NzBkNTYzOWZjMmIyZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_06f604d87da0484fb82a00d6babe5cef",
+      "statement": "ServerSettings treats blank OAUTH_CLIENT_ID and ALLOWED_ORGANIZATION_ID as unset (trimmed to None), whereas blank LANGSMITH_GATEWAY_API_KEY, TYPESAFE_API_KEY or TYPESAFE_BASE_URL raise a validation error.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/settings.py#L22-L47",
+          "version": "repo-lines-v1:sha256:f60e0132201d3841cb0f82805d4b034e983d854126127ef9cfb7fc62d391a98f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyNGNkYTM0YzY4OTQ4ZjlkNjIwY2JhYjVhYWEyMWYxOWU4ZGY3ZjVkNzFmNWYxMWJhZmU2MDcyZmU5ZmEzOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlM2NmY2ViMzNlMDExZjliNjk1MDg4ZTBiM2FhODNiMTYwM2Q2OWRiNGRjNjU4MDNhYTgzNjM1M2U4MWIwZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkODA1NTViMDI1YTUxNDEwZThhOTBmNmIyODY4ZTdmNTZlZjQ5M2ZiMDk1OThiOTUxYzUxNGNkNzI5ZWQ5OGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwMTI4YTdkNjUzOTNiMDU1YWQyNDk1NWI1ODgyNWVhNDk5NTU2ZGMwM2YzNzYzOTBiMGVhZThiN2NhZmI0ZjEifQ"
+        },
+        {
+          "resource": "repo://apps/server/tests/test_auth.py#L99-L103",
+          "version": "repo-lines-v1:sha256:01d46e2dd8bdc348736335ef63623b2909fff76e4750acf54e3e702c283def2e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGIzMjlkYTE2N2U1OGEzYmFkODQ2MzkzMDIxMjAwZmU5ZmJiYWM1NjcxY2IyNmQ2OGE3ZmY0MWNmNjk3MzEzNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGJhNDgxYTgxYTg2ZjdiNDRhM2YwYTEzMTE2YzNmNzQ2ZjdkYWNlZTJhM2VlZjExMWQ0NWE2YWNhNmE3MmJlZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzRlYzFlZDEwNGVmYmUwZTBhMjdiMjM1ZDUyNGFlOTRiZjkyODJlNjM1NjMyZTI5YTY0ZDIyNDc5NmE5MzVhNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTlkMzVlNzhlMmYwNDhjMjBkYmFkNTExYmI4MjhhYTI0ODYxNzU1OTRiY2UyMWMyMDlkZGU3NWQ3ZjQzOGY4MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e236014c791a41b4ba562085cc87149d",
+      "statement": "The auth handler runs token checking off the event loop via asyncio.to_thread, and caches the access policy and the PyJWKClient.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/auth.py#L79-L99",
+          "version": "repo-lines-v1:sha256:e903797ea10f7a8269101ace380ee4f49a25ed83070ed3511b103f4bdf2859de:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzZWRmYTI3ZTAxNGE2M2UwNTk2ODFhOWY0MWJjMTg1MTBhMTIzZGM0MWE1ZTQ4YWQwZTJlNmQxN2FiYjNlYjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjQ5NzUzMzdjM2NjZjkwZGI3ZmU1NTJmN2RmYzU0MjkxMGE0MGIwMGE4NGIxNjVjMTJkYTM3NjdjM2EzNmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4MWJlMzI1YjUzZjE5ZDdkNjJlNzZhZGU5NjlmOGIxNzgzNDRiNjIwMjc1MGIwNTdmNTkwYmExOWVhZjkzN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0fdad66f340649739a737df2b2068302",
+      "statement": "The deploy workflow writes OAUTH_CLIENT_ID and ALLOWED_ORGANIZATION_ID (from repository variable LANGSMITH_ORGANIZATION_ID) into the deployment env, and the Pages workflow builds the web app with VITE_OAUTH_CLIENT_ID, VITE_LANGSMITH_ORGANIZATION_ID and VITE_LANGSMITH_SSO_SLUG from repository variables.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/deploy.yml#L84-L93",
+          "version": "repo-lines-v1:sha256:c33f836274340bf06fd246aa6703001d6fce6e3fcab795d0cf555945fdb9aedc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2ZGQ5YmRlZGIzYzFkNDhjZDJhZWNkNDkzNzIwNzYwOTY1YTkwZmJhZjQ5ZTljOWU0NGE4MTM2Mzc1MzRhNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1NzcyOTYzMzZhNmU4NjQ2MWM1MTllNTM0OTU3YmQ0OTA1ZDk0OTU2ZTQyNGU5N2Q3OGJiOGZjNTQzOTdjYjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhMTQwNmEzOWIwYzNiMGI1ZGY5MDRlMTA4ZjhlNTY0ZGUyNGE3ZmMyNzIxYTQxOTU2YTYzNTE3YWNkMDk3MDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjMzU3ZjM4YWIzMjFlMjc4ODI5ZDVmMzY4ZDAxNWJiZWM2NjE0ZGM2MzA5NTRiYzA3YWNkNzlhYzgxNDMxM2UifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/pages.yml#L106-L116",
+          "version": "repo-lines-v1:sha256:f9122428f5fd4d10ab4c281ac22e95106016b5e4f88e4e47b359080e7246508b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlYzZmZDk0OTdjNmQ2MzkzNjhjMTg5MzA2ZDE5ODljMGU3MjUzOGEzYzJkNTU4OTNhODViN2U3OTA3YmEwNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkOTI1ODY2MzQ0NWVjMTM0ZjEzZTU0ZGVkZmNmNWMyNGY1ZmY2Mjc0NDBiMGEyMGY5NjU2MTNiM2MwYThhY2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyODU1NzM0N2IyOGQ0ZTg5OGJjYzg0NzVmZDY3OWZmZTU2YWZiMGNhMDU0NjI1NzcxMTA4N2E0ZTNlMWFlNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1OWY5NTJjZTc0ODY5ZTdkNDRhNTNlMjIzNDRmMGRjMWZjY2MyMjRmZTI3Zjk1ZjIxOTRhODY2NzYyYTA0NDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_72cccb303d694697abc7e83e731b2583",
+      "statement": "The web app's build config offers API keys only when VITE_OAUTH_CLIENT_ID is blank, reports a misconfiguration when the client id is set without VITE_LANGSMITH_ORGANIZATION_ID, and Root renders only a 'This build is misconfigured' banner in that case.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/Root.tsx#L36-L45",
+          "version": "repo-lines-v1:sha256:58a7cbcf0e1b3f4434dc2f54c050eb221b09825efeab340bd530a332317eb72c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4MWRiNjI5YTM3YjM4NzQzNWU2NWFmNTZlN2EwOTgwYWVlZDAwNGM3N2UzZjZkZjgxYWE0MmUxODRhMDAzYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlYWQzOGRhMThiYjkzOTU4Y2M0MjQ2ZmQ0NDNkYzMzNzQzMGY1Y2Q1MmY2Mjg4MWQ2MjI1ZjI4ZDYyYTc2OTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYzczNTZiYzk3NTE4Yzc4NTZkZTg4ODQ2NjU5Mzg4NWNiZWFiZWI4MjhhZDhkOGYyZWM4YjNkZTNmMWJmMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2ZDJkMGZmZTU5ZjAzMDRiMjNhYTY5Yjc1Yzc0OTE5NmE1ZWEyZjE0ZDc4OGZjMDhhMjA0MGMxNGY1MmJmNDAifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/config.ts#L22-L34",
+          "version": "repo-lines-v1:sha256:7fb6774fea65ed0e7d60cebced09e63dc52f91afb7dadeb484e6a85568e88a76:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZDk4YmI0Mzg0Y2RlYjMxZmI3NTYzYTQ1MzdmNWU2OTEyNjQ0YWE4MDRkMmYwNzFjM2RhNTcyMDQ2MmIxMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmYzQ4MjcxODg1ZDlkOTkyYTEzMjU3ZDQ0NzJmN2NjMjk2ZGE2Zjk3M2Q2YTAyYTk2MWZiNTExOGQ2MzkzN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bd7b3f7cffc7440f9cdc0f6eb9e79a1b",
+      "statement": "The web app uses oidc-client-ts authorization code flow against https://api.smith.langchain.com with scopes openid email profile offline_access, a resource parameter of the LangSmith API URL so the token is usable at the server, tab sessionStorage (or in-memory storage) for user and state, and automatic silent renew disabled.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/oauth.ts#L211-L221",
+          "version": "repo-lines-v1:sha256:ef5060a130efbb04ef16136e892195627ba69978eaab43ba14620d3ae2aaf0fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMDE5Y2QxM2UyMjIwNDZiNWU3YjZlZTdiYjQzMmUzNWE4ZGVmNGRkOWJjNjU3NTI5ZGNmMjcwOWUzZDU5ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1YWRjODM3YmE2YTcxMTA1YWU4NzU5MGY1ZDY3MjNkMGM0YjY2ZWI1NzY5OTYzZjhhMDkyOGRhYWJjZWM0Y2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/oauth.ts#L97-L123",
+          "version": "repo-lines-v1:sha256:36f4c7ea61f2ea9593b7b51130639e93d878b2dd53a42d4fc8f015a89590b122:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlYjQ1N2E5MWQwNzNmNDE0NDY2MGMzMDQyOWQ1ZDM4ODRhNmE1OGNiMjcwMzBhODUzZmIxZDI0NGRkZjk3MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiNWMzYzUxMWM1NzlkZjYyMTUzYTFiZDFmMjE0YjdiNWY1Mzc5MTFiZWEyYjA3NjEzZmQ4YjFiN2QxMDhkN2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0d4adfc4af66408ab405a733d55c1f02",
+      "statement": "When an SSO slug is configured, sign-in navigation is rewritten to https://smith.langchain.com/sso/login/<slug> with redirect_to pointing at /oauth/consent carrying the original authorize query.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/oauth.ts#L121-L121",
+          "version": "repo-lines-v1:sha256:0095bc837cf15c60a72ea6b2b5bab263ecf903c7737c3a4b02d0b15d10f798c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDA5NWJjODM3Y2YxNWM2MGE3MmVhNmIyYjViYWIyNjNlY2Y5MDNjNzczN2MzYTRiMDJkMGIxNWQxMGY3OThjMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDA5NWJjODM3Y2YxNWM2MGE3MmVhNmIyYjViYWIyNjNlY2Y5MDNjNzczN2MzYTRiMDJkMGIxNWQxMGY3OThjMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjk1MmUzZTkwZDg1MzlkYjAwODdhZmNkZThiYjQ0ODZjYTExMGRmYTFlZTdhODkzN2Y0MzU5OWE0NjBhZTcxYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDk0ZmMwYzE3M2QxZWMzZmM1MDFkN2RmYTkyODU1MDFjNTI3Y2ZiNDcxMjU4M2RhM2NjMzYxODA1NjZiNGJlMyJ9"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/oauth.ts#L59-L84",
+          "version": "repo-lines-v1:sha256:ecc813079dd93fa671563c62a4c17064567947bf7d7e259691f79b69515b4152:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NDU2NTQ4OTBjMmVmZTc0YzQ2NTAyMWRkYWFiZWNhZGYzMjcyMTQyYjZiODFjMTY5ZWI4NGI3Mzg2ODFmZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlYWU5NjY2ODIyODI2YjdlMzBhOTczMGFkYjI5ZTljMTc2OTZiYWYzNjNiNzY1OTk4NGVmYTMxNjAxY2M3ZjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f2e334dfc88e473fa1137786f3973fad",
+      "statement": "Sign-in start saves the page's search and hash in OAuth state and restores them after the callback; chooseOrganization sends prompt=consent; the redirect callback is processed at most once and a failed callback clears the OAuth parameters from the URL.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/oauth.ts#L180-L206",
+          "version": "repo-lines-v1:sha256:09ab47d906759e6cb8ee71a89bde607458fcca99aa94b309a8bf1d97baed8d86:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxNDFkMmM2OTE4YjBkNGFmOWQ4NmQ2ZTQzZTlmMmI1ZDY0MWVjYmY0YjlhYzczOGE0ZTc2NDMzZmQzMzhhMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzYmIyOWMwOTljNzllZmU2Yzc4Y2E0ZTBlMzg5YmFmODMyNmNjYTA2MTZkNGI5ZTIzNzZiZGRjYmQxM2MzM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1NGUxYTBkYzljNzA3NDdhNDFlYzcwMzkwZGJkYzBkNDY0YTZmZWU3ZWQwZDZkNDFjNWI4YjY3YWMxMDQ5MmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_65a1cd5b26324c3ea058821de512b927",
+      "statement": "After sign-in the client decodes the access token's organization_id without verification and, if it differs from the build's organization, signs out and reports wrong-organization; the sign-in screen then retries with chooseOrganization.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/SignIn.tsx#L44-L53",
+          "version": "repo-lines-v1:sha256:55e854da468693a2ae63e63e384da9fc534b768ca149aa1ae8913efe787cb6aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjZGRlNWZjYWMxMjA3Y2JmNzIxODE2NTI1NDQ1NjY0ZjAxZTU3MWU2NWQyMDQ1Y2ZhNzU0MWI2NjcxOTk1NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMjZkNWNlMDE3Njk2NWUyMGIzNzM2MTAzNzE0NWY5OWUzNDY3MDU3N2RlZWE1Mjk4NTk4ZDE4MjQzNjg1NDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhZWEyMWVmYjA2MDU2Yjg2MTg5MzU3OTdhNzFlYmIwOTA2MzQyMWQ5MzdiZTc3NjQwMTMwZjgzMDYxNGYxOWQifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/oauth.ts#L166-L178",
+          "version": "repo-lines-v1:sha256:58e3e4e64f2909816c0230b1b17e9a99c81255236d18fdc1001ecce33745ce6e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwZDU4MDgxNzRlNmJhZWQ1NGM5ZGE4YTU2YTgxMWEwYTRkZjQyZTAyZWIzNGM1OGVmZWI1M2E4ZWYwZGE2YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxZTkyNWNjNWM0YzkyNGY0ZjA1OWZhNzg0MmVhOThmYTBmYmFmY2I3MGQ2ZWU5ODUzNTQ4MGM1ZDM0OWMwZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyMWQyY2Q1ZWM4MjkwY2Y0NjQxOTA0YmYxOTdiZjZlZTg0NTlkYWM3Yjc2NDliODcwYTgwYzhkYzQ4YmU0MDIifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/oauth.ts#L86-L95",
+          "version": "repo-lines-v1:sha256:3c23b2871edb24917cb02b510a2912e680ff2b7c50ac0c2e9a6bfecdb0afb5ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljMWJhMjNhN2RkNGZkYTFjNjg2MDIzZmU2NjhhMzVhY2EwNDI4OWU3ZmI4MjA4NTdkYjE1Y2IxYTYyZmJhMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhNTA1NzA2Yjg0M2U5MjAwMjY1YzQ2NmNiNWU4OTYxMjgyMTBhZThmZGRkOTk5ODZiMjIwY2RiNGU4MmJjMjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5ec8108437af431c991b8f5f014dffb7",
+      "statement": "Access tokens are renewed on demand when within 30 seconds of expiry, with a single shared signinSilent refresh for concurrent callers; a failed refresh removes the user and triggers onExpired, which returns the app to sign-in with an expired problem.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/oauth.ts#L137-L154",
+          "version": "repo-lines-v1:sha256:2ebd81a9624d28a4564dd6956ba06633718485d78019b9e98ded8899fdcf826c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ZDU2YTA2MDYwMDdjYjEyOWRiZjJmMDUzOWQ1OWE1ZjY5MzU3NGVhZTc3YWNmODg4MTI3ODdkZmQxYzRlMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmMGU0OGJhYmE4Yzk0NTVhYWQyM2Q1NDI5MDFkNzQyNDAzN2RmNjMyN2ZhYTAxNmI0MjI0N2NjYWNlMjhhOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljMTQ2MjdlYjFjNTJjMzkxYWQzMjA1MDVhYjg1YTY3YmQzZjE4NWIzOWUxOGNiMTI5NTIxOTUxMDM0NTdiYzQifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/useSession.ts#L70-L74",
+          "version": "repo-lines-v1:sha256:d49283d07a40cf51b7724a831272f6d43ed02d6bec620933fa5e98e0c5d7346d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGFhMTZmZmUwMzIxMzg0OGQ5MzhjZWQyMTc0YzEzNTkwMWVkMWM4Y2Q3OWVjMmZhMGY4ZTg1NmQ1ZGQxNzNkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlZjAxYmMwOGRiYzNiNjNlNGU3NWVhM2QyNmE1Yjk0MTg5MTg3N2UyN2FkODkxMzI5Yzg0MTFkN2Q4ZGM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmE5MzA3YzJjMjczMjhkODQ5YTY4ODdlNjVmMjc5M2Y0NmFiZmFhZTVlMWNmNGI5MmM5NzFiOTljZjJmNDk5NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDljZGIxMzBiMzc1MTE2MjliYzI5Y2FmZTIyMWI0MWJiM2M5ZGIyYzYwYmRiY2VmYWI4NjVkODY3MDkyMDE5NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d6f921db98f34133ba2bec87acdae293",
+      "statement": "OAuth sign-out marks the session signed out, waits for any in-flight refresh, revokes the refresh token ignoring errors, and always removes the stored user; later token requests throw.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/oauth.ts#L156-L165",
+          "version": "repo-lines-v1:sha256:d8c80abe7c406a092f70204b0d1f6628c424a1cec11796d031819b4d30094177:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlYjU2ODA4ZjQwYWM0Yjg2MWUxNDcxNjQzNWJhZWFkMGY5MjNmZmUzZTlkNDZiYzE1OWIzMjhiOWFjNzI0MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwYWE0YjhkZmUxNTllNTE3NTJiNDQ2NWQyYjcxZjVhZTk1NDJmMDQzZjIxYmY0ZWEyNzhlZGRlM2I5OWFiMTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5ODZiZjU3ZmM3NTUzM2IyZDVmMzBjMjdkYzZjMzQ3ZjQ3MWJmYWFiOGQ0Y2UwNzU5OTA5MDQxYTkxYmVkYTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b3189da52131415d88df24e5a2d54f61",
+      "statement": "The Session type has none, apiKey and oauth kinds whose headers are respectively nothing, x-api-key, and Authorization Bearer with a freshly obtained token; sessionClient sets apiKey null and adds these headers to every SDK request via onRequest.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/session.ts#L3-L46",
+          "version": "repo-lines-v1:sha256:b26f1a75cc38aab1b9d6e6e88a03c260de17bd547db8f8b7677180a4d9836e0a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNjJhMzhhNDVmOTcwN2JjNTZhZDg1NzQyZGY4OTFiNjRhYjM2NTJiYTYzMjY3ZTFhZGJiNzljYjA1NTA4MzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmZDRhOTFlZDNmNmQyOGVlOWUxMWM0ZWZkZTljY2NiYTEyZDA2YTZjYTcwODAzNGQ0MzUyY2U5NGQ0ODIxMTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/useGame.ts#L166-L166",
+          "version": "repo-lines-v1:sha256:303e365656cbf7606d391a1c03dbabcb0ca6f2dd9582bfd9fea63e82e9dc8a24:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzAzZTM2NTY1NmNiZjc2MDZkMzkxYTFjMDNkYmFiY2IwY2E2ZjJkZDk1ODJiZmQ5ZmVhNjNlODJlOWRjOGEyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzAzZTM2NTY1NmNiZjc2MDZkMzkxYTFjMDNkYmFiY2IwY2E2ZjJkZDk1ODJiZmQ5ZmVhNjNlODJlOWRjOGEyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzRjMWM2NzcyZGI1ZjQ4NWI0NWZjNWNhMTVlOTI5OTg3YTgwMWZlMmM5M2I3MTE2Y2Q4NGFlMjkxYmEyNmY0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmQxNTBiZmMyY2Q1MDEzZjE3OTc2ZWY3N2JiZmE2YTI5NWMyN2E0MjA3Mjg4ZWM3NGU0NzdmODZmNjY2ZDFhYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4efce4f9e39341f99fc1a6c999cbabc7",
+      "statement": "The API key is kept trimmed in sessionStorage under langchain-chess:api-key, only the last account's email is kept in localStorage under langchain-chess:last-account, and the legacy langchain-chess:app localStorage key is deleted on resume.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/stored.ts#L6-L63",
+          "version": "repo-lines-v1:sha256:eb4738d50828255c91a1f5a8add5ab29afedcda4007e0ea0ea01e835272fa4d9:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4NWQ3NjkxMmQ4NTlkZTU4ZTA3OGI2YmFiOTQ0NDVjOGE3YTc4YWQ4M2U4M2Y5NTU3MjVhMDgxYjNkMTMzMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhZTdhZDljZDMzOGMyNDZhZGIzYTFkYTE0YzM4MTRiNGQ2NmU4NTVkZTQ0MTcxODk1MTQzYjRhZGU2ZThhZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/useSession.ts#L47-L47",
+          "version": "repo-lines-v1:sha256:630dba040777bceca25d2ad28c072223674ef54be9026ff052d91bf7b4f4195f:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjMwZGJhMDQwNzc3YmNlY2EyNWQyYWQyOGMwNzIyMjM2NzRlZjU0YmU5MDI2ZmYwNTJkOTFiZjdiNGY0MTk1ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjMwZGJhMDQwNzc3YmNlY2EyNWQyYWQyOGMwNzIyMjM2NzRlZjU0YmU5MDI2ZmYwNTJkOTFiZjdiNGY0MTk1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzdlMjNmNGM0YWZjYjk3ODUwMWRlZmI0NDBhYmZjODAyZGQ1Yjg0MjJlZGYzZTFhN2MzMGFjZGNkYjM0NTNjYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGIyNTQwZjFjNTQ2NzhlMWVjOWRmMzliZTE3NDIwNTk0MDYyNGZjYmQyODkxY2NiNzk1ZmViNzc1MTBlMTM4NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3a4b40156f0e432d8c0cac1795fd822e",
+      "statement": "Session resume tries a LangSmith sign-in first, then the tab's stored API key without asking the server, then checks whether the server accepts no credentials, opening the game with no session when it does.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/useSession.ts#L40-L65",
+          "version": "repo-lines-v1:sha256:a175b9965dcb5ad8bd03113786c0dafefddd1dbc78147ca981edfe6f88f058f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NjI5Y2M0MWY4ZGI1ZGZmMzUyYzY2NWQ0YmExZjczNjRhZTUzMTY1NjQxYWUwNWEzNzU3NmMyOWYxNTY1ZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxYjY2NzQ2MDM1ZjZjOGFiNmRkMGFmYTc3YjIzNzY1N2RiOThiZjk2Y2UxZWMxMTk3OTY3Y2U4ZTAwMTBmNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwZjczNTljMTcwODBjOGRiNDJkZGNiNjA0ZDljY2MxMTkzYzRiNzM4NjRkMjBiZDNiYzQwMzU1YWNkNGYyMzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_82f11819b75b4010ad5cfc4b551e217b",
+      "statement": "checkAccess POSTs {limit: 1} to /assistants/search with the session's headers; statuses other than 401/403 count as ok, 401/403 without credentials is missing, 401/403 with credentials is rejected with the server's detail, and fetch or token errors are unreachable.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/auth/check.ts#L21-L43",
+          "version": "repo-lines-v1:sha256:70650ab694930225861010e7bf153fb754bf5dbf638402d6a2d3c95fa21deef2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmNmMxOGUwMThhZDgxZjQ5MDM1ZTIyNzA4ZDNiMWIxY2VlNDcyODg2NDlhMDc5MzUwZDEzMjkxZWRkYzY3Y2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_59284785c7da4c839458ae16d8ed1c08",
+      "statement": "The sign-in screen checks an API key with the server before storing it and shows the API key form under Advanced when an OAuth app is configured, or alone when not.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/src/Root.tsx#L61-L61",
+          "version": "repo-lines-v1:sha256:311fe873976dcd53712520a7b879d10f6fbb8882422fadd40e615316af8a5328:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzExZmU4NzM5NzZkY2Q1MzcxMjUyMGE3Yjg3OWQxMGY2ZmJiODg4MjQyMmZhZGQ0MGU2MTUzMTZhZjhhNTMyOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzExZmU4NzM5NzZkY2Q1MzcxMjUyMGE3Yjg3OWQxMGY2ZmJiODg4MjQyMmZhZGQ0MGU2MTUzMTZhZjhhNTMyOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTM3ZmY4ZTkyNTRmZjgyNWUzZGIyZDVmNTY5YzZkMTVjZTYwNjcwZTg1NDYyNWVjMzQ2MTYwNGJmM2FmNDA4YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2YxNTE0MDRhZjRlZTc4ZThhMmJiMzdmMDBmNjU4MTNiNTUxNThhZWMyZWQzMDE4YmQ0N2VkNjhkNDk5ODY2NyJ9"
+        },
+        {
+          "resource": "repo://apps/web/src/auth/SignIn.tsx#L38-L64",
+          "version": "repo-lines-v1:sha256:a64820e4db360031e89a133ff8a0509e58798d3bea8c631b75577e7d4877ea5a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzYmFlNTEwYmIyZjkyOWNhMjU5MWY3ODA0NDUzNzBmZGRiNTEwMjQwNjQ4NGEyOGY4ZmUxNjJmN2ZjMzc4ODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5ZGU5ODM3MDBlNTI0ZWVhOWY3MTQ2NDg1YzQ2ZjQyNjU5ODdkOTZlOWJkZWJlNTAzMmEyNjNkYjk4ODk1Y2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhZTdlYWM3ZjNkMTg5N2RlYjg4YzgwZjU5ZGYyZmVhOTJmNDBhYjc4MmZlOTE0MWQ3YTA5NDI0YWQ4OGY0OTkifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.0",
+    "at": "2026-11-01T03:07:46.931Z"
+  }
+}

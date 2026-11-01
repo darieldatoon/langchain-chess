@@ -2,7 +2,7 @@
 type: operations guide
 title: Local development toolchain
 description: How the repo's single mise.toml supplies every tool and task (setup, dev:web with port checks, dev:tui, dev:uci, dev:review, check, test, test:e2e, test:live, test:uci, eval tasks, generate:settings, probe:efforts, build, agent:tag, wiki tasks), how .env is loaded explicitly with --env-file, how Socket Firewall (sfw) wraps dependency installs, what the lefthook git hooks enforce, common troubleshooting fixes, and how the OpenWiki update workflow runs.
-tags: [mise, toolchain, local-development, lefthook, sfw, environment, openwiki, tasks, troubleshooting, evals, codegen]
+tags: [mise, toolchain, local-development, lefthook, sfw, environment, openwiki, tasks, troubleshooting, evals, codegen, oauth]
 sources:
   - id: openwiki-source-5f5b95b3d6a215fa02ceb945
     resource: repo://.env.example
@@ -12,10 +12,16 @@ sources:
     resource: repo://apps/server/langchain_chess_server/codegen.py
   - id: openwiki-source-e3b0d2af80ee0702b2be4a6b
     resource: repo://apps/server/langchain_chess_server/settings.py
+  - id: openwiki-source-af9ed044b3462b6126b95a6e
+    resource: repo://apps/server/README.md
   - id: openwiki-source-64a074f8a0917e42ea22836a
     resource: repo://apps/server/tests/e2e/test_browser.py
   - id: openwiki-source-bae425afdb2f1082f5506562
     resource: repo://apps/server/tests/test_codegen.py
+  - id: openwiki-source-db33746522a03b766fdba194
+    resource: repo://apps/web/README.md
+  - id: openwiki-source-fe293e29941663c7d6f751f0
+    resource: repo://apps/web/src/auth/config.ts
   - id: openwiki-source-03f6dd3375679341910a29c1
     resource: repo://apps/web/vite.config.ts
   - id: openwiki-source-ee41134d60a773825ca210b7
@@ -44,10 +50,10 @@ sources:
     resource: repo://scripts/setup-worktree.sh
   - id: openwiki-source-d40d5b1418858a88965a8a23
     resource: repo://t3.json
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
 verified:
   - by: openwiki/0.6.0
-    at: 2026-11-01T01:10:29.908Z
+    at: 2026-11-01T03:07:46.931Z
 ---
 
 # Local development toolchain
@@ -97,8 +103,10 @@ It finds the main checkout through `T3CODE_PROJECT_ROOT`, or through the parent 
 | `eval:systemone` | `lcchess-evals systemone run` (with `.env`) | One System 1 experiment: `-- --model ... --style ... [--split dev]` |
 | `eval:systemone:baseline` | `lcchess-evals systemone baseline` (with `.env`) | The baseline experiments in `evals/experiments/systemone-baseline.toml`: Jev in both description styles, Luna Decisions, and a Jev control with a 16-option cap |
 | `generate:settings` | `python -m langchain_chess_server.codegen packages/chess-ui/src/generated` | Regenerates the settings JSON Schemas and TypeScript from `ChessContext` |
-| `build` | `pnpm --dir apps/web exec vp build` | Writes the UI into `apps/server/langchain_chess_server/static`, served at `/ui` |
-| `deploy` | `mise run build` then `langgraph deploy` | See [Deployment](/openwiki/operations/deployment.md) |
+| `probe:efforts` | `python -m langchain_chess.efforts` (with `.env`) | Asks each recorded model (and any given after `--`) whether it takes a reasoning effort; real calls |
+| `build` | `pnpm --dir apps/web exec vp build` | Writes the UI into `apps/server/langchain_chess_server/static`, served at `/ui` for local runs and the e2e tests |
+| `deploy` | `langgraph deploy --no-remote --agent-id langchain-chess --agent-environment production` | The UI ships separately to GitHub Pages. Prefer deploying from CI: see [Deployment](/openwiki/operations/deployment.md) |
+| `agent:tag` | `bash scripts/agent-tags.sh` | Tags the positions dataset and the agent's tracing projects |
 | `wiki:init` / `wiki:update` / `wiki:view` | `scripts/openwiki.sh code --init/--update --print`, `openwiki visualize` | OpenWiki pinned per task |
 
 ### `dev:web`: port checks and process lifecycle
@@ -155,7 +163,7 @@ Loading is **explicit**. Nothing sources `.env` globally:
 - The server's `ServerSettings` (pydantic-settings) reads the shell first and `.env` second.
 - `scripts/openwiki.sh` sources `.env` itself with `set -a`, if the file exists.
 
-Both `uv run --env-file` and python-dotenv expand `${VAR}` from the parent environment. If `LC_GATEWAY_KEY` is missing, the gateway and TypeSafe keys expand to an empty string, and langchain-core would silently fall back to `LANGSMITH_API_KEY`, sending model calls to the tracing org's gateway. To prevent that, `ServerSettings` rejects `LANGSMITH_GATEWAY_API_KEY`, `TYPESAFE_API_KEY` and `TYPESAFE_BASE_URL` when they are set but blank, so the app refuses to start.
+Both `uv run --env-file` and python-dotenv expand `${VAR}` from the parent environment. If `LC_GATEWAY_KEY` is missing, the gateway and TypeSafe keys expand to an empty string, and langchain-core would silently fall back to `LANGSMITH_API_KEY`, sending model calls to the tracing org's gateway. To prevent that, `ServerSettings` rejects `LANGSMITH_GATEWAY_API_KEY`, `TYPESAFE_API_KEY` and `TYPESAFE_BASE_URL` when they are set but blank ("is set but empty; unset it or give it a value"), so the app refuses to start. The OAuth settings deliberately behave the opposite way (blank means unset), as described above. `apps/server/tests/test_settings.py` covers both rules and `.env` loading.
 
 ## Supply-chain guard: `sfw`
 
@@ -213,6 +221,24 @@ The `openwiki` npm package is pinned **per task** (`tools = { "npm:openwiki" = "
 5. It disables telemetry and `exec`s `openwiki` with the task's arguments.
 
 If `LC_GATEWAY_KEY` or `LANGSMITH_API_KEY` is missing, the script stops immediately with a message.
+
+The **`openwiki-update`** GitHub workflow currently runs only on `workflow_dispatch`. Its push trigger on `main` is commented out while the code is changing quickly. The workflow:
+
+- Runs one job at a time (concurrency group `openwiki-update`, no cancel-in-progress), because every run pushes to the same `openwiki/update` branch.
+- Checks out with `fetch-depth: 0`, because `--update` diffs HEAD against the last documented commit.
+- Runs the shared setup action without Python or web dependencies, installs OpenWiki through `sfw`, then runs `mise run wiki:update` with `LC_GATEWAY_KEY` and `LANGSMITH_API_KEY` from repository secrets. That step is `continue-on-error`.
+- Deletes `openwiki/.run.json`, then uses `peter-evans/create-pull-request` to open or update a `docs: update OpenWiki` PR covering `openwiki`, `AGENTS.md` and `CLAUDE.md`. The PR is opened only when files changed.
+- Still opens the PR when OpenWiki fails. The PR then holds the pages finished before the failure, and a final step fails the job. Merging such a PR makes those pages the baseline for the next run.
+
+`AGENTS.md` tells coding agents not to hand-edit generated pages. Change the source instead and let the workflow regenerate the pages.
+Change the source instead and let the workflow regenerate the pages.
+ow regenerate the pages.
+flow regenerate the pages.
+files changed.
+- Still opens the PR when OpenWiki fails. The PR then holds the pages finished before the failure, and a final step fails the job. Merging such a PR makes those pages the baseline for the next run.
+
+`AGENTS.md` tells coding agents not to hand-edit generated pages. Change the source instead and let the workflow regenerate the pages.
+_KEY` or `LANGSMITH_API_KEY` is missing, the script stops immediately with a message.
 
 The **`openwiki-update`** GitHub workflow currently runs only on `workflow_dispatch`. Its push trigger on `main` is commented out while the code is changing quickly. The workflow:
 

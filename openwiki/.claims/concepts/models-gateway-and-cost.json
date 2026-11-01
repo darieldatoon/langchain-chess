@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:17e66b7d0fc66d95616579b3306e9e0a31ad0191cc3cfb0fadf56550fa016c95",
+  "pageVersion": "sha256:97c51614d9d679fcdbcfb96745de90b74a439f425ae04a4651288026795b0821",
   "claims": [
     {
       "id": "claim_da924ca86b624259b9fe4f9d0bcf3c46",
@@ -74,11 +74,11 @@
     },
     {
       "id": "claim_34f8c18deb8b4b839d83cc322d613720",
-      "statement": "ServerSettings rejects a set-but-empty LANGSMITH_GATEWAY_API_KEY, TYPESAFE_API_KEY or TYPESAFE_BASE_URL because the .env template's ${LC_GATEWAY_KEY} expansion yields an empty string that langchain-core would silently replace with the tracing key; make_graph instantiates it only for runs (reads without an execution runtime get the credential-free shape() graph), and typesafe() raises when either TypeSafe variable is unset but is called only when a TypeSafe System 1 model runs, so an OpenAI Decisions System 1 needs no TypeSafe variables.",
+      "statement": "ServerSettings rejects a LANGSMITH_GATEWAY_API_KEY, TYPESAFE_API_KEY or TYPESAFE_BASE_URL that is set to an empty or whitespace-only value (unset is allowed, defaulting to None) because the .env template's ${LC_GATEWAY_KEY} expansion yields an empty string that langchain-core would silently replace with the tracing key; make_graph instantiates it only for runs (reads without an execution runtime get the credential-free shape() graph), and typesafe() raises when either TypeSafe variable is unset but is called only when a TypeSafe System 1 model runs, so an OpenAI Decisions System 1 needs no TypeSafe variables.",
       "evidence": [
         {
           "resource": "repo://.env.example#L20-L33",
-          "version": "repo-lines-v1:sha256:a96f554f6d0aa3d42d654f5c598877d30d9dde6ff567f98cd4d3a87795a3f063:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhY2Y1MDYzNDQ0YWEyOTFhZjJmZDZjNWNiNTFjMTNkOWI2NjY5NjdlYzUwMzQ0YzE2MjEwMWVjYzA1NjhjMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NWVmNjQ1NDE0MTM0ZTE5ZmVjNDU3NTI2NDc3ZTA5YTZjNjM0NzFhZGJmOTg5MmQ2NjEwMDQxZThhOGY5ZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkMTlkMTlmM2Y4YWJmMTE2ODk0ZDgyMTk3YjIxYmIxODAxMmMzYjQ3YjllYTZkZTgwMWM0ZjQ2ZjFmMGIyM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:a96f554f6d0aa3d42d654f5c598877d30d9dde6ff567f98cd4d3a87795a3f063:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhY2Y1MDYzNDQ0YWEyOTFhZjJmZDZjNWNiNTFjMTNkOWI2NjY5NjdlYzUwMzQ0YzE2MjEwMWVjYzA1NjhjMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NWVmNjQ1NDE0MTM0ZTE5ZmVjNDU3NTI2NDc3ZTA5YTZjNjM0NzFhZGJmOTg5MmQ2NjEwMDQxZThhOGY5ZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkMTlkMTlmM2Y4YWJmMTE2ODk0ZDgyMTk3YjIxYmIxODAxMmMzYjQ3YjllYTZkZTgwMWM0ZjQ2ZjFmMGIyM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlNTQxNjM5ZmJjOThhYWIzNjIwZDlkYjMzZGU4YzdjNGY2MzhlMjFiM2I4NzQzZWRiOThhM2U5ZTU4YzYwODIifQ"
         },
         {
           "resource": "repo://apps/server/langchain_chess_server/graph.py#L124-L132",
@@ -89,8 +89,8 @@
           "version": "repo-lines-v1:sha256:e838ba6a74eb5e9f6815db7b172036c5040765ed810c0ae0e11ab56d3012fd6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwMDU3Y2M4OTBmMDkxYjMzMWYyMzdkNmM2YTI4MjVhNDQ2MmYzMzFlZWUzZjhiNThhY2E3OTJlMjUyYjhiYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMjJiOWI1YTc5YTUwOGEyYWNmOTZlN2I2OGU5OGVlMWU5MzUyZjc3MGUzNGUyMWEwMDdkZWM2ZmY0MDE4YzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjMDg4ZGYyNzRiN2FiYTQ0YmYyOWQ0OWZiN2MzNDlmM2RlNzM4N2U4ZDhlMzRmZDRjMzVlZTUzYTBiNzBmMjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkMDRjOTEwZjUwMjlhZGQyNzI0MjM3NzM0NzVlOTQyNTVjNjFkYjc2ZGNlOGY0OTUxZjgzZDJiNTU5ODIxMjYifQ"
         },
         {
-          "resource": "repo://apps/server/langchain_chess_server/settings.py#L1-L43",
-          "version": "repo-lines-v1:sha256:a32755775f313a1845956568a40e067618e63d16e05e3cfa5c550dcf4ae3cd98:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExYTIwZDAzNTMxODAyY2ZiZDc0OGQ0ZTVlOGFhZjA5NWU5ZTU5ODIyYjE3NmE0ZWM4YWE0YWNjYmEzOTYzMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMzdiYzZhMTc4YmQ0YmZjNThhZDVmYzk1YjI5ZGQyYzJiNjUxZWM0OTYzY2M4MGFhNDBmOTNjZDA1ODUyODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://apps/server/langchain_chess_server/settings.py#L1-L54",
+          "version": "repo-lines-v1:sha256:23dd03498af7fa35898cb46c91cf2a19ed7d1e8e2e48787f8a53c4aacce57b0f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExYTIwZDAzNTMxODAyY2ZiZDc0OGQ0ZTVlOGFhZjA5NWU5ZTU5ODIyYjE3NmE0ZWM4YWE0YWNjYmEzOTYzMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMzdiYzZhMTc4YmQ0YmZjNThhZDVmYzk1YjI5ZGQyYzJiNjUxZWM0OTYzY2M4MGFhNDBmOTNjZDA1ODUyODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://apps/server/tests/test_graph.py#L191-L224",
@@ -99,6 +99,10 @@
         {
           "resource": "repo://apps/server/tests/test_graph.py#L60-L63",
           "version": "repo-lines-v1:sha256:01bbf5243c8e391a90f6beefaf9cfd9ce9bdde67a8fe53e8beec142e06b038bf:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmY5YjhmZGQzZTcwNjdjNjYwOWJiNTMwMWI5Zjc2MTQ2MzdjNTYwMWU4OTM3YmVkNDg1ZWMzMzUyMjg4OWVkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGZhYzdkNzlkY2FlZTYzZmQ2ZTY3ZDgzZjQxYzZkMjA2MzgyZDk3YjU2OGIxOTM5NDg0M2M2YTViZWQ5NDBmZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmExNWQ2NjUyNjJlN2FmZWMyNmYxNmYwYjEyM2JhNWU2NzI1MTc1ZGQwMjZhYjBlZThkOWRlZjMwZWY0YzM1MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmJhNzExMTY3MjFmOTA3OWJjYTQwZTdlZWI4OWQ4M2M3YmU5NWNlYTI5MmE2MjAwNzZjZDNhNTMxODc2MGVhOSJ9"
+        },
+        {
+          "resource": "repo://apps/server/tests/test_settings.py#L13-L27",
+          "version": "repo-lines-v1:sha256:fafcd762b1188cc45eeac95007174babdb283442b4226dc4f5ba038653118177:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiYjQ0NDU1OWJlY2I5ZWZiOWEyZDZjYjliMjkyYjEzN2JmY2MzYzAxZDExYzZkOTBmZTE4NzQ1ZDk3YWNiMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhODc1YjI4YzkyZmYzMTk2YmI4NjE3OGZhMGVhZjJmMTUyOTg3YTU3OTdlYTU2YjUzZDYxOGVjZjdmYWUxZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2N2Y1OWU0ODY5NjlkMmRlZDhkNDQxM2QzMTUxYTM1Zjc2ZjQxNzg2NTZjMTgxMmVlZGQxYWQyMGUzYWY3OGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxN2VjMTIwNTNkOTA2YjNmM2Y4NzlmNGFmODUyZGNhNTQyZjJjMGMxYmNjODAzYjM3NjAzZDVkZDZiYTgyMmEifQ"
         }
       ]
     },
@@ -597,10 +601,24 @@
           "version": "repo-lines-v1:sha256:e3cebcda108baf7d91471a3bbe7d44c6907e4e8c4d2c195f7ba8818c74acef29:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5MzRhOWZjOTAyZjYwMTdmOTJhMWJhYWU4MzQ3NmQ2MDVjMDFkNjJiM2Y0MTE3ZWI2MGYzMTljZThmZGU5ODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczZmIzZWE5N2NhNGNjMjQ0MjdmOTQxMDIxYTRkOWJlYmIxMTRkZmEwZmI3NDVlNDU2ZjVlMjc3MjJlODA0OTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExY2I2ZWNlZmNjM2ExNGQ0NGE3OTAxM2YzMDA3NDgyNDllNjYzYjE3OWI2M2NiOGU1MmY3ZjlkMDExMjA0ZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2ZmEwMmFlNTg5OTMwYzE4NTU5MDk3OTUzNDdhYTM1ZGM3MTBiMTgxNjkwZTE1NGQwOTA3YjJmMzA2NjRlZjIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_1412b42253b34ee18eb7af019c0695d4",
+      "statement": "Unlike the credential variables, ServerSettings treats blank OAUTH_CLIENT_ID and ALLOWED_ORGANIZATION_ID as unset and strips their values, because the deploy workflow writes them before the OAuth app exists.",
+      "evidence": [
+        {
+          "resource": "repo://apps/server/langchain_chess_server/settings.py#L28-L38",
+          "version": "repo-lines-v1:sha256:ef7594927982b3fdc1cd2b65e14ee0d086753a47cf45337e24b9e5aec88de88a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1MTZlMWFmMDlmODMyNWVhZGQ0NTA3NmE5ZGI1YTYwNzEyNjM1MGFmYTJhMzVkMzcyNTk2YjFiNDZiMGQ1YjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhZjE3ZmY3MDZhMThhNTgxOWY4MzkzYjhkYTIxMDE4ZWE5YmE5YTlhODFmYzFlYTVhYmNjNzZmYjFkNTRjN2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiMDMwNmEyNjUxNzg4N2QwNzJhNjRiOWJkN2E5MDYyYzcyNWEzNWNiNjNjOTM0YjlhODdkYjdlYWI3MjYxMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1MGYyMmMyNDI1YWY0Y2FmYmU3NTBiNDJhNzk2ODExYTM1ZWNmMDhhN2EwNDUzMjZmYTQ3ZGE4ZWI4NzY2ZDEifQ"
+        },
+        {
+          "resource": "repo://apps/server/tests/test_settings.py#L30-L35",
+          "version": "repo-lines-v1:sha256:b9309951272c14817374c017ae8ba3c548c58e638af66d53d81e8040da06764d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2U0OTNjMWQ0YjU5NTM1ZDkxNDQ4ZWRlZGE5OWE3NDBkN2U2NGJhNmViMjU1N2RlMGU0ZjEwMTUzZDA3ZTBlNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWQ5NzUzNWI4ZmU3ZTgwY2I3OTNmMWIyMzk4Nzk2ZTk2YmI2ODAzZjZkNDRkNGNjYTMzN2JhNzZjNDJhMjJkOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2E1NjE0MjEyNzJjZDU2YzgxMzE0NjZhOWIxNTFkYzNkMGNkNjFiMWJlZmU4M2I4MGNjYzY2M2RiZTI4Nzc2NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzIzNTYwZGUxMmNlNzlhZWNlNjE4YjFiZDdiYWQ1YjU4YWM4OTQ2MWZmMjQ1OThjYzlkNmVmZWQ3NDRkNjk0NiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-11-01T01:10:29.908Z"
+    "at": "2026-11-01T03:07:46.931Z"
   }
 }
