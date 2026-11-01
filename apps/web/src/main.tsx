@@ -3,14 +3,14 @@ import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import App from "./App.tsx";
+import Root from "./Root.tsx";
 
 export function mount(root: HTMLElement) {
   createRoot(root).render(
     <StrictMode>
       <AppThemeProvider>
         <TooltipProvider>
-          <App />
+          <Root />
         </TooltipProvider>
       </AppThemeProvider>
     </StrictMode>,

@@ -87,3 +87,12 @@ def test_a_run_without_system_1_keys_fails_before_writing_and_its_thread_still_r
     assert client.runs.get(thread, run["run_id"])["status"] == "error"
     state = client.threads.get_state(thread)
     assert (state["values"], state["next"]) == ({}, [])
+
+
+def test_langgraph_dev_needs_no_key_but_checks_a_bearer_token(client: SyncLangGraphClient):
+    http = client.http.client
+    assert http.post("/assistants/search", json={"limit": 1}).status_code == 200
+    refused = http.post(
+        "/assistants/search", json={"limit": 1}, headers={"Authorization": "Bearer not-a-jwt"}
+    )
+    assert refused.status_code == 401

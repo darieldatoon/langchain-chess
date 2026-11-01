@@ -17,6 +17,10 @@
     "chess": "./apps/server/langchain_chess_server/graph.py:make_graph"
   },
   "env": ".env",
+  "auth": {
+    "path": "./apps/server/langchain_chess_server/auth.py:auth",
+    "allow_langsmith_api_keys": true
+  },
   "http": {
     "app": "./apps/server/langchain_chess_server/app.py:app"
   }

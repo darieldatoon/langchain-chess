@@ -77,6 +77,7 @@ tasks come back wrong. Only a run builds a model or System 1 client, so reads ne
 |---|---|
 | `LANGSMITH_GATEWAY_API_KEY` | LLM calls through the gateway (`.env.example` sets it from `LC_GATEWAY_KEY`) |
 | `TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL` | System 1 (the `systemone` and `hybrid` policies). Without them those runs fail before writing anything. |
+| `OAUTH_CLIENT_ID`, `ALLOWED_ORGANIZATION_ID` | Sign in with LangSmith: [`auth.py`](langchain_chess_server/auth.py) admits only tokens issued to this OAuth app for members of this org. Unset or blank, it refuses every token; API keys still work. See [the web app](../web/README.md#sign-in). |
 
 A key that is set but empty stops the server. That is what `${LC_GATEWAY_KEY}` expands to when
 the shell variable is missing, and langchain-core would otherwise fall back to the tracing key.
@@ -88,7 +89,8 @@ buildx) running locally: the image is built on your machine.
 CI deploys the `langchain-chess` agent's production environment on pushes to `main` that change the agent
 ([`.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml)). It needs two repository
 secrets: `LANGSMITH_API_KEY` (to deploy) and `LC_GATEWAY_KEY` (written into the revision's
-secrets). By hand:
+secrets), and reads the repository variables `OAUTH_CLIENT_ID` and `LANGSMITH_ORGANIZATION_ID`
+for sign-in. By hand:
 
 ```sh
 mise run deploy   # builds the web UI into langchain_chess_server/static, then `langgraph deploy`

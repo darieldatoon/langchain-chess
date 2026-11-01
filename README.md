@@ -156,8 +156,8 @@ LANGGRAPH_PORT=2034 WEB_PORT=5180 mise run dev
 Studio's chat view plays too. Type `go` for the agent to move, or type your move (`e4`, `e2e4`).
 
 The hosted site, <https://darieldatoon.github.io/langchain-chess/>, plays the deployed agent,
-but only for members of its LangSmith workspace: the deployment accepts that workspace's API
-keys and no others. Everyone else can play locally as above, or
+but only for members of its LangSmith organization (Sign in with LangSmith) or holders of its
+workspace's API keys ([sign-in](apps/web/README.md#sign-in)). Everyone else can play locally as above, or
 [deploy their own copy](apps/server#deploy).
 
 ## Play in the terminal

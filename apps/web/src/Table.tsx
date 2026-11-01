@@ -58,6 +58,7 @@ import { downloadText } from "./files";
 import { pgnFileName, pgnOf, playerName } from "./export";
 import { ExportDialog } from "./components/ExportDialog";
 import { GameActions, GameOver, ResultHeadline } from "./components/GameActions";
+import type { Session } from "./auth/session";
 import { describeError, isAuthError, isBusyRejection } from "./format";
 import { changedKnobs, opponentLabel, type GameRecord } from "./setup";
 import { pageTitle, useDocumentTitle, useTurnAlert } from "./title";
@@ -82,7 +83,7 @@ export interface ViewProps {
 }
 
 interface TableProps extends ViewProps {
-  apiKey: string;
+  session: Session;
   seat: Seat;
   onRematch: (from: GameRecord) => void;
   onReload: (from: Seat) => void;
@@ -104,7 +105,7 @@ const BADGE_COLORS: Record<SourceClass, "primary" | "special" | "secondary" | "w
 const REPLY_TAB = 0;
 
 export function Table({
-  apiKey,
+  session,
   seat,
   onRematch,
   onReload,
@@ -117,7 +118,7 @@ export function Table({
   onPrefsChange,
   allocation,
 }: TableProps) {
-  const game = useGame(apiKey, seat.chosen);
+  const game = useGame(session, seat.chosen);
   const { record } = game;
   // A stand-in for a thread with no record: its board stays locked.
   const humanSide = record?.side ?? "white";
@@ -520,7 +521,7 @@ export function Table({
       {isAuthError(failure) && (
         <Banner
           intent="warning"
-          title="LangSmith API key needed"
+          title="Sign-in needed"
           action={
             <Button
               variant="plain"
@@ -533,7 +534,7 @@ export function Table({
             </Button>
           }
         >
-          The server refused the request. Add or check your API key in Settings.
+          The server refused the request. Sign out in Settings and sign in again.
         </Banner>
       )}
       {notice && (

@@ -192,7 +192,7 @@ def test_new_game_fits_a_phone_with_advanced_open_and_a_key_problem(server: str,
     dialog = page.get_by_role("dialog", name="New game")
     dialog.get_by_role("button", name="Advanced").tap()
     dialog.get_by_role("button", name="Play", exact=True).tap()
-    expect(dialog.get_by_text("LangSmith API key needed")).to_be_visible()
+    expect(dialog.get_by_text("Sign-in needed")).to_be_visible()
 
     no_sideways_scroll(page, "[role=dialog]")
     inside_viewport(page, dialog.get_by_role("button", name="Play", exact=True))
@@ -212,10 +212,11 @@ def test_settings_open_from_new_game_and_fit_a_phone(server: str, page: Page):
     dialog = page.get_by_role("dialog", name="Settings")
     expect(dialog).to_be_visible()
     no_sideways_scroll(page, "[role=dialog]")
-    inside_viewport(page, dialog.get_by_role("button", name="Save"))
-    for name in ("Close", "Cancel", "Save"):
+    expect(dialog.get_by_text("This server needs no sign-in.")).to_be_visible()
+    inside_viewport(page, dialog.get_by_role("button", name="Done"))
+    for name in ("Close", "Done"):
         at_least_a_tap(dialog.get_by_role("button", name=name, exact=True))
-    dialog.get_by_role("button", name="Cancel").tap()
+    dialog.get_by_role("button", name="Done").tap()
     expect(page.get_by_role("dialog", name="New game")).to_be_visible()
 
 

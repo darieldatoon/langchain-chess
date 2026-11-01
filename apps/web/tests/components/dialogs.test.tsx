@@ -1,6 +1,7 @@
 import { act, fireEvent, screen } from "@testing-library/react";
 import { renderWithProviders as render } from "../support/renderApp";
-import type { KeyCheck } from "../../src/auth";
+import type { KeyCheck } from "../../src/auth/check";
+import { NO_SESSION, type Session } from "../../src/auth/session";
 import type { ModelFacts } from "../../src/modelFacts";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { DEFAULT_SETUP, type Setup } from "../../src/setup";
@@ -198,8 +199,8 @@ describe("NewGameDialog", () => {
   });
 
   it.each<[KeyCheck, string]>([
-    [{ kind: "missing" }, "LangSmith API key needed"],
-    [{ kind: "rejected" }, "API key rejected"],
+    [{ kind: "missing" }, "Sign-in needed"],
+    [{ kind: "rejected", detail: null }, "Sign-in refused"],
     [{ kind: "unreachable", message: "Failed to fetch" }, "Failed to fetch"],
   ])("holds the game back when the key check fails: %o", async (check, text) => {
     const { onPlay, onOpenSettings, checkKey } = open(DEFAULT_SETUP, false, check);
@@ -272,7 +273,7 @@ describe("NewGameDialog", () => {
     fireEvent.click(play());
     fireEvent.click(screen.getByRole("radio", { name: "Black" }));
     await act(async () => answer({ kind: "missing" }));
-    expect(screen.getByText("LangSmith API key needed")).toBeInTheDocument();
+    expect(screen.getByText("Sign-in needed")).toBeInTheDocument();
   });
 
   it("derives the policy from the pickers and disables Play when both are None", async () => {
@@ -704,16 +705,36 @@ describe("NewGameDialog", () => {
 });
 
 describe("AppSettingsDialog", () => {
-  it("saves the key trimmed and closes from Cancel or Escape", () => {
-    const onSave = vi.fn();
+  it.each<[Session, string]>([
+    [NO_SESSION, "This server needs no sign-in."],
+    [{ kind: "apiKey", apiKey: "k" }, "Signed in with a LangSmith API key."],
+    [
+      { kind: "oauth", email: "ada@example.com", accessToken: () => Promise.resolve("t") },
+      "Signed in with LangSmith as ada@example.com.",
+    ],
+    [
+      { kind: "oauth", email: null, accessToken: () => Promise.resolve("t") },
+      "Signed in with LangSmith.",
+    ],
+  ])("says how this tab is signed in: %o", (session, text) => {
+    render(<AppSettingsDialog session={session} onSignOut={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.getByRole("dialog", { name: "Settings" })).toHaveTextContent(text);
+  });
+
+  it("signs out, and closes from Done or Escape", () => {
+    const onSignOut = vi.fn();
     const onClose = vi.fn();
-    render(<AppSettingsDialog settings={{ apiKey: "" }} onSave={onSave} onClose={onClose} />);
-    change("LangSmith API Key", " lsv2_x ");
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    expect(onSave).toHaveBeenCalledWith({ apiKey: "lsv2_x" });
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    render(
+      <AppSettingsDialog
+        session={{ kind: "apiKey", apiKey: "k" }}
+        onSignOut={onSignOut}
+        onClose={onClose}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    expect(onSignOut).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(2);
-    expect(screen.queryByLabelText("System 1")).not.toBeInTheDocument();
   });
 });

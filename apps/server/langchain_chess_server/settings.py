@@ -25,6 +25,17 @@ class ServerSettings(BaseSettings):
     )
     typesafe_api_key: SecretStr | None = Field(default=None, validation_alias="TYPESAFE_API_KEY")
     typesafe_base_url: str | None = Field(default=None, validation_alias="TYPESAFE_BASE_URL")
+    # "Sign in with LangSmith" (auth.py). Blank means unset, unlike the keys above: the deploy
+    # workflow writes both before the OAuth app exists, and unset only refuses tokens.
+    oauth_client_id: str | None = Field(default=None, validation_alias="OAUTH_CLIENT_ID")
+    allowed_organization_id: str | None = Field(
+        default=None, validation_alias="ALLOWED_ORGANIZATION_ID"
+    )
+
+    @field_validator("oauth_client_id", "allowed_organization_id")
+    @classmethod
+    def _blank_is_unset(cls, value: str | None) -> str | None:
+        return None if value is None else value.strip() or None
 
     @field_validator("langsmith_gateway_api_key", "typesafe_api_key", "typesafe_base_url")
     @classmethod

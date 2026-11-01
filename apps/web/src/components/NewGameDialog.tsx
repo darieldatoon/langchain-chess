@@ -18,7 +18,7 @@ import { DotsThreeIcon } from "@phosphor-icons/react/dist/ssr/DotsThree";
 import { CrownIcon } from "@phosphor-icons/react/dist/ssr/Crown";
 import { ShuffleIcon } from "@phosphor-icons/react/dist/ssr/Shuffle";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { keyCheckMessage, type KeyCheck } from "../auth";
+import { keyCheckMessage, type KeyCheck } from "../auth/check";
 import { downloadJson, readJson } from "../files";
 import type { ModelFacts } from "../modelFacts";
 import { configurableOf, withKnob } from "../settings";

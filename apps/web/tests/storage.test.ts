@@ -2,13 +2,9 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { DEFAULT_TURN_VIEW } from "@langchain-chess/chess-ui";
 import { DEFAULT_SETUP, type Setup } from "../src/setup";
 import {
-  APP_KEY,
   browserStorage,
-  DEFAULT_APP_SETTINGS,
-  loadAppSettings,
   loadTurnView,
   loadSetup,
-  saveAppSettings,
   saveTurnView,
   saveSetup,
   SETUP_KEY,
@@ -40,19 +36,6 @@ describe("setup storage", () => {
   });
 });
 
-describe("app settings storage", () => {
-  it("keeps the key under its own entry", () => {
-    expect(loadAppSettings()).toEqual(DEFAULT_APP_SETTINGS);
-    saveAppSettings({ apiKey: "" });
-    expect(window.localStorage.getItem(APP_KEY)).toBe('{"apiKey":""}');
-    expect(loadAppSettings()).toEqual({ apiKey: "" });
-    store(APP_KEY, { apiKey: 3 });
-    expect(loadAppSettings()).toEqual(DEFAULT_APP_SETTINGS);
-    store(APP_KEY, "null");
-    expect(loadAppSettings()).toEqual(DEFAULT_APP_SETTINGS);
-  });
-});
-
 describe("unavailable storage", () => {
   it("reads defaults and reports every write as lost where the browser blocks storage", () => {
     const blocked = vi.spyOn(window, "localStorage", "get").mockImplementation(() => {
@@ -61,9 +44,7 @@ describe("unavailable storage", () => {
     try {
       expect(browserStorage()).toBeNull();
       expect(loadSetup()).toEqual(DEFAULT_SETUP);
-      expect(loadAppSettings()).toEqual(DEFAULT_APP_SETTINGS);
       expect(saveSetup(DEFAULT_SETUP)).toBe(false);
-      expect(saveAppSettings({ apiKey: "k" })).toBe(false);
     } finally {
       blocked.mockRestore();
     }
@@ -81,7 +62,6 @@ describe("unavailable storage", () => {
     }
     const broken = { getItem: insecure, setItem: insecure } as unknown as Storage;
     expect(loadSetup(broken)).toEqual(DEFAULT_SETUP);
-    expect(loadAppSettings(broken)).toEqual(DEFAULT_APP_SETTINGS);
   });
 
   it("reports a write that doesn't fit", () => {
