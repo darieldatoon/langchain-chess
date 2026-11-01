@@ -109,6 +109,10 @@ jobs:
           BASE_PATH: /${{ github.event.repository.name }}/
           OUT_DIR: dist
           VITE_API_URL: ${{ vars.VITE_API_URL }}
+          # Sign in with LangSmith; unset offers API keys only. The server gets the same two.
+          VITE_OAUTH_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
+          VITE_LANGSMITH_ORGANIZATION_ID: ${{ vars.LANGSMITH_ORGANIZATION_ID }}
+          VITE_LANGSMITH_SSO_SLUG: ${{ vars.LANGSMITH_SSO_SLUG }}
         run: pnpm --dir apps/web exec vp build
 
       - if: steps.guard.outputs.superseded != 'true'

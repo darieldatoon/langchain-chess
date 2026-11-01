@@ -13,11 +13,13 @@
   "dependencies": {
     "@langchain-chess/chess-ui": "workspace:*",
     "@langchain/core": "catalog:",
+    "@langchain/langgraph-sdk": "1.11.1",
     "@langchain/macaw-components": "catalog:",
     "@langchain/macaw-tokens": "catalog:",
     "@langchain/react": "^1.1.1",
     "@phosphor-icons/react": "catalog:",
     "@radix-ui/react-tooltip": "catalog:",
+    "oidc-client-ts": "3.5.0",
     "react": "catalog:",
     "react-dom": "catalog:"
   },

@@ -53,9 +53,38 @@ The site is built by [`.github/workflows/pages.yml`](../../.github/workflows/pag
 to (LangSmith → Deployments → the `langchain-chess` agent's production deployment → API URL);
 after changing it, run the workflow by hand.
 
-A deployed Agent Server needs a LangSmith API key. When the server answers 401 or 403, the app
-asks for one (the gear, Settings). It stays in this browser's localStorage and is sent as
-`X-Api-Key`. The local `langgraph dev` needs none: the server's own `.env` holds the model keys.
+## Sign in
+
+On load the app asks the server whether it needs a sign-in. The local `langgraph dev` needs none,
+so the app opens straight on the game. A deployed server does, so the app opens on a sign-in
+screen:
+
+- **Sign in with LangSmith** (the default, when the build has an OAuth app). Authorization code
+  with PKCE through `oidc-client-ts`. Access tokens last five minutes and refresh on demand, one
+  refresh at a time; they live in `sessionStorage` and go out as `Authorization: Bearer`. The
+  server ([`auth.py`](../server/langchain_chess_server/auth.py)) admits only tokens issued to this
+  app for members of its org. Sign-out revokes the refresh token. If the refresh token stops
+  working, the app goes back to sign-in; the game stays in the URL.
+- **API key** (under Advanced, or the only option without an OAuth app). A key from the
+  deployment's workspace, checked before it is kept, held in `sessionStorage` for this tab only,
+  and sent as `X-Api-Key`. LangSmith checks it, as before.
+
+Settings (the gear) shows how this tab is signed in, with Sign out.
+
+### Set up the OAuth app
+
+1. An org admin registers a **Public** OAuth app under LangSmith **Settings → OAuth
+   applications**, with scopes `openid`, `email`, `profile`, `offline_access` and redirect URIs
+   `https://darieldatoon.github.io/langchain-chess/` and `http://localhost` (trailing slashes as
+   shown). The org needs the `sign_in_with_langsmith` flag.
+2. Set repository variables `OAUTH_CLIENT_ID` (`lsc_…`) and `LANGSMITH_ORGANIZATION_ID`, and
+   `LANGSMITH_SSO_SLUG` if the org signs in through SSO. The Pages build and the deployment both
+   read them, so run both workflows by hand afterwards.
+
+Locally, put `VITE_OAUTH_CLIENT_ID`, `VITE_LANGSMITH_ORGANIZATION_ID` (and
+`VITE_LANGSMITH_SSO_SLUG`) in `apps/web/.env.development.local`, and `OAUTH_CLIENT_ID` and
+`ALLOWED_ORGANIZATION_ID` in `.env`. `langgraph dev` lets keyless requests through, so the
+sign-in screen only shows against a server that needs it.
 
 ## The LangSmith renderer
 
@@ -105,9 +134,10 @@ sequenceDiagram
   models set is `hybrid`, one alone is `systemone` or `llm`). A new game sends it until its
   first turn records it as `setup`. The human's side isn't stored: the external plies are
   theirs, and before the first one they play the side the agent didn't open with.
-- **localStorage** holds only the last setup (`langchain-chess:setup`), the API key
-  (`langchain-chess:app`), and what the reply card shows (`langchain-chess:view`). Nothing
-  per game.
+- **localStorage** holds only the last setup (`langchain-chess:setup`), what the reply card
+  shows (`langchain-chess:view`), and the email of the last LangSmith sign-in
+  (`langchain-chess:last-account`). Nothing per game, and no credentials: those are in
+  `sessionStorage`. The app deletes the API key older versions kept in `langchain-chess:app`.
 - **Styling** follows the Macaw design system: semantic Tailwind classes from its preset
   (`bg-surface-level-2`, `text-secondary`), Macaw components for controls, and no raw colours.
   The chessboard reads the same tokens as CSS variables. To find components:

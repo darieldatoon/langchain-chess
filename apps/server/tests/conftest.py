@@ -25,7 +25,7 @@ STARTUP_S = 90
 @pytest.fixture
 def env(monkeypatch: pytest.MonkeyPatch, tmp_path) -> pytest.MonkeyPatch:
     """The server settings, isolated from the shell and from the repo's `.env`."""
-    for name in (*GOOD, "LC_GATEWAY_KEY"):
+    for name in (*GOOD, "LC_GATEWAY_KEY", "OAUTH_CLIENT_ID", "ALLOWED_ORGANIZATION_ID"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.chdir(tmp_path)
     for name, value in GOOD.items():
@@ -44,6 +44,7 @@ def _config_in(workdir: Path, env_file: Path | None, graphs: Mapping[str, str] |
     specs = graphs if graphs is not None else config["graphs"]
     config["graphs"] = {name: _absolute(spec) for name, spec in specs.items()}
     config["http"]["app"] = _absolute(config["http"]["app"])
+    config["auth"]["path"] = _absolute(config["auth"]["path"])
     config["env"] = str(env_file) if env_file is not None else _absolute(config["env"])
     config["source"]["root"] = str(REPO)
     path = workdir / "langgraph.json"

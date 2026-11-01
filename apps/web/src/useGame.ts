@@ -25,6 +25,7 @@ import {
   type SystemOneLive,
   type TurnRecord,
 } from "@langchain-chess/chess-ui";
+import { sessionClient, type Session } from "./auth/session";
 import { commandKey, createCommandIds } from "./commands";
 import { apiUrl, configurableOf } from "./settings";
 import { gameOf, startFenOf, type GameRecord } from "./setup";
@@ -143,7 +144,7 @@ const IN_FLIGHT: TurnRecord = {
  * One `useStream` on the `chess` graph; one thread is one game, played with the setup its thread
  * records. `chosen` is a new game's side and context, used until the first turn records them.
  */
-export function useGame(apiKey: string, chosen: GameRecord | null): Game {
+export function useGame(session: Session, chosen: GameRecord | null): Game {
   const [threadId, setThreadId] = useState(() => threadFromUrl());
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
   const [sending, setSending] = useState<Control | null>(null);
@@ -162,9 +163,9 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
     };
   }, []);
 
+  const client = useMemo(() => sessionClient(apiUrl(), session), [session]);
   const stream = useStream<ChessValues>({
-    apiUrl: apiUrl(),
-    apiKey: apiKey || undefined,
+    client,
     assistantId: CHESS_GRAPH,
     threadId,
     onThreadId: (id) => {
@@ -175,7 +176,7 @@ export function useGame(apiKey: string, chosen: GameRecord | null): Game {
     },
   });
 
-  // A new client (a changed key) loads the thread again, with a new promise. Only a load for a
+  // A new client (a new sign-in) loads the thread again, with a new promise. Only a load for a
   // thread can find it missing: a new game's load, made before it had one, settles empty.
   const hydration = stream.hydrationPromise;
   const [target, setTarget] = useState({ hydration, threadId });

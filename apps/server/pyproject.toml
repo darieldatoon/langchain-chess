@@ -13,6 +13,7 @@ dependencies = [
     "langchain-chess-systemone",
     "langchain-openai>=1.7.0",
     "pydantic-settings>=2.10",
+    "pyjwt[crypto]>=2.10",
 ]
 
 [build-system]

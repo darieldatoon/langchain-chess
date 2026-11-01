@@ -6,7 +6,10 @@ import type { GameRecord } from "../src/setup";
 import { fake, lastOptions, resetFake } from "./support/fakeStream";
 import { AFTER_E4, E4_E5, live, ply, turn } from "@langchain-chess/chess-ui/testing";
 import { DEFAULT_CONTEXT, START_FEN } from "@langchain-chess/chess-ui";
+import { NO_SESSION, type Session } from "../src/auth/session";
 import { threadFromUrl, useGame, writeThreadToUrl } from "../src/useGame";
+
+const KEY: Session = { kind: "apiKey", apiKey: "lsv2_k" };
 
 vi.mock("@langchain/react", async () => (await import("./support/fakeStream")).useStreamMock());
 
@@ -33,7 +36,7 @@ describe("thread url helpers", () => {
 
 describe("useGame", () => {
   it("derives defaults from an empty thread", () => {
-    const { result } = renderHook(() => useGame("", WHITE));
+    const { result } = renderHook(() => useGame(NO_SESSION, WHITE));
     expect(result.current.fen).toBe(START_FEN);
     expect(result.current.startFen).toBe(START_FEN);
     expect(result.current.moves).toEqual([]);
@@ -44,14 +47,13 @@ describe("useGame", () => {
     expect(result.current.reply).toEqual({ status: "none" });
     expect(result.current.pendingTurn).toBe(false);
     expect(result.current.threadId).toBeNull();
-    expect(lastOptions.current).toMatchObject({ assistantId: "chess", apiKey: undefined });
+    expect(lastOptions.current).toMatchObject({ assistantId: "chess" });
   });
 
   it("submits a move as a human message with the context and a reject strategy", async () => {
     const context = { ...DEFAULT_CONTEXT, threshold: 0.4 };
     const chosen: GameRecord = { side: "white", context, startFen: START_FEN };
-    const { result } = renderHook(() => useGame("key", chosen));
-    expect(lastOptions.current).toMatchObject({ apiKey: "key" });
+    const { result } = renderHook(() => useGame(KEY, chosen));
     await act(() => result.current.play("e2e4", AFTER_E4));
     expect(fake.submit).toHaveBeenCalledWith(
       { messages: [{ type: "human", id: expect.any(String), content: "e2e4" }] },
@@ -65,7 +67,7 @@ describe("useGame", () => {
   });
 
   it("reuses a command id for the same move at the same position, and mints new ones otherwise", async () => {
-    const { result, rerender } = renderHook(() => useGame("", WHITE));
+    const { result, rerender } = renderHook(() => useGame(NO_SESSION, WHITE));
     await act(() => result.current.play("e2e4", AFTER_E4));
     await act(() => result.current.play("e2e4", AFTER_E4));
     await act(() => result.current.play("d2d4", "X"));
@@ -78,7 +80,7 @@ describe("useGame", () => {
   });
 
   it("resends the first command with its id after the server assigns the thread", async () => {
-    const { result } = renderHook(() => useGame("", BLACK));
+    const { result } = renderHook(() => useGame(NO_SESSION, BLACK));
     await act(() => result.current.start());
     const options = lastOptions.current as { onThreadId: (id: string) => void };
     act(() => options.onThreadId("thread-1"));
@@ -88,7 +90,7 @@ describe("useGame", () => {
   });
 
   it("starts with a `go` message and retries with empty input", async () => {
-    const { result } = renderHook(() => useGame("", BLACK));
+    const { result } = renderHook(() => useGame(NO_SESSION, BLACK));
     await act(() => result.current.start());
     expect(fake.submit).toHaveBeenLastCalledWith(
       { messages: [{ type: "human", id: expect.any(String), content: "go" }] },
@@ -100,7 +102,7 @@ describe("useGame", () => {
 
   it("exposes the record and the last reply with its turn and stages", () => {
     resetFake({ ...E4_E5, error: "nope", outcome: null });
-    const { result } = renderHook(() => useGame("", WHITE));
+    const { result } = renderHook(() => useGame(NO_SESSION, WHITE));
     expect(result.current.fen).toBe(AFTER_E4_E5);
     expect(result.current.entries).toEqual([
       { ply: 0, san: "e4", source: "external" },
@@ -133,7 +135,7 @@ describe("useGame", () => {
       new HumanMessage({ id: "h", content: "go" }),
       new AIMessage({ id: "a", content: "So far" }),
     ]);
-    const { result } = renderHook(() => useGame("", WHITE));
+    const { result } = renderHook(() => useGame(NO_SESSION, WHITE));
     expect(result.current.pendingTurn).toBe(true);
     expect(result.current.systemOneLive).toBe(result1);
     expect(result.current.reply).toEqual({
@@ -150,7 +152,7 @@ describe("useGame", () => {
 
   it("names moves without plies from the replay, and falls back to UCI", () => {
     resetFake({ start_fen: START_FEN, moves: ["e2e4", "e2e4"] });
-    const { result } = renderHook(() => useGame("", WHITE));
+    const { result } = renderHook(() => useGame(NO_SESSION, WHITE));
     expect(result.current.entries).toEqual([
       { ply: 0, san: "e4", source: "external" },
       { ply: 1, san: "e2e4", source: "external" },
@@ -158,7 +160,7 @@ describe("useGame", () => {
   });
 
   it("binds the thread and the URL once the server assigns it, and stores nothing", () => {
-    const { result } = renderHook(() => useGame("", BLACK));
+    const { result } = renderHook(() => useGame(NO_SESSION, BLACK));
     const options = lastOptions.current as { onThreadId: (id: string) => void };
     act(() => options.onThreadId("thread-9"));
     expect(result.current.threadId).toBe("thread-9");
@@ -169,7 +171,7 @@ describe("useGame", () => {
   it("plays with the setup the thread records, over the picks", async () => {
     const recorded = { ...DEFAULT_CONTEXT, policy: "llm" as const, k: 3 };
     resetFake({ ...E4_E5, setup: recorded });
-    const { result } = renderHook(() => useGame("", BLACK));
+    const { result } = renderHook(() => useGame(NO_SESSION, BLACK));
     expect(result.current.record).toEqual({
       side: "white",
       context: recorded,
@@ -181,22 +183,22 @@ describe("useGame", () => {
 
   it("has no record for a thread from its link without a setup", () => {
     resetFake(E4_E5);
-    const { result } = renderHook(() => useGame("", null));
+    const { result } = renderHook(() => useGame(NO_SESSION, null));
     expect(result.current.record).toBeNull();
   });
 
   it("is ready once the thread has loaded, and says so when the load failed", async () => {
     fake.isThreadLoading = true;
-    const loading = renderHook(() => useGame("", WHITE));
+    const loading = renderHook(() => useGame(NO_SESSION, WHITE));
     expect(loading.result.current.restore).toBe("loading");
     loading.unmount();
 
     fake.isThreadLoading = false;
-    const ready = renderHook(() => useGame("", WHITE));
+    const ready = renderHook(() => useGame(NO_SESSION, WHITE));
     expect(ready.result.current.restore).toBe("ready");
 
     fake.hydrationPromise = Promise.reject(new Error("Thread state request failed: 503"));
-    const failed = renderHook(() => useGame("", WHITE));
+    const failed = renderHook(() => useGame(NO_SESSION, WHITE));
     await act(async () => {});
     expect(failed.result.current.restore).toBe("failed");
 
@@ -207,7 +209,7 @@ describe("useGame", () => {
   });
 
   it("ignores a thread reported after the game was replaced", () => {
-    const { unmount } = renderHook(() => useGame("", BLACK));
+    const { unmount } = renderHook(() => useGame(NO_SESSION, BLACK));
     const options = lastOptions.current as { onThreadId: (id: string) => void };
     unmount();
     options.onThreadId("late");
@@ -217,7 +219,7 @@ describe("useGame", () => {
   it("clears the optimistic move once the run settles, even on failure", async () => {
     let finish: () => void = () => {};
     fake.submit = vi.fn(() => new Promise<void>((resolve) => (finish = resolve)));
-    const { result } = renderHook(() => useGame("", WHITE));
+    const { result } = renderHook(() => useGame(NO_SESSION, WHITE));
     let done: Promise<void> = Promise.resolve();
     act(() => {
       done = result.current.play("e2e4", AFTER_E4);
@@ -238,7 +240,7 @@ describe("useGame", () => {
 
   it("thinks for the whole run: in flight, then the turn, System 1, the analysis and the commit", () => {
     resetFake(E4_E5, [new HumanMessage({ id: "h", content: "e2e4" })]);
-    const { result, rerender } = renderHook(() => useGame("", WHITE));
+    const { result, rerender } = renderHook(() => useGame(NO_SESSION, WHITE));
     expect(result.current.reply.status).toBe("played");
 
     // The command is in flight: a stand-in turn, with the policy's stages.
@@ -322,7 +324,7 @@ describe("useGame", () => {
     resetFake(E4_E5, [new HumanMessage({ id: "h", content: "e2e4" })]);
     let finish: () => void = () => {};
     fake.submit = vi.fn(() => new Promise<void>((resolve) => (finish = resolve)));
-    const { result, rerender } = renderHook(() => useGame("", WHITE));
+    const { result, rerender } = renderHook(() => useGame(NO_SESSION, WHITE));
     act(() => void result.current.play("g1f3", "X"));
     fake.isLoading = true;
     rerender();
@@ -348,7 +350,7 @@ describe("useGame", () => {
     const forced = turn({ id: "turn-2", status: "pending", ply: null, initial_allowed: ["e8e7"] });
     resetFake({ ...E4_E5, turns: [...E4_E5.turns, forced] });
     fake.isLoading = true;
-    const { result, rerender } = renderHook(() => useGame("", WHITE));
+    const { result, rerender } = renderHook(() => useGame(NO_SESSION, WHITE));
     expect(result.current.reply).toMatchObject({ status: "pending", stages: { kind: "forced" } });
     const kE7 = ply({ ply: 2, uci: "e8e7", san: "Ke7", source: "forced", turn_id: "turn-2" });
     fake.values = {
@@ -370,7 +372,7 @@ describe("useGame", () => {
 
   it("reports loading from either stream flag", () => {
     fake.isThreadLoading = true;
-    const { result } = renderHook(() => useGame("", WHITE));
+    const { result } = renderHook(() => useGame(NO_SESSION, WHITE));
     expect(result.current.isLoading).toBe(true);
     expect(result.current.isThinking).toBe(false);
   });

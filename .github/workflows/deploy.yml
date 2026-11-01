@@ -88,6 +88,8 @@ jobs:
           LANGSMITH_GATEWAY_API_KEY=${{ secrets.LC_GATEWAY_KEY }}
           TYPESAFE_BASE_URL=https://gateway.smith.langchain.com
           TYPESAFE_API_KEY=${{ secrets.LC_GATEWAY_KEY }}
+          OAUTH_CLIENT_ID=${{ vars.OAUTH_CLIENT_ID }}
+          ALLOWED_ORGANIZATION_ID=${{ vars.LANGSMITH_ORGANIZATION_ID }}
           EOF
 
       # Re-running only this job reuses the earlier tip and CI. Main may have moved since; that

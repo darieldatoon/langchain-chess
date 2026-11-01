@@ -21,7 +21,8 @@ import {
   type TurnView,
   type Side,
 } from "@langchain-chess/chess-ui";
-import { checkApiKey, type KeyCheck } from "./auth";
+import { checkAccess, type KeyCheck } from "./auth/check";
+import type { Session } from "./auth/session";
 import { fetchModelFacts, type ModelFacts } from "./modelFacts";
 import { AppMenu } from "./components/AppMenu";
 import { AppSettingsDialog } from "./components/AppSettingsDialog";
@@ -31,15 +32,12 @@ import { apiUrl } from "./settings";
 import { resolveSide, type GameRecord, type Setup } from "./setup";
 import {
   browserStorage,
-  loadAppSettings,
   loadDisplayPrefs,
   loadTurnView,
   loadSetup,
-  saveAppSettings,
   saveDisplayPrefs,
   saveTurnView,
   saveSetup,
-  type AppSettings,
 } from "./storage";
 import { EmptyTable, Table, type Seat } from "./Table";
 import { threadFromUrl, writeThreadToUrl } from "./useGame";
@@ -73,23 +71,26 @@ function nextSeat(
 }
 
 interface Props {
+  session: Session;
+  onSignOut: () => void;
   /** Resolves a Random side; injectable so tests are deterministic. */
   random?: () => number;
-  /** Asks the server about a key before a game starts; injectable so tests need no server. */
-  checkKey?: (apiKey: string) => Promise<KeyCheck>;
+  /** Asks the server about the sign-in before a game starts; injectable so tests need no server. */
+  checkKey?: (session: Session) => Promise<KeyCheck>;
   /** Asks the server what it knows about a model; injectable so tests need no server. */
-  modelFacts?: (apiKey: string, model: string) => Promise<ModelFacts>;
+  modelFacts?: (session: Session, model: string) => Promise<ModelFacts>;
 }
 
-const serverCheck = (apiKey: string) => checkApiKey(apiUrl(), apiKey);
-const serverFacts = (apiKey: string, model: string) => fetchModelFacts(apiUrl(), apiKey, model);
+const serverCheck = (session: Session) => checkAccess(apiUrl(), session);
+const serverFacts = (session: Session, model: string) => fetchModelFacts(apiUrl(), session, model);
 
 export default function App({
+  session,
+  onSignOut,
   random = Math.random,
   checkKey = serverCheck,
   modelFacts = serverFacts,
 }: Props) {
-  const [app, setApp] = useState<AppSettings>(() => loadAppSettings());
   const [setup, setSetup] = useState<Setup>(() => loadSetup());
   const [view, setView] = useState<TurnView>(() => loadTurnView());
   const [prefs, setPrefs] = useState<DisplayPrefs>(() => loadDisplayPrefs());
@@ -120,19 +121,10 @@ export default function App({
     [],
   );
 
-  // Stable per key: the dialog asks again whenever this changes.
+  // Stable per session: the dialog asks again whenever this changes.
   const factsFor = useCallback(
-    (model: string) => modelFacts(app.apiKey, model),
-    [modelFacts, app.apiKey],
-  );
-
-  const onSaveApp = useCallback(
-    (next: AppSettings) => {
-      noteSaved(saveAppSettings(next));
-      setApp(next);
-      closeSettings();
-    },
-    [closeSettings, noteSaved],
+    (model: string) => modelFacts(session, model),
+    [modelFacts, session],
   );
 
   const onViewChange = useCallback(
@@ -206,6 +198,11 @@ export default function App({
           )}
         </div>
         <div className="flex items-center gap-space-2">
+          {!phone && session.kind === "oauth" && session.email && (
+            <Text variant="sm" color="secondary" className="truncate">
+              {session.email}
+            </Text>
+          )}
           <Button color="primary" size="md" className={TOUCH_TARGET} onClick={openNewGame}>
             New game
           </Button>
@@ -235,15 +232,14 @@ export default function App({
       >
         {unsaved && (
           <Banner intent="warning" title="This browser isn't saving">
-            Its storage is blocked or full, so your key, last setup and view won't be remembered
-            here.
+            Its storage is blocked or full, so your last setup and view won't be remembered here.
           </Banner>
         )}
 
         {seat ? (
           <Table
             key={seat.number}
-            apiKey={app.apiKey}
+            session={session}
             seat={seat}
             onRematch={rematch}
             onReload={reload}
@@ -275,12 +271,12 @@ export default function App({
           onPlay={play}
           onClose={closeNewGame}
           onOpenSettings={openSettingsFromNewGame}
-          checkKey={() => checkKey(app.apiKey)}
+          checkKey={() => checkKey(session)}
           modelFacts={factsFor}
         />
       )}
       {overlay?.kind === "settings" && (
-        <AppSettingsDialog settings={app} onSave={onSaveApp} onClose={closeSettings} />
+        <AppSettingsDialog session={session} onSignOut={onSignOut} onClose={closeSettings} />
       )}
     </div>
   );

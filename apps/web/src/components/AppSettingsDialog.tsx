@@ -1,56 +1,54 @@
 import { Button } from "@langchain/macaw-components/Button";
-import { Input } from "@langchain/macaw-components/Input";
+import { Text } from "@langchain/macaw-components/Text";
 import { ResponsiveDialog, TOUCH_TARGET } from "@langchain-chess/chess-ui";
-import { useState } from "react";
-import type { AppSettings } from "../storage";
+import type { Session } from "../auth/session";
 
 interface Props {
-  settings: AppSettings;
-  onSave: (settings: AppSettings) => void;
+  session: Session;
+  onSignOut: () => void;
   onClose: () => void;
 }
 
-/** App-level settings only; the opponent is chosen per game in the new-game dialog. Mounted only
- * while shown, so each opening starts from the saved settings. */
-export function AppSettingsDialog({ settings, onSave, onClose }: Props) {
-  const [apiKey, setApiKey] = useState(settings.apiKey);
+function describe(session: Session): string {
+  switch (session.kind) {
+    case "none":
+      return "This server needs no sign-in.";
+    case "apiKey":
+      return "Signed in with a LangSmith API key. It stays in this tab only.";
+    case "oauth":
+      return session.email
+        ? `Signed in with LangSmith as ${session.email}.`
+        : "Signed in with LangSmith.";
+  }
+}
+
+/** App-level settings only; the opponent is chosen per game in the new-game dialog. */
+export function AppSettingsDialog({ session, onSignOut, onClose }: Props) {
   return (
     <ResponsiveDialog
       title="Settings"
-      description="Stored in this browser only."
+      description="Your sign-in, for this tab."
       onClose={onClose}
       footer={
         <div className="flex justify-end gap-space-2">
-          <Button
-            variant="outlined"
-            color="secondary"
-            size="md"
-            className={TOUCH_TARGET}
-            onClick={onClose}
-          >
-            Cancel
-          </Button>
-          <Button
-            color="primary"
-            size="md"
-            className={TOUCH_TARGET}
-            onClick={() => onSave({ apiKey: apiKey.trim() })}
-          >
-            Save
+          {session.kind !== "none" && (
+            <Button
+              variant="outlined"
+              color="secondary"
+              size="md"
+              className={TOUCH_TARGET}
+              onClick={onSignOut}
+            >
+              Sign out
+            </Button>
+          )}
+          <Button color="primary" size="md" className={TOUCH_TARGET} onClick={onClose}>
+            Done
           </Button>
         </div>
       }
     >
-      <Input
-        id="api-key"
-        size="md"
-        type="password"
-        label="LangSmith API Key"
-        value={apiKey}
-        onChange={setApiKey}
-        placeholder="lsv2_..."
-        hintText="A key from the deployment's LangSmith workspace. Not needed against langgraph dev."
-      />
+      <Text variant="body">{describe(session)}</Text>
     </ResponsiveDialog>
   );
 }

@@ -354,6 +354,9 @@ importers:
       '@langchain/core':
         specifier: 'catalog:'
         version: 1.2.12(ws@8.21.3)
+      '@langchain/langgraph-sdk':
+        specifier: 1.11.1
+        version: 1.11.1(@langchain/core@1.2.12(ws@8.21.3))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@langchain/macaw-components':
         specifier: 'catalog:'
         version: 1.0.0-beta.0(@babel/runtime@7.29.7)(@codemirror/autocomplete@6.20.3)(@codemirror/search@6.7.2)(@codemirror/theme-one-dark@6.1.3)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(codemirror@6.0.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(tailwindcss@3.4.19(yaml@2.9.1))
@@ -369,6 +372,9 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: 'catalog:'
         version: 1.2.16(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      oidc-client-ts:
+        specifier: 3.5.0
+        version: 3.5.0
       react:
         specifier: 'catalog:'
         version: 19.3.0
@@ -2652,6 +2658,10 @@ packages:
       canvas:
         optional: true
 
+  jwt-decode@4.0.0:
+    resolution: {integrity: sha512-+KJGIyHgkGuIq3IEBNftfhW/LfWhXUIY6OmyVWjliu5KH1y0fw7VQ8YndE2O4qZdMSd9SqbnC8GOcZEy0Om7sA==}
+    engines: {node: '>=18'}
+
   langsmith@0.10.4:
     resolution: {integrity: sha512-P8kIZYLih9zDOr6e+wBTIKjSe3ak6LeFMKQFQJgAWQ65tjzrI/NcathO31Txr6BQZCCN2HEPfKX/YFmdbVBTgQ==}
     peerDependencies:
@@ -2924,6 +2934,10 @@ packages:
   obug@2.2.1:
     resolution: {integrity: sha512-XrsrhT5sybtKI6wakr2SPOlGZWWYbUXZ7a0jT8/QOeAPau+1X/bSegNe5YR75oJmEZQbKningirmGOEJCIk61Q==}
     engines: {node: '>=12.20.0'}
+
+  oidc-client-ts@3.5.0:
+    resolution: {integrity: sha512-l2q8l9CTCTOlbX+AnK4p3M+4CEpKpyQhle6blQkdFhm0IsBqsxm15bYaSa11G7pWdsYr6epdsRZxJpCyCRbT8A==}
+    engines: {node: '>=18'}
 
   oxfmt@0.68.0:
     resolution: {integrity: sha512-Z0XMofcXCGUXbcpBHnWyUiX93BGiw1B+lcHNbQDWEtOhX06ewoFfu4zXkyiLhRrNnMq0twqXRHUcJetf+GsiQQ==}
@@ -5567,6 +5581,8 @@ snapshots:
     transitivePeerDependencies:
       - '@noble/hashes'
 
+  jwt-decode@4.0.0: {}
+
   langsmith@0.10.4(ws@8.21.3):
     dependencies:
       p-queue: 6.6.2
@@ -5910,6 +5926,10 @@ snapshots:
   object-hash@3.0.0: {}
 
   obug@2.2.1: {}
+
+  oidc-client-ts@3.5.0:
+    dependencies:
+      jwt-decode: 4.0.0
 
   oxfmt@0.68.0(vite-plus@0.3.3(@types/node@24.13.6)(@vitest/coverage-v8@4.1.11)(jiti@1.21.7)(jsdom@30.1.0)(typescript@6.0.3)(yaml@2.9.1)):
     dependencies:

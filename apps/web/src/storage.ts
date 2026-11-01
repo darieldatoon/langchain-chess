@@ -1,4 +1,4 @@
-// localStorage for the four things the UI remembers; a game's own setup is in its thread. Every
+// localStorage for the three things the UI remembers; a game's own setup is in its thread. Every
 // reader tolerates missing, old, or corrupt entries, and blocked storage; every writer reports
 // whether it landed. The pure parsing lives in setup.ts and settings.ts.
 import {
@@ -7,19 +7,11 @@ import {
   type DisplayPrefs,
   type TurnView,
 } from "@langchain-chess/chess-ui";
-import { isRecord } from "./settings";
 import { DEFAULT_SETUP, sanitizeSetup, storedSetup, type Setup } from "./setup";
 
 export const SETUP_KEY = "langchain-chess:setup";
-export const APP_KEY = "langchain-chess:app";
 export const VIEW_KEY = "langchain-chess:view";
 export const DISPLAY_KEY = "langchain-chess:display";
-
-export interface AppSettings {
-  apiKey: string;
-}
-
-export const DEFAULT_APP_SETTINGS: AppSettings = { apiKey: "" };
 
 /**
  * Null where the browser blocks site data: there reading `localStorage` throws, or it hands
@@ -28,7 +20,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = { apiKey: "" };
 export function browserStorage(): Storage | null {
   try {
     const storage = window.localStorage;
-    storage.getItem(APP_KEY);
+    storage.getItem(SETUP_KEY);
     return storage;
   } catch {
     return null;
@@ -71,19 +63,6 @@ export function loadSetup(storage = browserStorage()): Setup {
 
 export function saveSetup(setup: Setup, storage = browserStorage()): boolean {
   return write(storage, SETUP_KEY, storedSetup(setup));
-}
-
-function appSettingsOf(stored: unknown): AppSettings {
-  const apiKey = isRecord(stored) ? stored.apiKey : undefined;
-  return { apiKey: typeof apiKey === "string" ? apiKey : "" };
-}
-
-export function loadAppSettings(storage = browserStorage()): AppSettings {
-  return appSettingsOf(parse(read(storage, APP_KEY)));
-}
-
-export function saveAppSettings(settings: AppSettings, storage = browserStorage()): boolean {
-  return write(storage, APP_KEY, settings);
 }
 
 /** Each field falls back to its default on its own; an older `PlyView` migrates. */

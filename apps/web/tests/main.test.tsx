@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 
-vi.mock("../src/App.tsx", () => ({ default: () => <p>app</p> }));
+vi.mock("../src/Root.tsx", () => ({ default: () => <p>app</p> }));
 
 describe("main", () => {
   it("does nothing without #root, and mounts the app when it exists", async () => {

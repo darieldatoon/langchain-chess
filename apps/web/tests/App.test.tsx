@@ -1,17 +1,17 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import App from "../src/App";
-import { checkApiKey, type KeyCheck } from "../src/auth";
+import type { ComponentProps } from "react";
+import RealApp from "../src/App";
+import { checkAccess, type KeyCheck } from "../src/auth/check";
+import { NO_SESSION, type Session } from "../src/auth/session";
 import { fetchModelFacts } from "../src/modelFacts";
 import { DEFAULT_SETUP } from "../src/setup";
 import {
-  APP_KEY,
   DISPLAY_KEY,
   loadDisplayPrefs,
   loadSetup,
   saveDisplayPrefs,
-  saveAppSettings,
   saveTurnView,
   saveSetup,
   VIEW_KEY,
@@ -73,9 +73,9 @@ vi.mock("react-chessboard", () => ({
   ),
 }));
 const keyCheck = vi.hoisted(() => ({ result: { kind: "ok" } as KeyCheck }));
-vi.mock("../src/auth", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../src/auth")>()),
-  checkApiKey: vi.fn(() => Promise.resolve(keyCheck.result)),
+vi.mock("../src/auth/check", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/auth/check")>()),
+  checkAccess: vi.fn(() => Promise.resolve(keyCheck.result)),
 }));
 const downloads = vi.hoisted(() => [] as [string, unknown][]);
 vi.mock("../src/files", () => ({
@@ -94,6 +94,14 @@ vi.mock("@langchain/macaw-components/Select", async () =>
 vi.mock("@langchain/macaw-components/Slider", async () =>
   (await import("./support/macawShims")).sliderShim(),
 );
+
+const signOut = vi.fn();
+const KEY: Session = { kind: "apiKey", apiKey: "lsv2_k" };
+
+/** The app as Root mounts it once signed in; against `langgraph dev` unless told otherwise. */
+function App(props: Partial<ComponentProps<typeof RealApp>>) {
+  return <RealApp session={NO_SESSION} onSignOut={signOut} {...props} />;
+}
 
 const LLM_HIGH: ChessContext = {
   ...DEFAULT_CONTEXT,
@@ -152,7 +160,8 @@ function reportThread(threadId: string) {
 
 beforeEach(() => {
   keyCheck.result = { kind: "ok" };
-  vi.mocked(checkApiKey).mockClear();
+  vi.mocked(checkAccess).mockClear();
+  signOut.mockClear();
   resetFake();
   window.history.replaceState(null, "", "/");
 });
@@ -180,15 +189,10 @@ describe("new game", () => {
     );
   });
 
-  it("asks the server about the model with the saved key", async () => {
-    saveAppSettings({ apiKey: "lsv2_k" });
-    render(<App />);
+  it("asks the server about the model with the session", async () => {
+    render(<App session={KEY} />);
     await waitFor(() =>
-      expect(fetchModelFacts).toHaveBeenCalledWith(
-        expect.any(String),
-        "lsv2_k",
-        DEFAULT_CONTEXT.model,
-      ),
+      expect(fetchModelFacts).toHaveBeenCalledWith(expect.any(String), KEY, DEFAULT_CONTEXT.model),
     );
   });
 
@@ -207,7 +211,7 @@ describe("new game", () => {
     fireEvent.keyDown(button("More"), { key: "Enter" });
     fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
     expect(screen.getByRole("dialog", { name: "Settings" })).toBeInTheDocument();
-    await click("Cancel");
+    await click("Done");
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
   });
 
@@ -472,7 +476,7 @@ describe("playing Black", () => {
       turns: [turn({ ply: 0, opened_message_id: "go-1" })],
     };
     fireEvent.click(button("Settings"));
-    fireEvent.click(button("Cancel"));
+    fireEvent.click(button("Done"));
     expect(strip("black")).toHaveTextContent("Your turn");
     expect(board()).toHaveAttribute("data-draggable", "true");
     await click("drop e7e5");
@@ -499,7 +503,7 @@ describe("playing Black", () => {
     expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
     expect(strip("black")).not.toHaveTextContent("Your turn");
     expect(screen.getByRole("status")).toHaveTextContent("provider 529");
-    expect(screen.queryByText("LangSmith API key needed")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sign-in needed")).not.toBeInTheDocument();
     await click("Retry");
     expect(fake.submit).toHaveBeenCalledWith(
       {},
@@ -578,67 +582,91 @@ describe("after the game", () => {
 describe("app settings and auth", () => {
   const unauthorized = Object.assign(new Error("HTTP 401: Unauthorized"), { status: 401 });
 
-  it("shows no API key banner without an auth failure, even with no key", () => {
+  it("shows no sign-in banner without an auth failure, even with no credentials", () => {
     onThread("abc");
     render(<App />);
-    expect(screen.queryByText("LangSmith API key needed")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sign-in needed")).not.toBeInTheDocument();
   });
 
   it("shows the banner when the server rejects the stream for auth, and opens settings", async () => {
     onThread("abc");
     fake.error = unauthorized;
-    render(<App />);
-    expect(screen.getByText("LangSmith API key needed")).toBeInTheDocument();
+    render(<App session={KEY} />);
+    expect(screen.getByText("Sign-in needed")).toBeInTheDocument();
     await click("Open settings");
-    expect(screen.getByRole("dialog", { name: "Settings" })).toBeInTheDocument();
-    change("LangSmith API Key", "lsv2_k");
-    await click("Save");
-    expect(dialog()).not.toBeInTheDocument();
-    expect(JSON.parse(window.localStorage.getItem(APP_KEY) ?? "{}")).toEqual({ apiKey: "lsv2_k" });
-    expect(window.localStorage.getItem("langchain-chess:setup")).toBeNull();
-    expect(lastOptions.current).toMatchObject({ apiKey: "lsv2_k" });
+    const settings = screen.getByRole("dialog", { name: "Settings" });
+    expect(settings).toHaveTextContent("Signed in with a LangSmith API key");
+    await click("Sign out");
+    expect(signOut).toHaveBeenCalledTimes(1);
   });
 
   it("shows the banner when a submit is refused as forbidden", async () => {
     fake.submit = vi.fn(() => Promise.reject(new Error("HTTP 403: Forbidden")));
     await playFromModal();
     await click("drop e2e4");
-    expect(screen.getByText("LangSmith API key needed")).toBeInTheDocument();
+    expect(screen.getByText("Sign-in needed")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("HTTP 403: Forbidden");
   });
 
-  it("sends a stored key, and cancels settings without saving", async () => {
-    saveAppSettings({ apiKey: "lsv2_saved" });
+  it("streams through a client of its own per session", () => {
+    onThread("abc");
+    const view = render(<App session={KEY} />);
+    const first = lastOptions.current?.client;
+    expect(first).toBeDefined();
+    expect(lastOptions.current).not.toHaveProperty("apiKey");
+    view.rerender(<App session={KEY} />);
+    expect(lastOptions.current?.client).toBe(first);
+    view.rerender(<App session={{ kind: "apiKey", apiKey: "lsv2_other" }} />);
+    expect(lastOptions.current?.client).not.toBe(first);
+  });
+
+  it("says who is signed in, in the header and in settings", async () => {
+    const oauth: Session = {
+      kind: "oauth",
+      email: "ada@example.com",
+      accessToken: () => Promise.resolve("t"),
+    };
+    onThread("abc");
+    render(<App session={oauth} />);
+    expect(screen.getByText("ada@example.com")).toBeInTheDocument();
+    await click("Settings");
+    expect(screen.getByRole("dialog", { name: "Settings" })).toHaveTextContent(
+      "Signed in with LangSmith as ada@example.com.",
+    );
+  });
+
+  it("offers no sign-out where the server needs no sign-in", async () => {
     onThread("abc");
     render(<App />);
-    expect(lastOptions.current).toMatchObject({ apiKey: "lsv2_saved" });
     await click("Settings");
-    change("LangSmith API Key", "other");
-    await click("Cancel");
-    expect(lastOptions.current).toMatchObject({ apiKey: "lsv2_saved" });
+    expect(screen.getByRole("dialog", { name: "Settings" })).toHaveTextContent(
+      "This server needs no sign-in.",
+    );
+    expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
+    await click("Done");
+    expect(dialog()).not.toBeInTheDocument();
   });
 });
 
 describe("key check on Play", () => {
-  it("keeps the modal up on a missing key, then plays with the key saved from settings", async () => {
+  it("keeps the modal up when the server wants a sign-in, with a way to settings", async () => {
     keyCheck.result = { kind: "missing" };
     render(<App />);
     fireEvent.click(screen.getByRole("radio", { name: "Black" }));
     await click("Play");
+    expect(checkAccess).toHaveBeenLastCalledWith(expect.any(String), NO_SESSION);
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
-    expect(screen.getByText("LangSmith API key needed")).toBeInTheDocument();
+    expect(screen.getByText("Sign-in needed")).toBeInTheDocument();
     expect(fake.submit).not.toHaveBeenCalled();
 
     await click("Open settings");
-    change("LangSmith API Key", "lsv2_new");
     keyCheck.result = { kind: "ok" };
-    await click("Save");
+    await click("Done");
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Black" })).toBeChecked();
-    expect(screen.queryByText("LangSmith API key needed")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sign-in needed")).not.toBeInTheDocument();
 
     await click("Play");
-    expect(checkApiKey).toHaveBeenLastCalledWith(expect.any(String), "lsv2_new");
     expect(dialog()).not.toBeInTheDocument();
     expect(board()).toHaveAttribute("data-orientation", "black");
   });
@@ -649,7 +677,7 @@ describe("key check on Play", () => {
     await click("New game");
     fireEvent.keyDown(button("More"), { key: "Enter" });
     fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
-    await click("Cancel");
+    await click("Done");
     expect(screen.getByRole("dialog", { name: "New game" })).toBeInTheDocument();
     await click("Cancel");
     expect(dialog()).not.toBeInTheDocument();
@@ -726,7 +754,7 @@ describe("the game screen", () => {
     fake.submit = vi.fn(() => Promise.reject(new Error("Failed to fetch")));
     await click("drop e2e4");
     expect(screen.getByRole("status")).toHaveTextContent("Failed to fetch");
-    expect(screen.queryByText("LangSmith API key needed")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sign-in needed")).not.toBeInTheDocument();
     fake.submit = vi.fn(() => Promise.resolve());
     await click("drop e2e4");
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
@@ -875,7 +903,7 @@ describe("the game screen", () => {
       ],
     };
     fireEvent.click(button("Settings"));
-    fireEvent.click(button("Cancel"));
+    fireEvent.click(button("Done"));
     expect(screen.getAllByText("Thinking…").length).toBeGreaterThan(0);
     const old = optionsLog.at(-1) as { onThreadId: (id: string) => void };
 
@@ -890,7 +918,7 @@ describe("the game screen", () => {
       finish();
     });
     fireEvent.click(button("Settings"));
-    fireEvent.click(button("Cancel"));
+    fireEvent.click(button("Done"));
 
     expect(window.location.search).toBe("");
     expect(board()).toHaveAttribute("data-position", START_FEN);

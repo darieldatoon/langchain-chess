@@ -27,6 +27,14 @@ def test_a_blank_value_fails_fast(env, name):
         ServerSettings()
 
 
+def test_sign_in_settings_treat_blank_as_unset(env):
+    env.setenv("OAUTH_CLIENT_ID", " ")
+    env.setenv("ALLOWED_ORGANIZATION_ID", " org-1 ")
+    settings = ServerSettings()
+    assert settings.oauth_client_id is None
+    assert settings.allowed_organization_id == "org-1"
+
+
 def test_env_file_is_read(env, tmp_path):
     env.delenv("TYPESAFE_API_KEY")
     (tmp_path / ".env").write_text("TYPESAFE_API_KEY=from-file\n")

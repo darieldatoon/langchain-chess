@@ -1,3 +1,4 @@
+import { sessionHeaders, type Session } from "./auth/session";
 import { isRecord } from "./settings";
 
 /** What the server knows about a model. `failed` says nothing about the model. */
@@ -19,14 +20,14 @@ const FAILED: ModelFacts = { kind: "failed" };
  */
 export async function fetchModelFacts(
   apiUrl: string,
-  apiKey: string,
+  session: Session,
   model: string,
   fetcher: typeof fetch = fetch,
 ): Promise<ModelFacts> {
   try {
     const response = await fetcher(
       `${apiUrl}/ui/model?${new URLSearchParams({ model }).toString()}`,
-      { headers: apiKey ? { "x-api-key": apiKey } : {} },
+      { headers: await sessionHeaders(session) },
     );
     if (!response.ok) return FAILED;
     const body: unknown = await response.json();
