@@ -35,11 +35,19 @@ export function keyCheckMessage(check: Exclude<KeyCheck, { kind: "ok" }>): {
 } {
   switch (check.kind) {
     case "missing":
-      return { title: "LangSmith API key needed", body: "This server needs an API key to play." };
+      return {
+        title: "LangSmith API key needed",
+        body:
+          "Only members of this deployment's LangSmith workspace can play here, with a key from " +
+          "that workspace. Anyone can run their own copy: see " +
+          "https://github.com/darieldatoon/langchain-chess.",
+      };
     case "rejected":
       return {
         title: "API key rejected",
-        body: "The server refused this key. Check it in Settings.",
+        body:
+          "The server refused this key. It takes keys from its own LangSmith workspace only; " +
+          "check the key in Settings.",
       };
     case "unreachable":
       return { title: "Server unreachable", body: check.message };
