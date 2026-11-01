@@ -85,6 +85,11 @@ You need:
   | Jev (`typesafe/jev-latest`, the default System 1) | A TypeSafe provider secret |
   | Luna Decisions (`openai/gpt-6-luna`, the other System 1) | An OpenAI provider secret |
 
+- **A LangSmith plan that covers what you run.** The free Developer plan is enough to play
+  locally (browser, terminal, UCI), grade games with `lcchess grade` and run the evals. Deploying
+  the agent needs LangSmith Deployments, which comes with Plus and above. Model calls go through
+  the LLM Gateway, which needs billing set up. See [pricing](https://www.langchain.com/pricing).
+
 ## Set up
 
 ```sh
@@ -150,6 +155,11 @@ LANGGRAPH_PORT=2034 WEB_PORT=5180 mise run dev
 
 Studio's chat view plays too. Type `go` for the agent to move, or type your move (`e4`, `e2e4`).
 
+The hosted site, <https://darieldatoon.github.io/langchain-chess/>, plays the deployed agent,
+but only for members of its LangSmith workspace: the deployment accepts that workspace's API
+keys and no others. Everyone else can play locally as above, or
+[deploy their own copy](apps/server#deploy).
+
 ## Play in the terminal
 
 ```sh
@@ -172,8 +182,10 @@ mise run dev:review
 ```
 
 `lcchess grade` replays a game from its traces, grades every move with Stockfish, and writes
-the grades back to the traces as LangSmith feedback. The [review app](apps/review) is a
-LangSmith custom app that replays graded games as an analysis board, and its **Analyze** button
+the grades back to the traces as LangSmith feedback. Each grade moves its trace to extended
+retention, which may be billed. The [review app](apps/review) is a LangSmith custom app (an
+organization outside Enterprise can have one) that replays graded games as an analysis board,
+and its **Analyze** button
 grades a game for you in a LangSmith sandbox. It runs through the `langsmith` CLI's own
 credentials, not `.env`, hence the login:
 

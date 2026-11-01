@@ -49,7 +49,7 @@ export function AppSettingsDialog({ settings, onSave, onClose }: Props) {
         value={apiKey}
         onChange={setApiKey}
         placeholder="lsv2_..."
-        hintText="Needed for a deployed server. Not needed against langgraph dev."
+        hintText="A key from the deployment's LangSmith workspace. Not needed against langgraph dev."
       />
     </ResponsiveDialog>
   );
