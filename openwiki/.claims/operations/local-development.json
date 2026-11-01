@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ed7d242e5fb4d1c9cdf3f8d233bdc7c281649db584fa0d277fb09c48e95b5625",
+  "pageVersion": "sha256:dc87ff7ba21d2133ce40bb8684ee434ac289fda6901a8468914f5c16926c3a7d",
   "claims": [
     {
       "id": "claim_64f9d3d12be44aa4b19129d0e5102977",
@@ -34,7 +34,7 @@
     },
     {
       "id": "claim_5f72439d2e824fc7b922fef27cb1748a",
-      "statement": "Commands that make model calls or LangSmith writes load .env explicitly via uv run --env-file .env (dev:tui, dev:uci, test:live, test:uci with ../.env, review:snapshot, eval:positions:upload, eval:systemone, eval:systemone:baseline), while langgraph dev reads .env through the env key in langgraph.json.",
+      "statement": "Commands that make model calls or LangSmith writes load .env explicitly via uv run --env-file .env (dev:tui, dev:uci, test:live, test:uci with ../.env, review:snapshot, probe:efforts, eval:positions:upload, eval:systemone, eval:systemone:baseline), while langgraph dev reads .env through the env key in langgraph.json.",
       "evidence": [
         {
           "resource": "repo://.env.example#L5-L7",
@@ -49,12 +49,12 @@
           "version": "repo-lines-v1:sha256:46f0877659be020db892b9d2ca181e1612534f0da2ecbe2adaf4e8ca84b9d1f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxOTliMzg2NjZiNGNkOTliYmY5ODk0YjRlMzEzOTUzMmVhZGJkMjI3YWVhZjc0MDViY2ZmMGRjNGMzYzQ0ZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4MzNlMzJhNjYxZDc5YTQ3MWFjOTdjYjBkMjM1MGYxNGUxNTVjYmI5YjI1YWU5MTFmOGU2ODcxZDMyYmUxM2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5NWY4MDkxM2U2MWE1NWE3MWNlOTVmNzFjZDg5ZDYyMDU5YjYxZTAyMGZlOWU3MzllNTEwY2NmNTE5OGJiMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMGFiNTk3NjhkY2I5ZTMzMDBlNGY5ZTc0ZTZjMjcyY2RmOTk3NDdjM2I5MDkzZjYwYTRkMDU0ZWQwNmM3ZTUifQ"
         },
         {
-          "resource": "repo://mise.toml#L150-L168",
-          "version": "repo-lines-v1:sha256:344f2413a6a499c5aa3f881cb7009ebfc131254c7ec2b69432af938deda813db:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTc3MDIyYTQ1MzJjYWI2YjIwNTViMTE0MTFjOGMzOTdiYjc3NTFhMDkwZTVmNWY0ZjgyYmIyODQ1ODVkNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwYzk2YjVjNWI1Y2NlOTc5ZjRjYzc2NmE2YjlmNTg4YmIxMDQxMTQ5Mzk1MTNlZDY0NmViOTE5ZTdiMTVmYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlY2I4ZTdiMTExM2YxNDJiZDZkYTg4YjY5OGM3MGRjZWViNmEwN2E3YzEyOWQyZTYxMzI5OGZmNTVkYWY0ZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhNmRmNWNkNTkyZWIzMjI2ZTllNjc4ZTY4NzNlY2JiYmZhMmM4YjJhNzNkOWExMjliOTE3MTRiMDgwYmUxYTMifQ"
+          "resource": "repo://mise.toml#L150-L176",
+          "version": "repo-lines-v1:sha256:b9b51937bdda2a1e6d5beca259e50ecbe60ba8898f9724d9df2eaba5d7afe430:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTc3MDIyYTQ1MzJjYWI2YjIwNTViMTE0MTFjOGMzOTdiYjc3NTFhMDkwZTVmNWY0ZjgyYmIyODQ1ODVkNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YjczODAwNjdlN2FmZjU0YTFiYTBlYTI0Mjc3ZGM5YjlkYWUwNzczMTVhZDk2YjFlN2FkYzRhZTIwNzBjOTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlY2I4ZTdiMTExM2YxNDJiZDZkYTg4YjY5OGM3MGRjZWViNmEwN2E3YzEyOWQyZTYxMzI5OGZmNTVkYWY0ZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmMDdjYWUwZjFhMWI3ZmY5Y2NmNGNlZmM0MGNiM2UyODczNGYyNGYzMjE2NGFmNzM1ZjkyNzE2YTY2ZTNjZDAifQ"
         },
         {
-          "resource": "repo://mise.toml#L207-L217",
-          "version": "repo-lines-v1:sha256:137dfe64320a697d8988549e0319ac45a9db464283bdcf9d12b519287d566d92:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NWYwN2ViMmFiZjI0ZDMxNGJkOTZhNWNhM2I1MmEzNzExMTU1ZDBhZTgwZTc3N2Y0MTM2NTE5MWM0MDI3NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlODYzOWVhMjJlNGYxM2MyMGEyMTUwMTYyN2ZmYWRmNzE1YWNlZGRjOWQ0MmJkYmMyM2JkMGM5MmY0MjY4YzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiODBiMjk4MWQwNjM5OTdjNWFkOGEzZDBmMWEwMGQ2NTUwYzAwZThiODZmZmQ2NThjYmNiYjM5NGQ1NjExMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExZmUyYmMxYjk1MDE4MWVlMzFlMDRkMTY2MzQ5NjFmNTk4YmQ1MTdjN2MxM2Y2ZjhmNjJlYzc4ZGNmMzdlODAifQ"
+          "resource": "repo://mise.toml#L214-L224",
+          "version": "repo-lines-v1:sha256:9162e336d3819cbd60769531aa00f0b6c28e623a3424d7e2385a807c7afd87bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NWYwN2ViMmFiZjI0ZDMxNGJkOTZhNWNhM2I1MmEzNzExMTU1ZDBhZTgwZTc3N2Y0MTM2NTE5MWM0MDI3NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlODYzOWVhMjJlNGYxM2MyMGEyMTUwMTYyN2ZmYWRmNzE1YWNlZGRjOWQ0MmJkYmMyM2JkMGM5MmY0MjY4YzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiODBiMjk4MWQwNjM5OTdjNWFkOGEzZDBmMWEwMGQ2NTUwYzAwZThiODZmZmQ2NThjYmNiYjM5NGQ1NjExMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExZmUyYmMxYjk1MDE4MWVlMzFlMDRkMTY2MzQ5NjFmNTk4YmQ1MTdjN2MxM2Y2ZjhmNjJlYzc4ZGNmMzdlODAifQ"
         }
       ]
     },
@@ -77,8 +77,8 @@
       "statement": "The .env template derives LANGSMITH_GATEWAY_API_KEY and TYPESAFE_API_KEY from the shell's LC_GATEWAY_KEY; if it is missing they expand to empty, so ServerSettings rejects set-but-blank gateway/TypeSafe values to prevent a silent fallback to the tracing key.",
       "evidence": [
         {
-          "resource": "repo://.env.example#L18-L30",
-          "version": "repo-lines-v1:sha256:8e85758f24ca7be10eb01aacb03d75fe52fa96f096229105bda6eb94cddc5db7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhY2Y1MDYzNDQ0YWEyOTFhZjJmZDZjNWNiNTFjMTNkOWI2NjY5NjdlYzUwMzQ0YzE2MjEwMWVjYzA1NjhjMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NWVmNjQ1NDE0MTM0ZTE5ZmVjNDU3NTI2NDc3ZTA5YTZjNjM0NzFhZGJmOTg5MmQ2NjEwMDQxZThhOGY5ZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkMTlkMTlmM2Y4YWJmMTE2ODk0ZDgyMTk3YjIxYmIxODAxMmMzYjQ3YjllYTZkZTgwMWM0ZjQ2ZjFmMGIyM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://.env.example#L20-L33",
+          "version": "repo-lines-v1:sha256:a96f554f6d0aa3d42d654f5c598877d30d9dde6ff567f98cd4d3a87795a3f063:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhY2Y1MDYzNDQ0YWEyOTFhZjJmZDZjNWNiNTFjMTNkOWI2NjY5NjdlYzUwMzQ0YzE2MjEwMWVjYzA1NjhjMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NWVmNjQ1NDE0MTM0ZTE5ZmVjNDU3NTI2NDc3ZTA5YTZjNjM0NzFhZGJmOTg5MmQ2NjEwMDQxZThhOGY5ZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkMTlkMTlmM2Y4YWJmMTE2ODk0ZDgyMTk3YjIxYmIxODAxMmMzYjQ3YjllYTZkZTgwMWM0ZjQ2ZjFmMGIyM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://apps/server/langchain_chess_server/settings.py#L1-L36",
@@ -88,15 +88,15 @@
     },
     {
       "id": "claim_ba81ebdf95944ff29cd80107eb48dede",
-      "statement": "The build task builds the web UI with vp build into apps/server/langchain_chess_server/static so the server image serves it under /ui.",
+      "statement": "The build task builds the web UI with vp build into apps/server/langchain_chess_server/static, which the server serves under /ui for local runs and the e2e tests; the hosted UI ships separately to GitHub Pages by overriding BASE_PATH and OUT_DIR.",
       "evidence": [
         {
-          "resource": "repo://apps/web/vite.config.ts#L9-L9",
-          "version": "repo-lines-v1:sha256:b2cecb144a46f5dcf12a6169fceed7695e8294b090de76f3661cdd0249300147:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjJjZWNiMTQ0YTQ2ZjVkY2YxMmE2MTY5ZmNlZWQ3Njk1ZTgyOTRiMDkwZGU3NmYzNjYxY2RkMDI0OTMwMDE0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjJjZWNiMTQ0YTQ2ZjVkY2YxMmE2MTY5ZmNlZWQ3Njk1ZTgyOTRiMDkwZGU3NmYzNjYxY2RkMDI0OTMwMDE0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGRmNmUyN2RhZDFiOGNkZjZkZmM1MzI0Nzc0YTY5MDc4NjhkMDcyZjVjMjc5MGU5OWQ5MTYwY2I2YTViYTVmYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Q1OWZkYTQzMzg1NjhjMjQ4NGFkNWU1MWIzMDc2ZWEwZGM0ZjNjMTM2Yzk4NzlhYmQ0ZGFkODFkY2JiMWFkMCJ9"
+          "resource": "repo://apps/web/vite.config.ts#L7-L13",
+          "version": "repo-lines-v1:sha256:1955c7d5de90b21d5554868ccf75860192183cd0d274f59a21609261c38132f1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWUwOGQ1YjZkY2Y0ZTZlNzQ4OTg2NTg4YWI3ZjdiMDI2ZTBiMjA1NThlNjFlNzQ3OTEyMjBkZWU4MTE2NzY3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTk0YTQwZmJmZmI5OGI4ZGU5MzUzYTMwZjYzZTc1NDAwYzk2ODg5YWYyZmJjYWE4Njg1NDE3NTFiNjYzOWQ1NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjE1ZGU2YzE3OTBiYTYzYjczNmY3NDU0ODMzYTdmZjM4ZGE2ZTlmYTgwOTM0OWI3ODNlNmJmZGU2OTU5NGJmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGI0ZWUwMjc1NWI0OTE2MDA5ODBiMDI4ZjA4YTBmZDQ1ZWI3ZTY3YTg3NjVjNDEwODA3NGFmOTk0NDJmYzViMyJ9"
         },
         {
-          "resource": "repo://mise.toml#L174-L176",
-          "version": "repo-lines-v1:sha256:e833f1776f2d8522d3b5b51cfee2034332f3298a77526d9c52d890a8f9bd88eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE0NmZmNzk4YzczZmEwMTk0NmY0MzVlZTQxYmVkNTU3MmUxZjJjY2E5YmFkYWZiOWI2NzQyNjkwNWMwNWQ5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjBkZTAwNTMzYjI5NmNkMDZkNDYxODZkM2FlNmI4YTBjNzNiZTJlOWE1MWY3YWVjZmFjODAxMWFlMGJmMDUyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmFmOWMxNzA3ZjJmZjM5ZDEzODlkMGIzYmI3ZDBmYTJjMGM1NzE4ZWZjZGVkN2E3NDIzM2U5OTMwYzdlZjYyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2VhMTc1ZDU3ZjkzNzAwNmU4NmI2MGQwNzkyNWRlYmUzNTU3NTExNzM1MDExZjhhYjU5MDEyZmRhMWRhMzEwMyJ9"
+          "resource": "repo://mise.toml#L178-L186",
+          "version": "repo-lines-v1:sha256:613d2af579364cef140e39081cf33c7de73fd805a1a56e64da1b2a70bfdc4a31:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE0NmZmNzk4YzczZmEwMTk0NmY0MzVlZTQxYmVkNTU3MmUxZjJjY2E5YmFkYWZiOWI2NzQyNjkwNWMwNWQ5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWM2NzM2NTkxMjQwNWU5NGJkOTZkZTVkNjE3NGE3NGI1NmUzZjRkZmMwYjUxZGQ2NWUyYWZiN2JlYTk1YTU4ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjk4ZGEzNzI0ZGZjZDcwYmU2NGUwZGViODg1ZmM5NzQwZmUzMDg2ZTUxZjRmM2M1ZGIxNDEzNmU5NTVmNzY3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmZmOGQ3MWRjM2QyOGJlYzY3ZmJjNWExMGRlNmY0Y2M4ODUyMWJmZDg2MDFmYmY3MzBmZDFiMjYxNjYzN2QxMCJ9"
         }
       ]
     },
@@ -115,7 +115,7 @@
       "statement": "Dependencies are added through sfw (sfw uv add --package, sfw uv add --group dev, sfw pnpm add in the consuming JS package).",
       "evidence": [
         {
-          "resource": "repo://README.md#L229-L232",
+          "resource": "repo://README.md#L243-L246",
           "version": "repo-lines-v1:sha256:baa2e087ff926f91d94573d723295c371c0649aa062fe9e5d27d5f02c389a07f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzgzODUwMzI2MDg0ZDU2NzZkYWI2Y2NjMGQ3NGI3MjYwOGMzMjA5YWVhNzdlOTJjYzhjOTAzOTJiNjk3NDUxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzNlZWNjYmU0Nzc1Yjg0ZDA0NDljN2NmMWNhMDNkNThiOTYyMmE1MzdjZGE5ZmQ0ZDk1ZmM0ODdiM2RlNTM5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGU0NDc3MTEwNjQzNzU5NDYxMjY1NDEyNDc1OWM3MjNkMmQ3ZWVlODFhZjU1NDViZjg1OWE5ZjY5MzM3OWIzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTY2ZTg1M2U4OWNiNGZlMWRiMzE1ZTAwOTYyMzAwZDY0ZTQ1YjQ3ZGNkM2M3ZWQ3YzJjYzZlNjcwN2YzNjg2NyJ9"
         }
       ]
@@ -129,18 +129,18 @@
           "version": "repo-lines-v1:sha256:d7bcdf0020116ac75756384a67ad66ee710562fbed2b7e386eebd409a4d9cc52:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y2MzJkN2QwNDg5NTg5ZTI1ZTAyZTNjYzhlYzk3MGE5ZWUxZGIyMzczNGFhOTEwMDQ4NTE4MzRhMzA3ZWIwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTA5ZDk2NTFlYmRlMjUwZjNkYzQ4ZmM0OGJiODNiMWFlM2ZiZTMxYTBhNzA5ZDI3NTYxYTk3NDkwMWZjNGE2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDE3NjJkYjQyNDViZDA0OTUyZjRlMTE3YWZhMTQyMzIwZjMxZDJiOGNiOGRjYzg0NDYzZWE5YjU1OTI1NzU4MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDE2NGQ1NmQ4MDA0MWJiMjUwNjdhZmFjZDE0ODU0MWNjZjdhYTU2NDYzMWNmYTczOWM2MDgyZDAwZDI3ZTBhMiJ9"
         },
         {
-          "resource": "repo://mise.toml#L185-L205",
-          "version": "repo-lines-v1:sha256:62736df4b01807cf872bcf0087ddd5a04453b63335e03625efa9d81818874b21:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0YzVkNzcxMTdkZTI1YjZiMjdiNDIwYWMwMWQ0MzRjYzUwMjgxMDNmYjU5MjJlYzViZTVjNGEzNjYxNWYyNjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlNmM5YzhlZjMzNmZiZjI2MDM2OWRlZTBkZmY2OWYxYjRjMzNhOTM5Y2FjOGQwYzFiZWIzOWU5MDUwNzE4ODQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4YjlhZjdkOTg1NWQwNTMxNWY3MzdlMmY5ZjUwOGMyNzdjOWQyZWUxMzZiNTEzZGYxZDExOTZjMTZhYTU0NDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyNGJmNzI2ODhhYjRlOWFmODI4MTk5NGZkZDdiZmJiNGFjNTEyMDAzMzFlNTIyY2JiZDBkMWZlZGI5OGY0NTUifQ"
+          "resource": "repo://mise.toml#L192-L212",
+          "version": "repo-lines-v1:sha256:62736df4b01807cf872bcf0087ddd5a04453b63335e03625efa9d81818874b21:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0YzVkNzcxMTdkZTI1YjZiMjdiNDIwYWMwMWQ0MzRjYzUwMjgxMDNmYjU5MjJlYzViZTVjNGEzNjYxNWYyNjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlNmM5YzhlZjMzNmZiZjI2MDM2OWRlZTBkZmY2OWYxYjRjMzNhOTM5Y2FjOGQwYzFiZWIzOWU5MDUwNzE4ODQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlNTdkOTdlYzU0YWE2ODBmNDc5MmY3NzI4Y2NiZWZkNTIyMWExMjBmOGVhZDU5N2U3NDRmMzJjZWNkMzRlOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5NzE0NjBjODM1NGQ4ZjM1OGIwMWRhYjUxYTQxM2JjZDI4NzY3YzNjOGVjNjg0Y2I0MmVjODEwNDY2ZjUyNDcifQ"
         }
       ]
     },
     {
       "id": "claim_ea0b03f2f90e4f7b9a428ee0fba235cc",
-      "statement": "scripts/openwiki.sh sources .env if present, routes OpenWiki model calls to Anthropic via the LangSmith LLM Gateway using LC_GATEWAY_KEY, maps LANGSMITH_API_KEY to OPENWIKI_LANGSMITH_API_KEY, traces to langchain-chess-openwiki, disables telemetry, and fails fast if either key is missing.",
+      "statement": "scripts/openwiki.sh sources .env if present, routes OpenWiki model calls to Anthropic via the LangSmith LLM Gateway using LC_GATEWAY_KEY, maps LANGSMITH_API_KEY to OPENWIKI_LANGSMITH_API_KEY, traces to the langchain-chess-openwiki project after unsetting LANGSMITH_AGENT_ID and LANGSMITH_AGENT_ENVIRONMENT, disables telemetry, and fails fast if either key is missing.",
       "evidence": [
         {
-          "resource": "repo://scripts/openwiki.sh#L1-L26",
-          "version": "repo-lines-v1:sha256:f78cf8fefffb6767ded0b1e9120e3f8eda1c6a9b41b9edaf89a984202a469dba:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1MmNjMWNmNTA0YTgwZGJmMzVjOWExYzgzOGNjMTBjZjY0YzUyZmIzNzlhNTZlY2MxMzhhZmNhNTBhYjIwMDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://scripts/openwiki.sh#L1-L28",
+          "version": "repo-lines-v1:sha256:3992d262b6de519671d03cb7b1a975f6d0af7840ccdd109d98ad8bc9afec368b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1MmNjMWNmNTA0YTgwZGJmMzVjOWExYzgzOGNjMTBjZjY0YzUyZmIzNzlhNTZlY2MxMzhhZmNhNTBhYjIwMDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -170,11 +170,11 @@
     },
     {
       "id": "claim_36094bd119f547bb925bcf26dadb9487",
-      "statement": "test:uci runs a two-game fastchess smoke match of SemIf-only lcchess instances inside .uci-match/ and fails unless both games have a result and none terminated by forfeit.",
+      "statement": "test:uci runs a two-game fastchess smoke match inside .uci-match/ between two System 1-only lcchess uci --policy systemone instances (seeds 1 and 2) and fails unless both games have a result and every Termination tag is normal or adjudication.",
       "evidence": [
         {
-          "resource": "repo://mise.toml#L207-L222",
-          "version": "repo-lines-v1:sha256:5ea39d409d57d2eb00b9b0ecb70b1915668acf7e7e2b58455809625ef0891f17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NWYwN2ViMmFiZjI0ZDMxNGJkOTZhNWNhM2I1MmEzNzExMTU1ZDBhZTgwZTc3N2Y0MTM2NTE5MWM0MDI3NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiODBiMjk4MWQwNjM5OTdjNWFkOGEzZDBmMWEwMGQ2NTUwYzAwZThiODZmZmQ2NThjYmNiYjM5NGQ1NjExMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://mise.toml#L214-L229",
+          "version": "repo-lines-v1:sha256:efa4a3d85adc4f7c5b2f9d6eabd0733b3130398f65590e41676d76c0faecd5fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NWYwN2ViMmFiZjI0ZDMxNGJkOTZhNWNhM2I1MmEzNzExMTU1ZDBhZTgwZTc3N2Y0MTM2NTE5MWM0MDI3NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiODBiMjk4MWQwNjM5OTdjNWFkOGEzZDBmMWEwMGQ2NTUwYzAwZThiODZmZmQ2NThjYmNiYjM5NGQ1NjExMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -183,7 +183,7 @@
       "statement": "The wiki:init task runs scripts/openwiki.sh with --init and then restores openwiki/.langsmith.json via git checkout, because --init keeps only INSTRUCTIONS.md and drops the committed connector config.",
       "evidence": [
         {
-          "resource": "repo://mise.toml#L188-L195",
+          "resource": "repo://mise.toml#L195-L202",
           "version": "repo-lines-v1:sha256:77fa03fc8321779a0f0f135fe87f917c5d7178c03e420e2b775963ae85006a16:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U0NWZhYjU2MTZkMjNiMzk2NTdmYTIxN2E4OTc0Mjg3NGRhY2NlOTQ1MmNhMzc3Zjk5NDBmNmI3YzIzZjBkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODMwZmYwOGQzMTQ2ZWQ2OTM4NGJlOTFkNGE3OTUyZGUzZWI1N2EyNzlkMTRhM2I4ZmMzYWZmZGRjMTZiMjVkZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNlYWI4ZTczMzgwNWI4NDMyY2Q2YTJjMWUxNGQxZTFkZTdjMmM4NjgwMzFiMDNiNzI5MzYzNmQ4NzdhOWYwYyJ9"
         }
       ]
@@ -203,8 +203,8 @@
       "statement": "The review app run by dev:review uses the langsmith CLI's own credentials rather than .env, so it needs a one-time langsmith auth login --prompt-workspace.",
       "evidence": [
         {
-          "resource": "repo://README.md#L164-L176",
-          "version": "repo-lines-v1:sha256:bec0534cd88cfd9326b6e79f2b974d473ea5f2f2f05d2f5e81b4c73270eb9578:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMDI3YjU1MjNjNWM0OGY2Yjc3OTE5ZjU4NjQwNjQwYmVhNmUxNGMzNThjOTQ5ZGI4MmMyNjU5MDZmY2IxMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjOGE4YTVhOTliOGZmNDcyYTgwZGFhNmEwOTBiYWQ0NGQ4ODJjMDg4MWZlMjk2ZTc2ZmNmY2Q4NWQ3ZjQ4NTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxODcwOTBlZjJmMGI3ZWFmODg2N2Y1M2QzZTY4MDE0NDAzYmI5NWYzMmUxYTNlOWRmNDY3ZjQ2ZjZlY2U0OWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3ZmJhNjk0YzA2NWQ4OGNmZmU0YmY5YmY5ZDlhOTBkNGQyNTcxNThmMjA2ODgxNzA1YjkyNGJmZmNhNWU1NTYifQ"
+          "resource": "repo://README.md#L176-L190",
+          "version": "repo-lines-v1:sha256:a035c27fe43307043cda0b1c866b0b087eb751d003756ff931c777a229e0f60b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMDI3YjU1MjNjNWM0OGY2Yjc3OTE5ZjU4NjQwNjQwYmVhNmUxNGMzNThjOTQ5ZGI4MmMyNjU5MDZmY2IxMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjOGE4YTVhOTliOGZmNDcyYTgwZGFhNmEwOTBiYWQ0NGQ4ODJjMDg4MWZlMjk2ZTc2ZmNmY2Q4NWQ3ZjQ4NTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVlY2E2NzM3ZDhiYmQ0MjdkMDVjZDFkOTBlNzcxZmZjMTY0YmQxYzRiYmRiM2NhYTY1YjU4OGFiNjU5ZjkzNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3ZmJhNjk0YzA2NWQ4OGNmZmU0YmY5YmY5ZDlhOTBkNGQyNTcxNThmMjA2ODgxNzA1YjkyNGJmZmNhNWU1NTYifQ"
         },
         {
           "resource": "repo://mise.toml#L92-L95",
@@ -232,7 +232,7 @@
       "evidence": [
         {
           "resource": "repo://apps/server/tests/e2e/test_browser.py#L1-L40",
-          "version": "repo-lines-v1:sha256:935ece1ec3c944c33796b621f78ab383f21d783d5a6f2b9f7163f25d3083f404:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMjQ0MjNiNWZkYmVhNTBmYmVlNjViNmQwY2NlZDFkMjQwY2U0YzdhMWU5ZDhlNjE4M2Q0ZWY2N2M2ODY0NmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlYjJmZWFhZjQ1ZDA4ZTExMWY1ODc1NGFiZjQyY2RkNmQyMDUzZTdhY2I1ZGIzOWJlMTlmNzk2ZTI2OTU4OGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhZTU5NDIyZGI1Y2Q0ODY0NzlkYTRhZGVkZGNhODM5YTUwODJhM2UxM2U3YjkzOWVlMjI0ZTg5NWY4ODRiODUifQ"
+          "version": "repo-lines-v1:sha256:91213544970c9023a9b9d986c0b6925d8ae1086e120888428911f5715e04849b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMjQ0MjNiNWZkYmVhNTBmYmVlNjViNmQwY2NlZDFkMjQwY2U0YzdhMWU5ZDhlNjE4M2Q0ZWY2N2M2ODY0NmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlYjJmZWFhZjQ1ZDA4ZTExMWY1ODc1NGFiZjQyY2RkNmQyMDUzZTdhY2I1ZGIzOWJlMTlmNzk2ZTI2OTU4OGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhZTU5NDIyZGI1Y2Q0ODY0NzlkYTRhZGVkZGNhODM5YTUwODJhM2UxM2U3YjkzOWVlMjI0ZTg5NWY4ODRiODUifQ"
         },
         {
           "resource": "repo://mise.toml#L143-L148",
@@ -260,11 +260,15 @@
     },
     {
       "id": "claim_1b4380b0d88e49708b56763e86092992",
-      "statement": "The eval tasks wrap the lcchess-evals CLI: eval:positions:build samples and labels Lichess positions into evals/datasets/positions/vN.jsonl, eval:positions:upload pushes that JSONL to a LangSmith dataset tagged vN, eval:systemone runs one System 1 experiment, and eval:systemone:baseline runs the baseline experiments in evals/experiments/systemone-baseline.toml.",
+      "statement": "The eval tasks wrap the lcchess-evals CLI: eval:positions:build samples and labels Lichess positions into evals/datasets/positions/vN.jsonl, eval:positions:upload pushes that JSONL to a LangSmith dataset tagged vN, eval:systemone runs one System 1 experiment, and eval:systemone:baseline runs the four experiments in evals/experiments/systemone-baseline.toml (Jev rich and terse, Luna rich, and a Jev control capped at 16 options).",
       "evidence": [
         {
+          "resource": "repo://evals/experiments/systemone-baseline.toml#L1-L24",
+          "version": "repo-lines-v1:sha256:a1e0708d29004b0f9f23fe530764c52b572a999b1d39a1753cb8faed420e46a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMjA4NWVhNjM4OWY5YjIwNWM3ZTI1ZmZmZTA1NDRlNGE0ZmI2ODA3NWMwNGEyMzVhYTJkNThmNTVkYTRjY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OTEyNDA4YjBhYzgwZjU0NmYxYTg3MzhjYTE4ZDlkNDdmMDI3YWQ2N2Q2ODNhMTYwYzYzODgwOTczMjAxMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
           "resource": "repo://mise.toml#L154-L168",
-          "version": "repo-lines-v1:sha256:08f36f2ac759bd13ace5c5376f42790999f235508b3745b5f5b1d485e55fa257:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTU2NjA3NDQwMmI4MzNhNzU2YTE4Mzc2YzU5Y2FiOWU0Y2RjMmU0ZTgzYzBkMDRhMTI4YmRhNzgzMjkyM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwYzk2YjVjNWI1Y2NlOTc5ZjRjYzc2NmE2YjlmNTg4YmIxMDQxMTQ5Mzk1MTNlZDY0NmViOTE5ZTdiMTVmYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3NjgxOWM1MDA2MmZhMGEyMWYyZDU5MjVjYjMyYzUxMTQxYWQyZWNlNGE2OTY5OGNhNzc1YzNiMGIzYjNmZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhNmRmNWNkNTkyZWIzMjI2ZTllNjc4ZTY4NzNlY2JiYmZhMmM4YjJhNzNkOWExMjliOTE3MTRiMDgwYmUxYTMifQ"
+          "version": "repo-lines-v1:sha256:ce55b6b44a2e5916d198a2d6ef901d656c29df431be929be712750301ada487b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTU2NjA3NDQwMmI4MzNhNzU2YTE4Mzc2YzU5Y2FiOWU0Y2RjMmU0ZTgzYzBkMDRhMTI4YmRhNzgzMjkyM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwYzk2YjVjNWI1Y2NlOTc5ZjRjYzc2NmE2YjlmNTg4YmIxMDQxMTQ5Mzk1MTNlZDY0NmViOTE5ZTdiMTVmYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3NjgxOWM1MDA2MmZhMGEyMWYyZDU5MjVjYjMyYzUxMTQxYWQyZWNlNGE2OTY5OGNhNzc1YzNiMGIzYjNmZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhNmRmNWNkNTkyZWIzMjI2ZTllNjc4ZTY4NzNlY2JiYmZhMmM4YjJhNzNkOWExMjliOTE3MTRiMDgwYmUxYTMifQ"
         }
       ]
     },
@@ -281,10 +285,66 @@
           "version": "repo-lines-v1:sha256:4d32ba4a483185aa07023418e19953bc009f567472f2258ab23ffaac036e39bd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4YzE4OGQ5MGNlNzM4MzIzMDUxMTliMjMzZTI1YzU4ZDMxMzY4ZGYyNjVhZmNiZWFhOGJiNDhjMDhiMzJmNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjNzQ1ODM3NjY4Y2I4ZjRiNzViNWY5YzI1MDE0YmI4MTRjMjcwZGVjYzliMTVlNmE0NjMyOGJkZDI1NjYwNTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0ZDBkYmJmYTYzYWJmOTA4MDdlODBkNDI0ZTczZmU5Y2E4Y2FhZDI1YjkyZWI1ZTU0OTI3MDI3OGFlM2I2MTcifQ"
         }
       ]
+    },
+    {
+      "id": "claim_0df3cf9508df44f0ae90f4c5ee0ee643",
+      "statement": "Local tracing targets the langchain-chess agent's local environment through LANGSMITH_AGENT_ID and LANGSMITH_AGENT_ENVIRONMENT; LANGSMITH_PROJECT must not also be set because with both the SDK traces nothing.",
+      "evidence": [
+        {
+          "resource": "repo://.env.example#L9-L15",
+          "version": "repo-lines-v1:sha256:7abd9557aa5eb998c31a8ed049e146e71ed2d7c0679ebc2f758f0415dff6bce5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzkzNGE5ZmM5MDJmNjAxN2Y5MmExYmFhZTgzNDc2ZDYwNWMwMWQ2MmIzZjQxMTdlYjYwZjMxOWNlOGZkZTk4OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDM0MTUyYzI1MzNiYzYyZDQwNDYyM2Q2MDNlMzM0OTFhYjgxY2ZjMTcxMDRmNTBkNTA2NjE4NGZhYzcxNmJkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTFjYjZlY2VmY2MzYTE0ZDQ0YTc5MDEzZjMwMDc0ODI0OWU2NjNiMTc5YjYzY2I4ZTUyZjdmOWQwMTEyMDRmMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDk0YjEzYWY3NjA4N2YyY2E3YzUwOGVmNjA5M2M2NjU3N2ZlMDU0OWI1ZDRkODMzOTJkMjIzMGYxNGVjZWZmYSJ9"
+        },
+        {
+          "resource": "repo://README.md#L105-L110",
+          "version": "repo-lines-v1:sha256:afebdcbdd181f9f3311dcbace8bf190c47d9ac2573d3cedda21dcd9d6c0ba823:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDU4OTk2ZDFmODQ4ZmMyYzk1YTI0YzY0NDdhNGQ2NjNkYzI5OGM2NWE3MTEyYmM2MjMwYTM4NTU4ZmQ4ZjUwZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjY1YjhjNDhkOWE2M2U5ZjA3OTExMGY1NGVkNGQ3YmQ3M2E1M2M3ZjRjYmU2NzU0ZjdlZDBlMDdjNzFhMjNmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzIzN2UxMGU1Y2MwN2FkN2M5MzYxNjEyNGFmMjU3ZTA4MWMxZGQwZTMyNzM2NThhYzc2YjM5ZTA5MjYzNTZjOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3836d89004454e1ba71d8bac6ed53b49",
+      "statement": "The agent:tag task runs scripts/agent-tags.sh, which uses the langsmith CLI API to tag the langchain-chess-positions dataset (and thereby its experiments) and each of the langchain-chess agent environments' tracing projects with the agent's tag; it skips the dataset with a hint to run eval:positions:upload when it does not exist yet, and CI runs it after every deploy.",
+      "evidence": [
+        {
+          "resource": "repo://mise.toml#L188-L190",
+          "version": "repo-lines-v1:sha256:5eefaccc774ad57bb460e44bb5a15d3fb6706b0ee6bcbc5f70c793a179385eff:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUyODE1ZTlkNDVlZmJlOGY1ODczYzYzNjNjZDA1MzVkZjZlNmRjYzAwMDg5NjJiOTVkMGNlNjA1MTcyNmMxMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGFhMjQwY2NhNWU1OWU4MDc0Y2U4MzhjODQ5MDE1ZTlkMzJmNTZiYjg0MTdiODFmNzQzODY3OGVmYjJjMGU0NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWRiODAyN2JkMDVjMDJhMzMxOGEzNTZmNjU0M2I2MWZiZTlhZGJhZTBjOGFiNjM2OGM1YTAwZDhjODUyNDAyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjJlMjViYjA0NmIwYjg4M2U1OTgyODcwNjBlMzlkMmVkNjdmZThkMjgwM2M4ZmZmMzE2MDYzN2ExYzNkOTZkMCJ9"
+        },
+        {
+          "resource": "repo://scripts/agent-tags.sh#L1-L32",
+          "version": "repo-lines-v1:sha256:325988dff0834fb0ef3400e1be06e7a3df46a28e0b8617062f480af6024f20d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2efbf2fa026d4c99ba0fe5519f35b729",
+      "statement": "probe:efforts makes real model calls via python -m langchain_chess.efforts to record which model specs accept a reasoning effort, re-probing every recorded spec plus any given after --.",
+      "evidence": [
+        {
+          "resource": "repo://libs/chess/langchain_chess/efforts.py#L1-L12",
+          "version": "repo-lines-v1:sha256:86632199aeb297e064895386337a137bd02eb272af1f8678cbd62e34d46e6fd3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3MDZiMzQ5M2E5MDExMTVhNWM0NDI3NWFmZmY4MzM5Y2U3MGEzMzk4YjBhNTMxYmJjYWMxOTQ4MWU3YmZlYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyYzM3MDRhMDI1NDEwMjA0MTNiMjQxNTM4Zjk0OGY4NGFjMzRlYjZlMjM5NzkwNzhlZTYwMzQ2ZWZkMGZmNTMifQ"
+        },
+        {
+          "resource": "repo://mise.toml#L174-L176",
+          "version": "repo-lines-v1:sha256:9b4006d01260367824e79f1032d71e74058703ec33064d0803465bc77868687d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzcyZGRjMjY3MDQ1YTQyYTNjZTk1NjZmOTc5ZTAwOGVkMGMyZDEwZmMzYTE1MmQwZTIzOGIyYWE1NGY5YzZkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjliNzM4MDA2N2U3YWZmNTRhMWJhMGVhMjQyNzdkYzliOWRhZTA3NzMxNWFkOTZiMWU3YWRjNGFlMjA3MGM5NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmFmOWMxNzA3ZjJmZjM5ZDEzODlkMGIzYmI3ZDBmYTJjMGM1NzE4ZWZjZGVkN2E3NDIzM2U5OTMwYzdlZjYyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmYwN2NhZTBmMWExYjdmZjljY2Y0Y2VmYzQwY2IzZTI4NzM0ZjI0ZjMyMTY0YWY3MzVmOTI3MTZhNjZlM2NkMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6dfbd5eae91643c2afd0f4b71b890fbf",
+      "statement": "lcchess grade locates games by agent environment (--environment, defaulting to LANGSMITH_AGENT_ENVIRONMENT, local vs production), with --project overriding it.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L268-L268",
+          "version": "repo-lines-v1:sha256:3b81a0ab059efd6384b2a1041df514fadc9d04de90adc5fbbce1478ab092160e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2I4MWEwYWIwNTllZmQ2Mzg0YjJhMTA0MWRmNTE0ZmFkYzlkMDRkZTkwYWRjNWZiYmNlMTQ3OGFiMDkyMTYwZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2I4MWEwYWIwNTllZmQ2Mzg0YjJhMTA0MWRmNTE0ZmFkYzlkMDRkZTkwYWRjNWZiYmNlMTQ3OGFiMDkyMTYwZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmExMWM1YWM2ZTVhN2UwMTljNWNhYTFmODkzMTRiNzkyZGYwNDUxYTQyZjk4Yjk0ZWEzNmEyZDBlNjU3YzBjZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDMwNDU1OGQ4YzMzZThjYWNlNTQxMDAwM2EwZjMxMTdkODQyMmE3ZDBhOWQ2OGFkZDY0OTBmMGM4ZWVkMWNhZiJ9"
+        },
+        {
+          "resource": "repo://libs/cli/langchain_chess_cli/main.py#L260-L268",
+          "version": "repo-lines-v1:sha256:5420fed04e1ffd824f012bd67607d08f21e884c4e221a1c3c0edd1dfb7dfd3e7:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjYzOGVhZjNjZDRmMDMzYzMyZWRjOGRjMjJjMzI0OGFhNGJkMzU4ODM2MWI3MTk0YmIwMTlhMDY3YzYzNzdlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzI1ODg5NGI2MTY1Yzg2NGRiYmNkMzk5MjE0NWIxYTJmOWZmMmMwODg4MTY1M2ZjMzMwMmQ1ZDk4N2Q1ODk1MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTg1NTk5ZGMyMDg4MWYxMmRjZDIxMDA1NmNiZDRhZjlhYzdmYzhkMDEwOTZkZjAzNWQ5YTg2OWM3NjM2OTk0YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGEyOTc1MWM2OThhNTAyNDVjNjZkZTA4NDVlMDczNDIyZjVjZWZkNjcwMmQwYjE3ZjI1NTMwZDM5NmY0NjJiMSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-27T19:08:28.877Z"
+    "at": "2026-11-01T01:10:29.908Z"
   }
 }

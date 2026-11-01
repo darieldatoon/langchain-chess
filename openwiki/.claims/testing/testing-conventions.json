@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:14aa3498e0519b68581b0a3d9199f4873aa520f1babaee29e9a68203bffb5a66",
+  "pageVersion": "sha256:0e97417cf7cb1e2e344a92041bbe90a886a91ca9053062f896293015b420a729",
   "claims": [
     {
       "id": "claim_3f5f773704a149dbbd89165ee1bc2078",
@@ -17,7 +17,7 @@
       "statement": "xdist parallelism (-n auto) is set in the mise test:python task rather than pytest addopts so a bare pytest stays serial for -k, --pdb and --snapshot-update.",
       "evidence": [
         {
-          "resource": "repo://mise.toml#L96-L99",
+          "resource": "repo://mise.toml#L134-L137",
           "version": "repo-lines-v1:sha256:d295abbe078937aaf6dfa12c04e5f2ab9395882d4882aa653f7e0b2fe3037dd7:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWU0YjM5YmJlMzAxMjY0YWYzMzE5ZWRhMWI3N2MzNTc0ZmM2NzkzOWNhYzlkMjg4YTgzMTUxYzgwOGYwNzdhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQ0MGE1MTM4MjhiZWU0OGQ5NDZlZDc2YmQ0YWE0YzM0YWRiZjk4YzZjNGE0ODcwYjdhMTc0NzY1MGJjNmNkNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzU1ZjY5OTJlZjkyY2M4MDc5Yzg3YzZhNzEyNjcyMGFlZDhlYzFjMjA0NTc2NDVlNTg0ODdjNTcyMjE3YjZhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGYyZTM5NTc5ZmVlN2U4ODM4NDYyOWJiMTMzOTc4MzM2NGY2NWQ3NmVhZTBiMjU2OGJmNTkzOTVhNDc5OThhYSJ9"
         }
       ]
@@ -74,7 +74,7 @@
       "evidence": [
         {
           "resource": "repo://.github/workflows/ci.yml#L22-L89",
-          "version": "repo-lines-v1:sha256:46f2dfb32b34fd96e87986c896a2aa9223aaac644a4f1c64e64c89c55dcd0340:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZDgwMTU0ZWQ0MmZjNWM3NzliMTMzMTU3OGI1OGI4OWM4MDFlYWNlNzRmMjRjZDQ4ZWI0YTIzNTc5NDBhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZGE2ODU4NjExMTY3YzlhZjU4Yjc5YjQ0NTEzZjcxYWM0ZWMxNDgzZDFiNzZjZjgwZTQ4YjY3YWJmNjU3MjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3ZWJiYzI0YTZlMjA3MWRmMGExZjNjN2U3NTMyZWQ3YzBhNDEzNjNkNTNmOWIwYjQ4ZmE3ZTFmZGE4NWM2MzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:4b9eef2c480ea2bc8c8e0712ecc8fc8a7f75b22e1fb9425f7466c3dcf9e3252b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZDgwMTU0ZWQ0MmZjNWM3NzliMTMzMTU3OGI1OGI4OWM4MDFlYWNlNzRmMjRjZDQ4ZWI0YTIzNTc5NDBhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZGE2ODU4NjExMTY3YzlhZjU4Yjc5YjQ0NTEzZjcxYWM0ZWMxNDgzZDFiNzZjZjgwZTQ4YjY3YWJmNjU3MjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3ZWJiYzI0YTZlMjA3MWRmMGExZjNjN2U3NTMyZWQ3YzBhNDEzNjNkNTNmOWIwYjQ4ZmE3ZTFmZGE4NWM2MzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://lefthook.yml#L33-L37",
@@ -124,11 +124,11 @@
     },
     {
       "id": "claim_18294a9b4f964776a5c8850742c1da72",
-      "statement": "FakeRanker returns scripted MoveDistributions or raises scripted errors while recording RankRequests; FakeTypeSafeClient stands in for TypeSafeClassifier and, when semif is set, enforces 2-16 options per Choice and at most 32 questions by raising a 422 TypeSafeAPIError.",
+      "statement": "FakeRanker returns scripted MoveDistributions (from a sequence or a callable over the request) or raises scripted errors while recording RankRequests; FakeTypeSafeClient stands in for TypeSafeClassifier and, when capped (the default, model other/ranker), enforces 2-16 options per Choice and at most 32 questions per request by raising a 422 TypeSafeAPIError.",
       "evidence": [
         {
-          "resource": "repo://libs/systemone/langchain_chess_systemone/testing.py#L26-L154",
-          "version": "repo-lines-v1:sha256:0c8f68a313117fd0b3e8bcf8ab8151a7179c4a1ab42ec24a2017b57925eb8533:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMDAzY2YzNmMwZWY2MjYwZjFmZjUwNDhiYzg0Y2ZhNmZjM2Q0NDJkZmRlYTg0ZWFiYjRkNzNiNzdjMmIwNGJmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5NjcwYjI5MDQ0ZWFlNjEzMTkyOTI5ZDM4NTBiODA0NWMyZmQwYTBjZDg5ZWU2ZWExNjZiM2M3ZGIxMzY5MzQ0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhY2UzNGM4MmQ1ZGZkOGY1NTgxN2VmNjYzZWNjOGFhNjQwZTYzMjhjNmMyODlhZjk0MzI2NmI3N2M1ZTNiYTViIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://libs/systemone/langchain_chess_systemone/testing.py#L26-L159",
+          "version": "repo-lines-v1:sha256:174310f3b5e4d3d511d2d49b1c93b934bbafa13c22539d65989a673fc73909b8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3NTFlOWIwYmJiODdlZjliYmEyMTNlMzYwZDY4ODllNzBkNGU1NjdjNDk5OTMwZTU2NTFkY2JlNjg2YjVlNTE2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5NjcwYjI5MDQ0ZWFlNjEzMTkyOTI5ZDM4NTBiODA0NWMyZmQwYTBjZDg5ZWU2ZWExNjZiM2M3ZGIxMzY5MzQ0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhY2UzNGM4MmQ1ZGZkOGY1NTgxN2VmNjYzZWNjOGFhNjQwZTYzMjhjNmMyODlhZjk0MzI2NmI3N2M1ZTNiYTViIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -148,25 +148,25 @@
     },
     {
       "id": "claim_be4b3016b09947c2b47cd3ccee7cc24c",
-      "statement": "packages/chess-ui exports a ./testing entry with call, turn, ply and systemOne factories plus the E4_E5 fixture game and AFTER_E4 FEN.",
+      "statement": "packages/chess-ui exports a ./testing entry with overridable call, turn, ply, systemOne and live (System 1 live shortlist result) factories plus the E4_E5 fixture game and AFTER_E4 FEN.",
       "evidence": [
         {
           "resource": "repo://packages/chess-ui/package.json#L7-L11",
           "version": "repo-lines-v1:sha256:c595120f99c585856317e493eaa7c2eafe4314ee18220e8b843c9469a5243e67:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2MwNWJiOWY0YThiOTg0NTEwZjgxNWE1ZmM0MDc4ZDc3YzVhMjBlOTNmMzM3M2RjNWRkZTRhMzQxZDFiNDBjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDNjMzVlZDUzM2IzZGRkMzdiMmZkNTljM2ZiZDRlMjEwMTQ2ODNkNThmMzc3MGU1NTI3MGM4ZWUzM2RhNmZhNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjdkOWVmY2NkMjBkNjdiYWI1MTE5MmUwMjU0ZmNmMGNmZTBlMDM4MDk1ZDM4MTdjMzkzMjBhMmRhYzRhZTA5NiJ9"
         },
         {
-          "resource": "repo://packages/chess-ui/src/testing.ts#L1-L98",
-          "version": "repo-lines-v1:sha256:51ea45c20e7d227daccf6a10050fd5d86d149b1ffed6ccda3b767d224504f9b5:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMmNjZGVhMDJlZjU3YzVlMzg3MmJkYjJjZGVmOWNmNmFhYmM5Zjg3ZjcxMGNhNjY5ODhhOGFlZDE3MjhhZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxODhjZTBlNjgxYTE3ZGM5MGYzYWM2MmRkYTgyNTNhM2MzY2E5OGI1ZTQ2YTAzNTFiOTVmYjI4MGQ0MDNiZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://packages/chess-ui/src/testing.ts#L1-L129",
+          "version": "repo-lines-v1:sha256:fe3500573614e47a655428876ec93f316d709dbab0b9e17946dd5eb24325c07f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiMjEyMWVkY2IzNTljNDY4MzNhNzEyNTFmZjQwOWE3ZjcwOGY4NzAxMjgyYzVjMDE0MWZiMWE4NTJkNjdiZmUyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTg4Y2UwZTY4MWExN2RjOTBmM2FjNjJkZGE4MjUzYTNjM2NhOThiNWU0NmEwMzUxYjk1ZmIyODBkNDAzYmY0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
     {
       "id": "claim_2e58d3292434408e9a7825c94fd95138",
-      "statement": "Textual TUI snapshot tests use snap_compare for three board sizes, piece selection, black's view with cursor, the promotion dialog and the full game screen with a ScriptedModel and a stubbed perf_counter for stable latency; `pytest --snapshot-update` rewrites them.",
+      "statement": "Textual TUI snapshot tests use snap_compare for board-only cases (three sizes, piece selection, black's view with cursor, promotion dialog) and full-app cases built on a hybrid game with a ScriptedModel and FakeRanker (game screen, light theme, stepping back, game over, new-game screen, stopped turn retry, invalid advanced setting, short and narrow terminals), stubbing perf_counter for stable latencies; `pytest --snapshot-update` rewrites them.",
       "evidence": [
         {
-          "resource": "repo://libs/cli/tests/test_tui_snapshots.py#L1-L101",
-          "version": "repo-lines-v1:sha256:057545d83b7c5ef094a7b712ee80e767cc43504efa73129ee2de77126071c1e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzMzAyZjc2ZDc0MTk5NzkxYmNlNTk4NzIwYTU0YjgyNWE1ZDllZjFjN2VjYzg0NjI1YTE2OWQ4ZTlkMmM5YzBlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1ZDcyZWFlY2M0ZjdiYTBkY2JmNTIxOTkyN2ZjYmM4NDFlNDhjZmRmZDM3NGFhODVhZDRiMzJkY2QwYmQ0YjlkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://libs/cli/tests/test_tui_snapshots.py#L1-L197",
+          "version": "repo-lines-v1:sha256:fcad5b6bea87d8bcb96ca4b87eb0a742ae002df0fd9a1016f04d0681cf3a4387:eyJzZWxlY3RlZExpbmVDb3VudCI6MTk3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzMzAyZjc2ZDc0MTk5NzkxYmNlNTk4NzIwYTU0YjgyNWE1ZDllZjFjN2VjYzg0NjI1YTE2OWQ4ZTlkMmM5YzBlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNDA2MGFkNzZmMWFiZDc1MWM4ZTc5YzVmZDZjZjc1OGY4OWUwM2NlNTgxMjc1ZWIwNGE4YTk4NzJmNTkwZTA0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -190,11 +190,11 @@
     },
     {
       "id": "claim_8c6fbb9e81454a7bb6d6ba0367ac6bd8",
-      "statement": "The server live tests use the shared langgraph_dev fixture and check the /ui mount via /ui/config, a System 1 chat game with idempotent resend and illegal-move error, assistant context reaching the factory via runtime with no run config, and priced LLM calls with threshold 1.0 reporting the default model baseten:zai-org/GLM-5.3-Flash.",
+      "statement": "The server live tests use the shared langgraph_dev fixture and check the /ui mount via /ui/config (graph chess, default policy hybrid), a System 1 chat game with idempotent resend and illegal-move error, assistant context reaching the factory via runtime with no run config, and priced LLM calls with threshold 1.0 reporting the default model baseten:zai-org/GLM-5.3-Flash.",
       "evidence": [
         {
           "resource": "repo://apps/server/tests/test_live.py#L1-L87",
-          "version": "repo-lines-v1:sha256:eca665099f06b1b863d0b25886fa2d153304da313201ee673c1fb13e409a478d:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwNWQyODA5ZDhkNDhkNTE1MDI5MjA3MGJlMWFjYjdjNGNlMWNkYmY0MWYzYWVhNjhmMjNiZDE5YjcyYzdlZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzYWM0ZDljYTRkMzFkMTkzOGMyNzRmMDRkOWQ0NjVhNzE2NDc3OWZiMDIzMDNkMThiNmRiMzFjMWU2YzJkMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:230266fe31a1b216b159ff827af9b2adc7c2397ce8d5ddae2a50abf575e45951:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwNWQyODA5ZDhkNDhkNTE1MDI5MjA3MGJlMWFjYjdjNGNlMWNkYmY0MWYzYWVhNjhmMjNiZDE5YjcyYzdlZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzYWM0ZDljYTRkMzFkMTkzOGMyNzRmMDRkOWQ0NjVhNzE2NDc3OWZiMDIzMDNkMThiNmRiMzFjMWU2YzJkMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -203,8 +203,8 @@
       "statement": "`mise run test:uci` runs a 2-game fastchess match of `lcchess uci --policy systemone` seeds 1 vs 2 in .uci-match/ and passes only if both games have a result and no termination other than normal or adjudication.",
       "evidence": [
         {
-          "resource": "repo://mise.toml#L138-L153",
-          "version": "repo-lines-v1:sha256:5ea39d409d57d2eb00b9b0ecb70b1915668acf7e7e2b58455809625ef0891f17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NWYwN2ViMmFiZjI0ZDMxNGJkOTZhNWNhM2I1MmEzNzExMTU1ZDBhZTgwZTc3N2Y0MTM2NTE5MWM0MDI3NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiODBiMjk4MWQwNjM5OTdjNWFkOGEzZDBmMWEwMGQ2NTUwYzAwZThiODZmZmQ2NThjYmNiYjM5NGQ1NjExMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://mise.toml#L214-L229",
+          "version": "repo-lines-v1:sha256:efa4a3d85adc4f7c5b2f9d6eabd0733b3130398f65590e41676d76c0faecd5fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NWYwN2ViMmFiZjI0ZDMxNGJkOTZhNWNhM2I1MmEzNzExMTU1ZDBhZTgwZTc3N2Y0MTM2NTE5MWM0MDI3NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiODBiMjk4MWQwNjM5OTdjNWFkOGEzZDBmMWEwMGQ2NTUwYzAwZThiODZmZmQ2NThjYmNiYjM5NGQ1NjExMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -262,11 +262,11 @@
     },
     {
       "id": "claim_446157962cc244e6813bfc8a4de3fdb6",
-      "statement": "The review app's test fixtures build a Scholar's-mate game state, a Stockfish review, gradings, game list entries, and review and status feedback from overridable factories built on the chess-ui testing factories.",
+      "statement": "The review app's test fixtures build a Scholar's-mate game state, a Stockfish review, gradings, game list entries, version-2 header-plus-parts reviews, and review, part and status feedback from overridable factories built on the chess-ui testing factories.",
       "evidence": [
         {
-          "resource": "repo://apps/review/tests/support/fixtures.ts#L1-L112",
-          "version": "repo-lines-v1:sha256:5244c9a4c4750d665ce1c36acfb91ca3150204339f23a8009b7b51dbb896b9ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5YjlhYTQwNDJjNjdkN2FiNWQxMDYzODI0Mjc3MzhiMTkxNmYyYmFkZTJjZTY0YTdjMmU5NWMwZmE0ZmI4MjhjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://apps/review/tests/support/fixtures.ts#L1-L163",
+          "version": "repo-lines-v1:sha256:071769ebef0d04135439f0394ba0d67197d623734fac9e6d0870a90ebf805b08:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5YjlhYTQwNDJjNjdkN2FiNWQxMDYzODI0Mjc3MzhiMTkxNmYyYmFkZTJjZTY0YTdjMmU5NWMwZmE0ZmI4MjhjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -282,11 +282,11 @@
     },
     {
       "id": "claim_9b358b82aecb4d488b33438ef118f10b",
-      "statement": "evals/reports excludes its one-off report pages (src/experiments/**) from the coverage gate and instead has a test that globs every report and checks it renders with a title and heading; under test the @report alias points at a fixture report.",
+      "statement": "evals/reports excludes its one-off report pages (src/experiments/**) from the coverage gate and instead has a test that globs every report, requires at least one, and checks each renders with a title and heading (30 s timeout); under test the @report alias points at a fixture report.",
       "evidence": [
         {
-          "resource": "repo://evals/reports/tests/reports.test.tsx#L1-L22",
-          "version": "repo-lines-v1:sha256:23a6e4b3c22fc40945108ece94eee34555c7aad8207df769d7de5b0b7b776b91:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyZmM3M2QyZTY0NTAyNTBhMTg4NTJlNDg0N2RjZmVmMmNlMDQ3MDRhN2M1NTRhNjY4NzU0MzJmODE5ZGQ5NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://evals/reports/tests/reports.test.tsx#L1-L27",
+          "version": "repo-lines-v1:sha256:caacbc3cdc5d613d0005af26428494a0a7f97aa215ef075209d132a63fc7bbd3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyZmM3M2QyZTY0NTAyNTBhMTg4NTJlNDg0N2RjZmVmMmNlMDQ3MDRhN2M1NTRhNjY4NzU0MzJmODE5ZGQ5NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://evals/reports/vite.config.ts#L5-L24",
@@ -314,15 +314,15 @@
     },
     {
       "id": "claim_5523e9aeed1d48eb894bf28b887bd52a",
-      "statement": "The e2e browser test (marked e2e, run by `mise run test:e2e` which builds the web UI first) boots langgraph dev offline with a replacement chess graph using a ScriptedModel and FakeRanker, drives the setup form in Chromium via Playwright, and asserts the stored setup, the prompt the agent saw and the System 1 shortlist size reflect the chosen settings.",
+      "statement": "The e2e browser tests (marked e2e, run by `mise run test:e2e` which builds the web UI first) boot langgraph dev offline with stripped credentials and a replacement chess graph using a ScriptedModel and FakeRanker, drive Chromium via Playwright in desktop and phone contexts, and assert that setup settings reach the agent (stored setup, prompt, shortlist size) plus phone layout fit and tap sizes, moves by tap and drag, promotion, resignation, FEN starts, and that a dropped first-move response is played only once.",
       "evidence": [
         {
           "resource": "repo://apps/server/tests/e2e/graph.py#L1-L42",
           "version": "repo-lines-v1:sha256:73e356db5bf146d9a8ab9a140b3006bf79195887f815dff9219de28039efc20a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyOWU5NWY4MTdhOTExOWQ4Y2Y4M2I2MmJmMTc1ZTFmZjNiYjY2MzY0NWVjNTNiYTZjYjc3MzkyZjI3NTc1OWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiOGEzODM4MTUyNzFkMzE1MDQ3ZWQzNjg1NDUxYzc2NjQ0YjdmNzBjNmIwNGVjMzc1ODI1OWJkOGM4MzM4NjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://apps/server/tests/e2e/test_browser.py#L1-L103",
-          "version": "repo-lines-v1:sha256:5f6336493ebd9b572742c0f3337c17d5e95d8f943311e63eca6855d31e255d05:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmYTI0NDIzYjVmZGJlYTUwZmJlZTY1YjZkMGNjZWQxZDI0MGNlNGM3YTFlOWQ4ZTYxODNkNGVmNjdjNjg2NDZmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlMWM3ZDQ2MGVjNzdlMmU5MzM0MWI5OTY2MWQyMjBlY2NmYzVkMjM0MzJjNDU3NmIyZTY0YjJhZjVkMGFmNWI2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://apps/server/tests/e2e/test_browser.py#L1-L430",
+          "version": "repo-lines-v1:sha256:8811b881e289f46c979f4493affbdf7a5e4ee0f79ea840b0c53ca12a5d9edd82:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmYTI0NDIzYjVmZGJlYTUwZmJlZTY1YjZkMGNjZWQxZDI0MGNlNGM3YTFlOWQ4ZTYxODNkNGVmNjdjNjg2NDZmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNjMzZGU3MDIyYzJkNDkzMWY3Y2JiYjlhZWM0MTI4ZGE3M2YwMjQyN2YxZjliNTAxNjk0OThjYTM4ODgxOGMzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         },
         {
           "resource": "repo://mise.toml#L143-L148",
@@ -350,11 +350,11 @@
     },
     {
       "id": "claim_74f7f64624344036a7cda418f6968460",
-      "statement": "The evals live tests run the System 1 eval target against real SemIf (a tournament over 20 legal moves) and verify LangSmith enforces the positions dataset schemas with a throwaway dataset that is deleted afterwards.",
+      "statement": "The evals live tests run the System 1 eval target with a real GatewayRanker (typesafe/jev-latest) on the starting position, expecting all 20 legal moves ranked with no tournament, and verify LangSmith enforces the positions dataset schemas with a throwaway dataset that is deleted afterwards.",
       "evidence": [
         {
-          "resource": "repo://evals/tests/test_live.py#L1-L57",
-          "version": "repo-lines-v1:sha256:2b0e1c641514b22412babbe0c4329d1fd1db7ef2cea134bdbe84efeda8405ae0:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZGVlODA1NmIyNjNmM2VhNmRiNWY3OWUwM2UwYmExY2IwYzM0NzFhZWJiNWQyMmMyOWVhMjI1OTczNTZjYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2ZTZiZWRhZDM2OTIwNjkwMDgzMWY5YzQxMDI3ZjAwOTVlYzFmY2M3NGNlNTA1NzhmNTJkYTlmZjY5NzMyODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://evals/tests/test_live.py#L1-L55",
+          "version": "repo-lines-v1:sha256:c05ed3fdba3e6e6cb98938048bfaabb3e0b5dfaee1f1a174f343630eeb764d14:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZGVlODA1NmIyNjNmM2VhNmRiNWY3OWUwM2UwYmExY2IwYzM0NzFhZWJiNWQyMmMyOWVhMjI1OTczNTZjYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2ZTZiZWRhZDM2OTIwNjkwMDgzMWY5YzQxMDI3ZjAwOTVlYzFmY2M3NGNlNTA1NzhmNTJkYTlmZjY5NzMyODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -371,6 +371,6 @@
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-27T19:08:28.877Z"
+    "at": "2026-11-01T01:10:29.908Z"
   }
 }

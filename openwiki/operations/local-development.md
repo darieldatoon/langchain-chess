@@ -1,11 +1,8 @@
 ---
 type: operations guide
 title: Local development toolchain
-description: How the repo's single mise.toml supplies every tool and task (setup, dev:web with port checks, dev:tui, dev:uci, dev:review, check, test, test:e2e, test:live, eval tasks, generate:settings, build, wiki tasks), how .env is loaded explicitly with --env-file, how Socket Firewall (sfw) wraps dependency installs, what the lefthook git hooks enforce, common troubleshooting fixes, and how the OpenWiki update workflow runs.
+description: How the repo's single mise.toml supplies every tool and task (setup, dev:web with port checks, dev:tui, dev:uci, dev:review, check, test, test:e2e, test:live, test:uci, eval tasks, generate:settings, probe:efforts, build, agent:tag, wiki tasks), how .env is loaded explicitly with --env-file, how Socket Firewall (sfw) wraps dependency installs, what the lefthook git hooks enforce, common troubleshooting fixes, and how the OpenWiki update workflow runs.
 tags: [mise, toolchain, local-development, lefthook, sfw, environment, openwiki, tasks, troubleshooting, evals, codegen]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-27T19:08:28.877Z
 sources:
   - id: openwiki-source-5f5b95b3d6a215fa02ceb945
     resource: repo://.env.example
@@ -21,16 +18,24 @@ sources:
     resource: repo://apps/server/tests/test_codegen.py
   - id: openwiki-source-03f6dd3375679341910a29c1
     resource: repo://apps/web/vite.config.ts
+  - id: openwiki-source-ee41134d60a773825ca210b7
+    resource: repo://evals/experiments/systemone-baseline.toml
   - id: openwiki-source-5bbba7b2a8ea8360ff233d63
     resource: repo://langgraph.json
   - id: openwiki-source-72b816a72bb5f72d95b334ea
     resource: repo://lefthook.yml
+  - id: openwiki-source-5ecb009f7580dd4bb6437726
+    resource: repo://libs/chess/langchain_chess/efforts.py
+  - id: openwiki-source-abe54986bd51a87223916132
+    resource: repo://libs/cli/langchain_chess_cli/main.py
   - id: openwiki-source-72b5d686f860ea86c8592080
     resource: repo://mise.toml
   - id: openwiki-source-05ccef8d4cf1698187f20464
     resource: repo://pyproject.toml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-16c9339952149eb7f9ab1b1a
+    resource: repo://scripts/agent-tags.sh
   - id: openwiki-source-27a918e9e11693d5de03d421
     resource: repo://scripts/grader-snapshot.py
   - id: openwiki-source-2e49a9bdd60917face4a1c9b
@@ -39,7 +44,10 @@ sources:
     resource: repo://scripts/setup-worktree.sh
   - id: openwiki-source-d40d5b1418858a88965a8a23
     resource: repo://t3.json
-generated: { by: "openwiki/0.6.0", at: "2026-09-27T19:08:28.877Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-11-01T01:10:29.908Z
 ---
 
 # Local development toolchain
@@ -87,7 +95,7 @@ It finds the main checkout through `T3CODE_PROJECT_ROOT`, or through the parent 
 | `eval:positions:build` | `lcchess-evals positions build` | One-off: samples and labels Lichess positions into `evals/datasets/positions/vN.jsonl` |
 | `eval:positions:upload` | `lcchess-evals positions upload` (with `.env`) | Creates or updates the LangSmith dataset from the committed JSONL, tagged `vN` |
 | `eval:systemone` | `lcchess-evals systemone run` (with `.env`) | One System 1 experiment: `-- --model ... --style ... [--split dev]` |
-| `eval:systemone:baseline` | `lcchess-evals systemone baseline` (with `.env`) | The five baseline experiments in `evals/experiments/systemone-baseline.toml` |
+| `eval:systemone:baseline` | `lcchess-evals systemone baseline` (with `.env`) | The baseline experiments in `evals/experiments/systemone-baseline.toml`: Jev in both description styles, Luna Decisions, and a Jev control with a 16-option cap |
 | `generate:settings` | `python -m langchain_chess_server.codegen packages/chess-ui/src/generated` | Regenerates the settings JSON Schemas and TypeScript from `ChessContext` |
 | `build` | `pnpm --dir apps/web exec vp build` | Writes the UI into `apps/server/langchain_chess_server/static`, served at `/ui` |
 | `deploy` | `mise run build` then `langgraph deploy` | See [Deployment](/openwiki/operations/deployment.md) |
@@ -212,6 +220,13 @@ The **`openwiki-update`** GitHub workflow currently runs only on `workflow_dispa
 - Checks out with `fetch-depth: 0`, because `--update` diffs HEAD against the last documented commit.
 - Runs the shared setup action without Python or web dependencies, installs OpenWiki through `sfw`, then runs `mise run wiki:update` with `LC_GATEWAY_KEY` and `LANGSMITH_API_KEY` from repository secrets. That step is `continue-on-error`.
 - Deletes `openwiki/.run.json`, then uses `peter-evans/create-pull-request` to open or update a `docs: update OpenWiki` PR covering `openwiki`, `AGENTS.md` and `CLAUDE.md`. The PR is opened only when files changed.
+- Still opens the PR when OpenWiki fails. The PR then holds the pages finished before the failure, and a final step fails the job. Merging such a PR makes those pages the baseline for the next run.
+
+`AGENTS.md` tells coding agents not to hand-edit generated pages. Change the source instead and let the workflow regenerate the pages.
+Change the source instead and let the workflow regenerate the pages.
+ow regenerate the pages.
+flow regenerate the pages.
+files changed.
 - Still opens the PR when OpenWiki fails. The PR then holds the pages finished before the failure, and a final step fails the job. Merging such a PR makes those pages the baseline for the next run.
 
 `AGENTS.md` tells coding agents not to hand-edit generated pages. Change the source instead and let the workflow regenerate the pages.
