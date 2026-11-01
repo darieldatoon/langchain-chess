@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:388ad68633d4c02e0c1214cb0cff8c983f5fa9fe3f91ed03864fab65d8bf9b2c",
+  "pageVersion": "sha256:28863b9466388b17a60e331d6d16f4bfe4da64a8a3acd790d6f33d43ea253666",
   "claims": [
     {
       "id": "claim_59eebdc33d204504a19644a639b344f9",
@@ -12,11 +12,11 @@
         },
         {
           "resource": "repo://evals/pyproject.toml",
-          "version": "repo-file-v1:sha256:2ce1b5dc911f23393022c5447af17a23d3e44c51a6985d1444f6b984117b7d80"
+          "version": "repo-file-v1:sha256:2261a90f191c5cb1b82d9fabb7a36380ab303d936eb793e5a2988dbece50fa14"
         },
         {
           "resource": "repo://mise.toml#L154-L168",
-          "version": "repo-lines-v1:sha256:08f36f2ac759bd13ace5c5376f42790999f235508b3745b5f5b1d485e55fa257:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTU2NjA3NDQwMmI4MzNhNzU2YTE4Mzc2YzU5Y2FiOWU0Y2RjMmU0ZTgzYzBkMDRhMTI4YmRhNzgzMjkyM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwYzk2YjVjNWI1Y2NlOTc5ZjRjYzc2NmE2YjlmNTg4YmIxMDQxMTQ5Mzk1MTNlZDY0NmViOTE5ZTdiMTVmYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3NjgxOWM1MDA2MmZhMGEyMWYyZDU5MjVjYjMyYzUxMTQxYWQyZWNlNGE2OTY5OGNhNzc1YzNiMGIzYjNmZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhNmRmNWNkNTkyZWIzMjI2ZTllNjc4ZTY4NzNlY2JiYmZhMmM4YjJhNzNkOWExMjliOTE3MTRiMDgwYmUxYTMifQ"
+          "version": "repo-lines-v1:sha256:ce55b6b44a2e5916d198a2d6ef901d656c29df431be929be712750301ada487b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTU2NjA3NDQwMmI4MzNhNzU2YTE4Mzc2YzU5Y2FiOWU0Y2RjMmU0ZTgzYzBkMDRhMTI4YmRhNzgzMjkyM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwYzk2YjVjNWI1Y2NlOTc5ZjRjYzc2NmE2YjlmNTg4YmIxMDQxMTQ5Mzk1MTNlZDY0NmViOTE5ZTdiMTVmYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3NjgxOWM1MDA2MmZhMGEyMWYyZDU5MjVjYjMyYzUxMTQxYWQyZWNlNGE2OTY5OGNhNzc1YzNiMGIzYjNmZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhNmRmNWNkNTkyZWIzMjI2ZTllNjc4ZTY4NzNlY2JiYmZhMmM4YjJhNzNkOWExMjliOTE3MTRiMDgwYmUxYTMifQ"
         }
       ]
     },
@@ -176,7 +176,7 @@
       "evidence": [
         {
           "resource": "repo://evals/langchain_chess_evals/cli.py#L103-L132",
-          "version": "repo-lines-v1:sha256:4d91c268ebe7278349f80ed9e3c7b3393828456dbbfce55c17224929d0546095:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhN2JmMjg2NmU2NzEzMjljMjQ2NjNhZTZjYTkxMTk3Y2Y4MWUyMTZhYTM0MGFhNGEwODJiZmVhZjBjMzJjMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0N2Q5NDNlMzQyMjYzNTc3YzU4NjcyMjRiMDE3Mjk1NmQ0ZDE5NWYzOTE4YjBmZjE5MWM2MDRkYjI0Yzc5OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYjRlNDM5YmQ4NGJkYzIwMTdiMWY0ZGI4YzUyOWNhMTM4ZWViZWUzYjA2ODkyMTIxYzkwMDA0NDMxZmI1MmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhNmY3ZGNjMWEwZDM1NTk2ODA0ZDVlYzAwODE0MjUzZGUxYTZmZGMxYzE4ZTVkOGFhYThlMjc0ZTc2MTcwZWUifQ"
+          "version": "repo-lines-v1:sha256:4fdf416217bd4da6d4600bd42223b66c6d37f9e1f2c9cf29a3ae21879b8e9fc4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhN2JmMjg2NmU2NzEzMjljMjQ2NjNhZTZjYTkxMTk3Y2Y4MWUyMTZhYTM0MGFhNGEwODJiZmVhZjBjMzJjMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0N2Q5NDNlMzQyMjYzNTc3YzU4NjcyMjRiMDE3Mjk1NmQ0ZDE5NWYzOTE4YjBmZjE5MWM2MDRkYjI0Yzc5OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYjRlNDM5YmQ4NGJkYzIwMTdiMWY0ZGI4YzUyOWNhMTM4ZWViZWUzYjA2ODkyMTIxYzkwMDA0NDMxZmI1MmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhNmY3ZGNjMWEwZDM1NTk2ODA0ZDVlYzAwODE0MjUzZGUxYTZmZGMxYzE4ZTVkOGFhYThlMjc0ZTc2MTcwZWUifQ"
         },
         {
           "resource": "repo://evals/langchain_chess_evals/positions/upload.py#L115-L145",
@@ -190,21 +190,21 @@
       "evidence": [
         {
           "resource": "repo://evals/langchain_chess_evals/cli.py#L162-L234",
-          "version": "repo-lines-v1:sha256:4137b37e89f4cf9a032c8dc83b0e768d9ecef64eba0a373dbaeeac886e4e2961:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkNjFjZmUxY2ZmZDVmZjIyNDRlYzQzNzgxOTZiY2M4NGVkYmNjZTcxOWIxNzUzNDQ0YWY5MTU5YjBjNTNkZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OTE5NWI4ZGI5ZmUwMmIyMjU2ZWU0Y2EyZjBjYWE4MDVhNjcxMDQyYWZlY2E2YjY0NTcxZjIwOGRlNTA0MDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZmNlZTRmMzZlOTE3ZDRlODQ1MDNmYTRhZmQwNDhmY2E1OWJkZjI3MzdlNTkxMWVhNDgxZjNiMGU4OGU0ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:9d1b28b3e1f3e92039c77b302ea493350847d7161d913b37e542fbb018e53908:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkNjFjZmUxY2ZmZDVmZjIyNDRlYzQzNzgxOTZiY2M4NGVkYmNjZTcxOWIxNzUzNDQ0YWY5MTU5YjBjNTNkZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OTE5NWI4ZGI5ZmUwMmIyMjU2ZWU0Y2EyZjBjYWE4MDVhNjcxMDQyYWZlY2E2YjY0NTcxZjIwOGRlNTA0MDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZmNlZTRmMzZlOTE3ZDRlODQ1MDNmYTRhZmQwNDhmY2E1OWJkZjI3MzdlNTkxMWVhNDgxZjNiMGU4OGU0ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
       "id": "claim_81030b01fcc644e4a34fb24ff6461749",
-      "statement": "A grid entry names System 1 with model/style or with an opponent settings file relative to the TOML, not both; ranker_settings takes only systemone_model, style, with_eval and with_nouls from the opponent file.",
+      "statement": "A grid entry names System 1 with model/style or with an opponent settings file relative to the TOML, not both; ranker_settings takes only systemone_model, style, with_eval and with_nouls from the opponent file, and the only committed opponent file, jev-terse.json, sets typesafe/jev-latest with terse style.",
       "evidence": [
         {
-          "resource": "repo://evals/experiments/opponents/semif-terse.json",
-          "version": "repo-file-v1:sha256:0a919c7df9d02c3b5d5c7bce3892a41d66407dad308c284b46bb90ea6e7e3feb"
+          "resource": "repo://evals/experiments/opponents/jev-terse.json",
+          "version": "repo-file-v1:sha256:c3adb7328b2c2670c24afb67dcf31d8a092943aeb79758f8642b7006c5484e22"
         },
         {
           "resource": "repo://evals/experiments/systemone-baseline.toml",
-          "version": "repo-file-v1:sha256:3dd4d3466a3b5ab6275c2420376fb7990fc1cdc298ca0bc62e68af15c4fa7108"
+          "version": "repo-file-v1:sha256:a1e0708d29004b0f9f23fe530764c52b572a999b1d39a1753cb8faed420e46a3"
         },
         {
           "resource": "repo://evals/langchain_chess_evals/systemone/experiment.py#L39-L79",
@@ -214,21 +214,21 @@
     },
     {
       "id": "claim_66699921249841058c7a103dbf948eaa",
-      "statement": "The baseline grid includes a jev-rich-cap16 control with max_options 16 that forces SemIf's 16-option tournament onto Jev to isolate the tournament's cost.",
+      "statement": "The baseline grid runs four experiments in order: jev-rich (typesafe/jev-latest, rich), jev-terse (from the opponent file), luna-rich (openai/gpt-6-luna, rich), and a jev-rich-cap16 control with max_options 16 that forces a 16-option tournament onto Jev to isolate the tournament's cost.",
       "evidence": [
         {
-          "resource": "repo://evals/README.md#L109-L111",
-          "version": "repo-lines-v1:sha256:db352ddbff68efab13774887f8a406921cc4167e877891fffc9bdacb98421503:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGVhNDU1YmE0NGYzNjVmZjU5ZjU2MzBjNTIzOTQwMjMzZjNkNjZlNTVhMjAwMmE4YzQ1N2VmZWU1ZTE3ZDk2ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODFiMWNmZTZlZjdhMWZkZjdiZDllY2M3YTZiYjdlZjQ2OGM4NzI4NzJkODE0ZjhhODBlZGQ3OGIxYWFmMjQ4OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDBmMDY2YWFlNzExNDM0ZmYwMTYzMTM5NWU0YTcwNjUyN2NlOWEwNWJmYmUzMTljMzRmZDJkOGFiMjUyNTE0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTE2ZTMyOTE3ZmFhMjQ1ZDgzMDlmM2ZlNzVlZDNiOWI0MzYyNmIzNWI2Y2Y2ZmZiNmZjZWI0OGU0Yjg1MzllNiJ9"
+          "resource": "repo://evals/README.md#L108-L110",
+          "version": "repo-lines-v1:sha256:527bc64302451de45a62e7afd64646d838cebb880afeb90b2dd509cd7eb52177:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGVhNDU1YmE0NGYzNjVmZjU5ZjU2MzBjNTIzOTQwMjMzZjNkNjZlNTVhMjAwMmE4YzQ1N2VmZWU1ZTE3ZDk2ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODFiMWNmZTZlZjdhMWZkZjdiZDllY2M3YTZiYjdlZjQ2OGM4NzI4NzJkODE0ZjhhODBlZGQ3OGIxYWFmMjQ4OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDBmMDY2YWFlNzExNDM0ZmYwMTYzMTM5NWU0YTcwNjUyN2NlOWEwNWJmYmUzMTljMzRmZDJkOGFiMjUyNTE0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTE2ZTMyOTE3ZmFhMjQ1ZDgzMDlmM2ZlNzVlZDNiOWI0MzYyNmIzNWI2Y2Y2ZmZiNmZjZWI0OGU0Yjg1MzllNiJ9"
         },
         {
-          "resource": "repo://evals/experiments/systemone-baseline.toml#L1-L29",
-          "version": "repo-lines-v1:sha256:3dd4d3466a3b5ab6275c2420376fb7990fc1cdc298ca0bc62e68af15c4fa7108:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjYzgzNzYzNzMwZmJhOGIyZDM1MzgxYmMwNWRmMWIwYzM4ZTc1ZTUxMjlhYWZmOTYwMTcwZDE2OWEwMmZiMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OTEyNDA4YjBhYzgwZjU0NmYxYTg3MzhjYTE4ZDlkNDdmMDI3YWQ2N2Q2ODNhMTYwYzYzODgwOTczMjAxMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://evals/experiments/systemone-baseline.toml#L1-L24",
+          "version": "repo-lines-v1:sha256:a1e0708d29004b0f9f23fe530764c52b572a999b1d39a1753cb8faed420e46a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMjA4NWVhNjM4OWY5YjIwNWM3ZTI1ZmZmZTA1NDRlNGE0ZmI2ODA3NWMwNGEyMzVhYTJkNThmNTVkYTRjY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OTEyNDA4YjBhYzgwZjU0NmYxYTg3MzhjYTE4ZDlkNDdmMDI3YWQ2N2Q2ODNhMTYwYzYzODgwOTczMjAxMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
       "id": "claim_4eba32ba24ce4bbda6fa97e4235fb864",
-      "statement": "Experiments run with max_concurrency 4 and GatewayRanker max_attempts 30 because the gateway rate-limits SemIf and a rate limit must not score as a ranking miss; the old harness hit 429s at 8.",
+      "statement": "Experiments run with max_concurrency 4 and GatewayRanker max_attempts 30 because the gateway rate-limited SemIf (and may rate-limit any classifier) and a rate limit must not score as a ranking miss; the old harness hit 429s at 8.",
       "evidence": [
         {
           "resource": "repo://evals/README.md#L56-L58",
@@ -236,7 +236,7 @@
         },
         {
           "resource": "repo://evals/langchain_chess_evals/systemone/experiment.py#L20-L24",
-          "version": "repo-lines-v1:sha256:1eba05b8db06534ff7f91db982ed6386f18f70a48ffda29d5982b73a878570f3:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDAxZmY4ODg0YTJmNDE4OWM4MWU2NDlhZDhiYjhiNDE4NTk0YWMzNjIxODcxNTIyNWQ3Yzk3NGZmYzBhNzI0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTU3MWYzNGQ2YzQwZTE5MDgxNzFjNzVmZDc5YzFkMDI3YjgzZDhjOTQxNjZkMzVkM2U0MDVkMjAxZWRkNTNiMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2Y0ZTZhY2M5YjhhNDQ2MGRmZmM3NGFjM2M1Yzc5YTE4NGViYWJmMGY3M2FhZmNiZTY0YmIzM2EzNzllNmNhNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2JiZWM2YWM2ZTEyNjg1NDFmOGYwMDBiZTk0OWJjNmQ0MTE3Y2Y0MGJmNGI2YzhmYjA5OTYwZGU3NzY3MDJhYiJ9"
+          "version": "repo-lines-v1:sha256:535255fba876c7d6bde96da982503e18b17b5d92a1a64f84c3c7bc4595ed247d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjIxYmNmYzVlYTk5MGI0NjVkZjEyNGE0ZjVjNTZkYzEzMDUwOWE5NTFhNTFlMzYwMDIyZGI1ZWY1Y2FkZjhhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTU3MWYzNGQ2YzQwZTE5MDgxNzFjNzVmZDc5YzFkMDI3YjgzZDhjOTQxNjZkMzVkM2U0MDVkMjAxZWRkNTNiMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2Y0ZTZhY2M5YjhhNDQ2MGRmZmM3NGFjM2M1Yzc5YTE4NGViYWJmMGY3M2FhZmNiZTY0YmIzM2EzNzllNmNhNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2JiZWM2YWM2ZTEyNjg1NDFmOGYwMDBiZTk0OWJjNmQ0MTE3Y2Y0MGJmNGI2YzhmYjA5OTYwZGU3NzY3MDJhYiJ9"
         },
         {
           "resource": "repo://evals/langchain_chess_evals/systemone/experiment.py#L82-L90",
@@ -298,7 +298,7 @@
       "evidence": [
         {
           "resource": "repo://evals/langchain_chess_evals/systemone/summary.py#L1-L98",
-          "version": "repo-lines-v1:sha256:83474cfe4a41813a52deb736dd955578360b65f59a3dc12c0a4509462cdab344:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwYTdhNmZhMWNiZWI1YTE2N2U0OTVmNWQyMzNlZGYzZWMxY2Y4ZTI5NmI0MGU1M2U3MzcyNzEyNTk5MTkxNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViOTI1MDAxZjQ5ODE1OGRhMWI4M2VmMmNmMmI4ZDA3NmQyMzVkZmQ2ZjYzZmE3NDViMDNmMjEzNDc3MjE5MDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkMWZiYzcxMmYxOTZiMzA1NWU2YjkxYzFkYzY1NWUxY2FhYjQ0N2E0ZDE2NTkxN2I5ZTk5NWZhMzkyNjU5ZGIifQ"
+          "version": "repo-lines-v1:sha256:f30e96f6fdf14a5ea0f9379ca33a44002f1a02f1e7ab4c00874d64ee03212b47:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwYTdhNmZhMWNiZWI1YTE2N2U0OTVmNWQyMzNlZGYzZWMxY2Y4ZTI5NmI0MGU1M2U3MzcyNzEyNTk5MTkxNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViOTI1MDAxZjQ5ODE1OGRhMWI4M2VmMmNmMmI4ZDA3NmQyMzVkZmQ2ZjYzZmE3NDViMDNmMjEzNDc3MjE5MDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkMWZiYzcxMmYxOTZiMzA1NWU2YjkxYzFkYzY1NWUxY2FhYjQ0N2E0ZDE2NTkxN2I5ZTk5NWZhMzkyNjU5ZGIifQ"
         }
       ]
     },
@@ -322,25 +322,29 @@
     },
     {
       "id": "claim_80e9396c1cb442eb82a10ceeba81d294",
-      "statement": "The web app's render.html is the dataset's LangSmith custom output renderer; it accepts messages only from its embedding window rather than a fixed origin.",
+      "statement": "The web app's render.html, served from the web UI's GitHub Pages site, is the dataset's LangSmith custom output renderer; it accepts messages only from its embedding window rather than a fixed origin.",
       "evidence": [
         {
-          "resource": "repo://apps/web/README.md#L54-L67",
-          "version": "repo-lines-v1:sha256:a8af5546397e694f40b7d0c1ebbc1773544e2eba267184ea245d837cb37d118f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjNzkwMmFmYTg5ZGY4MjJjNzhhNjA0MDY2MDA1YTBkODI0NDc5NWM2MTJiM2RiZWFmMTMyNTQ4ZjMyNjQxZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZTE1NzA3NTA0MjliNWQ2M2E4NmM4ZmI5ZmM5NDc5ODQ2NGQ2ZTMxMzhkMzQ1ZTk1ZGE0ZGZkOTZhNDdjMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjZmYxODU0OTQxMmM0NTUzM2JhY2FlYmE3NjkwMmM1MjA3MDNhZjc2ZmUwZGE3YmI3YmZjY2U1MTQ4ZTVkNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlMjMzMmFhMDZiNDIzZjY3ZWQzN2UwODQyYjYzOGViZDNmNjQzN2Q3ZTI5N2RhYjc5MWI1NjFiMTMwMjkzOTAifQ"
+          "resource": "repo://apps/web/README.md#L60-L73",
+          "version": "repo-lines-v1:sha256:405798c73d1a041e1955eb10c7a69076b8636fba2b2ee709c4f37533be3bc3fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjNzkwMmFmYTg5ZGY4MjJjNzhhNjA0MDY2MDA1YTBkODI0NDc5NWM2MTJiM2RiZWFmMTMyNTQ4ZjMyNjQxZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZTE1NzA3NTA0MjliNWQ2M2E4NmM4ZmI5ZmM5NDc5ODQ2NGQ2ZTMxMzhkMzQ1ZTk1ZGE0ZGZkOTZhNDdjMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjZmYxODU0OTQxMmM0NTUzM2JhY2FlYmE3NjkwMmM1MjA3MDNhZjc2ZmUwZGE3YmI3YmZjY2U1MTQ4ZTVkNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlMjMzMmFhMDZiNDIzZjY3ZWQzN2UwODQyYjYzOGViZDNmNjQzN2Q3ZTI5N2RhYjc5MWI1NjFiMTMwMjkzOTAifQ"
         },
         {
           "resource": "repo://apps/web/src/render/useParentMessage.ts",
           "version": "repo-file-v1:sha256:d70969014c814d19a5a780bd4eb135ec2454277ddade67b2baa39b36e530fcf3"
+        },
+        {
+          "resource": "repo://apps/web/vite.config.ts#L7-L18",
+          "version": "repo-lines-v1:sha256:4fdc1aa0598d5717673636e0174ab808271af3fa4f9687784eef424f90ca6256:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMDhkNWI2ZGNmNGU2ZTc0ODk4NjU4OGFiN2Y3YjAyNmUwYjIwNTU4ZTYxZTc0NzkxMjIwZGVlODExNjc2NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMmVhYWVlNzNiNzNhYTlmYjM4NTJjMWU0NDcxODgwYmZmZWQxYzM3ZTRlNjJjMDQ1M2QzN2QyOTI3YzNjMDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxNWRlNmMxNzkwYmE2M2I3MzZmNzQ1NDgzM2E3ZmYzOGRhNmU5ZmE4MDkzNDliNzgzZTZiZmRlNjk1OTRiZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxMWU0OTdiZmY4YzdmMDk5YmEzOTVhMDFhNGQ0NWUwNzk1Y2ZmNThkYWMyNmIxMTg0NmI2OTg4NzFjNDg0ZTgifQ"
         }
       ]
     },
     {
       "id": "claim_8ac9640bcbf04525ac5741deed6309d7",
-      "statement": "Live eval tests (-m live, via mise run test:live) are opt-in, cost money, and run one real SemIf ranking through the target plus a schema-enforcement check on a throwaway dataset.",
+      "statement": "Live eval tests (-m live, via mise run test:live) are opt-in, cost money, and run one real Jev ranking of the starting position through the target (no error, no tournament, all legal moves ranked) plus a schema-enforcement check on a throwaway dataset.",
       "evidence": [
         {
           "resource": "repo://evals/tests/test_live.py",
-          "version": "repo-file-v1:sha256:2b0e1c641514b22412babbe0c4329d1fd1db7ef2cea134bdbe84efeda8405ae0"
+          "version": "repo-file-v1:sha256:c05ed3fdba3e6e6cb98938048bfaabb3e0b5dfaee1f1a174f343630eeb764d14"
         },
         {
           "resource": "repo://mise.toml#L150-L152",
@@ -351,6 +355,6 @@
   ],
   "verification": {
     "by": "openwiki/0.6.0",
-    "at": "2026-09-27T19:08:28.877Z"
+    "at": "2026-11-01T01:10:29.908Z"
   }
 }

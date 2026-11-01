@@ -1,11 +1,11 @@
 ---
 type: architecture
 title: Turn lifecycle
-description: How create_chess_agent assembles its fixed middleware stack (including fixed_topology and the core-owned StallRetry) and how ChessCore plays at most one turn per run, covering command classification, invocation and opened_turn bookkeeping, pending, abandoned, committed and terminal turns, reply parsing, illegal-move retries and resignation, stall retries, the forced-move shortcut, failed provider calls, atomic finalization, draw claims and ContextBudgetError.
+description: How create_chess_agent assembles its fixed middleware stack (including fixed_topology and the core-owned StallRetry) and how ChessCore plays at most one turn per run, covering command classification, resign and draw control commands, invocation and opened_turn bookkeeping, pending, abandoned, committed and terminal turns, reply parsing, illegal-move retries and forfeits, stall retries, the forced-move shortcut, failed provider calls, provider error translation (ContextBudgetError, ReasoningEffortError), atomic finalization and draw claims.
 tags: [chess-core, turn-lifecycle, agent-loop, middleware, retries, finalization]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-27T19:08:28.877Z
+    at: 2026-11-01T01:10:29.908Z
 sources:
   - id: openwiki-source-88d085345a1ecd09c61f7ab0
     resource: repo://apps/server/langchain_chess_server/game_setup.py
@@ -15,6 +15,8 @@ sources:
     resource: repo://libs/chess/langchain_chess/agent.py
   - id: openwiki-source-2823ab4258a02b653101a66b
     resource: repo://libs/chess/langchain_chess/contract.py
+  - id: openwiki-source-ddd9015cc3a195fb1a1753fe
+    resource: repo://libs/chess/langchain_chess/errors.py
   - id: openwiki-source-fc393bc7c06df7c3f85ece92
     resource: repo://libs/chess/langchain_chess/middleware/core.py
   - id: openwiki-source-39bd12bdddf97b4c91560f31
@@ -31,6 +33,8 @@ sources:
     resource: repo://libs/chess/langchain_chess/rules.py
   - id: openwiki-source-89cf26730d6633d36dd4f627
     resource: repo://libs/chess/langchain_chess/state.py
+  - id: openwiki-source-15c007567b3e97d780416043
+    resource: repo://libs/chess/tests/test_commands.py
   - id: openwiki-source-2c6a2617bc273a5be95fdd7d
     resource: repo://libs/chess/tests/test_contract.py
   - id: openwiki-source-4611e49b3e9b4d2d0edd598c
@@ -47,7 +51,7 @@ sources:
     resource: repo://libs/systemone/langchain_chess_systemone/agent.py
   - id: openwiki-source-3c3f476720af9ceef23b678d
     resource: repo://libs/systemone/langchain_chess_systemone/middleware.py
-generated: { by: "openwiki/0.6.0", at: "2026-09-27T19:08:28.877Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
 ---
 
 # Turn lifecycle
@@ -67,6 +71,8 @@ The stack always has the same shape:
 5. **`StallRetry`** is always last. It is core-owned (callers cannot remove it) and adds only a model-call wrapper, no graph node (`test_stall_retry_adds_no_node`). See [Stall retries](#stall-retries-stallretry).
 
 If `model` is `None`, the stack gets a `NoModel` stand-in. Calling it raises `ChessContractError`, so a System-1-only agent fails loudly when no proposer fires. It never plays a random move. After compiling, the factory checks that the graph's input schema contains only `messages` and `position`. An extension that leaks a public state key fails at build time. The compiled graph is returned with a `CallRecorder` callback attached. That callback captures every provider response for the turn's `calls`.
+
+`ChessCore` also takes a `draw_policy` (default `rules.decline_all`), but `create_chess_agent` does not expose it, so agents built through the factory decline every draw offer. See [Control commands](#control-commands-resign-and-draw).
 
 Without a checkpointer the agent is stateless, so every run must carry a `position` (see `test_stateless_agent`).
 
@@ -99,8 +105,8 @@ sequenceDiagram
     participant M as Model
     C->>Core: run with position or message
     Core->>Core: before_agent classifies and syncs
-    alt reject or noop
-        Core-->>C: jump to end, record untouched
+    alt reject, noop, resign or draw offer
+        Core-->>C: jump to end, no model call
     else execute
         Fm->>Fm: before_model, one initial move?
         Ext->>Ext: before_model narrows or proposes
@@ -136,7 +142,10 @@ flowchart TD
     E -- yes --> P2{"last turn pending"}
     P2 -- yes --> RT
     P2 -- no --> N3["noop"]
-    E -- no --> F{"pending turn and chat message"}
+    E -- no --> K{"chat is resign or draw"}
+    K -- resign --> RS["abandon pending, terminal turn, noop"]
+    K -- draw --> DR["draw policy answers, noop or reject"]
+    K -- no --> F{"pending turn and chat message"}
     F -- yes --> R3["reject: finish or retry first"]
     F -- no --> G{"sync validates"}
     G -- "no, CommandError" --> R4["reject"]
@@ -144,23 +153,30 @@ flowchart TD
     H -- yes --> T["open terminal turn, noop"]
     H -- no --> X["open pending turn, execute"]
 ```
-*How `ChessCore._lifecycle` classifies a run. A new position that validates while a turn is pending abandons that turn before opening the new one.*
+*How `ChessCore._lifecycle` classifies a run. Control commands are checked before the pending-turn rejection, and a new position that validates while a turn is pending abandons that turn before opening the new one.*
 
 Details that matter when you change this:
 
-- **Chat sync** (`_sync_chat`) accepts exactly `go` or one legal move in SAN or UCI (`rules.parse_chat`). Anything else raises `CommandError`, including null-move spellings such as `0000` (`legal_member` checks that the move is in the legal set, not just that it parses). The human's move is recorded as an `external` ply.
+- **Chat sync** (`_sync_chat`) accepts exactly `go` or one legal move in SAN or UCI (`rules.parse_chat`). Anything else raises `CommandError`, including null-move spellings such as `0000` (`legal_member` checks that the move is in the legal set, not just that it parses). A move that needs a promotion piece gets an error that lists the completed spellings. The human's move is recorded as an `external` ply. (`parse_chat` also recognises `resign <side>` and `draw <side>`, but `_lifecycle` handles those first, through `control_command`.)
 - **Position sync** (`_sync_position`) requires the requested moves to *extend* the thread's game, with the same root and the thread's moves as a prefix. A `restrict` list must be non-empty and legal. New moves become `external` plies. A synthetic delta `HumanMessage` is added, such as "New game. You are White." or the new movetext. Takebacks and new games need a new thread.
 - A rejected chat message is removed from `messages` (`RemoveMessage`), and the reason goes into `error`. The game record is never touched.
 - Resending the same message id, or the same position after a commit, is a `noop`. Resending the same position while its turn is still pending is a retry. This is how clients recover after a provider error (`test_resent_position_retries_a_failed_turn`).
-- A resignation cannot be rederived from the board. The check for `outcome` therefore runs before any sync.
-- On a thread's first run, `_first_run` writes the empty record (`start_fen`, `moves`, `plies`, `turns`, `outcome`, `error`, `consumed_message_ids`), because LangGraph omits keys that were never written.
+- A resignation cannot be rederived from the board. The check for `outcome` therefore runs before any sync. A resend of the position that ended the game is rejected as "the game is over" (`test_a_first_position_replayed_after_the_game_ended_is_rejected`).
+- On a thread's first run, `_first_run` writes the empty record (`start_fen`, `moves`, `plies`, `turns`, `outcome`, `error`, `consumed_message_ids`, `draw_offers`), because LangGraph omits keys that were never written. A record from before draw offers existed reads `draw_offers` as empty.
+
+## Control commands: resign and draw
+
+`rules.control_command` recognises `resign <side>` and `draw <side>`: case-insensitive, exactly two single-spaced words. The side must be named because the server does not know which side is human (the command is not authenticated). A known verb with an unknown side, such as `resign green`, is a `CommandError` and the message is rejected. These commands never open a model turn and never call the model (`tests/test_commands.py`).
+
+- **Resign** (`_resign`) works for either side on either side's move, and it runs *before* the pending-turn rejection so that a stuck turn can still be ended. A pending turn is marked `abandoned` (its extension calls and latency folded in), and any decision it saved (`proposal` or a forfeit `terminal_intent`) is discarded, not played. A new turn is opened directly as `terminal` with `request` and `opened_message_id` set to the message id, no calls and empty `initial_allowed`. `outcome` becomes `{kind: "resignation", winner: <other side>, reason: "resigned"}`, a result message such as "White resigned · Black wins. 0-1" is added, and the run is a `noop` whose `opened_turn` is the terminal turn.
+- **Draw offer** (`_offer_draw`) is rejected while a turn is pending, when it is not the offering side's move ("offer a draw on your own move"), or when that side already offered in this position. Otherwise the `draw_policy` answers and a `DrawOffer` `{ply: len(moves), by, answer}` is appended to `draw_offers`. With the default `decline_all`, the reply is "Draw declined.". No turn opens, the game record is otherwise unchanged, and the run is a `noop`.
 
 ## Invocation and `opened_turn` bookkeeping
 
 `invocation` is private, per-run state, kept separate from the durable `TurnRecord.status`. Every run gets a fresh `invocation` with a new `id`, its `action`, and `opened_turn`:
 
-- `opened_turn` is the id of the turn **this run** opened, whether that turn is pending (`execute`) or opened directly as terminal (`noop` on an ended input position).
-- A retry (`_retry`), a reject and an ordinary noop open no turn, so `opened_turn` is `None`. `test_the_invocation_names_only_a_turn_this_run_opened` checks this across a failed run, an empty retry, a new position and another empty retry.
+- `opened_turn` is the id of the turn **this run** opened, whether that turn is pending (`execute`) or opened directly as terminal (`noop` on an ended input position or a resignation).
+- A retry (`_retry`), a reject, a draw offer and an ordinary noop open no turn, so `opened_turn` is `None`. `test_the_invocation_names_only_a_turn_this_run_opened` checks this across a failed run, an empty retry, a new position and another empty retry.
 - The field is `NotRequired`; checkpoints from before it existed have no `opened_turn`.
 
 Extensions use it to act exactly once per turn opening. The server's `GameSetupMiddleware` writes the thread's `setup` only when there is exactly one turn and its id equals `invocation.opened_turn`. It checks in both `before_agent` and `after_agent`, because a run that opens a terminal turn jumps from `ChessCore.before_agent` straight to `end`, past the extension's `before_agent`. `_finalize` itself keys off `invocation.action`: it does nothing unless the action is `execute`.
@@ -172,16 +188,16 @@ Each `TurnRecord` in `turns` has a `status`: `pending`, `committed`, `abandoned`
 ```mermaid
 stateDiagram-v2
     [*] --> Pending: execute opens a turn
-    [*] --> Terminal: command reaches an ended position
+    [*] --> Terminal: ended position or resign command
     Pending --> Pending: run fails, a later run retries
     Pending --> Committed: after_agent commits the proposal
-    Pending --> Terminal: retries exhausted, resignation
-    Pending --> Abandoned: a new valid position arrives
+    Pending --> Terminal: retries exhausted, forfeit
+    Pending --> Abandoned: new valid position or resign command
     Committed --> [*]
     Terminal --> [*]
     Abandoned --> [*]
 ```
-*The states a TurnRecord moves through. A committed move that ends the game stays `committed` and sets `outcome`. Only an ended input position or a resignation produces a `terminal` turn.*
+*The states a TurnRecord moves through. A committed move that ends the game stays `committed` and sets `outcome`. Only an ended input position, a resign command or an illegal-move forfeit produces a `terminal` turn.*
 
 When a turn opens, `initial_allowed` is set to the legal moves, filtered by `restrict`. This list is the turn's hard constraint, and the forced-move check and every retry reset use it. A turn opened on an already-ended position gets `status: "terminal"`, the outcome and a result message, and the run is a `noop` that never calls the model.
 
@@ -195,12 +211,18 @@ Whenever a turn leaves `pending` (committed, terminal or abandoned), `_finalized
 
 Everything the provider returns inside the wrapper is captured through `recorder.sink("llm")` and appended to the turn's `calls` in the wrapper's own state update. The wall-clock time of the wrapper is added to `turn.latency_ms`. An empty AI reply is stored as the `EMPTY_REPLY` placeholder (`[no text in reply]`), because Anthropic rejects a replayed assistant turn that has no text.
 
+**Provider error translation.** The handler call runs inside `errors.provider_errors()` (`libs/chess/langchain_chess/errors.py`), which re-raises a provider's rejection as an error that says what to change:
+
+- an exception whose text matches one of the overflow hints (`prompt is too long`, `context length`, `context_length`, `maximum context`, `too many tokens`, `input is too long`) becomes **`ContextBudgetError`**;
+- an exception with `status_code == 400` about the reasoning effort (its `param` is `reasoning.effort` or `reasoning_effort`, or, without a `param`, its text mentions `effort`) becomes **`ReasoningEffortError`**, with advice to remove the effort from the settings and model arguments;
+- anything else propagates unchanged.
+
+Both translated errors are chained to the original (`from e`). In each case the turn stays `pending` (`test_prompt_too_long_is_a_context_budget_error`, `test_a_rejected_effort_is_a_reasoning_effort_error`).
+
 **Failures inside the wrapper** take one of two paths:
 
-- If the handler raises before any provider call completed, the exception propagates unchanged and the turn stays `pending`.
-- If some provider calls had already completed (for example an inner wrapper that calls the model twice), the wrapper does not raise. It returns an empty response plus an update that keeps those calls on the turn and sets a `failed_call` marker (`{id, error}`), remembering the original exception in memory. `after_model` then sees the marker and re-raises the original exception in the same run. On a later resume the in-memory exception is gone, so `after_model` clears the marker and jumps back to `model` to try again instead of re-raising forever (`test_calls_before_a_wrapper_failure_are_kept_and_retried_once`, `test_resuming_after_a_wrapper_failure_calls_the_model_again`).
-
-**`ContextBudgetError`**: if the provider raises an exception whose text matches one of the overflow hints (`prompt is too long`, `context length`, `context_length`, `maximum context`, `too many tokens`, `input is too long`), the wrapper converts it to `ContextBudgetError`. It then follows the same two paths: raised directly, or re-raised by `after_model` when calls had completed (`test_an_overflow_after_a_completed_call_is_still_a_budget_error`). Either way the turn stays `pending`.
+- If the handler raises before any provider call completed, the (possibly translated) exception propagates and the turn stays `pending`.
+- If some provider calls had already completed (for example an inner wrapper that calls the model twice), the wrapper does not raise. It returns an empty response plus an update that keeps those calls on the turn and sets a `failed_call` marker (`{id, error}`), remembering the exception in memory. `after_model` then sees the marker and re-raises that exception in the same run. On a later resume the in-memory exception is gone, so `after_model` clears the marker and jumps back to `model` to try again instead of re-raising forever (`test_calls_before_a_wrapper_failure_are_kept_and_retried_once`, `test_resuming_after_a_wrapper_failure_calls_the_model_again`). Because translation happens inside the `try`, an overflow after a completed call is still a `ContextBudgetError` (`test_an_overflow_after_a_completed_call_is_still_a_budget_error`).
 
 ## Stall retries (`StallRetry`)
 
@@ -211,13 +233,13 @@ Everything the provider returns inside the wrapper is captured through `recorder
 - **On exhaustion.** `on_failure="error"`: the second stall re-raises rather than being turned into the model's reply (`"continue"` would do that). The error reaches `ChessCore.wrap_model_call`, the run fails, and the turn stays `pending`, so the client's Retry resumes the same turn (`test_a_second_stall_fails_the_turn_and_retry_resumes_it`).
 - **Accounting.** A stalled attempt records no call: its usage would have arrived in the final chunk, which never came, and `CallRecorder` drops errored attempts. A turn that stalls once and then succeeds has one call, `illegal_attempts` unchanged, and no pending recorder entries (`test_a_stalled_stream_is_retried_within_the_turn`). The stalled attempt's wall time still counts toward `turn.latency_ms`, because it happens inside `ChessCore`'s wrapper.
 
-## Reply parsing, retries and resignation (`after_model`)
+## Reply parsing, retries and forfeit (`after_model`)
 
 `parse.parse_move` reads the move from the reply. If the reply contains a `MOVE:` marker (case-insensitive), only the **last** marker counts: its line is read to the end, and the first word (with `*` and backticks stripped, `0-0` normalised to `O-O`) is the candidate. An empty or unreadable last marker is rejected; the parser does not fall back to an earlier marker. Only when there is no marker at all is the last move-like token used. The candidate is tried as SAN first, then as UCI, and it must be legal. `_parse` then applies these rules:
 
 - If the move is legal **and** in `allowed_moves`, it becomes the `proposal` (`source: "llm"`, with the reply text as `analysis` and the reply id in `meta`).
 - If the move is legal but not allowed (because of `restrict` or a middleware narrowing it), or if no move was found, the reply id is added to `rejected_message_ids` and `illegal_attempts` goes up by one. If the previous count was below `max_retries`, a feedback `HumanMessage` ("Try again, ... Choose from: ...") is added and the run jumps back to `model`. Remember that this re-runs `before_model`.
-- Once `max_retries` (default 3) retries are used up, a `terminal_intent` resignation for the side to move is set (`reason: "illegal_moves"`). With the default setting that happens after four illegal replies.
+- Once `max_retries` (default 3) retries are used up, a `terminal_intent` resignation for the side to move is set (`reason: "illegal_moves"`, a forfeit). With the default setting that happens after four illegal replies.
 
 Illegal-move retries and stall retries are independent: a stall never reaches `after_model`, so it never consumes the illegal-move budget.
 
@@ -229,19 +251,20 @@ When `turn.initial_allowed` has exactly one move and no proposal exists yet, `Fo
 
 `_finalize` acts only when `invocation.action == "execute"`. It first folds the extensions' calls and latency into the turn (`_finalized`), then:
 
-- If a **`terminal_intent`** is set, the turn becomes `terminal`, `outcome` is set, and a result message is added (for example "White resigns after repeated illegal moves. 0-1").
+- If a **`terminal_intent`** is set, the turn becomes `terminal`, `outcome` is set, and a result message is added (for example "White forfeited after repeated illegal moves · Black wins. 0-1").
 - If a **`proposal`** is set, it is checked again against both the board's legal moves and `allowed_moves`. If either check fails, it raises `ChessContractError`. If neither a proposal nor an intent exists, that is also a `ChessContractError`. The ply is appended with source, analysis, model (for LLM moves, the last `llm` call's model; otherwise `meta.model`), `turn_id`, the turn's `latency_ms`, and each extension's `ply_meta`. A proposal that did not come from the LLM also gets a synthetic `MOVE: <san>` AI message. The turn becomes `committed` with its `ply` index, and all decision keys are reset.
-- Last, `ending(board, draw_claims)` checks the new position. If the game has ended, `outcome` and a result message are written in the same update, and the turn stays `committed`.
+- Last, `ending(board, draw_claims)` checks the new position. If the game has ended, `outcome` and a result message (such as "Draw by threefold repetition. 1/2-1/2") are written in the same update, and the turn stays `committed`.
 
 ## Draw claims
 
-`rules.ending` always applies automatic endings: checkmate, stalemate, insufficient material, fivefold repetition and the 75-move rule. With `draw_claims="auto"`, it also ends the game on a threefold repetition or fifty-move rule that has **actually happened**. It never uses `outcome(claim_draw=True)` or `can_claim_threefold_repetition()`, because those would declare a draw the next move merely could reach, before the agent has moved (`test_threefold_is_not_adjudicated_before_the_agent_moves`). `create_chess_agent` defaults to `"auto"`. `"never"` leaves claimable draws to the caller; the UCI adapter forces it (`DRAW_CLAIMS = "never"` in `libs/cli/langchain_chess_cli/uci/engine.py`) because the GUI adjudicates. `replay` checks for an ending before every ply, so a position with moves after the game ended is rejected as a `CommandError`.
+`rules.ending` always applies automatic endings: checkmate, stalemate, insufficient material, fivefold repetition and the 75-move rule. With `draw_claims="auto"`, it also ends the game on a threefold repetition or fifty-move rule that has **actually happened**. It never uses `outcome(claim_draw=True)` or `can_claim_threefold_repetition()`, because those would declare a draw the next move merely could reach, before the agent has moved (`test_threefold_is_not_adjudicated_before_the_agent_moves`). `create_chess_agent` defaults to `"auto"`. `"never"` leaves claimable draws to the caller; the UCI adapter forces it (`DRAW_CLAIMS = "never"` in `libs/cli/langchain_chess_cli/uci/engine.py`) because the GUI adjudicates. `replay` checks for an ending before every ply, so a position with moves after the game ended is rejected as a `CommandError`. Draw claims are separate from draw *offers*, which the `draw_policy` answers (see [Control commands](#control-commands-resign-and-draw)).
 
 ## Focused tests
 
-- `libs/chess/tests/test_lifecycle.py`: classification (noop, reject, retry), `opened_turn`, abandonment, the durable illegal-move budget, illegal retries, resignation, `restrict`, terminal inputs, draws, empty replies, `ContextBudgetError`, and which messages each memory mode sends.
+- `libs/chess/tests/test_lifecycle.py`: classification (noop, reject, retry), `opened_turn`, abandonment, the durable illegal-move budget, illegal retries, the forfeit, `restrict`, terminal inputs, draws, empty replies, `ContextBudgetError`, `ReasoningEffortError`, and which messages each memory mode sends.
+- `libs/chess/tests/test_commands.py`: resigning for either side on either side's move, resigning abandoning a pending turn and discarding its saved move or forfeit, resignations after the game is over, declined and rejected draw offers, control commands as a thread's first input, and records from before `draw_offers`.
 - `libs/chess/tests/test_text.py`: `parse_move`, `model_view` memory modes, the position message and `move_list`.
-- `libs/chess/tests/test_rules.py`: endings, draw claims only once they have occurred, replay rejecting moves after an ending, `parse_chat` strictness, fingerprint semantics.
+- `libs/chess/tests/test_rules.py`: endings, draw claims only once they have occurred, replay rejecting moves after an ending, `parse_chat` and `control_command` strictness, the default draw policy, fingerprint semantics.
 - `libs/chess/tests/test_contract.py`: finalization surviving a failing `after_agent` or `after_model` hook, `failed_call` recovery after a partial wrapper failure, overflow after a completed call, `NoModel` failing loudly, and the `StallRetry` tests (one stall retried within the turn, a second stall failing the turn so Retry resumes it, only stalls retried, no extra node).
 - `libs/chess/tests/test_memory.py`: `fixed_topology` keeping an inert summarization node.
 
@@ -251,7 +274,7 @@ When `turn.initial_allowed` has exactly one move and no proposal exists yet, `Fo
 
 What the code tells you to expect when you compare against traces (**Correlated**):
 
-- A normal LLM turn makes one recorded `llm` call. Each illegal reply adds one more, up to `max_retries + 1` calls (4 by default) before the turn resigns. A forced move, or a proposal from middleware, makes zero LLM calls.
+- A normal LLM turn makes one recorded `llm` call. Each illegal reply adds one more, up to `max_retries + 1` calls (4 by default) before the turn forfeits. A forced move, a proposal from middleware, a resignation or a draw offer makes zero LLM calls.
 - A stall retry shows up in LangSmith as an extra errored provider span. It does not appear in the turn's `calls`, so the recorded calls can be fewer than the traced attempts.
 - `turn.latency_ms`, which is also copied onto the ply, is the time inside `ChessCore.wrap_model_call` (stalled attempts included) plus whatever each extension reports through `turn_latency_ms` at finalization (System 1 reports its frozen ranking time). Other `before_model` work, summarization and graph overhead are not counted, so trace root latency can still be higher than the recorded ply latency.
 - **Hypothesis:** if sampled turns often show several LLM calls, the retry and feedback path is a cost driver. Check the rejected-reply signature (no `MOVE:` line, empty reply, or a disallowed move) before you change `feedback_text`, `SYSTEM_PROMPT`, `move_list` or `max_retries`.

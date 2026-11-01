@@ -3,9 +3,6 @@ type: configuration schema
 title: Settings, versions and model arguments
 description: The versioned CoreSettings/ChessContext opponent schema shared by the agent server, CLI, web app and evals. Covers migrate/resolve and merge order (assistant context, then configurable, with null meaning reset), how model_kwargs are checked on each surface, codegen of JSON Schema and TypeScript into packages/chess-ui, and opponent settings files.
 tags: [settings, chess-context, versioning, model-kwargs, codegen, json-schema]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-27T19:08:28.877Z
 sources:
   - id: openwiki-source-9e73cfc78a8aeac72fc36a15
     resource: repo://apps/server/langchain_chess_server/codegen.py
@@ -19,8 +16,8 @@ sources:
     resource: repo://apps/server/tests/test_context.py
   - id: openwiki-source-be4a82601d4a0ee9e1634703
     resource: repo://apps/web/src/setup.ts
-  - id: openwiki-source-2cbf9ee3f5e63891c1fb88bb
-    resource: repo://evals/experiments/opponents/semif-terse.json
+  - id: openwiki-source-aa3e6650e2e2db69113e88b1
+    resource: repo://evals/experiments/opponents/jev-terse.json
   - id: openwiki-source-1e593e9ea3114c009929aa6d
     resource: repo://evals/langchain_chess_evals/systemone/experiment.py
   - id: openwiki-source-b97343132cd8bf8377dc9677
@@ -37,13 +34,18 @@ sources:
     resource: repo://libs/systemone/langchain_chess_systemone/schema.py
   - id: openwiki-source-21de6a067affac443ab60933
     resource: repo://libs/systemone/langchain_chess_systemone/settings.py
+  - id: openwiki-source-86dda03c2529753312560daf
+    resource: repo://libs/systemone/tests/fixtures/settings-cases.json
   - id: openwiki-source-5879d0ac89e370d9b678cbd5
     resource: repo://libs/systemone/tests/test_settings.py
   - id: openwiki-source-72b5d686f860ea86c8592080
     resource: repo://mise.toml
   - id: openwiki-source-c81a61ad418f9c19c518d61d
     resource: repo://packages/chess-ui/src/settings.ts
-generated: { by: "openwiki/0.6.0", at: "2026-09-27T19:08:28.877Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-11-01T01:10:29.908Z
 ---
 
 # Settings, versions and model arguments
@@ -99,7 +101,7 @@ flowchart TD
 `resolve_context(config, runtime)` in `apps/server/langchain_chess_server/context.py`:
 
 1. Reads the assistant context from `runtime.execution_runtime.context`, which can be a model or a dict, and then `config["configurable"]`.
-2. Treats a source with no `version` (or a null one) as the current version, because Studio saves assistants without one. This is only safe while each version just adds keys. A version that renames or removes a key must decide how to read versionless sources.
+2. Treats a source with no `version` (or a null one) as the current version, because Studio saves assistants without one. This is only safe while each version just adds keys. A version that renames or removes a key must decide how to read versionless sources. Because a versionless source is treated as version 3, it skips the 2→3 step, so a versionless source that still names a `semif-` model is not rewritten to Jev.
 3. Migrates each source with `unknown="drop"`, so server-owned keys such as `thread_id` are ignored.
 4. Resolves in the order context, then configurable. A key omitted from `configurable` keeps the assistant's value. An explicit `null` resets the key to its default, so a run can clear an assistant's `top_p`. Validation happens after the merge, so a bad value fails the run up front with a `ValidationError`, and a newer `version` fails with a `SettingsError`.
 
@@ -165,5 +167,8 @@ The hand-written `packages/chess-ui/src/settings.ts` mirrors `migrate`, `resolve
 
 - `libs/systemone/tests/test_settings.py`: file and recorded cases, per-key value cases, the defaults frozen to match the model, migrate and resolve semantics, immutability, and the lenient input schema.
 - `apps/server/tests/test_context.py`: merge order, null reset, versionless sources, bounds, and rejection of newer versions.
+- `libs/chess/tests/test_model_arguments.py`: precedence, collapsing aliases, `extra_body.reasoning` replacement, and the everywhere and server-only hold-backs, checked against captured gateway bodies.
+- `apps/server/tests/test_codegen.py`: committed files are current, and the required-keys shape of both schemas.
+tests/test_context.py`: merge order, null reset, versionless sources, bounds, and rejection of newer versions.
 - `libs/chess/tests/test_model_arguments.py`: precedence, collapsing aliases, `extra_body.reasoning` replacement, and the everywhere and server-only hold-backs, checked against captured gateway bodies.
 - `apps/server/tests/test_codegen.py`: committed files are current, and the required-keys shape of both schemas.

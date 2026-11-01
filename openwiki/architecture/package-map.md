@@ -5,7 +5,7 @@ description: The Python (uv) and JavaScript (pnpm) packages in langchain-chess, 
 tags: [architecture, packages, dependencies, monorepo, uv, pnpm, layering, codegen]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-27T19:08:28.877Z
+    at: 2026-11-01T01:10:29.908Z
 sources:
   - id: openwiki-source-c2ad925c3422b92574d65d56
     resource: repo://apps/review/package.json
@@ -33,8 +33,10 @@ sources:
     resource: repo://apps/server/tests/test_codegen.py
   - id: openwiki-source-99de51df25f29bfc72caf823
     resource: repo://apps/web/package.json
-  - id: openwiki-source-434b43fa9c75a1218beca2f5
-    resource: repo://apps/web/src/modelLimit.ts
+  - id: openwiki-source-6bcec85ddd7955325f5b1865
+    resource: repo://apps/web/src/auth.ts
+  - id: openwiki-source-7f2e3520a656d432bb97cc86
+    resource: repo://apps/web/src/modelFacts.ts
   - id: openwiki-source-611421396243f4b643f6d94a
     resource: repo://apps/web/src/useGame.ts
   - id: openwiki-source-03f6dd3375679341910a29c1
@@ -79,6 +81,8 @@ sources:
     resource: repo://packages/chess-ui/package.json
   - id: openwiki-source-a2159d5515f3a1f98d1230a7
     resource: repo://packages/chess-ui/src/index.ts
+  - id: openwiki-source-8f4a6ef492dd86b6058c2cff
+    resource: repo://packages/chess-ui/src/stages.ts
   - id: openwiki-source-fd0e9360c0eb5b2cec5ea440
     resource: repo://packages/chess-ui/src/types.ts
   - id: openwiki-source-40275cb92c3610938f16ade3
@@ -87,7 +91,7 @@ sources:
     resource: repo://pyproject.toml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-27T19:08:28.877Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
 ---
 
 # Package map and dependency direction
@@ -104,7 +108,7 @@ The layout keeps graph building apart from the clients of the graph. Move choice
 | Path | Distribution / npm name | Import | Role | Layer |
 |---|---|---|---|---|
 | `libs/chess` | `langchain-chess` | `langchain_chess` | `create_chess_agent`, `ChessState`, the `ChessMiddleware` contract, core middleware (core, forced move, summarization), rules, pricing, `CoreSettings`, `model_arguments`, the shared `chat_model` factory, engine grading | Core library |
-| `libs/systemone` | `langchain-chess-systemone` | `langchain_chess_systemone` | `SystemOneMiddleware`, its no-op stand-in `NoSystemOne`, `GatewayRanker` (SemIf/Jev System 1 ranking, tournaments), the versioned `ChessContext` settings and their JSON Schemas, and the shared `build_agent` | Middleware library, agent assembly |
+| `libs/systemone` | `langchain-chess-systemone` | `langchain_chess_systemone` | `SystemOneMiddleware`, its no-op stand-in `NoSystemOne`, `GatewayRanker` (System 1 ranking through Jev on TypeSafe or OpenAI Decisions, tournaments), the versioned `ChessContext` settings and their JSON Schemas, and the shared `build_agent` | Middleware library, agent assembly |
 | `libs/cli` | `langchain-chess-cli` | `langchain_chess_cli` | The `lcchess` script: `uci`, `play` (Textual TUI), `grade` | Adapter |
 | `apps/server` | `langchain-chess-server` (private, `Private :: Do Not Upload`) | `langchain_chess_server` | The `chess` graph factory, the server-only `GameSetupMiddleware`, the FastAPI `/ui` app for the Agent Server, and the settings codegen | Adapter / deployable |
 | `evals` | `langchain-chess-evals` (private, `Private :: Do Not Upload`) | `langchain_chess_evals` | The `lcchess-evals` script: position datasets and LangSmith experiments on System 1 | Leaf tooling |
@@ -159,7 +163,7 @@ What the manifests and imports establish:
 - **One `build_agent`, in `libs/systemone`.** `langchain_chess_systemone.agent.build_agent` is the single place that turns a `ChessContext` into a graph for every surface. Surfaces inject what they own: a model factory, a ranker factory, a checkpointer, extra middleware, `fixed_topology` and a `context_schema`. It calls only the factories the policy uses. With policy `systemone` it builds no chat model. With any policy but `llm` it adds a `SystemOneMiddleware`. With `llm` it adds `NoSystemOne()` only when `fixed_topology=True`, and otherwise leaves System 1 out. Memory stays on only when there is a chat model, and `build_agent` raises `ChessContractError` if memory is on and `langchain_chess.middleware.summarization.input_limit` finds no known input limit for the model. Its defaults build the chat model with the core `langchain_chess.chat_models.chat_model` and the ranker as a plain `GatewayRanker`.
 - **`cli -> chess, systemone` and `server -> chess, systemone`.** Both adapters call that shared `build_agent`. They differ only in what they inject:
   - The **CLI** (`libs/cli/langchain_chess_cli/main.py`) builds its `ChessContext` from an optional settings file plus flags (`options.overlay`). Its `uci` and `play` commands call `build_agent(settings, checkpointer=...)` with the default model and ranker factories and no fixed topology. `options.run_config` names and tags the trace by surface and records the settings plus `sent(...)` in metadata.
-  - The **server** (`apps/server/langchain_chess_server/graph.py`) wraps `build_agent` in `build_graph`. It passes `server_model`, which keeps only the `model_kwargs` the server surface allows. It passes a `pooled_ranker`, whose `GatewayRanker` uses a `langchain_typesafe` `TypeSafeClassifier`. That classifier takes its API key and base URL from `ServerSettings.typesafe()` (`TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL`) and its HTTP clients from the process-wide `POOL` in `clients.py`, which the `/ui` app's lifespan closes. The server also adds its own `GameSetupMiddleware`, sets `fixed_topology=True` and `context_schema=ChessContextInput`, and attaches `sent(settings, "server")` as run metadata. When there is no execution runtime (reads, updates, introspection), `make_graph` returns a model-free `shape()` graph with the same nodes. See [Agent Server integration](../integrations/agent-server.md).
+  - The **server** (`apps/server/langchain_chess_server/graph.py`) wraps `build_agent` in `build_graph`. It passes `server_model`, which keeps only the `model_kwargs` the server surface allows. It passes a `pooled_ranker`, whose `GatewayRanker` gets a classifier chosen by the System 1 model name. An `openai/<model>` name gets an OpenAI Decisions classifier from `langchain_chess_systemone.ranker.classifier`, which uses the `LANGSMITH_GATEWAY*` credentials and `httpx` clients from `DECISIONS_POOL`. Any other name gets a `langchain_typesafe` `TypeSafeClassifier`, with its API key and base URL from `ServerSettings.typesafe()` (`TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL`, which raises if either is unset) and `httpx2` clients from `POOL`. Both pools are process-wide, live in `clients.py`, and are closed by the `/ui` app's lifespan. The CLI instead uses `build_agent`'s `default_ranker`, a plain `GatewayRanker` that builds its own classifier. The server also adds its own `GameSetupMiddleware`, sets `fixed_topology=True` and `context_schema=ChessContextInput`, and attaches `sent(settings, "server")` as run metadata. When there is no execution runtime (reads, updates, introspection), `make_graph` returns a model-free `shape()` graph with the same nodes. See [Agent Server integration](../integrations/agent-server.md).
 - **The CLI's `grade` command** also uses `langchain_chess.engine` and `langchain_chess.grading` from the core library.
 - **`evals -> chess, systemone`.** `langchain-chess-evals` depends on both libraries. Its System 1 experiments drive `GatewayRanker`/`Ranker` and load `ChessContext` settings files. Its scoring reuses `langchain_chess.grading` and `langchain_chess.rules`. See [System 1 evals](../workflows/system-one-evals.md).
 - **Nothing depends on `cli`, `server` or `evals`.** They are leaves and don't import each other. What they share (agent assembly, settings, chat-model construction, input limits, rules, grading) lives in `libs/systemone` or `libs/chess`. The server and evals are marked private and never published.
@@ -222,4 +226,6 @@ flowchart TD
 - [Web frontends](../architecture/web-frontends.md)
 - [Agent Server integration](../integrations/agent-server.md)
 - [System 1 evals](../workflows/system-one-evals.md)
+- [Deployment](../operations/deployment.md)
+ws/system-one-evals.md)
 - [Deployment](../operations/deployment.md)

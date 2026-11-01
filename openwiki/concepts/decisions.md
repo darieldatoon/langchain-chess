@@ -3,9 +3,6 @@ type: Decision record
 title: Decisions and measurements
 description: Design choices in langchain-chess that look like gaps (no Anthropic prompt caching, the removed `full` memory mode, memory now a plain on/off switch) with the measured numbers behind them and the conditions under which to revisit them. Also notes which defaults, such as the System 1 threshold, have no recorded measurement.
 tags: [decisions, measurements, prompt-caching, memory, anthropic, cost, system-one]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-27T19:08:28.877Z
 sources:
   - id: openwiki-source-0486059a508cedacd209f083
     resource: repo://apps/server/tests/test_context.py
@@ -29,7 +26,10 @@ sources:
     resource: repo://libs/systemone/langchain_chess_systemone/middleware.py
   - id: openwiki-source-21de6a067affac443ab60933
     resource: repo://libs/systemone/langchain_chess_systemone/settings.py
-generated: { by: "openwiki/0.6.0", at: "2026-09-27T19:08:28.877Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-11-01T01:10:29.908Z
 ---
 
 # Decisions and measurements
@@ -153,8 +153,11 @@ The System 1 gate defaults have **no measurement recorded** behind them in the b
 else in the repo:
 
 - `threshold = 0.9`. System 1 plays when the gate signal (`margin` by default, or `confidence`)
-  is at least this value. `0` always plays and `1` never does. The default is set in
-  `SystemOneMiddleware.__init__` and in `SystemOneSettings`, which `ChessContext` inherits.
+  is at least this value. `0` always plays and `1` never does (the gate requires
+  `threshold < 1.0` as well as `signal >= threshold`). The default is set in
+  `SystemOneMiddleware.__init__` and in `SystemOneSettings`, which `ChessContext` inherits, and
+  every settings-file version records `0.9`. Both values must lie in `[0, 1]`; the middleware
+  raises `ValueError` otherwise.
 - `tournament_threshold = None`. When a SemIf tournament ranked more options than one System 1
   request holds, this value applies instead of `threshold`. If it is left empty, `threshold` is
   used.

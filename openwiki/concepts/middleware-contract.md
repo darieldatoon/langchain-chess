@@ -30,10 +30,10 @@ sources:
     resource: repo://libs/systemone/langchain_chess_systemone/middleware.py
   - id: openwiki-source-0e44d1e7d0101f3027cd3f67
     resource: repo://libs/systemone/tests/test_middleware.py
-generated: { by: "openwiki/0.6.0", at: "2026-09-27T19:08:28.877Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-27T19:08:28.877Z
+    at: 2026-11-01T01:10:29.908Z
 ---
 
 # The middleware contract
@@ -154,7 +154,7 @@ Declare extension state in a subclass of `ChessState` and mark each key `Annotat
 `before_model` can run more than once per turn:
 
 1. **In-run retry.** When `ChessCore.after_model` rejects an illegal reply, it jumps back to `model`, which re-enters at the first `before_model`. `allowed_moves` and `candidates` keep their current values.
-2. **Resume after a failed model call.** If the provider fails after some calls have already completed, `ChessCore.wrap_model_call` keeps those calls and sets `failed_call`. `after_model` hooks, including extensions' hooks, then run with no new reply. `ChessCore.after_model` re-raises the original error in that same run. On a later resume the error is no longer held in memory, so it clears `failed_call` and jumps back to `model`, which runs `before_model` again.
+2. **Resume after a failed model call.** If the provider fails before any call completed, the error simply propagates. If it fails after some calls have already completed, `ChessCore.wrap_model_call` keeps those calls and sets `failed_call`. `after_model` hooks, including extensions' hooks, then run with no new reply. `ChessCore.after_model` re-raises the original error in that same run. On a later resume the error is no longer held in memory, so it clears `failed_call` and jumps back to `model`, which runs `before_model` again.
 3. **Cross-run retry.** A new run on a thread with a pending turn and the same request resets the decision keys and restores `allowed_moves` to `initial_allowed`. The exception is a turn that already has a validated `proposal`/`terminal_intent`: that one skips straight to finalization.
 
 The rules are therefore:
@@ -235,6 +235,11 @@ SystemOne's freeze and replay behaviour is covered in `libs/systemone/tests/test
 - `test_a_hybrid_turn_counts_the_ranking_once_across_retries`
 
 The shared fakes (`ScriptedModel`, `position`, `human`) live in `langchain_chess.testing`. See [testing conventions](/openwiki/testing/testing-conventions.md).
+rn_specific`
+- `test_a_hybrid_turn_counts_the_ranking_once_across_retries`
+
+The shared fakes (`ScriptedModel`, `position`, `human`) live in `langchain_chess.testing`. See [testing conventions](/openwiki/testing/testing-conventions.md).
+chess.testing`. See [testing conventions](/openwiki/testing/testing-conventions.md).
 rn_specific`
 - `test_a_hybrid_turn_counts_the_ranking_once_across_retries`
 

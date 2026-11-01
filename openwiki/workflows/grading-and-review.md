@@ -1,11 +1,11 @@
 ---
 type: workflow
 title: Grading and review
-description: How `lcchess grade` selects game threads from LangSmith, rebuilds each game from its root runs, evaluates every distinct position once on a pool of UCI engines, grades moves the Lichess way, and writes fingerprinted feedback; how the review app replays it and launches grading jobs in a LangSmith sandbox built from the grader snapshot.
+description: How `lcchess grade` selects game threads from LangSmith, rebuilds each game from its root runs, evaluates every distinct position once on a pool of UCI engines, grades moves the Lichess way, and publishes fingerprinted feedback (a `game_review` header plus size-capped `game_review_part` values); how the review app loads, validates and replays it and launches grading jobs in a LangSmith sandbox built from the grader snapshot.
 tags: [grading, lcchess, langsmith, feedback, stockfish, review-app, accuracy, sandbox]
 verified:
   - by: openwiki/0.6.0
-    at: 2026-09-27T19:08:28.877Z
+    at: 2026-11-01T01:10:29.908Z
 sources:
   - id: openwiki-source-1367020fc794d7846ab57adc
     resource: repo://.github/workflows/deploy-grader.yml
@@ -17,10 +17,12 @@ sources:
     resource: repo://apps/review/src/App.tsx
   - id: openwiki-source-bdf6fdb9290364f6d610e7d9
     resource: repo://apps/review/src/components/AnalysisBanner.tsx
+  - id: openwiki-source-df4099aaaa1d56ceab1fb944
+    resource: repo://apps/review/src/components/EngineHeader.tsx
+  - id: openwiki-source-5f430379e94fba9e583bcd06
+    resource: repo://apps/review/src/components/EngineLines.tsx
   - id: openwiki-source-8e17609d88ef23327924a49d
     resource: repo://apps/review/src/components/GameView.tsx
-  - id: openwiki-source-ed1fb758d91e09f3b631921d
-    resource: repo://apps/review/src/components/GradeCard.tsx
   - id: openwiki-source-471a9092cd5b3971e06785cb
     resource: repo://apps/review/src/games.ts
   - id: openwiki-source-4a50211e51ae5b4042cd6e74
@@ -51,25 +53,25 @@ sources:
     resource: repo://mise.toml
   - id: openwiki-source-27a918e9e11693d5de03d421
     resource: repo://scripts/grader-snapshot.py
-generated: { by: "openwiki/0.6.0", at: "2026-09-27T19:08:28.877Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
 ---
 
 # Grading and review
 
-`lcchess grade` runs after games have been played. It reads the games back from their LangSmith traces, has a UCI engine (Stockfish by default) evaluate every position, classifies each move and computes accuracy the way Lichess does, then writes the results back to the same traces as feedback. The review app is a LangSmith sandbox app. It lists the games in a project and replays each one on a board, using the single `game_review` feedback value that the grader writes. Its **Analyze** button can also run `lcchess grade` for one game inside a LangSmith sandbox started from a prebuilt "grader snapshot" image.
+`lcchess grade` runs after games have been played. It reads the games back from their LangSmith traces, has a UCI engine (Stockfish by default) evaluate every position, classifies each move and computes accuracy the way Lichess does, then writes the results back to the same traces as feedback. The review app is a LangSmith sandbox app. It lists the games in the agent's tracing project and replays each one on a board, using the review the grader writes: a `game_review` header plus the `game_review_part` values that hold the per-ply grades. Its **Analyze** button can also run `lcchess grade` for one game inside a LangSmith sandbox started from a prebuilt "grader snapshot" image.
 
 The code is split into layers:
 
 | Layer | Where | Role |
 | --- | --- | --- |
-| Command | `libs/cli/langchain_chess_cli/main.py` (`grade`), `grade/cli.py` | Parses and validates options, builds the `EngineConfig`, prints progress |
+| Command | `libs/cli/langchain_chess_cli/main.py` (`grade`), `grade/cli.py` | Parses and validates options, resolves the project, builds the `EngineConfig`, prints progress |
 | Batch | `grade/batch.py` (`grade_batch`) | Selects games, skips games already graded, schedules positions, writes each game |
 | Sandbox job | `grade/job.py` (`sandbox_job`) | With `--sandbox-job`: settles the review app's `grade_status` marks, then deletes its own sandbox |
-| Records | `grade/records.py` | Pure code. Turns root runs into a `GameRecord` and a grade into `Feedback` entries |
-| Store | `grade/store.py` (`LangSmithStore`) | The LangSmith side: finds threads, reads runs, reads grading marks, replaces feedback, settles `grade_status` marks |
+| Records | `grade/records.py` | Pure code. Turns root runs into a `GameRecord` and a grade into `Feedback` entries, including the review header and its parts |
+| Store | `grade/store.py` (`LangSmithStore`) | The LangSmith side: resolves projects, finds threads, reads runs, reads grading marks, replaces feedback, settles `grade_status` marks |
 | Engine | `libs/chess/langchain_chess/engine.py` | `EngineConfig`, `Grader` fingerprint, `EnginePool` of UCI processes |
 | Grading math | `libs/chess/langchain_chess/grading.py` | Pure code. Positions, judgements, cp/win% loss, move and game accuracy |
-| Review app | `apps/review/src` | Reads threads, last runs, `game_review` and `grade_status` feedback, replays the graded game, launches Analyze jobs (`analysis.ts`) |
+| Review app | `apps/review/src` | Reads threads, last runs, review and `grade_status` feedback, replays the graded game, launches Analyze jobs (`analysis.ts`) |
 | Grader image | `docker/grader.Dockerfile`, `scripts/grader-snapshot.py`, `.github/workflows/deploy-grader.yml` | Builds the `langchain-chess-grader` sandbox snapshot (Stockfish + `lcchess`) |
 
 For the shape of the run outputs the grader reads (`start_fen`, `moves`, `plies`, `outcome`), see [the state record](/openwiki/concepts/state-record.md). For how the review app is built and hosted, see [web frontends](/openwiki/architecture/web-frontends.md) and [deployment](/openwiki/operations/deployment.md).
@@ -95,7 +97,7 @@ sequenceDiagram
     Pool-->>Batch: Grader and fingerprint
     opt not forced
         Batch->>Store: graded on last run
-        Store-->>Batch: stored fingerprint or none
+        Store-->>Batch: fingerprint of a whole review or none
     end
     Batch->>Math: engine_fens over all games
     Batch-->>User: Planned event
@@ -106,9 +108,9 @@ sequenceDiagram
     end
     loop each game once its positions are done
         Batch->>Math: grade_game
-        Batch->>Batch: feedback entries
+        Batch->>Batch: feedback entries with a new generation
         Batch->>Store: replace old feedback
-        Store->>Store: delete ours, write rest, write game_review, clear grade_status
+        Store->>Store: write scores and parts, check, write header, drop superseded, clear grade_status
         Batch-->>User: Graded event
     end
 ```
@@ -117,16 +119,18 @@ sequenceDiagram
 
 ## 1. Choosing threads
 
-`cli.selection` turns the options into one of two kinds of `Selection`:
+The project comes from `--project`, or else from `--environment` (`LANGSMITH_AGENT_ENVIRONMENT`, e.g. `local` or `production`): `LangSmithStore.agent_project` retrieves the LangSmith agent (`--agent`, `LANGSMITH_AGENT_ID`, default `langchain-chess`) and uses the `tracer_session_name` of the environment with that name (case-insensitive). An unknown environment raises `LookupError`. Without either, `cli.selection` fails with an option error.
 
-- **Explicit threads** (`--thread`, repeatable, and/or `--threads-file` with one id per line; blank lines and `#` comments are skipped) become a `Threads(project, ids)` selection. Duplicates are dropped, keeping first-seen order. `--since`, `--until`, `--limit` and `--metadata` cannot be combined with explicit threads; doing so is a usage error.
-- **Project query**: with no thread ids, a `ProjectQuery` is built. `LangSmithStore.find_threads` lists root runs in the project, newest first. It passes `--since` as `start_time` and builds a filter from `--until` (`lt(start_time, ...)`) and each `--metadata key=value` pair (`eq(metadata_key)`/`eq(metadata_value)`, joined with `and(...)`). It collects distinct `metadata.thread_id` values and stops once it has `--limit` threads. A naive `--since`/`--until` is read as local time.
+`cli.selection` then turns the options into one of two kinds of `Selection`:
 
-You always need a project, either `--project` or `LANGSMITH_PROJECT`. Option errors (`OptionError`) are raised as Typer `BadParameter`, so the command exits with code 2. `--sandbox-job` is only accepted together with explicit `--thread` ids; with a project query it is also an option error.
+- **Explicit threads** (`--thread`, repeatable, and/or `--threads-file` with one id per line; blank lines and `#` comments are skipped) become a `Threads(project, ids)` selection. The batch drops duplicates, keeping first-seen order. `--since`, `--until`, `--limit` and `--metadata` cannot be combined with explicit threads; doing so is a usage error.
+- **Project query**: with no thread ids, a `ProjectQuery` is built. `LangSmithStore.find_threads` resolves the project name to its id (cached) and queries root runs with `client.runs.query`, newest first, 1000 per page, selecting only id, start time and metadata. `min_start_time` is `--since`, but never earlier than 400 days ago (`LOOKBACK`), which is also the default: `runs.query` otherwise looks back one day only and refuses windows over 401 days. A filter is built from `--until` (`lt(start_time, ...)`) and each `--metadata key=value` pair (`eq(metadata_key)`/`eq(metadata_value)`, joined with `and(...)`). It collects distinct `metadata.thread_id` values and stops once it has `--limit` threads. A naive `--since`/`--until` is read as local time.
+
+Option errors (`OptionError`) and the `LookupError` above are raised as Typer `BadParameter`, so the command exits with code 2. `--sandbox-job` is only accepted together with explicit `--thread` ids; with a project query it is also an option error.
 
 ## 2. Rebuilding a game from its root runs
 
-For each thread, `thread_runs` fetches every root run whose metadata `thread_id` matches, selecting `id`, `session_id`, `start_time` and `outputs`. Up to 8 threads are fetched at once. `records.game_record` then builds a `GameRecord`:
+For each thread, `thread_runs` queries every root run in the project whose metadata `thread_id` matches (same 400-day lookback), selecting id, project id, start time and outputs. Up to 8 threads are fetched at once. `records.game_record` then builds a `GameRecord`:
 
 - Only runs whose outputs contain a `plies` list count. Errored runs and non-chess runs are ignored, and the order the runs arrive in doesn't matter. If no run qualifies, or the best run has no plies, the thread is reported as `Skipped(reason="no_game")`.
 - The **last run** is the run with the most plies, with ties going to the latest `start_time`. Its outputs supply `start_fen`, `moves` and `outcome`.
@@ -140,11 +144,11 @@ For each thread, `thread_runs` fetches every root run whose metadata `thread_id`
 
 Before it checks for games already graded, the batch opens a **probe pool of one engine** to learn the `Grader`: the engine's UCI `id name` plus `EngineConfig.settings()`. The settings are the limit kind and value, multipv, threads and hash_mb. The binary path is deliberately left out because it differs between machines. `Grader.fingerprint` is the first 16 hex characters of a SHA-256 over the sorted JSON of the engine name and settings. A different engine version or a different setting therefore produces a different fingerprint.
 
-Unless `--force` is set, `LangSmithStore.graded(last_run.id)` looks for `game_review` feedback on the game's last run and returns the fingerprint from it. It only counts feedback whose source metadata has `grader == "lcchess grade"`. If that fingerprint equals the current grader's, the game is skipped with `Skipped(reason="graded")`. As a result:
+Unless `--force` is set, `LangSmithStore.graded(last_run.id)` lists this grader's `game_review` and `game_review_part` feedback on the game's last run (feedback whose source metadata has `grader == "lcchess grade"`). It takes the **newest** header and returns the fingerprint from its source metadata only if the review is there whole: either a legacy `version: 1` header, or a `version: 2` header for which `records.whole` finds every part number `0..parts-1` among the parts with the same `generation`. A header stored as null, or missing a part, counts as not graded. If the fingerprint equals the current grader's, the game is skipped with `Skipped(reason="graded")`. As a result:
 
 - Re-running with the same engine and settings is cheap and idempotent.
 - Changing a setting or upgrading the engine re-grades everything.
-- A game that has continued since it was graded now has a new last run with no mark, so it is graded again.
+- A game that has continued since it was graded now has a new last run with no review, so it is graded again.
 - `--force` re-grades regardless.
 
 ## 4. Evaluating each distinct position once
@@ -178,23 +182,34 @@ Two details keep grades reproducible:
 
 ## 6. Writing feedback
 
-`records.feedback` places each entry on a specific run:
+`records.feedback(record, grade, grader, generation)` places each entry on a specific run. The batch passes a fresh random `generation` (a UUID hex) per game write, which ties the review header to its parts so a reader never mixes two gradings.
 
 - **Per-move keys** (`move_quality`, `cp_loss`, `win_pct_loss` rounded to 2 decimals, `best_move`) are written only for **agent turns**, meaning plies with a `turn_id`. They go on the root run that played that ply, and their `source_info` includes `ply`.
-- **Game keys** go on the game's last run: `accuracy_white`/`accuracy_black` (rounded to 1 decimal; omitted for a side that never moved), then `game_review`, which is always the **last** entry.
+- **Game keys** go on the game's last run: `accuracy_white`/`accuracy_black` (rounded to 1 decimal; omitted for a side that never moved), then the `game_review_part` entries, then the `game_review` header, which is always the **last** entry.
 - Every entry's `source_info` carries `grader: "lcchess grade"`, `engine`, `settings` and `fingerprint`. The store uses these fields to recognise its own feedback.
 
-The `game_review` value (`version: 1`) holds everything the review app draws in a single value: engine, settings, per-side accuracy, one eval per position (`{"cp": n}` or `{"mate": n, "winner": side}`), and a per-ply list with `run_id`, `side`, `uci`, `best_move`, `quality`, `cp_loss`, `win_pct_loss`, `accuracy` and the engine `lines` for the position before the move. Because each ply carries its `run_id`, the app does not need to read every turn's run.
+### The review payload (version 2)
 
-`LangSmithStore.replace(runs, entries)` implements the "replace" semantics:
+`records.review` produces everything the review app draws, split to fit LangSmith's feedback size cap (LangSmith silently stores a value over its cap, 20 KiB by default, as null):
 
-1. It lists feedback for any grading key (`KEYS`) and for `grade_status` on **all** of the game's runs, keeping only entries whose source metadata says `grader == "lcchess grade"`. Feedback from people or other graders under the same keys is kept.
-2. It deletes the old `game_review` markers first, then the other old grading keys. A game reads as graded while an old marker survives, so the marker goes before anything else.
-3. It writes every entry except the last, in parallel (default 16 threads). Deletes finish before any of these writes start.
-4. It writes the `game_review` marker by itself, after everything else.
-5. Only then does it delete this grader's `grade_status` marks (the review app's "analyzing" mark), so the game never reads as neither analyzing nor graded.
+- Each **part** (`game_review_part`) is `{version: 2, generation, part, from, evals, plies}`: a consecutive run of plies starting at ply `from`, each with the eval of the position before it. A ply's entry has `ply`, `run_id`, `side`, `uci`, `best_move`, `quality`, `cp_loss`, `win_pct_loss`, `accuracy` and the engine `lines` (eval plus UCI PV) for the position before the move. Parts are packed greedily up to `PART_BYTES` (16 KiB of compact JSON); a single ply over the budget raises `ValueError`.
+- The **header** (`game_review`) is `{version: 2, generation, engine, settings, accuracy, plies, parts, final_eval}`: per-side accuracy, the ply and part counts, and the eval of the final position. Evals are `{"cp": n}` or `{"mate": n, "winner": side}`.
 
-Every write passes `extend_trace_retention=True`, so a graded game's traces are kept longer. Since the marker is deleted first and written last, and the skip check only looks at the marker, a replace cut short (including a failed delete) never leaves a partly rewritten game marked graded; the next run redoes it.
+Because each ply carries its `run_id`, the app does not need to read every turn's run.
+
+### Replace semantics
+
+`LangSmithStore.replace(runs, entries)` publishes the new review before removing the old one, so a game never reads as ungraded mid-write and a failed write leaves the earlier review intact:
+
+1. It lists this grader's feedback for every score key (`PLY_KEYS` + `GAME_KEYS`), both review keys and `grade_status` on **all** of the game's runs, 25 run ids per listing (they go in the URL). Feedback from people or other graders under the same keys is kept.
+2. It picks the new feedback ids up front, then deletes the old score feedback and, once those deletes finish, writes every entry except the header (scores and parts) in parallel (default 16 threads).
+3. It **checks** the new parts by reading them back until LangSmith lists them as written (up to 5 tries, sleeping 1, 2, 4, 8 s, since LangSmith may store feedback late). A value still missing, for example one stored as null for being over the cap, raises `UnstoredReviewError` naming its size.
+4. It writes the header with its pre-chosen id (a request that fails may still have stored it) and checks it the same way.
+5. If the check or the header write fails, it deletes the new header first and then the new parts, and re-raises. If the header cannot be deleted, its parts stay with it. The earlier review is untouched and still published.
+6. Only then does it delete the superseded review: every old header, the parts of those headers' generations, and parts LangSmith emptied. Parts of other generations are left alone, since another grading of the game may have written its parts and not yet its header.
+7. Last, it deletes this grader's `grade_status` marks (the review app's "analyzing" mark), so the game never reads as neither analyzing nor graded.
+
+Deletes tolerate feedback another grading already removed (`LangSmithNotFoundError` is suppressed). Every write passes `extend_trace_retention=True`, so a graded game's traces are kept longer. Since the skip check and the app both read the newest whole header, an interrupted replace either leaves the earlier review as the game's review or redoes the game on the next run.
 
 ## Failure behaviour and progress
 
@@ -216,30 +231,32 @@ When the review app's Analyze button launches a grading job, nothing polls the s
 - It tees every progress line through the normal printer and keeps the last 20 lines (`TAIL_LINES`) as a log tail.
 - When the batch finishes, `verdicts` decides each requested thread's `grade_status` mark. A graded game's mark was already cleared by `replace`. A game skipped as already graded gets `None` (clear). A game with no record gets the text `"The thread has no game in its traces."`. Any other game gets the batch's failure, or `None` if the batch succeeded.
 - If the batch raises, the exception type and message are appended to the tail. Every game not yet written is failed with that log, and the exception is re-raised.
-- `LangSmithStore.settle(runs, failure)` deletes this grader's `grade_status` marks on the thread's runs when `failure` is `None`, and otherwise updates them to `value="failed"` with the log as the comment. It does nothing for an empty run list, because an empty `run_ids` filter would match every mark in the workspace.
+- `LangSmithStore.settle(runs, failure)` deletes this grader's `grade_status` marks on the thread's runs when `failure` is `None`, and otherwise updates them to `value="failed"` with the log as the comment. An empty run list lists nothing, rather than every mark in the workspace.
 - In a `finally`, `delete_own_sandbox` deletes the sandbox named by `LANGSMITH_SANDBOX_NAME` through `langsmith.sandbox.SandboxClient`. Outside a sandbox, or if the delete fails, it only prints a message; the sandbox's idle TTL is the backstop.
 
 ## The review app
 
 The review app (`apps/review`) runs in a LangSmith sandbox. `entry.tsx` renders `App`, calling the host's `window.langsmith.call` through `createApi`:
 
-- **Project and window**: `defaultProject` picks `langchain-chess-app` first, then any project whose name contains "chess", then the most recent. The window options are the last 1, 7 (default), 30 or 90 days.
-- **Listing games**: `api.games` pages through `POST /api/v2/threads/query`, 20 threads at a time. For each page it fetches, in parallel, the threads' last root runs (`POST /api/v2/runs/query` by `last_trace_id`, with `min_start_time` set because unbounded queries are rate-limited harder) and the `game_review` and `grade_status` feedback on those runs (`GET /api/v1/feedback`). `reviewsByRun` keeps only reviews whose source metadata has `grader == "lcchess grade"`; `marksByRun` keeps this grader's newest `grade_status` mark per run. A refresh reloads every page on screen, and keeps loading pages until the open game is among them.
-- **Grading states**: `parseReview` returns `graded` only for a complete `version: 1` review whose fields all validate, whose plies are index-matched (`ply === i`), and which has exactly one eval per position (`evals.length === plies.length + 1`). Anything else is `invalid` with a reason. `toGame` also marks a review `invalid` when its plies' `uci` values differ from the game's moves. With no review the game is `ungraded`.
-- **Game record**: `decodeValues` accepts a run's outputs only when `moves` is an array of UCI strings and the optional `start_fen`, `plies`, `turns` and `outcome` have the expected shape. Otherwise the game has no values and the app shows "No game record" instead of a board. `toGame` builds the matchup label from run metadata (`policy`, `model`, `systemone_model`).
-- **List row**: matchup, result (`1-0`, `0-1`, `½-½`, or "In progress"), start time, ply count, and White / Black accuracy or "Not graded"; while a job is analyzing, stalled or failed, the row shows that status instead of the grade.
-- **Replay** (`GameView`): the app replays FENs from `start_fen` and `moves` and steps through them with keys or controls. When a review exists it adds:
-  - an eval bar from `review.evals[index]`
-  - arrows for the played move and, if different, the engine's best move
-  - quality badges in the move list
-  - a `GradeCard` showing eval before → after, best move in SAN, winning chances lost, centipawn loss, move accuracy, and engine lines of 6 plies each. The card's height is set by the most lines any ply carries (not by the claimed `settings.multipv`), so the graph below it doesn't move
-  - an `EvalGraph` over every position, where clicking a point jumps to that position
+- **Project and window**: `api.projects` lists sessions whose names contain `langchain-chess-` and keeps only the agent's tracing projects, in the order `langchain-chess-production`, `langchain-chess-local`; the first one found is preselected. The window options are the last 1, 7 (default), 30 or 90 days.
+- **Listing games**: `api.games` pages through `POST /api/v2/threads/query`, 20 threads at a time. For each page it fetches, in parallel, the threads' last root runs (`POST /api/v2/runs/query` by `last_trace_id`, with `min_start_time` set because unbounded queries are rate-limited harder), and two paged listings of `GET /api/v1/feedback` on those runs (100 per request): `game_review` with `grade_status`, and `game_review_part` separately, because a regrade deleting feedback between pages could shift rows past the offset. `reviewsByRun` keeps only feedback whose source metadata has `grader == "lcchess grade"`, picks the newest header per run (a regrade publishes its header before deleting the old one) and joins it with that run's parts; `marksByRun` keeps this grader's newest `grade_status` mark per run. A refresh reloads every page on screen, and keeps loading pages until the open game is among them.
+- **Grading states**: `readReview` treats a null header as `invalid` (LangSmith may have dropped it for size). A `version: 2` header is joined with the parts of its `generation` into the version 1 shape: every part `0..parts-1` must be present, contiguous (`from` equal to the plies so far), with one eval per ply, no part stored twice with different content, and the total must equal the header's `plies`; `final_eval` becomes the last eval. `parseReview` then returns `graded` only for a complete `version: 1` review whose fields all validate, whose plies are index-matched (`ply === i`), and which has exactly one eval per position (`evals.length === plies.length + 1`). Anything else is `invalid` with a reason. `toGame` also marks a review `invalid` when its plies' `uci` values differ from the game's moves. With no header the game is `ungraded`.
+- **Game record**: `decodeValues` accepts a run's outputs only when `moves` is an array of UCI strings and the optional `start_fen`, `plies`, `turns`, `outcome`, `draw_offers` and `systemone_live` have the expected shape. Otherwise the game has no values and the app shows "No game record" instead of a board. `toGame` builds the matchup label from run metadata (`policy`, `model`, `systemone_model`) and records the `surface`.
+- **List row**: matchup, result (`1-0`, `0-1`, `½-½`, "In progress", or "No record"), opening name once the opening table is loaded, start time, ply count, and White / Black accuracy, "Not graded" or "Unreadable review"; while a job is analyzing, stalled or failed, the row shows that status instead of the grade.
+- **Replay** (`GameView`): the app replays FENs from `start_fen` and `moves` and steps through them with keys, wheel or controls. When a review is graded it adds:
+  - an eval bar from `review.evals[index]` and each side's accuracy on its player strip
+  - arrows for the played move (red for a mistake or blunder) and, if different, the engine's best move
+  - quality badges and the eval after each move in the move list, with optional mistake notes
+  - an `EngineHeader` card: engine, search limit, the position's eval, a quality badge for the move, and eval before → after, winning chances lost, centipawn loss and move accuracy
+  - an `EngineLines` card with the engine lines before the move (up to 8 plies each, clickable or hoverable to preview on the board). Its row count is the most lines any ply carries (not the claimed `settings.multipv`), so the column below doesn't move
+  - a `Summary` card with each side's flaw counts, average loss and accuracy, also split by who chose the moves
+  - an `EvalGraph` in the Graph tab, where clicking a point jumps to that position (other tabs show agent latency and PGN export)
   - a **Re-analyze** button when no job is running
 
-  "Open trace" opens the current ply's `run_id` from the review, or the thread's last run. Below the board, `AnalysisBanner` shows where the game stands (see below).
+  "Open trace" resolves the current ply's `run_id` from the review, or the thread's last run, to the game's thread view in LangSmith. In the tools column, `AnalysisBanner` shows where the game stands (see below).
 - `review.ts` keeps a TypeScript mirror of the review schema and of `win_percent` (`whiteWinPercent`, same ±1000 clamp and 0.00368208 constant), so the app's eval bar and graph agree with the grader.
 
-The grader writes `game_review` on the run with the most plies, but the app looks for it on the thread's `last_trace_id`. The two are normally the same run, since each new turn's run carries the whole game so far. If they differ, for example when the thread's latest run carries no game record, the app shows no review (or "No game record") for that thread.
+The grader writes the review on the run with the most plies, but the app looks for it on the thread's `last_trace_id`. The two are normally the same run, since each new turn's run carries the whole game so far. If they differ, for example when the thread's latest run carries no game record, the app shows no review (or "No game record") for that thread.
 
 ### Analyze: grading from the app
 
@@ -264,13 +281,13 @@ stateDiagram-v2
 
 1. If a previous failed or stalled mark exists, it deletes the old sandbox (ignoring "not found"), waits up to 10 polls of 1 s for it to disappear, and deletes the old mark.
 2. It posts a `grade_status: analyzing` feedback on the game's last run with source metadata `grader: "lcchess grade"`.
-3. It creates a sandbox named `sandboxName(threadId)` (`lcchess-grade-<sanitised id>`, at most 63 characters; one name per game, so a second start on the same game conflicts instead of running twice) from the `langchain-chess-grader` snapshot, with 4 vCPUs, 8 GiB, `idle_ttl_seconds: 900` as a backstop, and explicit access delegation limited to what the job needs: `projects:read`, `runs:read`, `runs:read-outputs`, `feedback:read/create/update/delete`, `sandboxes:delete` and `workspaces:read`. A bridge timeout on create is tolerated because the server keeps booting.
+3. It creates a sandbox named `sandboxName(threadId)` (`lcchess-grade-<sanitised id>`, at most 63 characters; one name per game, so a second start on the same game conflicts instead of running twice) from the `langchain-chess-grader` snapshot, with 4 vCPUs, 8 GiB, `idle_ttl_seconds: 900` as a backstop, `delete_after_stop_seconds: 60`, and explicit access delegation limited to what the job needs: `projects:read`, `runs:read`, `runs:read-outputs`, `feedback:read/create/update/delete`, `sandboxes:delete` and `workspaces:read`. No API key goes into the sandbox; it calls LangSmith as the viewer. A bridge timeout on create is tolerated because the server keeps booting.
 4. It polls the sandbox status until `ready` (a `failed` status or 10 polls without ready is an error).
-5. It executes `gradeCommand`: `nohup setsid lcchess grade --project … --thread … --workers 4 [--force] --sandbox-job </dev/null >/tmp/grade.log 2>&1 &`, detached so the job outlives the execute call. A non-zero exit code is an error.
+5. It executes `gradeCommand`: `nohup setsid lcchess grade --project '<name>' --thread '<id>' --workers 4 [--force] --sandbox-job </dev/null >/tmp/grade.log 2>&1 &`, detached so the job outlives the execute call. A non-zero exit code is an error.
 
 On any error after the mark is written, it deletes the mark and (if it may exist) the sandbox, and rethrows a message from `explain`, which maps known bridge errors to hints: sandboxes not enabled, the snapshot missing ("run mise run review:snapshot"), the sandbox limit reached, "already being analyzed", or a permissions problem. `App` passes `force: true` unless the game is ungraded.
 
-`analysisOf(mark, now)` turns a mark into `analyzing`, `stalled` (an `analyzing` mark older than `STALL_MS`, 10 minutes, belongs to a job that died without reporting) or `failed` (with the comment as the log). `AnalysisBanner` then shows, in priority order: a launch error with "Try again"; "Analyzing…" while the tab's launch has started or the mark is analyzing; "Analysis didn't finish" with Retry for a stalled job; "Analysis failed" with the job's log and Retry; "Review unreadable" with the reason, Re-analyze and a `lcchess grade --thread <id> --force` hint for an invalid review; "Not graded yet" with Analyze and a `lcchess grade --thread <id>` hint for an ungraded game; and nothing for a graded game at rest. The launch button is disabled while starting so a second click can't launch twice. After a successful launch the app refreshes the list, and drops its local "started" state once the reloaded page carries the mark.
+`analysisOf(mark, now)` turns a mark into `analyzing`, `stalled` (an `analyzing` mark older than `STALL_MS`, 10 minutes, belongs to a job that died without reporting) or `failed` (with the comment as the log). `AnalysisBanner` then shows, in priority order: a launch error with "Try again"; "Analyzing…" while the tab's launch has started or the mark is analyzing; "Analysis didn't finish" with Retry for a stalled job; "Analysis failed" with the job's log and Retry; "Review unreadable" with the reason, Re-analyze and a `lcchess grade --project '<name>' --thread <id> --force` hint for an invalid review; "Not graded yet" with Analyze and a `lcchess grade --project '<name>' --thread <id>` hint for an ungraded game; and nothing for a graded game at rest. The launch button is disabled while starting so a second click can't launch twice. After a successful launch the app refreshes the list, and drops its local "started" state once the reloaded page carries the mark.
 
 ## The grader snapshot and its deploy workflow
 
@@ -284,23 +301,24 @@ The Analyze sandbox boots from a LangSmith snapshot named `langchain-chess-grade
 
 - **Other engines**: any UCI binary works through `--engine`. The fingerprint includes its `id name`, so switching engines re-grades.
 - **Other stores or pools**: `grade_batch` depends only on the `Store` protocol (`find_threads`, `thread_runs`, `graded`, `replace`) and on a `Pools` factory that yields an `Evaluator` (`grader`, `analyse`). `sandbox_job` depends on a `MarkStore` (`thread_runs`, `settle`). The tests swap in fakes for all of them.
-- **Changing the review payload**: `records.review` and `apps/review/src/review.ts` must change together. The app treats any `version` other than 1, or any field it can't validate, as an unreadable review.
+- **Changing the review payload**: `records.review`/`records.whole` and `apps/review/src/review.ts` (`readReview`, `parseReview`) must change together. The app still reads legacy `version: 1` headers directly; any other version, or any field it can't validate, is an unreadable review.
 - **Changing grading math**: grading output does not change the fingerprint; only the engine and settings do. After changing `grading.py`, re-grade with `--force` to refresh existing grades.
-- **Adding feedback keys**: add them to `PLY_KEYS`/`GAME_KEYS` so `replace` also deletes stale copies. Keep `game_review` as the last entry.
+- **Adding feedback keys**: add them to `PLY_KEYS`/`GAME_KEYS` so `replace` also deletes stale copies. Keep the parts before the `game_review` header, and the header as the last entry.
 - **Changing what the job needs**: the sandbox's delegated permissions in `analysis.ts` cap what the job can do as the viewer. The snapshot only picks up code changes after it is rebuilt, which the deploy workflow does for paths in its filter.
 
 ## Tests that matter
 
 - `libs/cli/tests/test_grade.py`:
   - rebuilding records from web-style runs (ply-to-run mapping, last run, ignoring noise runs)
-  - where feedback goes (agent turns only, game keys and the marker last)
-  - the exact review payload
-  - store filters, `replace` ordering (only this grader's feedback deleted, markers deleted first, marker written last, `grade_status` cleared after it, retention extended), a failed delete never leaving a partial game marked graded, and `settle`
+  - where feedback goes (agent turns only, game keys, parts, and the header last)
+  - the exact review header and part payload, splitting a long review into parts under the byte budget, and `whole`
+  - store queries (filters, 400-day lookback, project ids, agent environments), `graded` reading only this grader's newest whole header, feedback listed 25 runs at a time
+  - `replace` ordering (publishing the new review before dropping the old one, retention extended), a round trip through a fake LangSmith, a review or header LangSmith drops or a failed header request being taken back with the earlier review left published, other gradings' unpublished parts left alone, late-stored feedback, and `settle`
   - batch behaviour: each position evaluated once, pool size clamping, skip unless forced, dry run, a failure that keeps earlier writes
   - the sandbox job: `verdicts`, settling marks then deleting the sandbox, failing unwritten games with the log tail, `delete_own_sandbox`
-  - option validation, printer output, and end-to-end CLI runs (normal and `--sandbox-job`) against a fake engine
+  - option validation, printer output, and end-to-end CLI runs (normal, `--sandbox-job`, and the project found from the agent environment) against a fake engine
 - `libs/chess/tests/test_grading.py`: symmetry and clamping of winning chances, centipawn and mate judgements from the mover's side, move and game accuracy (including one Black move and long games), settled positions, `engine_fens` dedupe, `grade_game`, `first_runs` and `eval_json`.
 - `libs/chess/tests/test_engine.py`: search limit mapping, settings that leave out the path, fingerprint sensitivity, White-side scores, the error when no score comes back, and pool start-up and shutdown with a fake engine.
-- `apps/review/tests/`: logic (`logic.test.ts`), the Analyze flow (`analysis.test.ts`), components, `App`, and entry rendering.
+- `apps/review/tests/`: logic (`logic.test.ts`), the Analyze flow (`analysis.test.ts`), review tools (`tools.test.ts`, `tools.view.test.tsx`), components, `App`, and entry rendering.
 
 See also [runtime behavior](/openwiki/operations/runtime-behavior.md) for how the traced runs that grading reads are produced, and [System 1 evals](/openwiki/workflows/system-one-evals.md) for offline evaluation of the move policy.
