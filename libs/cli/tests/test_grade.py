@@ -40,6 +40,7 @@ from langchain_chess_cli.grade.records import (
     whole,
 )
 from langchain_chess_cli.grade.store import (
+    LOOKBACK,
     LangSmithStore,
     ProjectQuery,
     UnstoredReviewError,
@@ -228,15 +229,26 @@ class FakeClient:
     """Stores what it is given as JSON, nulling a value over `cap` bytes as LangSmith does."""
 
     def __init__(self, runs=(), feedback=(), cap=20 * 1024):
-        self.runs = list(runs)
+        self.stored_runs = list(runs)
         self.feedback = list(feedback)
         self.cap = cap
         self.calls = []
         self.created = []
+        self.projects = []
+        self.runs = SimpleNamespace(query=self._query)
 
-    def list_runs(self, **kw):
-        self.calls.append(("list_runs", kw))
-        return iter(self.runs)
+    def _query(self, **kw):
+        self.calls.append(("runs.query", kw))
+
+        async def pages():
+            for run in self.stored_runs:
+                yield run
+
+        return pages()
+
+    async def aread_project(self, *, project_name):
+        self.projects.append(project_name)
+        return SimpleNamespace(id=f"id-{project_name}")
 
     def list_feedback(self, *, run_ids, feedback_key):
         self.calls.append(("list_feedback", run_ids, feedback_key))
@@ -272,21 +284,29 @@ class FakeClient:
 
 
 def listed(thread_id):
-    return SimpleNamespace(extra={"metadata": {"thread_id": thread_id}} if thread_id else None)
+    return SimpleNamespace(metadata={"thread_id": thread_id} if thread_id else None)
 
 
-def test_find_threads_newest_first_and_distinct():
+async def test_find_threads_newest_first_and_distinct():
     client = FakeClient([listed("b"), listed(None), listed("b"), listed("a"), listed("c")])
-    store = LangSmithStore(client)
+    store = LangSmithStore(client, now=lambda: T0)
     since = datetime(2026, 9, 1, tzinfo=UTC)
     query = ProjectQuery("proj", since=since, metadata=(("surface", "web"),), limit=2)
-    assert store.find_threads(query) == ["b", "a"]
+    assert await store.find_threads(query) == ["b", "a"]
     kw = client.calls[0][1]
-    assert kw["project_name"] == "proj"
-    assert kw["start_time"] == since
+    assert kw["project_ids"] == ["id-proj"]
+    assert kw["min_start_time"] == since
     assert kw["is_root"] is True
     assert "surface" in kw["filter"]
-    assert store.find_threads(ProjectQuery("proj")) == ["b", "a", "c"]
+    assert kw["selects"] == ["ID", "START_TIME", "METADATA"]
+    assert await store.find_threads(ProjectQuery("proj")) == ["b", "a", "c"]
+    unfiltered = client.calls[1][1]
+    assert "filter" not in unfiltered
+    # Without a lower bound, runs.query looks back one day only.
+    assert unfiltered["min_start_time"] == T0 - LOOKBACK
+    assert client.projects == ["proj"]
+    await store.find_threads(ProjectQuery("proj", since=T0 - 2 * LOOKBACK))
+    assert client.calls[2][1]["min_start_time"] == T0 - LOOKBACK
 
 
 def test_an_agent_environment_names_its_project():
@@ -303,13 +323,15 @@ def test_an_agent_environment_names_its_project():
     assert LangSmithStore(client).agent_project("chess", "local") == "chess-local"
 
 
-def test_thread_runs():
-    run = SimpleNamespace(id="r1", session_id="p1", start_time=T0, outputs={"moves": []})
+async def test_thread_runs_finds_games_older_than_a_day():
+    run = SimpleNamespace(id="r1", project_id="p1", start_time=T0, outputs={"moves": []})
     client = FakeClient([run])
-    assert LangSmithStore(client).thread_runs("proj", "t1") == [
-        RootRun("r1", "p1", T0, {"moves": []})
-    ]
-    assert '"t1"' in client.calls[0][1]["filter"]
+    store = LangSmithStore(client, now=lambda: T0)
+    assert await store.thread_runs("proj", "t1") == [RootRun("r1", "p1", T0, {"moves": []})]
+    kw = client.calls[0][1]
+    assert '"t1"' in kw["filter"]
+    assert kw["min_start_time"] == T0 - LOOKBACK
+    assert kw["selects"] == ["ID", "PROJECT_ID", "START_TIME", "OUTPUTS"]
 
 
 def header_and_part(generation="g1"):
@@ -588,7 +610,7 @@ class FakeStore:
         self.writes = []
         self.settled = []
 
-    def find_threads(self, query):
+    async def find_threads(self, query):
         self.queries.append(query)
         return self.threads
 
@@ -598,7 +620,7 @@ class FakeStore:
             raise LookupError(msg)
         return f"{agent_id}-{environment}"
 
-    def thread_runs(self, project, thread_id):
+    async def thread_runs(self, project, thread_id):
         return self.games.get(thread_id, [])
 
     def graded(self, run_id):

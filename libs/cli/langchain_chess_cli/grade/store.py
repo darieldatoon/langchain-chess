@@ -7,7 +7,7 @@ import uuid
 from collections.abc import Callable, Iterable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from langchain_chess_cli.grade.records import (
@@ -48,6 +48,11 @@ def run_filter(until: datetime | None, metadata: Sequence[tuple[str, str]]) -> s
         return clauses[0] if clauses else None
     return f"and({', '.join(clauses)})"
 
+
+LOOKBACK = timedelta(days=400)
+"""How far back the run queries reach. `runs.query` looks back one day unless told otherwise and
+refuses windows over 401 days; 400 days is also LangSmith's longest trace retention."""
+PAGE_SIZE = 1000
 
 RUNS_PER_LIST = 25
 """Run ids go in the URL of a feedback listing; a long game's would make it too long."""
@@ -107,40 +112,63 @@ class LangSmithStore:
         *,
         write_concurrency: int = 16,
         sleep: Callable[[float], None] = time.sleep,
+        now: Callable[[], datetime] = lambda: datetime.now(UTC),
     ) -> None:
         self._client = client
         self._write_concurrency = write_concurrency
         self._sleep = sleep
+        self._now = now
+        self._project_ids: dict[str, str] = {}
+
+    def _since(self, since: datetime | None = None) -> datetime:
+        earliest = self._now() - LOOKBACK
+        return earliest if since is None else max(since, earliest)
 
     def agent_project(self, agent_id: str, environment: str) -> str:
         return environment_project(self._client.agents.retrieve(agent_id).environments, environment)
 
-    def find_threads(self, query: ProjectQuery) -> list[str]:
-        """Newest first, each thread once."""
+    async def _project_id(self, name: str) -> str:
+        """`runs.query` takes project IDs, not names."""
+        if name not in self._project_ids:
+            project = await self._client.aread_project(project_name=name)
+            self._project_ids[name] = str(project.id)
+        return self._project_ids[name]
+
+    async def find_threads(self, query: ProjectQuery) -> list[str]:
+        """Newest first (the query's order), each thread once."""
         threads: dict[str, None] = {}
-        runs = self._client.list_runs(
-            project_name=query.project,
+        filter_ = run_filter(query.until, query.metadata)
+        runs = self._client.runs.query(
+            project_ids=[await self._project_id(query.project)],
             is_root=True,
-            start_time=query.since,
-            filter=run_filter(query.until, query.metadata),
-            select=["id", "start_time", "extra"],
+            min_start_time=self._since(query.since),
+            selects=["ID", "START_TIME", "METADATA"],
+            page_size=PAGE_SIZE,
+            **({"filter": filter_} if filter_ else {}),
         )
-        for run in runs:
-            thread_id = ((run.extra or {}).get("metadata") or {}).get("thread_id")
+        async for run in runs:
+            thread_id = (run.metadata or {}).get("thread_id")
             if thread_id:
                 threads[str(thread_id)] = None
                 if query.limit is not None and len(threads) >= query.limit:
                     break
         return list(threads)
 
-    def thread_runs(self, project: str, thread_id: str) -> list[RootRun]:
-        runs = self._client.list_runs(
-            project_name=project,
+    async def thread_runs(self, project: str, thread_id: str) -> list[RootRun]:
+        runs = self._client.runs.query(
+            project_ids=[await self._project_id(project)],
             is_root=True,
+            min_start_time=self._since(),
             filter=_metadata_clause("thread_id", thread_id),
-            select=["id", "session_id", "start_time", "outputs"],
+            selects=["ID", "PROJECT_ID", "START_TIME", "OUTPUTS"],
+            page_size=PAGE_SIZE,
         )
-        return [RootRun(str(r.id), str(r.session_id), r.start_time, r.outputs) for r in runs]
+        # START_TIME is selected, so every run has one; the check is for the type.
+        return [
+            RootRun(str(r.id), str(r.project_id), r.start_time, r.outputs)
+            async for r in runs
+            if r.start_time is not None
+        ]
 
     def _feedback(self, run_ids: Sequence[str], keys: Sequence[str]) -> list[Any]:
         """This grader's feedback under `keys` on the runs; none for no runs, not every run's."""

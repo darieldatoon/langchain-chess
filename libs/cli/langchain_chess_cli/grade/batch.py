@@ -20,8 +20,8 @@ from langchain_chess_cli.grade.store import ProjectQuery
 
 
 class Store(Protocol):
-    def find_threads(self, query: ProjectQuery) -> list[str]: ...
-    def thread_runs(self, project: str, thread_id: str) -> list[RootRun]: ...
+    async def find_threads(self, query: ProjectQuery) -> list[str]: ...
+    async def thread_runs(self, project: str, thread_id: str) -> list[RootRun]: ...
     def graded(self, run_id: str) -> str | None: ...
     def replace(self, runs: Sequence[RootRun], entries: Sequence[Feedback]) -> None: ...
 
@@ -104,9 +104,15 @@ async def grade_batch(
     if isinstance(selection, Threads):
         project, ids = selection.project, list(dict.fromkeys(selection.ids))
     else:
-        project, ids = selection.project, await asyncio.to_thread(store.find_threads, selection)
+        project, ids = selection.project, await store.find_threads(selection)
 
-    runs = await _bounded(concurrency, [lambda t=t: store.thread_runs(project, t) for t in ids])
+    semaphore = asyncio.Semaphore(concurrency)
+
+    async def thread_runs(thread_id: str) -> list[RootRun]:
+        async with semaphore:
+            return await store.thread_runs(project, thread_id)
+
+    runs = await asyncio.gather(*(thread_runs(t) for t in ids))
     records: list[GameRecord] = []
     skipped = 0
     for thread_id, thread in zip(ids, runs, strict=True):
