@@ -1,6 +1,6 @@
 # langchain-chess-server
 
-The `chess` graph and the `/ui` routes for the LangGraph Agent Server, locally (`langgraph dev`)
+The `chess` graph and the web UI's `/model-facts` route for the LangGraph Agent Server, locally (`langgraph dev`)
 and on LangSmith Deployments. Private: it is deployed, not installed.
 
 ## Run it
@@ -18,9 +18,7 @@ it. Check it is up with `curl http://127.0.0.1:2024/ok`.
 | Route | What it serves |
 |---|---|
 | The Agent Server API | Threads, runs and assistants for the `chess` graph. Studio uses it too. |
-| `GET /ui/config` | The `ChessContext` JSON schema and its defaults |
-| `GET /ui/model?model=<spec>` | `{"max_input_tokens": <int or null>, "takes_effort": <bool>}`: the web UI offers Summarize only with a limit, and Reasoning Effort unless the model is known to take none |
-| `/ui/` | The built web UI. A 404 until `mise run build` has run; `mise run dev` serves it from Vite instead. |
+| `GET /model-facts?model=<spec>` | `{"max_input_tokens": <int or null>, "takes_effort": <bool>}`: the web UI offers Summarize only with a limit, and Reasoning Effort unless the model is known to take none |
 
 ## Call it
 
@@ -93,7 +91,7 @@ secrets), and reads the repository variables `OAUTH_CLIENT_ID` and `LANGSMITH_OR
 for sign-in. By hand:
 
 ```sh
-mise run deploy   # builds the web UI into langchain_chess_server/static, then `langgraph deploy`
+mise run deploy   # `langgraph deploy`; the web UI ships separately, to GitHub Pages
 uv run --all-packages langgraph build -t langchain-chess:smoke   # check the image builds
 ```
 
@@ -111,6 +109,7 @@ uv run --all-packages pytest apps/server --no-cov -q
 ```
 
 `test_server.py` runs the graph under an offline `langgraph dev`; nothing it runs reaches a model.
-`mise run test:e2e` builds the web UI and plays a game in Chromium against `langgraph dev` with a
-fake model ([`tests/e2e`](tests/e2e)), checking a setup's settings reach the agent. Install the
-browser once with `uv run playwright install chromium`.
+`mise run test:e2e` builds the web UI against `langgraph dev` with a fake model, serves it from
+another origin as GitHub Pages does, and plays games in Chromium ([`tests/e2e`](tests/e2e)),
+checking a setup's settings reach the agent. Install the browser once with
+`uv run playwright install chromium`.

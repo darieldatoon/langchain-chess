@@ -1,7 +1,7 @@
 # langchain-chess web UI
 
 Play the `chess` agent in the browser at <https://darieldatoon.github.io/langchain-chess/>. Locally, `mise run dev` serves this
-React app at `/ui`.
+React app on `:5173`.
 
 ![A game in the web UI](../../docs/images/web-game.png)
 
@@ -14,7 +14,7 @@ mise run dev
 ```
 
 That starts `langgraph dev` on `:2024` and this app on `:5173`, then prints the URLs. Open
-<http://localhost:5173/ui/>. To use other ports: `LANGGRAPH_PORT=2034 WEB_PORT=5180 mise run dev`.
+<http://localhost:5173/>. To use other ports: `LANGGRAPH_PORT=2034 WEB_PORT=5180 mise run dev`.
 
 ## Play a game
 
@@ -97,7 +97,7 @@ messages only from the window that embeds it: self-hosted LangSmith can live on 
 [`packages/chess-ui`](../../packages/chess-ui).
 
 LangSmith embeds only `https` pages, so it can't reach `vp dev`. Instead, with `vp dev` running,
-open <http://localhost:5173/ui/render-preview.html>: it embeds the renderer four times and posts
+open <http://localhost:5173/render-preview.html>: it embeds the renderer four times and posts
 real messages from `preview/samples.ts`, as LangSmith would. It is not a build input, so it never
 deploys.
 
@@ -107,16 +107,16 @@ deploys.
 pnpm --dir apps/web exec vp dev          # this app alone, against a server already on :2024
 pnpm --dir apps/web exec vp test --run   # Vitest; add --coverage for the 100% gate
 mise run check:web                       # format, lint and type check (config: root vite.config.ts)
-mise run build                           # into apps/server/langchain_chess_server/static
+pnpm --dir apps/web exec vp build        # into apps/web/dist
 ```
 
-`VITE_API_URL` points the app at another server.
+`VITE_API_URL` points the app at another server; unset, it calls `langgraph dev` on `:2024`.
 
 ```mermaid
 sequenceDiagram
   participant B as Browser
   participant S as Agent Server
-  B->>S: GET /ui/model (when the dialog opens or the LLM changes)
+  B->>S: GET /model-facts (when the dialog opens or the LLM changes)
   B->>S: create thread, stream run: message "e2e4", context
   S-->>B: values: moves, plies, turns, outcome
   Note over B,S: every submit sends the thread's `setup` back as `configurable`

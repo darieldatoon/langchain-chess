@@ -13,7 +13,7 @@
       "name": "Dev",
       "command": "mise run dev",
       "icon": "play",
-      "previewUrl": "http://localhost:5173/ui/"
+      "previewUrl": "http://localhost:5173/"
     },
     {
       "name": "Test",

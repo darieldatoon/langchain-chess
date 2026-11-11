@@ -91,7 +91,7 @@ def test_upload(dirs, monkeypatch):
     }
     assert "langchain-chess-positions@v1: 0 examples" in result.output
 
-    url = "https://chess.example.com/ui/render.html"
+    url = "https://chess.example.com/render.html"
     result = runner.invoke(cli.app, ["positions", "upload", "--renderer-url", url])
     assert result.exit_code == 0, result.output
     assert seen["renderer_url"] == url

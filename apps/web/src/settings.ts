@@ -55,16 +55,11 @@ export function recordedContext(stored: unknown): ChessContext | null {
 
 export const DEV_API_URL = "http://localhost:2024";
 
-/** The deployment's URL on GitHub Pages, set at build time; same origin when the server serves the UI
- * under /ui; `vp dev` talks to `langgraph dev`. */
+/** The deployment's URL, set at build time; unset, `langgraph dev`. */
 export function apiUrl(
-  env: { DEV?: boolean; VITE_API_URL?: string } = import.meta.env as {
-    DEV?: boolean;
-    VITE_API_URL?: string;
-  },
+  env: { VITE_API_URL?: string } = import.meta.env as { VITE_API_URL?: string },
 ): string {
-  if (env.VITE_API_URL) return env.VITE_API_URL;
-  return env.DEV ? DEV_API_URL : window.location.origin;
+  return env.VITE_API_URL || DEV_API_URL;
 }
 
 /** `configurable` for a run, and an exported file: every key, `version` first, in order. */

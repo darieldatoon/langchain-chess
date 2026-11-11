@@ -30,8 +30,6 @@ credentials.json
 .coverage.*
 htmlcov/
 
-# the web build lives inside the server package so the image can serve it; CI builds it
-/apps/server/langchain_chess_server/static/
 /apps/web/coverage/
 /packages/*/coverage/
 

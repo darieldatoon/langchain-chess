@@ -4,53 +4,26 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from langchain_chess_server import graph as graph_module
-from langchain_chess_server.app import app, create_app, ui_config
+from langchain_chess_server.app import app, create_app
 from langchain_chess_server.graph import model_limit
-
-
-def test_ui_config_exposes_schema_and_defaults():
-    body = ui_config()
-    assert body["graph"] == "chess"
-    assert body["defaults"]["policy"] == "hybrid"
-    properties = body["schema"]["properties"]
-    assert properties["threshold"]["default"] == 0.9
-    assert "langgraph_nodes" in properties["k"]
-
-
-def test_routes_without_a_build():
-    client = TestClient(create_app(static_dir=None))
-    assert client.get("/ui/config").status_code == 200
-    redirect = client.get("/ui", follow_redirects=False)
-    assert redirect.status_code == 307
-    assert redirect.headers["location"] == "/ui/"
-    assert client.get("/ui/").status_code == 404
 
 
 def test_the_model_route(env):
     model_limit.cache_clear()
-    client = TestClient(create_app(static_dir=None))
-    known = client.get("/ui/model", params={"model": "langsmith:baseten/zai-org/GLM-5.3"})
+    client = TestClient(create_app())
+    known = client.get("/model-facts", params={"model": "langsmith:baseten/zai-org/GLM-5.3"})
     assert known.json() == {"max_input_tokens": 1_048_000 - 64000, "takes_effort": True}
     haiku = client.get(
-        "/ui/model", params={"model": "langsmith:anthropic/claude-haiku-4-5-20251001"}
+        "/model-facts", params={"model": "langsmith:anthropic/claude-haiku-4-5-20251001"}
     )
     assert haiku.json()["takes_effort"] is False
-    unknown = client.get("/ui/model", params={"model": "kimi-k3"})
+    unknown = client.get("/model-facts", params={"model": "kimi-k3"})
     assert unknown.json() == {"max_input_tokens": None, "takes_effort": True}
-    assert client.get("/ui/model").status_code == 422
-
-
-def test_static_build_is_served(tmp_path):
-    (tmp_path / "index.html").write_text("<h1>chess</h1>")
-    (tmp_path / "assets").mkdir()
-    (tmp_path / "assets" / "app.js").write_text("console.log(1)")
-    client = TestClient(create_app(static_dir=tmp_path))
-    assert client.get("/ui/").text == "<h1>chess</h1>"
-    assert client.get("/ui/assets/app.js").status_code == 200
+    assert client.get("/model-facts").status_code == 422
 
 
 def test_module_app():
-    assert app.title == "langchain-chess ui"
+    assert app.title == "langchain-chess"
 
 
 def test_shutdown_closes_the_clients_of_the_graph_langgraph_loads(env):
@@ -60,7 +33,7 @@ def test_shutdown_closes_the_clients_of_the_graph_langgraph_loads(env):
     loaded = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(loaded)
     assert loaded is not graph_module
-    with TestClient(create_app(static_dir=None)):
+    with TestClient(create_app()):
         classifier = loaded._classifier(
             "typesafe/jev-latest", "k", "https://gateway.smith.langchain.com"
         )

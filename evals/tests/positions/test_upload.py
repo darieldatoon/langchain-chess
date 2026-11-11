@@ -120,12 +120,12 @@ def test_upload_keeps_other_dataset_metadata():
     assert client.metadata[done.dataset_id] == {"manifest": MANIFEST, "iframe_config": iframe}
 
 
-RENDERER = "https://chess.example.com/ui/render.html"
+RENDERER = "https://chess.example.com/render.html"
 
 
 def test_iframe_config_takes_only_an_absolute_https_url():
     assert iframe_config(RENDERER) == {"enabled": True, "url": RENDERER}
-    for url in ("http://chess.example.com/ui/render.html", "https:///ui/render.html", "/ui/"):
+    for url in ("http://chess.example.com/render.html", "https:///render.html", "/render.html"):
         with pytest.raises(UploadError, match="absolute https:// URL"):
             iframe_config(url)
 

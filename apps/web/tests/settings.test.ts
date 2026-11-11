@@ -86,10 +86,10 @@ describe("recordedContext", () => {
 });
 
 describe("apiUrl", () => {
-  it("prefers VITE_API_URL, then the dev server in dev, then the page origin", () => {
+  it("prefers VITE_API_URL, then langgraph dev", () => {
     expect(apiUrl({ VITE_API_URL: "http://localhost:2027" })).toBe("http://localhost:2027");
-    expect(apiUrl({ DEV: true })).toBe(DEV_API_URL);
-    expect(apiUrl({ DEV: false })).toBe(window.location.origin);
+    expect(apiUrl({ VITE_API_URL: "" })).toBe(DEV_API_URL);
+    expect(apiUrl({})).toBe(DEV_API_URL);
     expect(typeof apiUrl()).toBe("string");
   });
 });

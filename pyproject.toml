@@ -67,7 +67,7 @@ testpaths = [
 asyncio_mode = "auto"
 markers = [
     "live: hits the real LLM Gateway (run with -m live --no-cov)",
-    "e2e: drives the built web UI in a browser (mise run test:e2e)",
+    "e2e: drives the web UI in a browser (mise run test:e2e)",
 ]
 addopts = [
     "-m", "not live and not e2e",

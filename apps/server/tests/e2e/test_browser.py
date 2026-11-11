@@ -1,12 +1,16 @@
 """The web app in a browser, on a real `langgraph dev` with a fake model: a setup's settings
-reach the agent. Needs the built UI (`mise run build`) and Chromium; run with `mise run test:e2e`.
+reach the agent. Needs pnpm and Chromium; run with `mise run test:e2e`.
 """
 
 import json
 import os
+import subprocess
+import threading
 import time
 from collections.abc import Callable, Iterator
 from contextlib import AbstractContextManager, suppress
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from itertools import pairwise
 from pathlib import Path
 from typing import Any
@@ -17,12 +21,12 @@ from langgraph_sdk import get_sync_client
 from langgraph_sdk.errors import NotFoundError
 from playwright.sync_api import Locator, Page, Request, Route, expect, sync_playwright
 
-from langchain_chess_server.app import STATIC_DIR
 from langchain_chess_systemone.settings import ChessContext, dump
 
 pytestmark = pytest.mark.e2e
 
 GRAPH = str(Path(__file__).with_name("graph.py")) + ":make_graph"
+WEB = Path(__file__).resolve().parents[4] / "apps" / "web"
 
 
 @pytest.fixture(scope="module")
@@ -30,8 +34,6 @@ def server(
     tmp_path_factory: pytest.TempPathFactory,
     langgraph_dev: Callable[..., AbstractContextManager[str]],
 ) -> Iterator[str]:
-    if not (STATIC_DIR / "index.html").is_file():
-        pytest.fail("the web UI isn't built; run `mise run build` first")
     workdir = tmp_path_factory.mktemp("langgraph-dev-e2e")
     env_file = workdir / ".env"
     env_file.write_text(
@@ -41,6 +43,33 @@ def server(
     environ = {k: v for k, v in os.environ.items() if not k.startswith(prefixes)}
     with langgraph_dev(workdir, env_file=env_file, environ=environ, graphs={"chess": GRAPH}) as url:
         yield url
+
+
+class _QuietHandler(SimpleHTTPRequestHandler):
+    def log_message(self, format: str, *args: Any) -> None:
+        pass
+
+
+@pytest.fixture(scope="module")
+def site(server: str, tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
+    """The web UI built against `server` and served from another origin, as GitHub Pages is."""
+    dist = tmp_path_factory.mktemp("web")
+    environ = {k: v for k, v in os.environ.items() if not k.startswith("VITE_")}
+    build = subprocess.run(
+        ["pnpm", "--dir", str(WEB), "exec", "vp", "build"],
+        env={**environ, "VITE_API_URL": server, "OUT_DIR": str(dist)},
+        capture_output=True,
+        text=True,
+    )
+    if build.returncode != 0:
+        pytest.fail(f"the web UI didn't build:\n{build.stdout}{build.stderr}")
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), partial(_QuietHandler, directory=str(dist)))
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    try:
+        yield f"http://127.0.0.1:{httpd.server_address[1]}"
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
 
 
 # Desktop, then a phone held upright and on its side.
@@ -70,12 +99,13 @@ MIN_TAP = 44
 
 
 @pytest.fixture
-def page(request: pytest.FixtureRequest) -> Iterator[Page]:
-    """Desktop unless a test parametrizes it (`indirect=True`) with a `CONTEXTS` key."""
+def page(request: pytest.FixtureRequest, site: str) -> Iterator[Page]:
+    """On `site`. Desktop unless a test parametrizes it (`indirect=True`) with a `CONTEXTS` key."""
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch()
         try:
-            yield browser.new_context(**CONTEXTS[getattr(request, "param", "desktop")]).new_page()
+            context = CONTEXTS[getattr(request, "param", "desktop")]
+            yield browser.new_context(base_url=site, **context).new_page()
         finally:
             browser.close()
 
@@ -132,7 +162,7 @@ def pick(page: Page, label: str, option: str) -> None:
 
 def game_state(server: str, page: Page) -> Any:
     """The thread the page plays on, once the agent has moved."""
-    page.wait_for_url("**/ui/?thread=*")
+    page.wait_for_url("**/?thread=*")
     thread = parse_qs(urlparse(page.url).query)["thread"][0]
     client = get_sync_client(url=server)
     deadline = time.monotonic() + 30
@@ -146,7 +176,7 @@ def game_state(server: str, page: Page) -> Any:
 
 
 def test_a_setup_s_settings_reach_the_agent(server: str, page: Page):
-    page.goto(f"{server}/ui/")
+    page.goto("/")
     page.get_by_role("radiogroup", name="Play As").get_by_text("Black", exact=True).click()
     page.get_by_role("button", name="Advanced").click()
     pick(page, "Moves to list", "Candidates System 1's, when it has any")
@@ -176,16 +206,16 @@ def test_a_setup_s_settings_reach_the_agent(server: str, page: Page):
     expect(page.get_by_label("black player").get_by_text("Your turn")).to_be_visible()
 
 
-def open_a_game(server: str, page: Page) -> None:
+def open_a_game(page: Page) -> None:
     """Plays the default setup as White, so a game is on screen and New game can be cancelled."""
-    page.goto(f"{server}/ui/")
+    page.goto("/")
     page.get_by_role("button", name="Play", exact=True).tap()
     expect(page.get_by_role("dialog")).to_have_count(0)
 
 
 @pytest.mark.parametrize("page", TOUCH, indirect=True)
-def test_new_game_fits_a_phone_with_advanced_open_and_a_key_problem(server: str, page: Page):
-    open_a_game(server, page)
+def test_new_game_fits_a_phone_with_advanced_open_and_a_key_problem(page: Page):
+    open_a_game(page)
     # The server now refuses the key, so Play shows the key banner.
     page.route("**/assistants/search", lambda route: route.fulfill(status=401, body="{}"))
     page.get_by_role("button", name="New game").tap()
@@ -205,8 +235,8 @@ def test_new_game_fits_a_phone_with_advanced_open_and_a_key_problem(server: str,
 
 
 @pytest.mark.parametrize("page", TOUCH, indirect=True)
-def test_settings_open_from_new_game_and_fit_a_phone(server: str, page: Page):
-    page.goto(f"{server}/ui/")
+def test_settings_open_from_new_game_and_fit_a_phone(page: Page):
+    page.goto("/")
     page.get_by_role("button", name="More").tap()
     page.get_by_role("menuitem", name="Settings").tap()
     dialog = page.get_by_role("dialog", name="Settings")
@@ -226,7 +256,7 @@ def square(page: Page, name: str) -> Locator:
 
 def moves_of(server: str, page: Page, count: int) -> list[str]:
     """The thread's moves once it has `count` of them."""
-    page.wait_for_url("**/ui/?thread=*")
+    page.wait_for_url("**/?thread=*")
     thread = parse_qs(urlparse(page.url).query)["thread"][0]
     client = get_sync_client(url=server)
     deadline = time.monotonic() + 30
@@ -252,7 +282,7 @@ def drag(page: Page, source: Locator, target: Locator) -> None:
 
 @pytest.mark.parametrize("page", ["portrait"], indirect=True)
 def test_a_phone_plays_a_move_with_two_taps(server: str, page: Page):
-    open_a_game(server, page)
+    open_a_game(page)
     no_sideways_scroll(page)
     square(page, "e2").tap()
     square(page, "e4").tap()
@@ -262,7 +292,7 @@ def test_a_phone_plays_a_move_with_two_taps(server: str, page: Page):
 
 
 def test_desktop_plays_a_move_by_dragging(server: str, page: Page):
-    page.goto(f"{server}/ui/")
+    page.goto("/")
     page.get_by_role("button", name="Play", exact=True).click()
     expect(page.get_by_role("dialog")).to_have_count(0)
     drag(page, square(page, "d2"), square(page, "d4"))
@@ -271,8 +301,8 @@ def test_desktop_plays_a_move_by_dragging(server: str, page: Page):
     no_sideways_scroll(page, "[data-slot=table]")
 
 
-def test_the_reply_card_shows_the_turn_stage_by_stage(server: str, page: Page):
-    page.goto(f"{server}/ui/")
+def test_the_reply_card_shows_the_turn_stage_by_stage(page: Page):
+    page.goto("/")
     page.get_by_role("button", name="Play", exact=True).click()
     square(page, "e2").click()
     square(page, "e4").click()
@@ -286,8 +316,8 @@ def test_the_reply_card_shows_the_turn_stage_by_stage(server: str, page: Page):
 
 
 @pytest.mark.parametrize("page", ["portrait"], indirect=True)
-def test_a_phone_customizes_the_reply_card_with_taps(server: str, page: Page):
-    open_a_game(server, page)
+def test_a_phone_customizes_the_reply_card_with_taps(page: Page):
+    open_a_game(page)
     square(page, "e2").tap()
     square(page, "e4").tap()
     card = page.get_by_label("last reply", exact=True)
@@ -303,8 +333,8 @@ def test_a_phone_customizes_the_reply_card_with_taps(server: str, page: Page):
 
 
 @pytest.mark.parametrize("page", ["landscape"], indirect=True)
-def test_a_phone_on_its_side_never_scrolls_sideways(server: str, page: Page):
-    open_a_game(server, page)
+def test_a_phone_on_its_side_never_scrolls_sideways(page: Page):
+    open_a_game(page)
     no_sideways_scroll(page)
     no_sideways_scroll(page, "[data-slot=table]")
     inside_viewport(page, square(page, "a1"))
@@ -321,7 +351,7 @@ def seeded(server: str, fen: str) -> str:
 @pytest.mark.parametrize("page", ["portrait"], indirect=True)
 def test_a_phone_promotes_on_a_flipped_board_and_can_cancel(server: str, page: Page):
     thread = seeded(server, "4k3/P6P/8/8/8/8/8/4K3 b - - 0 1")
-    page.goto(f"{server}/ui/?thread={thread}")
+    page.goto(f"/?thread={thread}")
     expect(page.get_by_label("white player").get_by_text("Your turn")).to_be_visible()
     page.get_by_role("button", name="Flip board").tap()
     square(page, "a7").tap()
@@ -341,7 +371,7 @@ def test_a_phone_promotes_on_a_flipped_board_and_can_cancel(server: str, page: P
 @pytest.mark.parametrize("flip", [False, True])
 def test_a_small_phone_s_promotion_choices_fit_the_board(server: str, page: Page, flip: bool):
     thread = seeded(server, "4k3/P6P/8/8/8/8/8/4K3 b - - 0 1")
-    page.goto(f"{server}/ui/?thread={thread}")
+    page.goto(f"/?thread={thread}")
     expect(page.get_by_label("white player").get_by_text("Your turn")).to_be_visible()
     if flip:
         page.get_by_role("button", name="Flip board").tap()
@@ -366,7 +396,7 @@ def test_a_small_phone_s_promotion_choices_fit_the_board(server: str, page: Page
 
 
 def test_desktop_resigns_after_one_move(server: str, page: Page):
-    page.goto(f"{server}/ui/")
+    page.goto("/")
     page.get_by_role("button", name="Play", exact=True).click()
     expect(page.get_by_role("dialog")).to_have_count(0)
     drag(page, square(page, "e2"), square(page, "e4"))
@@ -382,7 +412,7 @@ def test_desktop_resigns_after_one_move(server: str, page: Page):
 
 def test_a_game_from_a_fen_where_the_agent_is_to_move_starts_itself(server: str, page: Page):
     fen = "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1"
-    page.goto(f"{server}/ui/")
+    page.goto("/")
     page.get_by_role("radiogroup", name="Play As").get_by_text("Black", exact=True).click()
     page.get_by_label("Starting position").fill(fen)
     expect(page.get_by_label("starting position preview")).to_be_visible()
@@ -412,7 +442,7 @@ def test_a_first_move_the_server_took_but_never_heard_back_from_is_played_once(
 
     page.on("request", record)
     page.route("**/commands", drop_the_answer, times=1)
-    page.goto(f"{server}/ui/")
+    page.goto("/")
     page.get_by_label("Starting position").fill(fen)
     page.get_by_role("button", name="Play", exact=True).click()
     expect(page.get_by_role("dialog")).to_have_count(0)
