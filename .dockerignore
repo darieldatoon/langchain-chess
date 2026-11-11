@@ -1,7 +1,5 @@
 # Build context for `langgraph build` / `langgraph deploy --no-remote`. The uv workspace (libs/,
-# apps/server/, the lockfile) and the web build under apps/server/langchain_chess_server/static
-# are all the image needs. Docker semantics only: a gitignored static/ still gets in, which is
-# what CI relies on.
+# apps/server/, the lockfile) is all the image needs.
 .git/
 .venv/
 **/node_modules/

@@ -26,7 +26,7 @@ export async function fetchModelFacts(
 ): Promise<ModelFacts> {
   try {
     const response = await fetcher(
-      `${apiUrl}/ui/model?${new URLSearchParams({ model }).toString()}`,
+      `${apiUrl}/model-facts?${new URLSearchParams({ model }).toString()}`,
       { headers: await sessionHeaders(session) },
     );
     if (!response.ok) return FAILED;

@@ -2,7 +2,7 @@
 
 Checks what the in-process tests can't: that `langgraph.json` loads, that the server passes
 assistant settings through the factory's `runtime`, that the call recorder survives the server
-copying the graph, and that the `/ui` app is mounted. Against the real LLM Gateway:
+copying the graph, and that the custom app's route is mounted. Against the real LLM Gateway:
 `uv run --all-packages --env-file .env pytest -m live --no-cov`.
 """
 
@@ -43,10 +43,9 @@ def human(content: str, id: str | None = None) -> dict[str, Any]:
 SYSTEM_ONE: Config = {"configurable": {"policy": "systemone"}}
 
 
-def test_the_ui_app_is_mounted(server: str):
-    body = httpx.get(f"{server}/ui/config", timeout=10).json()
-    assert body["graph"] == "chess"
-    assert body["defaults"]["policy"] == "hybrid"
+def test_the_custom_app_is_mounted(server: str):
+    response = httpx.get(f"{server}/model-facts", params={"model": "kimi-k3"}, timeout=10)
+    assert response.json() == {"max_input_tokens": None, "takes_effort": True}
 
 
 def test_a_chat_game_on_the_server(client: SyncLangGraphClient):

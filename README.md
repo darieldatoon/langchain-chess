@@ -130,7 +130,7 @@ mise run dev
 This starts the Agent Server on `:2024` and the web UI on `:5173`. Once both answer, it prints:
 
 ```text
-  ♟  Web UI:  http://localhost:5173/ui/
+  ♟  Web UI:  http://localhost:5173/
      API:     http://127.0.0.1:2024
      Studio:  https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024
 ```
@@ -224,8 +224,8 @@ covers the inputs, the game record and writing your own middleware. The
 | [`libs/chess`](libs/chess) | `langchain-chess` | `create_chess_agent`, the game state and the middleware contract |
 | [`libs/systemone`](libs/systemone) | `langchain-chess-systemone` | `SystemOneMiddleware`: the System 1 ranker and its gate |
 | [`libs/cli`](libs/cli) | `langchain-chess-cli` | The `lcchess` command: `play`, `uci`, `grade` |
-| [`apps/server`](apps/server) | `langchain-chess-server` (private) | The `chess` graph and the `/ui` routes for the Agent Server |
-| [`apps/web`](apps/web) | | The React UI served at `/ui` |
+| [`apps/server`](apps/server) | `langchain-chess-server` (private) | The `chess` graph and the web UI's `/model-facts` route for the Agent Server |
+| [`apps/web`](apps/web) | | The React UI, hosted on GitHub Pages |
 | [`apps/review`](apps/review) | | The LangSmith custom app that replays graded games |
 | [`packages/chess-ui`](packages/chess-ui) | `@langchain-chess/chess-ui` | Board, move list and move details shared by the two web apps |
 | [`evals`](evals) | `langchain-chess-evals` (private) | The labelled positions dataset and System 1 experiments in LangSmith |

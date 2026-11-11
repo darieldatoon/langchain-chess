@@ -8,7 +8,6 @@ plans/
 **/node_modules/
 .langgraph_api/
 .uci-match/
-apps/server/langchain_chess_server/static/
 apps/review/.langsmith/
 **/coverage/
 uv.lock

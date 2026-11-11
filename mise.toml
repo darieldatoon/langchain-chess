@@ -22,7 +22,7 @@ run = [
 ]
 
 [tasks."dev:web"]
-description = "Agent Server (Studio) on :2024 and the web UI on :5173/ui/ ($LANGGRAPH_PORT, $WEB_PORT)"
+description = "Agent Server (Studio) on :2024 and the web UI on :5173 ($LANGGRAPH_PORT, $WEB_PORT)"
 alias = "dev"
 # langgraph dev silently moves to a random port when its port is taken, while the UI would keep
 # calling the old one: check first, and point the UI at the same port. Vite prints its URL first
@@ -59,8 +59,8 @@ web=$!
   deadline=$((SECONDS + 120))
   while ((SECONDS < deadline)); do
     if curl -sf --max-time 2 "http://127.0.0.1:$port/ok" >/dev/null \
-      && curl -sf --max-time 2 "http://localhost:$web_port/ui/" >/dev/null; then
-      printf '\n  ♟  Web UI:  http://localhost:%s/ui/\n' "$web_port"
+      && curl -sf --max-time 2 "http://localhost:$web_port/" >/dev/null; then
+      printf '\n  ♟  Web UI:  http://localhost:%s/\n' "$web_port"
       printf '     API:     http://127.0.0.1:%s\n' "$port"
       printf '     Studio:  https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:%s\n\n' "$port"
       exit 0
@@ -141,11 +141,8 @@ description = "Web tests with the 100% coverage gates"
 run = "pnpm exec vp run -r test"
 
 [tasks."test:e2e"]
-description = "Build the web UI, then drive it in Chromium against langgraph dev with a fake model"
-run = [
-  "mise run build",
-  "uv run --all-packages pytest -m e2e --no-cov -q",
-]
+description = "Drive the built web UI in Chromium against langgraph dev with a fake model"
+run = "uv run --all-packages pytest -m e2e --no-cov -q"
 
 [tasks."test:live"]
 description = "The live tests against the real LLM Gateway (costs a few cents)"
@@ -174,10 +171,6 @@ run = "uv run --all-packages python -m langchain_chess_server.codegen packages/c
 [tasks."probe:efforts"]
 description = "Ask each recorded model, and any given after --, whether it takes a reasoning effort (real calls)"
 run = "uv run --all-packages --env-file .env python -m langchain_chess.efforts"
-
-[tasks.build]
-description = "Build the web UI into the server package, which serves it under /ui for local runs and the e2e tests"
-run = "pnpm --dir apps/web exec vp build"
 
 [tasks.deploy]
 description = "Build and push the agent image to the langchain-chess agent's production environment"

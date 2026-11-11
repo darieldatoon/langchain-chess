@@ -17,7 +17,7 @@ describe("fetchModelFacts", () => {
       takesEffort: false,
     });
     expect(fetcher).toHaveBeenCalledWith(
-      "https://chess.test/ui/model?model=langsmith%3Abaseten%2Fzai-org%2FGLM-5.3",
+      "https://chess.test/model-facts?model=langsmith%3Abaseten%2Fzai-org%2FGLM-5.3",
       { headers: { "x-api-key": "k" } },
     );
   });
