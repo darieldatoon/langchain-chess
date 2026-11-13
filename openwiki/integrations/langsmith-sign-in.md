@@ -4,8 +4,8 @@ title: "Sign in with LangSmith: authentication and access control"
 description: How the web app signs users in with LangSmith OAuth (oidc-client-ts, PKCE, optional SSO slug and organization choice) or an API key, how it stores and checks the session, and how the Agent Server auth handler verifies LangSmith EdDSA JWTs and admits only this OAuth client and organization.
 tags: [auth, oauth, langsmith, security, web, agent-server, jwt]
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T03:07:46.931Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T19:10:14.398Z
 sources:
   - id: openwiki-source-6766b7a0c14857435d2077c9
     resource: repo://.github/workflows/deploy.yml
@@ -37,7 +37,7 @@ sources:
     resource: repo://apps/web/src/useGame.ts
   - id: openwiki-source-5bbba7b2a8ea8360ff233d63
     resource: repo://langgraph.json
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-13T19:10:14.398Z" }
 ---
 
 # Sign in with LangSmith: authentication and access control
@@ -84,7 +84,7 @@ sequenceDiagram
 - `VITE_LANGSMITH_ORGANIZATION_ID`: required whenever the client id is set. A client id with no organization makes the config `ok: false`. `Root.tsx` then shows only a "This build is misconfigured" error banner, with the problem text "VITE_OAUTH_CLIENT_ID is set without VITE_LANGSMITH_ORGANIZATION_ID.", and never mounts the sign-in screen or the game.
 - `VITE_LANGSMITH_SSO_SLUG`: optional. If set, sign-in goes through the organization's SSO login.
 
-The Pages workflow (`.github/workflows/pages.yml`) fills these from the repository variables `OAUTH_CLIENT_ID`, `LANGSMITH_ORGANIZATION_ID` and `LANGSMITH_SSO_SLUG`. For local runs, `apps/web/README.md` says to put the `VITE_*` variables in `apps/web/.env.development.local`. Registering the OAuth app is covered in `apps/web/README.md` ("Set up the OAuth app"): it must be a Public app with scopes `openid email profile offline_access`, and its redirect URIs must match exactly, trailing slash included.
+The "Build the web UI" step of the Pages workflow (`.github/workflows/pages.yml`) passes four build variables from repository vars: `VITE_API_URL` (from `VITE_API_URL`), `VITE_OAUTH_CLIENT_ID` (from `OAUTH_CLIENT_ID`), `VITE_LANGSMITH_ORGANIZATION_ID` (from `LANGSMITH_ORGANIZATION_ID`) and `VITE_LANGSMITH_SSO_SLUG` (from `LANGSMITH_SSO_SLUG`). If the OAuth variables are unset, the build offers API keys only. For local runs, `apps/web/README.md` says to put the `VITE_*` variables in `apps/web/.env.development.local`. Registering the OAuth app is covered in `apps/web/README.md` ("Set up the OAuth app"): it must be a Public app with scopes `openid email profile offline_access`, and its redirect URIs must match exactly, trailing slash included.
 
 ## Web app: OAuth sign-in (`oauth.ts`)
 
@@ -181,7 +181,7 @@ An `AccessPolicy` with either field set to `None` refuses every bearer token. So
 
 `ServerSettings` (`apps/server/langchain_chess_server/settings.py`) reads `OAUTH_CLIENT_ID` and `ALLOWED_ORGANIZATION_ID` from the shell first and `.env` second. **For these OAuth settings a blank value means unset**: they are trimmed, and an empty result becomes `None`. The deploy workflow writes both lines before the OAuth app exists, and an unset value only refuses tokens. That is the opposite of the model credentials (`LANGSMITH_GATEWAY_API_KEY`, `TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL`), where **a blank value is an error** that stops the server. See [Settings and model arguments](../concepts/settings-and-model-arguments.md).
 
-In CI, `.github/workflows/deploy.yml` writes `OAUTH_CLIENT_ID` from the repository variable `OAUTH_CLIENT_ID`, and `ALLOWED_ORGANIZATION_ID` from the repository variable `LANGSMITH_ORGANIZATION_ID`, into the revision's env. Pages and the deployment read the same variables. After changing them, run both workflows by hand (see [Deployment](../operations/deployment.md)).
+In CI, `.github/workflows/deploy.yml` writes `OAUTH_CLIENT_ID` from the repository variable `OAUTH_CLIENT_ID`, and `ALLOWED_ORGANIZATION_ID` from the repository variable `LANGSMITH_ORGANIZATION_ID`, into the revision's env file (the "Write deployment env" step). Pages and the deployment read the same `OAUTH_CLIENT_ID` and `LANGSMITH_ORGANIZATION_ID` repository variables. After changing them, run both workflows by hand (see [Deployment](../operations/deployment.md)).
 
 ## Failure modes at a glance
 

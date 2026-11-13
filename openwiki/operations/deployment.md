@@ -1,8 +1,11 @@
 ---
 type: operations guide
-title: Deployment and image build
-description: How CI gates merges and how four workflows ship from main — deploy.yml (Agent Server image for the langchain-chess agent's production environment), pages.yml (web UI to GitHub Pages), deploy-review.yml (review app) and deploy-grader.yml (grader sandbox snapshot) — with a tip SHA resolved inside a queued concurrency lock, on.push path filters, and a superseded check. Also how langgraph.json builds the image from the uv workspace, why dockerfile_lines lists member pyproject.toml files while workspace sources live only in the root pyproject.toml, and why evals changes never redeploy anything.
+title: Deployment and the image build
+description: How CI gates merges and how four workflows ship from main — deploy.yml (Agent Server image for the langchain-chess agent's production environment, no UI), pages.yml (web UI to GitHub Pages, skipped until VITE_API_URL is set), deploy-review.yml (review app) and deploy-grader.yml (grader sandbox snapshot) — with a tip SHA resolved inside a queued concurrency lock, on.push path filters, and a superseded check. Also how langgraph.json builds the image from the uv workspace, why dockerfile_lines lists member pyproject.toml files while workspace sources live only in the root pyproject.toml, and why evals changes never redeploy anything.
 tags: [deployment, ci, docker, langgraph, uv-workspace, github-actions, github-pages, oauth]
+verified:
+  - by: openwiki/0.9.0
+    at: 2026-11-13T19:10:14.398Z
 sources:
   - id: openwiki-source-715dace563ef484b6e8bd1e2
     resource: repo://.dockerignore
@@ -30,6 +33,8 @@ sources:
     resource: repo://apps/server/pyproject.toml
   - id: openwiki-source-af9ed044b3462b6126b95a6e
     resource: repo://apps/server/README.md
+  - id: openwiki-source-64a074f8a0917e42ea22836a
+    resource: repo://apps/server/tests/e2e/test_browser.py
   - id: openwiki-source-0c7af728d91c2bdeaf4f3679
     resource: repo://apps/server/tests/test_app.py
   - id: openwiki-source-db33746522a03b766fdba194
@@ -56,24 +61,21 @@ sources:
     resource: repo://scripts/grader-snapshot.py
   - id: openwiki-source-5d3885b801ad37ac84a9169b
     resource: repo://scripts/superseded.sh
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T03:07:46.931Z
+generated: { by: "openwiki/0.9.0", at: "2026-11-13T19:10:14.398Z" }
 ---
 
-# Deployment and image build
+# Deployment and the image build
 
 The repository deploys four things. Each has its own workflow:
 
-- **agent**: the LangGraph Agent Server image for the `langchain-chess` agent's `production` environment on LangSmith Deployments. It serves the `chess` graph and the small `/ui/*` JSON routes. It is deployed by `.github/workflows/deploy.yml`.
-- **pages**: the web UI (`apps/web`), published as a static site to GitHub Pages by `.github/workflows/pages.yml`. The deployed image does **not** carry the UI.
+- **agent**: the LangGraph Agent Server image for the `langchain-chess` agent's `production` environment on LangSmith Deployments. It serves the `chess` graph and one small custom JSON route, `/model-facts`. It is deployed by `.github/workflows/deploy.yml`. The image carries **no** web UI.
+- **pages**: the web UI (`apps/web`), published as a static site to GitHub Pages by `.github/workflows/pages.yml`. It talks to the deployed agent across origins.
 - **review**: the `apps/review` LangSmith custom app. It is published by `.github/workflows/deploy-review.yml`.
 - **grader**: the `langchain-chess-grader` LangSmith sandbox snapshot (Stockfish plus `lcchess`) that runs behind the review app's Analyze button. It is built by `.github/workflows/deploy-grader.yml`.
 
-All four workflows run on pushes to `main`, and all four deploy only after the same checks that pull requests run (`.github/workflows/ci.yml`). The `evals` workspace member is never deployed: it is checked and tested by CI, but no deploy workflow watches its paths (see [path filters](#triggers-and-path-filters)).
+The agent and the UI are two independent deploys: neither workflow builds or waits for the other, and they watch disjoint source paths. All four workflows run on pushes to `main`, and all four deploy only after the same checks that pull requests run (`.github/workflows/ci.yml`). The `evals` workspace member is never deployed: it is checked and tested by CI, but no deploy workflow watches its paths (see [path filters](#triggers-and-path-filters)).
 
-This page covers the image build inputs, the workflows, and how to check a build locally. For the package layout see [package map](/openwiki/architecture/package-map.md). For the server's graph and HTTP app see [Agent Server integration](/openwiki/integrations/agent-server.md). For what the grader and review app do see [grading and review](/openwiki/workflows/grading-and-review.md). For local dev servers and tasks see [local development](/openwiki/operations/local-development.md). For the test and coverage gates CI runs, see [testing conventions](/openwiki/testing/testing-conventions.md).
+This page covers the image build inputs, the workflows, and how to check a build locally. For the package layout see [package map](../architecture/package-map.md). For the web UI see [web frontends](../architecture/web-frontends.md). For the server's graph and HTTP app see [Agent Server integration](../integrations/agent-server.md). For the sign-in variables see [LangSmith sign-in](../integrations/langsmith-sign-in.md). For local dev servers and tasks see [local development](local-development.md).
 
 ## Image build: `langgraph.json`
 
@@ -81,7 +83,7 @@ This page covers the image build inputs, the workflows, and how to check a build
 
 - `python_version: "3.13"`, `image_distro: "wolfi"`.
 - `source: { kind: "uv", root: ".", package: "langchain-chess-server" }`. The image is built from the uv workspace and its `uv.lock`, not from a requirements list. The package installed as the app is the `apps/server` distribution.
-- `graphs.chess` points at `./apps/server/langchain_chess_server/graph.py:make_graph`, and `http.app` points at `./apps/server/langchain_chess_server/app.py:app`. The custom FastAPI app handles the `/ui` routes.
+- `graphs.chess` points at `./apps/server/langchain_chess_server/graph.py:make_graph`, `auth.path` at `./apps/server/langchain_chess_server/auth.py:auth` (with `allow_langsmith_api_keys: true`), and `http.app` at `./apps/server/langchain_chess_server/app.py:app`.
 - `env: ".env"`. The agent deploy job writes this file (see below).
 
 ### Why `dockerfile_lines` copies member `pyproject.toml` files
@@ -98,42 +100,31 @@ The root `[tool.uv.sources]` marks all five distributions (`langchain-chess`, `l
 
 ### Build context: `.dockerignore`
 
-`.dockerignore` limits the context to what the image needs, the uv workspace (`libs/`, `apps/server/`, the lockfile). It excludes:
+`.dockerignore` limits the context to what the image needs: the uv workspace (`libs/`, `apps/server/`, the lockfile). Its header comment says exactly that. It excludes:
 
-- `.git/`, virtualenvs, `node_modules`, caches and coverage output, `.langgraph_api/`, `.uci-match/`.
+- `.git/`, virtualenvs, `node_modules`, caches and coverage output, `.langgraph_api/`, `.uci-match/`, `.DS_Store`.
 - `**/tests/`, `plans/`, `docs/`, `.github/`.
-- The JS sources `apps/web/`, `apps/review/` and `packages/`.
+- The JS sources `apps/web/`, `apps/review/` and `packages/`, so nothing of the UI reaches the image.
 - Secrets and key material: `.env`, `.env.*` except `.env.example`, `*.pem`, `*.key`, `*.crt`, `credentials.json`.
 
 It does not exclude `evals/` or `docker/`, so the evals sources (minus their tests) are part of the build context even though the server does not use them.
 
-`static/` is gitignored, but `.dockerignore` follows Docker semantics only, not git's, so a `static/` directory that happens to exist in the build directory (for example after a local `mise run build`) still reaches the image. The file's header comment still says the web build is part of what the image needs and that CI relies on this; that is out of date. The CI agent job sets up without web dependencies and `mise run deploy` no longer builds the UI, so the image CI deploys has no `static/` directory.
-
 ## The server app at deploy time
 
-`app.py` builds its FastAPI app through `create_app(static_dir=STATIC_DIR)`, where `STATIC_DIR` is the package's `static/` directory (the default Vite output of `mise run build`). Its routes:
+`app.py` builds its FastAPI app through `create_app()` (title `langchain-chess`, with the docs, ReDoc and OpenAPI routes switched off). It registers a single route, `GET /model-facts?model=<spec>`, which returns `max_input_tokens` (from `model_limit`, or `null` for an unknown model) and `takes_effort` for that model; a request without `model` is a 422. The Pages-hosted UI calls it when the new-game dialog opens or the model changes. There is no static mount and no `/ui` route: GitHub Pages hosts the UI. The module docstring warns that custom routes shadow the Agent Server's own, so new ones must avoid its paths (`/threads`, `/runs`, `/assistants`, `/store`, `/ui`, `/ok`, …).
 
-- `/ui/config`: the graph id `chess`, plus the `ChessContext` JSON schema and defaults.
-- `/ui/model?model=<spec>`: `max_input_tokens` (from `model_limit`) and `takes_effort` for that model; a request without `model` is a 422.
-- A bare `/ui` redirects to `/ui/`.
-- If the static directory exists, it is mounted at `/ui` with `StaticFiles(..., html=True)`. Otherwise `/ui/` returns a 404 JSON message telling you to run `mise run build` (or use `vp dev`).
+The app's lifespan closes both shared graph client pools (`POOL` and `DECISIONS_POOL`) on shutdown; the Agent Server merges this lifespan with its own. `apps/server/tests/test_app.py` covers the `/model-facts` route (a known model, a model that takes no effort, an unknown model, a missing parameter) and checks that shutdown closes the clients of the graph module as langgraph loads it by path.
 
-The JSON routes are registered whether or not the build exists. In the deployed image the build is absent (GitHub Pages hosts the UI), so `/ui/` is the 404 there, while the Pages-hosted UI calls `/ui/config` and `/ui/model` on the deployment. The static mount survives for local runs and the e2e tests (`mise run test:e2e` runs `mise run build` first). The UI is mounted under `/ui`, never `/`, because `/` is the Agent Server's health check. It uses `app.mount` rather than `app.frontend()`, because `app.frontend()` routes have low priority and the Agent Server's own `/ui` mount would answer first. The app's lifespan closes both shared graph client pools (`POOL` and `DECISIONS_POOL`) on shutdown; the Agent Server merges this lifespan with its own.
+### `mise run deploy`
 
-`apps/server/tests/test_app.py` tests both branches (`static_dir=None`, and a temporary directory holding an `index.html` and an asset), the `/ui/model` route, and that shutdown closes the clients of the graph module as langgraph loads it by path.
-
-### `mise run build` and `mise run deploy`
-
-`mise run build` runs `pnpm --dir apps/web exec vp build`. `apps/web/vite.config.ts` uses `base` from `BASE_PATH` (default `/ui/`) and `build.outDir` from `OUT_DIR` (default `../server/langchain_chess_server/static`), with `emptyOutDir: true`. By default the bundle therefore goes into the Python package for local serving; the Pages workflow overrides both.
-
-`mise run deploy` no longer builds the UI. It is only:
+The task builds and pushes the image only; it never builds the UI:
 
 ```toml
 [tasks.deploy]
 run = "uv run --all-packages langgraph deploy --no-remote --agent-id langchain-chess --agent-environment production --deployment-type dev"
 ```
 
-`--no-remote` builds the image locally (on the CI runner, or on your machine, which needs Docker with buildx) from the `.dockerignore`d context and then pushes it to the `langchain-chess` agent's `production` environment. The task's comment says to deploy from CI, because `langgraph deploy` sends `.env` as the deployment's secrets and a local `.env` names the local environment.
+`--no-remote` builds the image locally (on the CI runner, or on your machine, which needs Docker with buildx) from the `.dockerignore`d context and then pushes it to the `langchain-chess` agent's `production` environment. The task's comment says the UI ships separately to GitHub Pages, and to deploy from CI, because `langgraph deploy` sends `.env` as the deployment's secrets and a local `.env` names the local environment.
 
 ## Deploy workflows
 
@@ -159,7 +150,7 @@ flowchart TD
 
 Each workflow runs on `push` to `main` filtered by `on.push.paths`, and on `workflow_dispatch` (no inputs). A manual dispatch ignores the path filters, so it is the way to retry a failed deploy that no later push would redo (and, for Pages, to republish after changing `VITE_API_URL`). Every job is conditioned on `github.ref == 'refs/heads/main'` (via `tip`), so a dispatch from another branch skips.
 
-- **agent** (`deploy.yml`): `libs/chess/**`, `libs/systemone/**`, `libs/cli/pyproject.toml`, `apps/server/**`, `uv.lock`, `pyproject.toml`, `.python-version`, `langgraph.json`, `.dockerignore`, `scripts/agent-tags.sh`, the common set below, and `.github/workflows/deploy.yml`. It no longer watches `apps/web/**`, `packages/chess-ui/**` or the JS shared files, since the UI is not in the image.
+- **agent** (`deploy.yml`): `libs/chess/**`, `libs/systemone/**`, `libs/cli/pyproject.toml`, `apps/server/**`, `uv.lock`, `pyproject.toml`, `.python-version`, `langgraph.json`, `.dockerignore`, `scripts/agent-tags.sh`, the common set below, and `.github/workflows/deploy.yml`. It does not watch `apps/web/**`, `packages/chess-ui/**` or the JS shared files, since the UI is not in the image.
 - **pages** (`pages.yml`): `apps/web/**`, `packages/chess-ui/**`, the JS shared set (`pnpm-lock.yaml`, `pnpm-workspace.yaml`, `package.json`, `vite.config.ts`, `tsconfig.json`), the common set, and `.github/workflows/pages.yml`.
 - **review** (`deploy-review.yml`): `apps/review/**`, `packages/chess-ui/**`, the JS shared set, the common set, and `.github/workflows/deploy-review.yml`.
 - **grader** (`deploy-grader.yml`): `libs/chess/**`, `libs/systemone/**`, `libs/cli/**` (all of it, because `lcchess grade` runs from it), `uv.lock`, `pyproject.toml`, `.python-version`, `docker/grader.Dockerfile`, `scripts/grader-snapshot.py`, the common set, and `.github/workflows/deploy-grader.yml`.
@@ -189,11 +180,11 @@ Re-running only the deploy job in the Actions UI reuses the earlier `tip` output
 
 ### `agent` job (`deploy.yml`)
 
-30-minute timeout. It checks out the tip SHA and runs the setup action with `web: false` (no pnpm install, so no UI build). Then it:
+30-minute timeout. It checks out the tip SHA and runs the setup action with `web: false` (no pnpm install). Then it:
 
-1. Writes `.env` with the runtime variables `LANGSMITH_GATEWAY`, `LANGSMITH_GATEWAY_API_KEY`, `TYPESAFE_BASE_URL` and `TYPESAFE_API_KEY`. Both API keys come from the `LC_GATEWAY_KEY` repository secret. `langgraph deploy` re-sends this env file as the revision's secrets on every deploy, so the file must contain the *complete* runtime set. A variable left out could be dropped by a redeploy.
+1. Writes `.env` with the runtime variables `LANGSMITH_GATEWAY`, `LANGSMITH_GATEWAY_API_KEY`, `TYPESAFE_BASE_URL`, `TYPESAFE_API_KEY`, `OAUTH_CLIENT_ID` and `ALLOWED_ORGANIZATION_ID`. Both API keys come from the `LC_GATEWAY_KEY` repository secret; the two sign-in values come from the repository variables `OAUTH_CLIENT_ID` and `LANGSMITH_ORGANIZATION_ID`. `langgraph deploy` re-sends this env file as the revision's secrets on every deploy, so the file must contain the *complete* runtime set. A variable left out could be dropped by a redeploy.
 2. Runs the superseded check against `deploy.yml`.
-3. Unless superseded, runs `mise run deploy -- --no-input` with the `LANGSMITH_API_KEY` repository secret. This builds and pushes the image only.
+3. Unless superseded, runs `mise run deploy -- --no-input` with the `LANGSMITH_API_KEY` repository secret. This builds and pushes the image only; the web UI ships through `pages.yml`.
 4. Unless superseded, runs `mise run agent:tag` (`scripts/agent-tags.sh`) with the same key. The script looks up the `langchain-chess` agent through `langsmith api`, then tags the `langchain-chess-positions` dataset (if it exists; tagging it also tags its experiments) and each environment's tracing project with the agent's tag value. Tagging upserts, so every deploy re-tags and picks up resources added since.
 
 At runtime `ServerSettings` (`apps/server/langchain_chess_server/settings.py`) reads the shell, then `.env`, and rejects `LANGSMITH_GATEWAY_API_KEY`, `TYPESAFE_API_KEY` or `TYPESAFE_BASE_URL` when set but blank. `make_graph` constructs it for each run (reads, updates and introspection without an execution runtime get a credential-free graph shape instead), so an empty secret written into the deployment `.env` makes runs fail loudly instead of falling back silently to another key.
@@ -202,9 +193,11 @@ The two sign-in variables are handled the other way: `ServerSettings` treats a b
 
 ### `pages` workflow (`pages.yml`)
 
-The whole workflow is skipped until the repository variable `VITE_API_URL` (the agent deployment's API URL) is set: `tip` requires both `main` and a non-empty `VITE_API_URL`. The `build` job (15-minute timeout) sets up without Python (`python: false`), runs the superseded check against `pages.yml`, and then, unless superseded, runs `pnpm --dir apps/web exec vp build` with `BASE_PATH=/<repository name>/` (the site lives under that path), `OUT_DIR=dist`, `VITE_API_URL`, and the sign-in build variables `VITE_OAUTH_CLIENT_ID`, `VITE_LANGSMITH_ORGANIZATION_ID` and `VITE_LANGSMITH_SSO_SLUG`. These three take their values from the repository variables `OAUTH_CLIENT_ID`, `LANGSMITH_ORGANIZATION_ID` and `LANGSMITH_SSO_SLUG`. The job then uploads `apps/web/dist` with `actions/upload-pages-artifact`. A separate `deploy` job, skipped when `build` reported `superseded`, runs `actions/configure-pages` and `actions/deploy-pages` in the `github-pages` environment with `pages: write` and `id-token: write`.
+The whole workflow is skipped until the repository variable `VITE_API_URL` (the agent deployment's API URL) is set: `tip` requires both `main` and a non-empty `VITE_API_URL`. Its concurrency group is `pages-${{ github.ref }}` with `queue: max`, like the others.
 
-The UI uses `VITE_API_URL` as its API base when set, so the Pages site talks to the deployed agent. A deployed Agent Server needs a LangSmith API key, which the UI asks for and sends as `X-Api-Key`. Changing `VITE_API_URL` does not touch a watched path, so republish by dispatching the workflow by hand.
+The `build` job (15-minute timeout) sets up without Python (`python: false`), runs the superseded check against `pages.yml`, and then, unless superseded, runs `pnpm --dir apps/web exec vp build` with `BASE_PATH=/<repository name>/` (the site lives under that path), `VITE_API_URL`, and the sign-in build variables `VITE_OAUTH_CLIENT_ID`, `VITE_LANGSMITH_ORGANIZATION_ID` and `VITE_LANGSMITH_SSO_SLUG`. These three take their values from the repository variables `OAUTH_CLIENT_ID`, `LANGSMITH_ORGANIZATION_ID` and `LANGSMITH_SSO_SLUG`; unset, the UI offers API keys only. `apps/web/vite.config.ts` takes `base` from `BASE_PATH` (default `/`) and `build.outDir` from `OUT_DIR` (default `dist`, with `emptyOutDir: true`), and builds both `index.html` and the `render.html` LangSmith renderer. The job then uploads `apps/web/dist` with `actions/upload-pages-artifact`. A separate `deploy` job, skipped when `build` reported `superseded`, runs `actions/configure-pages` and `actions/deploy-pages` in the `github-pages` environment with `pages: write` and `id-token: write`.
+
+The UI's `apiUrl()` returns `VITE_API_URL` when it is non-empty and otherwise `http://localhost:2024` (`langgraph dev`), so the Pages site talks to the deployed agent. Changing `VITE_API_URL` touches no watched path, so republish by dispatching `pages.yml` by hand. The OAuth variables are read by both `pages.yml` and `deploy.yml`, so after changing them dispatch both workflows.
 
 ### `review` job (`deploy-review.yml`)
 
@@ -222,7 +215,7 @@ The script stages a build context holding `docker/grader.Dockerfile`, wheels of 
 
 - **python** job: setup with `web: false`, then `mise run check:python` (ruff format check, ruff lint, `ty check`) and `mise run test:python` (`pytest -q -n auto` with the 100% coverage gate from the root pytest/coverage config; the `live` and `e2e` markers are deselected by default). The root config includes `evals/tests` and `--cov=langchain_chess_evals`, so evals is gated here even though it is never deployed. On failure it uploads `snapshot_report.html` as an artifact.
 - **web** job: setup with `python: false`, then `mise run check:web` (`vp check`), `mise run test:web` (`vp run -r test` with 100% coverage thresholds), and `mise run review:size`. That last task builds `apps/review` and runs `scripts/upload-size.mjs`, because `langsmith apps push` uploads the directory whole with a budget of 5 MiB, 500 files, text only.
-- **e2e** job: full setup, `uv run playwright install --with-deps chromium`, then `mise run test:e2e`, which builds the web UI into the server's static directory and drives it in Chromium against `langgraph dev` with a fake model.
+- **e2e** job: full setup, `uv run playwright install --with-deps chromium`, then `mise run test:e2e` (`pytest -m e2e --no-cov -q`). The e2e fixtures start `langgraph dev` with a fake-model graph, build the web UI with `vp build` into a temporary directory (`OUT_DIR`) against that server's URL (`VITE_API_URL`), serve the build from another origin as GitHub Pages does, and drive it in Chromium.
 
 ### Shared setup action
 
@@ -237,18 +230,25 @@ Package caches (the uv cache and uv-managed Python, keyed on `uv.lock` and `.pyt
 
 ## Secrets and variables
 
+Only names are listed here; values live in the repository settings.
+
 | Name | Kind | Used by |
 |---|---|---|
 | `LANGSMITH_API_KEY` | repository secret | `mise run deploy` and `mise run agent:tag` (agent), `langsmith apps push` (review), `grader-snapshot.py` (grader) |
 | `LC_GATEWAY_KEY` | repository secret | written into the agent `.env` as `LANGSMITH_GATEWAY_API_KEY` and `TYPESAFE_API_KEY` |
 | `VITE_API_URL` | repository variable | the agent deployment's API URL baked into the Pages build; the Pages workflow skips while it is empty |
+| `OAUTH_CLIENT_ID` | repository variable | agent `.env` (`OAUTH_CLIENT_ID`) and Pages build (`VITE_OAUTH_CLIENT_ID`) |
+| `LANGSMITH_ORGANIZATION_ID` | repository variable | agent `.env` (`ALLOWED_ORGANIZATION_ID`) and Pages build (`VITE_LANGSMITH_ORGANIZATION_ID`) |
+| `LANGSMITH_SSO_SLUG` | repository variable | Pages build (`VITE_LANGSMITH_SSO_SLUG`), when the org signs in through SSO |
 | `CUSTOM_APP_ID` | repository variable | review app id; the review workflow skips while it is empty |
 | `LANGSMITH_WORKSPACE_ID` | repository variable | grader snapshot; needed when the API key reaches more than one workspace |
 
 ## Local smoke builds and manual deploys
 
-- Build the image locally without deploying: `uv run --all-packages langgraph build -t langchain-chess:smoke`. Without a local `mise run build` the image has no UI and `/ui/` returns the "UI not built" 404, which matches the deployed image.
-- Manual deploy from a workstation: `mise run deploy`. It needs Docker with buildx, `LANGSMITH_API_KEY` in the environment, and a complete `.env` with the runtime variables listed above. The task itself advises deploying from CI (a local `.env` describes the local environment and would be sent as the deployment's secrets), so prefer `workflow_dispatch` from `main`, which also gates the deploy on CI. If a local `static/` exists, it would be shipped too.
+- Build the image locally without deploying: `uv run --all-packages langgraph build -t langchain-chess:smoke`. Like the deployed image, it contains no UI.
+- Build the web UI locally: `pnpm --dir apps/web exec vp build` writes `apps/web/dist`.
+- Manual deploy from a workstation: `mise run deploy`. It needs Docker with buildx, `LANGSMITH_API_KEY` in the environment, and a complete `.env` with the runtime variables listed above. The task itself advises deploying from CI (a local `.env` describes the local environment and would be sent as the deployment's secrets), so prefer `workflow_dispatch` from `main`, which also gates the deploy on CI.
+- Republish the UI: dispatch `pages.yml` from `main`.
 - Re-tag the agent's resources by hand: `mise run agent:tag`.
 - Rebuild the grader snapshot by hand: `mise run review:snapshot` (reads `.env`).
 - Check the review app's upload budget: `mise run review:size`.
@@ -257,16 +257,7 @@ Package caches (the uv cache and uv-managed Python, keyed on `uv.lock` and `.pyt
 
 - **Adding a workspace member:** add it to the root `members` and `[tool.uv.sources]` (not to the member's own manifest), add an `ADD` line to `dockerfile_lines` (and confirm with a smoke build), add it to the pytest/ruff/ty/coverage lists in the root `pyproject.toml`, and decide which deploy workflows it affects. Add its paths to a workflow's `on.push.paths` only if that target ships it; like `evals`, a tooling-only member needs none.
 - **Adding a runtime environment variable:** add it to the `.env` heredoc in the `agent` job. Otherwise the next deploy won't carry it.
+- **Adding a server route:** keep it clear of the Agent Server's own paths (`/threads`, `/runs`, `/assistants`, `/store`, `/ui`, `/ok`), since custom routes shadow them.
 - **New build input for the server, UI, review app or grader:** add its path to the matching workflow's `on.push.paths`. UI inputs belong in `pages.yml`, not `deploy.yml`. `superseded.sh` reads the same list, so it needs no separate change.
 - **Adding another deploy target:** give it its own workflow and concurrency group. Queued-run replacement is safe only when every run of a workflow deploys the same target.
-- **Excluding files from the image:** edit `.dockerignore`.
-pp or grader:** add its path to the matching workflow's `on.push.paths`. UI inputs belong in `pages.yml`, not `deploy.yml`. `superseded.sh` reads the same list, so it needs no separate change.
-- **Adding another deploy target:** give it its own workflow and concurrency group. Queued-run replacement is safe only when every run of a workflow deploys the same target.
-- **Excluding files from the image:** edit `.dockerignore`.
-g in `pages.yml`, not `deploy.yml`. `superseded.sh` reads the same list, so it needs no separate change.
-- **Adding another deploy target:** give it its own workflow and concurrency group. Queued-run replacement is safe only when every run of a workflow deploys the same target.
-- **Excluding files from the image:** edit `.dockerignore`.
-t is safe only when every run of a workflow deploys the same target.
-- **Excluding files from the image:** edit `.dockerignore`.
- run of a workflow deploys the same target.
 - **Excluding files from the image:** edit `.dockerignore`.

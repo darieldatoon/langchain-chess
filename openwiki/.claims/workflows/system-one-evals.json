@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:28863b9466388b17a60e331d6d16f4bfe4da64a8a3acd790d6f33d43ea253666",
+  "pageVersion": "sha256:64dcaca229b2541787ccf3c9eeaf91224f0d10c25450cd2ad7e2af00610c1b6b",
   "claims": [
     {
       "id": "claim_59eebdc33d204504a19644a639b344f9",
@@ -15,7 +15,7 @@
           "version": "repo-file-v1:sha256:2261a90f191c5cb1b82d9fabb7a36380ab303d936eb793e5a2988dbece50fa14"
         },
         {
-          "resource": "repo://mise.toml#L154-L168",
+          "resource": "repo://mise.toml#L151-L165",
           "version": "repo-lines-v1:sha256:ce55b6b44a2e5916d198a2d6ef901d656c29df431be929be712750301ada487b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTU2NjA3NDQwMmI4MzNhNzU2YTE4Mzc2YzU5Y2FiOWU0Y2RjMmU0ZTgzYzBkMDRhMTI4YmRhNzgzMjkyM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwYzk2YjVjNWI1Y2NlOTc5ZjRjYzc2NmE2YjlmNTg4YmIxMDQxMTQ5Mzk1MTNlZDY0NmViOTE5ZTdiMTVmYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3NjgxOWM1MDA2MmZhMGEyMWYyZDU5MjVjYjMyYzUxMTQxYWQyZWNlNGE2OTY5OGNhNzc1YzNiMGIzYjNmZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhNmRmNWNkNTkyZWIzMjI2ZTllNjc4ZTY4NzNlY2JiYmZhMmM4YjJhNzNkOWExMjliOTE3MTRiMDgwYmUxYTMifQ"
         }
       ]
@@ -141,7 +141,7 @@
           "version": "repo-file-v1:sha256:c1285d678a42eadf25cd13cf1c57f750f3bd8d4624fe665fc8b3e74256587543"
         },
         {
-          "resource": "repo://evals/tests/test_live.py#L32-L57",
+          "resource": "repo://evals/tests/test_live.py#L30-L55",
           "version": "repo-lines-v1:sha256:8984e5fec4ab1ca93a9f79f21a532f7fc2acdc1b10dcd249e330aff927ee19b8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2ODViNzIxMDM1OGU3ZjZhNzg0ZmQzNDEyNzI1ZjNiNzdiNmFhNjM0ZjVjOTAyNTZkNGU3MjdhYzcxOTZkMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2ZTZiZWRhZDM2OTIwNjkwMDgzMWY5YzQxMDI3ZjAwOTVlYzFmY2M3NGNlNTA1NzhmNTJkYTlmZjY5NzMyODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwNGJmOGI1M2QyNGY3NGY5OTljMDM1NzJiYTk0OWY3N2IyM2U1YWFiOTQ0NDY2YTI4Yjc1YWExMDMzZDg0ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -175,7 +175,7 @@
       "statement": "--renderer-url sets the dataset's iframe_config only for absolute https URLs and leaves the setting unchanged when omitted.",
       "evidence": [
         {
-          "resource": "repo://evals/langchain_chess_evals/cli.py#L103-L132",
+          "resource": "repo://evals/langchain_chess_evals/cli.py#L103-L133",
           "version": "repo-lines-v1:sha256:4fdf416217bd4da6d4600bd42223b66c6d37f9e1f2c9cf29a3ae21879b8e9fc4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhN2JmMjg2NmU2NzEzMjljMjQ2NjNhZTZjYTkxMTk3Y2Y4MWUyMTZhYTM0MGFhNGEwODJiZmVhZjBjMzJjMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0N2Q5NDNlMzQyMjYzNTc3YzU4NjcyMjRiMDE3Mjk1NmQ0ZDE5NWYzOTE4YjBmZjE5MWM2MDRkYjI0Yzc5OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYjRlNDM5YmQ4NGJkYzIwMTdiMWY0ZGI4YzUyOWNhMTM4ZWViZWUzYjA2ODkyMTIxYzkwMDA0NDMxZmI1MmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhNmY3ZGNjMWEwZDM1NTk2ODA0ZDVlYzAwODE0MjUzZGUxYTZmZGMxYzE4ZTVkOGFhYThlMjc0ZTc2MTcwZWUifQ"
         },
         {
@@ -189,7 +189,7 @@
       "statement": "systemone run requires exactly one of --model or --opponent, refuses --style with --opponent, and defaults to the dev split; systemone baseline runs every [[experiment]] in the TOML grid sequentially on full and prints a headline table.",
       "evidence": [
         {
-          "resource": "repo://evals/langchain_chess_evals/cli.py#L162-L234",
+          "resource": "repo://evals/langchain_chess_evals/cli.py#L163-L238",
           "version": "repo-lines-v1:sha256:9d1b28b3e1f3e92039c77b302ea493350847d7161d913b37e542fbb018e53908:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkNjFjZmUxY2ZmZDVmZjIyNDRlYzQzNzgxOTZiY2M4NGVkYmNjZTcxOWIxNzUzNDQ0YWY5MTU5YjBjNTNkZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OTE5NWI4ZGI5ZmUwMmIyMjU2ZWU0Y2EyZjBjYWE4MDVhNjcxMDQyYWZlY2E2YjY0NTcxZjIwOGRlNTA0MDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZmNlZTRmMzZlOTE3ZDRlODQ1MDNmYTRhZmQwNDhmY2E1OWJkZjI3MzdlNTkxMWVhNDgxZjNiMGU4OGU0ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -322,11 +322,15 @@
     },
     {
       "id": "claim_80e9396c1cb442eb82a10ceeba81d294",
-      "statement": "The web app's render.html, served from the web UI's GitHub Pages site, is the dataset's LangSmith custom output renderer; it accepts messages only from its embedding window rather than a fixed origin.",
+      "statement": "The web app's render.html is the positions dataset's LangSmith custom output renderer. It is built as a second Vite input beside index.html and served from the web UI's GitHub Pages site at /<repo>/render.html (BASE_PATH set by the Pages workflow). It accepts messages only from its embedding window rather than a fixed origin.",
       "evidence": [
         {
-          "resource": "repo://apps/web/README.md#L60-L73",
-          "version": "repo-lines-v1:sha256:405798c73d1a041e1955eb10c7a69076b8636fba2b2ee709c4f37533be3bc3fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjNzkwMmFmYTg5ZGY4MjJjNzhhNjA0MDY2MDA1YTBkODI0NDc5NWM2MTJiM2RiZWFmMTMyNTQ4ZjMyNjQxZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZTE1NzA3NTA0MjliNWQ2M2E4NmM4ZmI5ZmM5NDc5ODQ2NGQ2ZTMxMzhkMzQ1ZTk1ZGE0ZGZkOTZhNDdjMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjZmYxODU0OTQxMmM0NTUzM2JhY2FlYmE3NjkwMmM1MjA3MDNhZjc2ZmUwZGE3YmI3YmZjY2U1MTQ4ZTVkNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlMjMzMmFhMDZiNDIzZjY3ZWQzN2UwODQyYjYzOGViZDNmNjQzN2Q3ZTI5N2RhYjc5MWI1NjFiMTMwMjkzOTAifQ"
+          "resource": "repo://.github/workflows/pages.yml#L105-L112",
+          "version": "repo-lines-v1:sha256:6e3cba76d3e818812730dd6266a3b2cf0317519aea5e31be1f8b41ae5a2df446:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWRlNGFhMzA3NTQ0ZmFjNDkxMWRhOTk4NzRkOWJhZWU0ZGQ1ODQwYTRkMzk2MjQyMmExZGM2ODdmYTQ2YTAxYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjM1MTY0MmJmZDFjNTIxYjUxMWQ2ODIwOWE1YzE3ZmIwNzEzMzI4MmUzYzkyNWQ0Nzc5MmYyM2UyZjI5NDY1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjdkZDYwMzA5NjFjNjZlZGE2ZDQ2MTkzMmI4YWY2MTI1NmFlMjgzZWI0M2VmNmI5OTJkNDVhZjg0NzkyYTBlZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmE1OWNkMDMwMTk4OTE2OGY4MTVjZDE1MmZkZmU5ZDk1NDE5NDIyNmUzZGYzMWQ3OWEwZWEyMTAxNTlmMjAyMyJ9"
+        },
+        {
+          "resource": "repo://apps/web/README.md#L89-L97",
+          "version": "repo-lines-v1:sha256:761acdb9062e73f5b851183ff3005a747796b6281cdd469909ee53d90975b79a:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWM3OTAyYWZhODlkZjgyMmM3OGE2MDQwNjYwMDVhMGQ4MjQ0Nzk1YzYxMmIzZGJlYWYxMzI1NDhmMzI2NDFlYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUyNTcyNTdiY2ZhOGQyZDg2NTgyN2QzZTllYzM2ODgxZGE1MTJkNDY1ZTRmYTMyZGQwYTRkOWVkZTkwZjE3ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzI1MjcyNWQ0YzE0YTIwMTc2NGNkYmIyYmQwMDdjZjM1ZTliODlmMDVlMzlmNjdkZDFmMmM4Y2FlOWViYjJmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWY1YTI2MDExY2UyYzg5OTc3MDIxNWZlYmI3YjZlMDRiM2RkMjdiMDcyNDNjZjg2OThhYzNlOWMyOTljYWUwMCJ9"
         },
         {
           "resource": "repo://apps/web/src/render/useParentMessage.ts",
@@ -334,7 +338,7 @@
         },
         {
           "resource": "repo://apps/web/vite.config.ts#L7-L18",
-          "version": "repo-lines-v1:sha256:4fdc1aa0598d5717673636e0174ab808271af3fa4f9687784eef424f90ca6256:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMDhkNWI2ZGNmNGU2ZTc0ODk4NjU4OGFiN2Y3YjAyNmUwYjIwNTU4ZTYxZTc0NzkxMjIwZGVlODExNjc2NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMmVhYWVlNzNiNzNhYTlmYjM4NTJjMWU0NDcxODgwYmZmZWQxYzM3ZTRlNjJjMDQ1M2QzN2QyOTI3YzNjMDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxNWRlNmMxNzkwYmE2M2I3MzZmNzQ1NDgzM2E3ZmYzOGRhNmU5ZmE4MDkzNDliNzgzZTZiZmRlNjk1OTRiZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxMWU0OTdiZmY4YzdmMDk5YmEzOTVhMDFhNGQ0NWUwNzk1Y2ZmNThkYWMyNmIxMTg0NmI2OTg4NzFjNDg0ZTgifQ"
+          "version": "repo-lines-v1:sha256:262c88d1b9ad3042b0f8ddeac8bc2bcc3bc8700a2470c6e34a3d84af8b8073d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMmM1YTQ0MGNmZWMxNDMwNGI4NGRlZjQyMTQ0OGY0OTZlMjkxOWQ4NjlhMTIyOGU1ZDdlYjg0MjliMDU3MjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5OGJmYzZlOGFlNzZkYzkwMjUzZTdmNjA1NGEyN2E3NWMwNjEyNzQ4ZjM1MTFhZDBjNTA4Njk4NTRmZWEwMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxNWRlNmMxNzkwYmE2M2I3MzZmNzQ1NDgzM2E3ZmYzOGRhNmU5ZmE4MDkzNDliNzgzZTZiZmRlNjk1OTRiZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyNDUyYzI4YmY2YjE5MjU1MmJjMzQwMjUwMzQ4MDFiYmRlZmI4Yjg1MGFmMTE2YTRhOTFlZWY3Nzc1MzYwMjIifQ"
         }
       ]
     },
@@ -347,14 +351,32 @@
           "version": "repo-file-v1:sha256:c05ed3fdba3e6e6cb98938048bfaabb3e0b5dfaee1f1a174f343630eeb764d14"
         },
         {
-          "resource": "repo://mise.toml#L150-L152",
+          "resource": "repo://mise.toml#L147-L149",
           "version": "repo-lines-v1:sha256:517cbc47fa374049960d11db8d1bfe2de0ebe12b640be1b56bb2f45d2e890d2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTVlNzcwMjJhNDUzMmNhYjZiMjA1NWIxMTQxMWM4YzM5N2JiNzc1MWEwOTBlNWY1ZjRmODJiYjI4NDU4NWQ2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2M1NWU1NmE1MjVkOTBkNzZiYjFhNzI2M2IzMTU0MjMwYTM1NmY3ZmZjOTcwNjViNDZlMzg1ZGE0YjY1Y2Q3MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGVjYjhlN2IxMTEzZjE0MmJkNmRhODhiNjk4YzcwZGNlZWI2YTA3YTdjMTI5ZDJlNjEzMjk4ZmY1NWRhZjRkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2EzNDIzNTgzZDc2YmVjNGRjZjJiOGJiZWExM2E3ODhlODgwM2Q5YzVmMzBiNjU0ZDgzOTFkNzRjNDZiYmE2MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1c733279f4ac4f87ac31ec2fe6a459d8",
+      "statement": "render-preview.html is a dev-only page: with vp dev running it is opened at http://localhost:5173/render-preview.html, embeds the renderer several times and posts sample messages from preview/samples.ts. It is not a build input, so it is never deployed.",
+      "evidence": [
+        {
+          "resource": "repo://apps/web/README.md#L99-L102",
+          "version": "repo-lines-v1:sha256:2f342271423692e31d9e225f59f66787c19459da50e24321be0f925366e68c30:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWRiMDVjYWVkODQ5MGFkYjYwMGFmMWE1NzNkODJiMDg0NGZkYjE1NGRlNjQ2Njk1NDcyNmRjMDNhZmYyNDYwZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDVlMTU3MDc1MDQyOWI1ZDYzYTg2YzhmYjlmYzk0Nzk4NDY0ZDZlMzEzOGQzNDVlOTVkYTRkZmQ5NmE0N2MxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWFiMGNkZmEwZWE0NzY2N2RkNjJhYWNhZGZjMmRjN2VhYWY5MmViNWRiN2IzNmU3YTQ4ZGYzMTJhZTk0ZWE5OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmUyMzMyYWEwNmI0MjNmNjdlZDM3ZTA4NDJiNjM4ZWJkM2Y2NDM3ZDdlMjk3ZGFiNzkxYjU2MWIxMzAyOTM5MCJ9"
+        },
+        {
+          "resource": "repo://apps/web/render-preview.html",
+          "version": "repo-file-v1:sha256:b1186f99bee3a24090011887b8defcf89061526cd3f984f49281a04d57f10b0b"
+        },
+        {
+          "resource": "repo://apps/web/vite.config.ts#L15-L18",
+          "version": "repo-lines-v1:sha256:37ec51434a8dc5ca78bae2469e29118e9967411d4850cf93e5daf611b020f33d:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjhhY2M2Yjk0OGMyMjVlNGQyNjg0NmU5Mzc4NjEyYjI5MTc5YmQyNWVmZTM2ZDA1MGZhMDE5MjFjMjA3MjlkYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDk4YmZjNmU4YWU3NmRjOTAyNTNlN2Y2MDU0YTI3YTc1YzA2MTI3NDhmMzUxMWFkMGM1MDg2OTg1NGZlYTAwNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDU1M2YyZWUzZTZlMTgzMGY0Y2Y4YTY4YmQ2OTQ5ZTc5N2I2Y2MzNTFmNTU3MTBkN2FlNzVmMjUwYzAzODg5ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjI0NTJjMjhiZjZiMTkyNTUyYmMzNDAyNTAzNDgwMWJiZGVmYjhiODUwYWYxMTZhNGE5MWVlZjc3NzUzNjAyMiJ9"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-11-01T01:10:29.908Z"
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-13T19:10:14.398Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:943cca87ff753e764a432ea91cbd6f6fa0d6676968ee8c58ef8bc6bff21489ed",
+  "pageVersion": "sha256:0997b6c2b1713e75c7bb7a034998ab06a641bcc0661947b107e0d3d8c22f3e3d",
   "claims": [
     {
       "id": "claim_85161f93b8de4483a9fdb46b15f9c351",
@@ -88,15 +88,15 @@
     },
     {
       "id": "claim_0fdad66f340649739a737df2b2068302",
-      "statement": "The deploy workflow writes OAUTH_CLIENT_ID and ALLOWED_ORGANIZATION_ID (from repository variable LANGSMITH_ORGANIZATION_ID) into the deployment env, and the Pages workflow builds the web app with VITE_OAUTH_CLIENT_ID, VITE_LANGSMITH_ORGANIZATION_ID and VITE_LANGSMITH_SSO_SLUG from repository variables.",
+      "statement": "The deploy workflow's \"Write deployment env\" step writes OAUTH_CLIENT_ID (from repository variable OAUTH_CLIENT_ID) and ALLOWED_ORGANIZATION_ID (from repository variable LANGSMITH_ORGANIZATION_ID) into the deployment env file, and the Pages workflow's \"Build the web UI\" step passes VITE_API_URL, VITE_OAUTH_CLIENT_ID, VITE_LANGSMITH_ORGANIZATION_ID and VITE_LANGSMITH_SSO_SLUG from repository variables (VITE_API_URL, OAUTH_CLIENT_ID, LANGSMITH_ORGANIZATION_ID, LANGSMITH_SSO_SLUG).",
       "evidence": [
         {
           "resource": "repo://.github/workflows/deploy.yml#L84-L93",
           "version": "repo-lines-v1:sha256:c33f836274340bf06fd246aa6703001d6fce6e3fcab795d0cf555945fdb9aedc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2ZGQ5YmRlZGIzYzFkNDhjZDJhZWNkNDkzNzIwNzYwOTY1YTkwZmJhZjQ5ZTljOWU0NGE4MTM2Mzc1MzRhNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1NzcyOTYzMzZhNmU4NjQ2MWM1MTllNTM0OTU3YmQ0OTA1ZDk0OTU2ZTQyNGU5N2Q3OGJiOGZjNTQzOTdjYjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhMTQwNmEzOWIwYzNiMGI1ZGY5MDRlMTA4ZjhlNTY0ZGUyNGE3ZmMyNzIxYTQxOTU2YTYzNTE3YWNkMDk3MDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjMzU3ZjM4YWIzMjFlMjc4ODI5ZDVmMzY4ZDAxNWJiZWM2NjE0ZGM2MzA5NTRiYzA3YWNkNzlhYzgxNDMxM2UifQ"
         },
         {
-          "resource": "repo://.github/workflows/pages.yml#L106-L116",
-          "version": "repo-lines-v1:sha256:f9122428f5fd4d10ab4c281ac22e95106016b5e4f88e4e47b359080e7246508b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlYzZmZDk0OTdjNmQ2MzkzNjhjMTg5MzA2ZDE5ODljMGU3MjUzOGEzYzJkNTU4OTNhODViN2U3OTA3YmEwNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkOTI1ODY2MzQ0NWVjMTM0ZjEzZTU0ZGVkZmNmNWMyNGY1ZmY2Mjc0NDBiMGEyMGY5NjU2MTNiM2MwYThhY2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyODU1NzM0N2IyOGQ0ZTg5OGJjYzg0NzVmZDY3OWZmZTU2YWZiMGNhMDU0NjI1NzcxMTA4N2E0ZTNlMWFlNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1OWY5NTJjZTc0ODY5ZTdkNDRhNTNlMjIzNDRmMGRjMWZjY2MyMjRmZTI3Zjk1ZjIxOTRhODY2NzYyYTA0NDMifQ"
+          "resource": "repo://.github/workflows/pages.yml#L106-L115",
+          "version": "repo-lines-v1:sha256:d461a5d3a30a4c9feb510201d67400175de3380517040c87a451fae3ba48286c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlYzZmZDk0OTdjNmQ2MzkzNjhjMTg5MzA2ZDE5ODljMGU3MjUzOGEzYzJkNTU4OTNhODViN2U3OTA3YmEwNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkOTI1ODY2MzQ0NWVjMTM0ZjEzZTU0ZGVkZmNmNWMyNGY1ZmY2Mjc0NDBiMGEyMGY5NjU2MTNiM2MwYThhY2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyODU1NzM0N2IyOGQ0ZTg5OGJjYzg0NzVmZDY3OWZmZTU2YWZiMGNhMDU0NjI1NzcxMTA4N2E0ZTNlMWFlNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1OWY5NTJjZTc0ODY5ZTdkNDRhNTNlMjIzNDRmMGRjMWZjY2MyMjRmZTI3Zjk1ZjIxOTRhODY2NzYyYTA0NDMifQ"
         }
       ]
     },
@@ -258,7 +258,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-11-01T03:07:46.931Z"
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-13T19:10:14.398Z"
   }
 }

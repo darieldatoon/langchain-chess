@@ -47,7 +47,7 @@ sources:
     resource: repo://packages/chess-ui/src/stages.ts
   - id: openwiki-source-fd0e9360c0eb5b2cec5ea440
     resource: repo://packages/chess-ui/src/types.ts
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-13T19:10:14.398Z" }
 ---
 
 # The state record
@@ -58,6 +58,9 @@ A chess agent's LangGraph thread holds three kinds of channel:
 - **The model's working context** (`messages`).
 - **Private turn bookkeeping.** Only the middleware uses it.
 
+<!-- openwiki: broken internal link [/openwiki/architecture/turn-lifecycle.md] link "/openwiki/architecture/turn-lifecycle.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/concepts/middleware-contract.md] link "/openwiki/concepts/middleware-contract.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/concepts/models-gateway-and-cost.md] link "/openwiki/concepts/models-gateway-and-cost.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 This page covers the record, the input a caller may send, and how runs and threads map onto turns and games. For how `ChessCore` opens, retries and finalizes a turn step by step, see [the turn lifecycle](/openwiki/architecture/turn-lifecycle.md). For the extension rules (`ply_meta`, `turn_calls`, `turn_latency_ms`, the write guard), see [the middleware contract](/openwiki/concepts/middleware-contract.md). For how `Call` is priced, see [models, gateway and cost](/openwiki/concepts/models-gateway-and-cost.md).
 
 All of these types live in `libs/chess/langchain_chess/state.py`. Every value is plain JSON-like data: strings, numbers, lists, TypedDicts and LangChain messages. That keeps everything serializable through LangGraph's codecs. The state has no custom reducers. Who may write which key is enforced by the write guard in `contract.py`, not by the channels.
@@ -177,12 +180,14 @@ stateDiagram-v2
 - `called_at` is an ISO 8601 timestamp.
 - Price fields: `cost_usd`, `cost_complete` (false if a usage dimension was approximated) and `priced_with` (the genai-prices version).
 
+<!-- openwiki: broken internal link [/openwiki/workflows/grading-and-review.md] link "/openwiki/workflows/grading-and-review.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 Unreported usage shows up as `null`. A provider that reports no token counts produces calls with `input_tokens: null` and `cost_usd: null` (`test_a_call_without_usage_has_no_cost`). A move costs its whole turn: `turn_cost` in Python, and its mirror `turnCost` in `selectors.ts`. Grading and review read the same shapes (see [grading and review](/openwiki/workflows/grading-and-review.md)).
 
 ### The TypeScript mirror
 
 `packages/chess-ui/src/types.ts` is a hand-written copy of the Python state types (`Side`, `DrawReason`, `Outcome`, `DrawOffer`, `Call`, `TurnStatus`, `TurnRecord`, `Ply`, `PositionInput`, and `ChessValues` for the readable keys) and of the System 1 telemetry types (`SystemOneMeta`, `SystemOneLive`). Its header says: "Keep them in step by hand." Nothing generates or checks those types. **If you change a field in `state.py` or the System 1 telemetry types, change `types.ts` in the same commit.** Otherwise `apps/web` and `apps/review` will quietly misread threads. `ChessContext` and the settings enums are different: they are generated into `packages/chess-ui/src/generated/settings.ts` from the Python `ChessContext` by `mise run generate:settings`.
 
+<!-- openwiki: broken internal link [/openwiki/architecture/web-frontends.md] link "/openwiki/architecture/web-frontends.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 See [web frontends](/openwiki/architecture/web-frontends.md) for the code that uses these types. Selectors in `selectors.ts` rely on the record links described above:
 
 - `turnOf` finds a ply's turn through `turn_id`.

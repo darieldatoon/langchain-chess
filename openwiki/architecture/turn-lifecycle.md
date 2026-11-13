@@ -51,13 +51,18 @@ sources:
     resource: repo://libs/systemone/langchain_chess_systemone/agent.py
   - id: openwiki-source-3c3f476720af9ceef23b678d
     resource: repo://libs/systemone/langchain_chess_systemone/middleware.py
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-13T19:10:14.398Z" }
 ---
 
 # Turn lifecycle
 
 `create_chess_agent` (`libs/chess/langchain_chess/agent.py`) is a thin wrapper around LangChain's `create_agent(tools=[])`. It passes no tools. All chess behaviour lives in middleware, and one middleware owns the game: `ChessCore` (`libs/chess/langchain_chess/middleware/core.py`). This page covers how one run becomes at most one turn, and the invariants you must keep when you change that code.
 
+<!-- openwiki: broken internal link [/openwiki/concepts/middleware-contract.md] link "/openwiki/concepts/middleware-contract.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/concepts/state-record.md] link "/openwiki/concepts/state-record.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/concepts/prompt-and-memory.md] link "/openwiki/concepts/prompt-and-memory.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/architecture/system-one.md] link "/openwiki/architecture/system-one.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/operations/runtime-behavior.md] link "/openwiki/operations/runtime-behavior.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 Related pages: [middleware contract](/openwiki/concepts/middleware-contract.md) (what extensions may write), [state record](/openwiki/concepts/state-record.md) (the keys clients read), [prompt and memory](/openwiki/concepts/prompt-and-memory.md) (what the model sees), [System 1](/openwiki/architecture/system-one.md) (the main proposer), and [runtime behavior](/openwiki/operations/runtime-behavior.md) (what production runs look like).
 
 ## The stack `create_chess_agent` builds
@@ -207,6 +212,7 @@ Whenever a turn leaves `pending` (committed, terminal or abandoned), `_finalized
 
 `ChessCore` is the outermost wrapper. `_prepare` rewrites the request's messages as `model_view(...)` followed by a trailing position message from `turn_message`/`render_position`. The position message is never stored. It always contains the movetext, a custom starting FEN when the root is not the standard one, the side to move, check, the permitted moves on a restricted turn, and the request for `MOVE: <move>`. The renderer adds the rest: by default the FEN and ASCII board (`show_fen`, `show_board`) and, per `move_list` (`both`, `candidates`, `legal`), suggested `candidates` and the full legal-move list. A custom `render_position` replaces that section but cannot drop what every turn must say.
 
+<!-- openwiki: broken internal link [/openwiki/concepts/prompt-and-memory.md] link "/openwiki/concepts/prompt-and-memory.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 `model_view` depends on `memory`. With `memory=False` the model sees only the current turn, starting from its opening message. With `memory=True` it sees the whole history, minus earlier turns' rejected attempts and feedback. In both modes the current turn shows only its latest rejected reply (which keeps its reasoning blocks), reasoning blocks are removed from other AI messages, and every message is deep-copied so that wrappers cannot change state (`test_model_view_memory_modes`). See [prompt and memory](/openwiki/concepts/prompt-and-memory.md).
 
 Everything the provider returns inside the wrapper is captured through `recorder.sink("llm")` and appended to the turn's `calls` in the wrapper's own state update. The wall-clock time of the wrapper is added to `turn.latency_ms`. An empty AI reply is stored as the `EMPTY_REPLY` placeholder (`[no text in reply]`), because Anthropic rejects a replayed assistant turn that has no text.
@@ -270,6 +276,7 @@ When `turn.initial_allowed` has exactly one move and no proposal exists yet, `Fo
 
 ## Observed at runtime
 
+<!-- openwiki: broken internal link [/openwiki/operations/runtime-behavior.md] link "/openwiki/operations/runtime-behavior.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 > **Observed at runtime (this pull only):** no trace figures were available for this pull. There are no measured turn counts, model calls per turn, stall-retry rates or turn latencies to report here. When a pull has figures, they go on [runtime behavior](/openwiki/operations/runtime-behavior.md). They apply only to that pull's anomaly-weighted sample, not the whole fleet, so do not copy them onto this page as stable facts.
 
 What the code tells you to expect when you compare against traces (**Correlated**):

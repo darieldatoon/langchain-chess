@@ -1,9 +1,18 @@
 ---
 type: quickstart
 title: "Quickstart: working in langchain-chess"
-description: Entry point for coding agents changing langchain-chess. Covers what the repo is, the Python/JS package map and dependency direction (including the never-published evals member), the mise dev/check/test/eval commands, the rules every change must keep, and a task-routing table to the rest of the wiki, including settings and System 1 evals.
-tags: [quickstart, overview, package-map, development, routing, settings, evals]
+description: Entry point for coding agents changing langchain-chess. Covers what the repo is, the Python/JS package map and dependency direction (including the never-published evals member), the mise dev/check/test/eval/deploy commands, the two independent deploys (agent image via langgraph deploy, web UI on GitHub Pages), the rules every change must keep, and a task-routing table to the rest of the wiki.
+tags: [quickstart, overview, package-map, development, routing, settings, evals, deployment]
+verified:
+  - by: openwiki/0.9.0
+    at: 2026-11-13T19:10:14.398Z
 sources:
+  - id: openwiki-source-6766b7a0c14857435d2077c9
+    resource: repo://.github/workflows/deploy.yml
+  - id: openwiki-source-5f219f204b3e870beec929d9
+    resource: repo://.github/workflows/pages.yml
+  - id: openwiki-source-b9886f4aee6bc16bdaea61ff
+    resource: repo://apps/server/langchain_chess_server/app.py
   - id: openwiki-source-d6b546398e3b1c03ecb0494a
     resource: repo://apps/server/langchain_chess_server/auth.py
   - id: openwiki-source-9e73cfc78a8aeac72fc36a15
@@ -18,6 +27,10 @@ sources:
     resource: repo://apps/server/langchain_chess_server/settings.py
   - id: openwiki-source-f5485618fdea35eba238fd7b
     resource: repo://apps/server/pyproject.toml
+  - id: openwiki-source-64a074f8a0917e42ea22836a
+    resource: repo://apps/server/tests/e2e/test_browser.py
+  - id: openwiki-source-db33746522a03b766fdba194
+    resource: repo://apps/web/README.md
   - id: openwiki-source-fde4d91838391ae51474c06b
     resource: repo://apps/web/src/auth/check.ts
   - id: openwiki-source-fe293e29941663c7d6f751f0
@@ -68,15 +81,12 @@ sources:
     resource: repo://pyproject.toml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T03:07:46.931Z
+generated: { by: "openwiki/0.9.0", at: "2026-11-13T19:10:14.398Z" }
 ---
 
 # Quickstart: working in langchain-chess
 
-langchain-chess builds chess-playing agents on LangChain's `create_agent`. The design comes down to one rule: **anything that decides how a move is chosen is middleware, and anything that talks to the agent is an adapter outside the graph.** Legality, forced moves, the System 1 ranker (Jev or OpenAI Decisions), memory summarization and stall retries are all middleware. The UCI engine, the terminal UI, the Agent Server graph with its web UI, and the grader are all adapters. The separate `evals` workspace member runs LangSmith experiments against System 1 and is not part of the agent.
+langchain-chess builds chess-playing agents on LangChain's `create_agent`. The design comes down to one rule: **anything that decides how a move is chosen is middleware, and anything that talks to the agent is an adapter outside the graph.** Legality, forced moves, the System 1 ranker (Jev or OpenAI Decisions), memory summarization and stall retries are all middleware. The UCI engine, the terminal UI, the Agent Server graph, the web UI and the grader are all adapters. The separate `evals` workspace member runs LangSmith experiments against System 1 and is not part of the agent.
 
 "System 1 + System 2" is a single middleware. A cheap ranker scores the legal moves. If its confidence clears the gate, it plays the move and the LLM never runs. If not, it gives the LLM a shortlist, and the LLM can still play any legal move. The default System 1 model is Jev (`typesafe/jev-latest`). An `openai/…` model (for example `openai/gpt-6-luna`) uses OpenAI Decisions instead. The details are in [System 1](architecture/system-one.md).
 
@@ -88,12 +98,12 @@ flowchart TD
         chess["libs/chess - langchain_chess"]
         s1["libs/systemone - langchain_chess_systemone"]
         cli["libs/cli - lcchess uci, play, grade"]
-        server["apps/server - chess graph and /ui app"]
+        server["apps/server - chess graph and /model-facts"]
         evals["evals - lcchess-evals, never published"]
     end
     subgraph JS["JavaScript - pnpm and Vite+"]
         ui["packages/chess-ui - TS source, no build"]
-        web["apps/web - React UI at /ui"]
+        web["apps/web - React UI on GitHub Pages"]
         review["apps/review - LangSmith custom app"]
         reports["evals/reports - static TSX reports"]
     end
@@ -106,20 +116,19 @@ flowchart TD
     evals --> s1
     web --> ui
     review --> ui
-    web -. "HTTP (useStream)" .-> server
-    server -. "serves built UI" .-> web
+    web -. "HTTP (useStream, VITE_API_URL)" .-> server
     server -. "codegen writes settings" .-> ui
 ```
-*Solid arrows mean "depends on". Dotted arrows are runtime or build-time links: the web UI calls the server over HTTP, the server serves the built UI, and `mise run generate:settings` writes generated settings files into `packages/chess-ui`.*
+*Solid arrows mean "depends on". Dotted arrows are runtime or build-time links: the web UI calls the server over HTTP at the URL baked in through `VITE_API_URL`, and `mise run generate:settings` writes generated settings files into `packages/chess-ui`. The server does not host the UI.*
 
 | Package | Import / binary | Role |
 |---|---|---|
 | `libs/chess` (`langchain-chess`) | `langchain_chess` | `create_chess_agent`, `ChessState`, the middleware contract and write guard, `ChessCore`, `StallRetry`, `CoreSettings`, `model_kwargs` checks (`model_arguments.py`), `chat_model` (`chat_models.py`), the call recorder and pricing, grading math, test fakes |
 | `libs/systemone` (`langchain-chess-systemone`) | `langchain_chess_systemone` | `SystemOneMiddleware`, `NoSystemOne`, `GatewayRanker` (TypeSafe or OpenAI Decisions client), the tournament, the versioned `ChessContext` settings (`settings.py`), and `build_agent` (`agent.py`), which every surface uses |
 | `libs/cli` (`langchain-chess-cli`) | `lcchess` | The UCI engine, the Textual TUI, `lcchess grade` |
-| `apps/server` (private) | `langchain_chess_server` | The `chess` graph factory (`make_graph`), context resolution, `GameSetupMiddleware`, settings codegen, and the FastAPI app that serves `/ui` |
+| `apps/server` (private) | `langchain_chess_server` | The `chess` graph factory (`make_graph`), context resolution, `GameSetupMiddleware`, settings codegen, the auth handler, and a small FastAPI app whose only route is `GET /model-facts` (its lifespan closes the System 1 client pools) |
 | `evals` (private, never published) | `lcchess-evals` | The Lichess + Stockfish positions dataset and System 1 experiments. `evals/reports` holds the static reports |
-| `apps/web` | — | React UI that signs in (`src/auth/`) and then talks to the `chess` graph over the Agent Server API |
+| `apps/web` | — | React UI, hosted as a static site on GitHub Pages, that signs in (`src/auth/`) and then talks to the `chess` graph over the Agent Server API. Also ships the LangSmith `render.html` output renderer |
 | `apps/review` | — | LangSmith custom app that replays graded games |
 | `packages/chess-ui` | `@langchain-chess/chess-ui` | Board, move list, ply details, state types and the generated settings schemas, shared by both web apps |
 
@@ -156,7 +165,8 @@ Both paths use `fixed_topology=True`, so every build has the same nodes and stat
 
 - **One run plays at most one turn, and one thread is one game.** Input is either a chat message (`go` or one move) or a `position` that extends the thread's game. A position that doesn't extend the game is rejected. A run with no new command retries a pending turn or does nothing. → [Turn lifecycle](architecture/turn-lifecycle.md), [State record](concepts/state-record.md)
 - **Clients read only `start_fen`, `moves`, `plies`, `turns`, `outcome` and `error`, plus the server's `setup`.** `messages` is the model's working context and may be summarized. The thread-state API also returns private channels. → [State record](concepts/state-record.md)
-- **Keep the graph's topology fixed on the server.** Any new server-side middleware must also go into `shape()` or get a no-op placeholder like `NoSystemOne`. Otherwise reads made with the runless graph won't match the running graph. → [Agent Server graph](integrations/agent-server.md)
+- **Keep the graph's topology fixed on the server.** Any new server-side middleware must also go into `shape()` or get a no-op placeholder like `NoSystemOne`. Otherwise reads made with the runless graph won't match the running graph. → [Agent Server graph and HTTP surface](integrations/agent-server.md)
+- **Name custom routes clear of the Agent Server API.** Routes in the custom FastAPI app shadow the Agent Server's own (`/threads`, `/runs`, `/assistants`, `/store`, `/ui`, `/ok`, …). → [Agent Server graph and HTTP surface](integrations/agent-server.md)
 - **Settings are versioned.** `ChessContext` (System 1 settings over `CoreSettings`) is one schema shared by the server, the CLI, the web apps and the evals. It is currently at version 3, the version that retired SemIf and made Jev the default System 1. Any schema change must bump `VERSION`, add a frozen `DEFAULTS` entry and a `MIGRATIONS` step, and be followed by `mise run generate:settings` so the TypeScript in `packages/chess-ui` stays current. A test fails if the committed generated files are stale. → [Settings and model arguments](concepts/settings-and-model-arguments.md)
 - **The middleware contract:**
   - `allowed_moves` can only narrow.
@@ -170,7 +180,7 @@ Both paths use `fixed_topology=True`, so every build has the same nodes and stat
   → [Middleware contract](concepts/middleware-contract.md)
 - **Cost is computed locally.** Every provider response inside a turn, retries included, is recorded and priced with the pinned genai-prices snapshot. OpenAI Decisions System 1 calls use a local per-token rate instead. A stalled call records nothing. A call with no known price, or with approximated usage, marks the turn's cost incomplete. → [Model specs, the LLM Gateway and cost](concepts/models-gateway-and-cost.md)
 - **Coverage is 100% line and branch on both the Python and JS halves**, `evals` included. Use fakes, not mocks. → [Testing conventions](testing/testing-conventions.md)
-- **Image build:** `langgraph.json` builds from the uv workspace with `langchain-chess-server` as the package. `dockerfile_lines` adds the member `pyproject.toml` files: it currently lists `libs/chess`, `libs/systemone`, `libs/cli` and `apps/server`, but not `evals`. Workspace sources live only in the root `pyproject.toml`. → [Deployment](operations/deployment.md)
+- **Image build:** `langgraph.json` builds from the uv workspace with `langchain-chess-server` as the package. `dockerfile_lines` adds the member `pyproject.toml` files: it currently lists `libs/chess`, `libs/systemone`, `libs/cli` and `apps/server`, but not `evals`. Workspace sources live only in the root `pyproject.toml`. The image contains no web UI. → [Deployment](operations/deployment.md)
 
 ## Commands
 
@@ -178,16 +188,15 @@ mise provides the tools: node, pnpm, uv, lefthook, `sfw`, fastchess, Stockfish a
 
 ```sh
 mise trust && mise install && mise run setup   # tools, uv sync --all-packages --all-groups, pnpm install, git hooks
-mise run check        # ruff format/lint + ty, then vp check (web lint, format, types)
+mise run check        # check:python (ruff format/lint + ty) and check:web (vp check)
 mise run test         # test:python (pytest -n auto, 100% coverage gate) + test:web (vp run -r test)
-mise run test:e2e     # build the web UI, drive it in Chromium against langgraph dev with a fake model
+mise run test:e2e     # pytest -m e2e --no-cov: builds the web UI, serves it from another origin, plays in Chromium against langgraph dev with a fake model
 mise run test:live    # opt-in live tests against the real gateway, `-m live --no-cov`; costs money
 mise run test:uci     # two System 1-only (Jev) games under fastchess, seeds 1 and 2; fails on any forfeit
-mise run build        # web UI into apps/server's static dir, served at /ui
 mise run generate:settings   # JSON Schemas + TS for ChessContext into packages/chess-ui/src/generated
 mise run probe:efforts       # ask models whether they take a reasoning effort (real calls)
 
-mise run dev:web      # alias `dev`: langgraph dev on :2024 + web UI on :5173/ui/
+mise run dev:web      # alias `dev`: langgraph dev on :2024 + Vite web UI on http://localhost:5173/
                       # override with LANGGRAPH_PORT / WEB_PORT; refuses to start if a port is taken
 mise run dev:tui -- --side black          # lcchess play
 mise run dev:uci -- --policy systemone    # lcchess uci
@@ -198,15 +207,19 @@ mise run eval:positions:upload            # committed positions JSONL into LangS
 mise run eval:systemone -- --model typesafe/jev-latest --style rich   # or --opponent <settings file>
 mise run eval:systemone:baseline          # the baseline grid in evals/experiments/
 
-mise run deploy       # langgraph deploy to production; meant to run from CI
+mise run deploy       # langgraph deploy of the agent image to production; meant to run from CI
+mise run agent:tag    # tag the dataset and tracing projects to the langchain-chess agent
 mise run wiki:update  # refresh OpenWiki pages (also wiki:init, wiki:view)
 ```
+
+There is no build task for the web UI: to build it by hand, run `pnpm --dir apps/web exec vp build` (output in `apps/web/dist`).
 
 Tips:
 
 - Options after `--` are passed through to the underlying command.
-- `dev:web` points the UI at the chosen server port through `VITE_API_URL`. Once both servers are up it prints the web UI, API and Studio URLs, and it stops everything when either server exits.
-- Plain `pytest` runs serially, which is what you want for `-k`, `--pdb` and `--snapshot-update`. By default pytest skips the `live` and `e2e` markers.
+- `dev:web` points the UI at the chosen server port through `VITE_API_URL`. Once both servers are up it prints the web UI, API and Studio URLs, and it stops everything when either server exits. Unset, `VITE_API_URL` defaults to `langgraph dev` on `:2024`.
+- Plain `pytest` runs serially, which is what you want for `-k`, `--pdb` and `--snapshot-update`. The root `pyproject.toml` declares the `live` and `e2e` markers and its `addopts` skip both (`-m "not live and not e2e"`) and enforce coverage over all five packages with `--cov-fail-under=100`, so focused runs usually want `--no-cov`.
+- The e2e tests need Chromium once: `uv run playwright install chromium`.
 - Add dependencies with `sfw uv add --package <dist> <dep>`, or with `sfw pnpm add <pkg>` in the JS package that needs it.
 - JS versions shared by more than one package go in the `pnpm-workspace.yaml` catalog. The pnpm workspace covers `apps/web`, `apps/review`, `evals/reports` and `packages/*`.
 
@@ -219,9 +232,18 @@ Tips:
 - `LANGSMITH_GATEWAY`: gateway passthrough for bare or `provider:model` specs.
 - `STOCKFISH_PATH`: optional, for grading.
 - `OAUTH_CLIENT_ID` and `ALLOWED_ORGANIZATION_ID`: server-side "Sign in with LangSmith" settings. If they are unset, the server accepts API keys only.
-- `VITE_OAUTH_CLIENT_ID`, `VITE_LANGSMITH_ORGANIZATION_ID` and the optional `VITE_LANGSMITH_SSO_SLUG`: web build variables, set in the Pages workflow and in `apps/web/.env.development.local`. Without a client id, the UI offers API-key sign-in only. If the client id is set without the organization id, the UI shows a "misconfigured build" error.
+- `VITE_API_URL`, `VITE_OAUTH_CLIENT_ID`, `VITE_LANGSMITH_ORGANIZATION_ID` and the optional `VITE_LANGSMITH_SSO_SLUG`: web build variables, set in the Pages workflow (from repository variables) and locally in `apps/web/.env.development.local`. Without a client id, the UI offers API-key sign-in only. If the client id is set without the organization id, the UI shows a "misconfigured build" error.
 
 Create `.env` by copying `.env.example`, and never commit values. The server's settings reject `LANGSMITH_GATEWAY_API_KEY`, `TYPESAFE_API_KEY` or `TYPESAFE_BASE_URL` when one is set but empty, so the graph build fails instead of silently falling back. The two OAuth settings are the opposite: a blank value counts as unset, because the deploy workflow writes them before the OAuth app exists. → [Local development](operations/local-development.md)
+
+## Deploying
+
+The agent and the web UI ship separately, each from its own workflow on pushes to `main` (path-filtered, plus a manual `workflow_dispatch`). Both run CI on the tip of `main` inside a queued concurrency lock and skip when a newer run will ship a newer change.
+
+- **Agent** — [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) writes the deployment's `.env` (gateway and TypeSafe credentials from the `LC_GATEWAY_KEY` secret, the OAuth variables), then runs `mise run deploy` (`langgraph deploy` to the `langchain-chess` agent's production environment) and `mise run agent:tag`. It needs the `LANGSMITH_API_KEY` and `LC_GATEWAY_KEY` secrets, and Docker locally if you deploy by hand.
+- **Web UI** — [`.github/workflows/pages.yml`](../.github/workflows/pages.yml) builds `apps/web` with `vp build` under the repository's base path and publishes `apps/web/dist` to GitHub Pages. The repository variable `VITE_API_URL` names the agent deployment's API URL; the workflow is skipped until it is set, and after changing it you run the workflow by hand.
+
+→ [Deployment and the image build](operations/deployment.md), [Web frontends](architecture/web-frontends.md)
 
 ## Task routing
 
@@ -229,32 +251,23 @@ Create `.env` by copying `.env.example`, and never commit values. The server's s
 |---|---|
 | Understand which package owns what, or where a new feature belongs | [Package map and dependency direction](architecture/package-map.md) |
 | Change how a turn runs: command classification, pending/abandoned turns, reply parsing, illegal-move and stall retries, resignation, forced moves, draw claims | [Turn lifecycle](architecture/turn-lifecycle.md) |
-| Tune or change System 1: gates, thresholds, `k`/`top_p`, the tournament, Jev vs OpenAI Decisions, `NoSystemOne`, ranking retries, policy wiring in `build_agent` | [System 1 (SystemOneMiddleware)](architecture/system-one.md) |
+| Tune or change System 1: gates, thresholds, `k`/`top_p`, the tournament, Jev vs OpenAI Decisions, `NoSystemOne`, ranking retries, policy wiring in `build_agent` | [System 1](architecture/system-one.md) |
+| Change the React UI, its GitHub Pages build or `VITE_API_URL`, the LangSmith output renderer, the shared board components, or how the review app displays games | [Web frontends](architecture/web-frontends.md) |
 | Add or change a setting, bump the settings `VERSION`, write a migration, change merge order or `model_kwargs` checks, regenerate the TS settings, edit opponent settings files | [Settings and model arguments](concepts/settings-and-model-arguments.md) |
-| Change the React UI, the LangSmith output renderer, the shared board components, or how the review app displays games | [Web frontends](architecture/web-frontends.md) |
 | Write a new middleware, or understand why the write guard rejected one | [The middleware contract](concepts/middleware-contract.md) |
 | Add a model, change `chat_model`, gateway routing or reasoning effort, or fix cost and token accounting | [Model specs, the LLM Gateway and cost](concepts/models-gateway-and-cost.md) |
 | Change the prompt, the listed moves (`move_list`), or memory and summarize eligibility | [Prompt and memory](concepts/prompt-and-memory.md) |
 | Add or read a field in `plies`/`turns`/`setup`, or change input and thread semantics | [The state record](concepts/state-record.md) |
-| Change `make_graph`, `shape()`, context resolution, `GameSetupMiddleware`, the client pool, or the `/ui` mount | [Agent Server graph and /ui app](integrations/agent-server.md) |
+| Change `make_graph`, `shape()`, context resolution, `GameSetupMiddleware`, the client pools, the `/model-facts` route or add a custom route | [Agent Server graph and HTTP surface](integrations/agent-server.md) |
+| Change sign-in: OAuth PKCE, the API-key fallback, or the server's auth policy | [Sign in with LangSmith](integrations/langsmith-sign-in.md) |
 | Change the terminal UI or the shared CLI options | [Terminal UI (lcchess play)](integrations/terminal-ui.md) |
 | Change the UCI adapter: time management, fallback moves, `bestmove 0000` | [UCI engine adapter](integrations/uci-engine.md) |
 | Build or upload the positions dataset, run a System 1 experiment or the baseline grid, read the metrics, or write a report | [System 1 evals](workflows/system-one-evals.md) |
 | Change grading, feedback keys, or the review app's data | [Grading and review](workflows/grading-and-review.md) |
-| Change the image build, `langgraph.json`, CI, or deploy path filters | [Deployment and image build](operations/deployment.md) |
+| Change the image build, `langgraph.json`, the deploy or Pages workflows, CI, or path filters | [Deployment and the image build](operations/deployment.md) |
 | Add a mise task, a git hook or a tool pin, or change the OpenWiki workflow | [Local development](operations/local-development.md) |
-| Understand how turns fail and recover at runtime: model errors, stalls, System 1 failures, context validation, what the UI shows | [Runtime behavior and failure modes](operations/runtime-behavior.md) |
+| Understand how turns fail and recover at runtime: model errors, stalls, System 1 failures, context validation, what the UI shows | [Runtime behavior](operations/runtime-behavior.md) |
 | Add tests, use the fakes, update TUI snapshots, or run e2e, live and fastchess tests | [Testing conventions](testing/testing-conventions.md) |
 | Find out why something that looks like a gap was left out on purpose, the measurements behind it, and when to revisit | [Decisions and measurements](concepts/decisions.md) |
 
 Memory is a single on/off setting. When it is off, the model sees only the current position. When it is on, earlier turns are kept and summarized as the conversation nears the model's input limit. Design decisions and their measurements live on the [Decisions and measurements](concepts/decisions.md) page, which the README also points to. No other page in this wiki repeats those numbers.
-repeats those numbers.
-ers.
-evelopment.md) |
-| Understand how turns fail and recover at runtime: model errors, stalls, System 1 failures, context validation, what the UI shows | [Runtime behavior and failure modes](operations/runtime-behavior.md) |
-| Add tests, use the fakes, update TUI snapshots, or run e2e, live and fastchess tests | [Testing conventions](testing/testing-conventions.md) |
-| Find out why something that looks like a gap was left out on purpose, the measurements behind it, and when to revisit | [Decisions and measurements](concepts/decisions.md) |
-
-Memory is a single on/off setting. When it is off, the model sees only the current position. When it is on, earlier turns are kept and summarized as the conversation nears the model's input limit. Design decisions and their measurements live on the [Decisions and measurements](concepts/decisions.md) page, which the README also points to. No other page in this wiki repeats those numbers.
-repeats those numbers.
-ers.
