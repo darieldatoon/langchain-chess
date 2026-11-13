@@ -24,8 +24,8 @@ contains line by line.
 5. **Model specs, the LLM Gateway and cost.** `init_chat_model` specs, the `langsmith:`
    provider, how the recorder captures and prices every provider response locally, and when a
    turn's cost is incomplete.
-6. **Adapters.** The Agent Server graph and the `/ui` mount, the UCI engine, the terminal UI
-   and `lcchess grade` with the review app.
+6. **Adapters.** The Agent Server graph and its `/model-facts` route, the UCI engine, the
+   terminal UI and `lcchess grade` with the review app.
 7. **Deployment and the image build.** The uv workspace in `langgraph.json`, why
    `dockerfile_lines` lists every member's `pyproject.toml`, and why workspace sources live
    only in the root `pyproject.toml`.

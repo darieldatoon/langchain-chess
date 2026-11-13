@@ -187,7 +187,7 @@ run = "bash scripts/agent-tags.sh"
 # .github/workflows/openwiki-update.yml together.
 [tasks."wiki:init"]
 description = "Generate the OpenWiki from scratch (replaces openwiki/ except INSTRUCTIONS.md)"
-tools = { "npm:openwiki" = "0.6.0" }
+tools = { "npm:openwiki" = "0.9.0" }
 run = [
   "bash scripts/openwiki.sh code --init --print",
   # --init keeps only INSTRUCTIONS.md from openwiki/ and drops the committed connector config.
@@ -196,12 +196,12 @@ run = [
 
 [tasks."wiki:update"]
 description = "Update the OpenWiki pages that changed code made stale (a no-op when nothing did)"
-tools = { "npm:openwiki" = "0.6.0" }
+tools = { "npm:openwiki" = "0.9.0" }
 run = "bash scripts/openwiki.sh code --update --print"
 
 [tasks."wiki:view"]
 description = "Browse the OpenWiki locally"
-tools = { "npm:openwiki" = "0.6.0" }
+tools = { "npm:openwiki" = "0.9.0" }
 run = "openwiki visualize"
 
 [tasks."test:uci"]

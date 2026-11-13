@@ -2,10 +2,9 @@ name: openwiki-update
 
 on:
   workflow_dispatch:
-  # Off while the code churns; uncomment once it settles.
-  # push:
-  #   branches: [main]
-  #   paths: ["libs/**", "apps/**", "packages/**"]
+  # Weekly, not per merge: one run batches a week of churn. Move to nightly once the code settles.
+  schedule:
+    - cron: "0 8 * * 1"
 
 permissions:
   contents: read
@@ -16,7 +15,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Each run starts from main's baseline, so a run while last week's PR is open pays again for
+  # the same pages.
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      open-pr: ${{ steps.open-pr.outputs.count }}
+    steps:
+      - name: Count open update PRs
+        id: open-pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          count=$(gh pr list --repo "$GITHUB_REPOSITORY" --head openwiki/update --state open --json number --jq length)
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          if [ "$count" -gt 0 ]; then
+            echo "::notice title=OpenWiki update skipped::Merge or close the open openwiki/update PR first."
+          fi
+
   update:
+    needs: check
+    if: ${{ needs.check.outputs.open-pr == '0' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -36,7 +57,7 @@ jobs:
 
       # The wiki tasks would install it unguarded; installing first puts it behind Socket Firewall.
       - name: Install OpenWiki
-        run: sfw mise install npm:openwiki@0.6.0
+        run: sfw mise install npm:openwiki@0.9.0
 
       - name: Update the wiki
         id: openwiki
@@ -44,6 +65,8 @@ jobs:
         env:
           LC_GATEWAY_KEY: ${{ secrets.LC_GATEWAY_KEY }}
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          # Names the run's LangSmith thread, so its traces and cost can be found from the commit.
+          OPENWIKI_TRACE_THREAD_ID: ${{ github.sha }}
         run: mise run wiki:update
 
       - name: Remove transient run state

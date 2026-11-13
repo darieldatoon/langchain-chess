@@ -53,10 +53,22 @@ url = "https://github.com/SocketDev/sfw-free/releases/download/v1.15.2/sfw-free-
 url_api = "https://api.github.com/repos/SocketDev/sfw-free/releases/assets/566326113"
 provenance = "github-attestations"
 
+[tools."github:SocketDev/sfw-free"."platforms.linux-arm64-musl"]
+checksum = "sha256:13f432d267c9246b4dbd741493e7b40fa71c408223f7ef8360c8c0fce1e8130c"
+url = "https://github.com/SocketDev/sfw-free/releases/download/v1.15.2/sfw-free-musl-linux-arm64"
+url_api = "https://api.github.com/repos/SocketDev/sfw-free/releases/assets/566326114"
+provenance = "github-attestations"
+
 [tools."github:SocketDev/sfw-free"."platforms.linux-x64"]
 checksum = "sha256:fea8171808f9d913635c8f55fa70f7e72451cd38b0fca3d694e12ee1a9d7fc68"
 url = "https://github.com/SocketDev/sfw-free/releases/download/v1.15.2/sfw-free-linux-x86_64"
 url_api = "https://api.github.com/repos/SocketDev/sfw-free/releases/assets/566326111"
+provenance = "github-attestations"
+
+[tools."github:SocketDev/sfw-free"."platforms.linux-x64-musl"]
+checksum = "sha256:007a9769b95235d38811822e599ff5e822d9c46868d263b82b42a31f03b0052c"
+url = "https://github.com/SocketDev/sfw-free/releases/download/v1.15.2/sfw-free-musl-linux-x86_64"
+url_api = "https://api.github.com/repos/SocketDev/sfw-free/releases/assets/566327480"
 provenance = "github-attestations"
 
 [tools."github:SocketDev/sfw-free"."platforms.macos-arm64"]
@@ -69,6 +81,12 @@ provenance = "github-attestations"
 checksum = "sha256:3abd6086098e6ad604a8814cd6a5d9e5dd8e64c2108583f9e85c12e08baa7a26"
 url = "https://github.com/SocketDev/sfw-free/releases/download/v1.15.2/sfw-free-macos-x86_64"
 url_api = "https://api.github.com/repos/SocketDev/sfw-free/releases/assets/566326110"
+provenance = "github-attestations"
+
+[tools."github:SocketDev/sfw-free"."platforms.windows-x64"]
+checksum = "sha256:8802ace1584212ed0361db6f4f12447f9f426b52c24eada54f7625910c3d5292"
+url = "https://github.com/SocketDev/sfw-free/releases/download/v1.15.2/sfw-free-windows-x86_64.exe"
+url_api = "https://api.github.com/repos/SocketDev/sfw-free/releases/assets/566327562"
 provenance = "github-attestations"
 
 [[tools."github:langchain-ai/langsmith-cli"]]
@@ -237,6 +255,12 @@ url = "https://nodejs.org/dist/v24.21.0/node-v24.21.0-darwin-x64.tar.gz"
 [tools.node."platforms.windows-x64"]
 checksum = "sha256:158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541"
 url = "https://nodejs.org/dist/v24.21.0/node-v24.21.0-win-x64.zip"
+
+[[tools."npm:openwiki"]]
+version = "0.9.0"
+aube = { path = ".mise/locks/npm-openwiki/0.9.0", digest = "sha256:5fb1765e5b0f844781eed53d7ed145a3df52e4eaf87a0e8ee4f2bbb68005add8" }
+backend = "npm:openwiki"
+specifiers = ["0.9.0"]
 
 [[tools.pnpm]]
 version = "12.5.1"
