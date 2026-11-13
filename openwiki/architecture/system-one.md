@@ -4,8 +4,8 @@ title: System 1 (SystemOneMiddleware)
 description: How SystemOneMiddleware ranks the allowed moves with a System 1 classifier (Jev over TypeSafe, or an OpenAI Decisions model, via GatewayRanker), gates on margin or confidence to either play the top move or suggest a shortlist, runs a seeded tournament when a capped classifier gets more options than one request holds, behaves when ranking fails with and without an LLM, publishes its decision live, and is wired per opponent policy by the shared build_agent in libs/systemone.
 tags: [systemone, middleware, ranker, tournament, jev, openai-decisions, gate, typesafe, build_agent, settings]
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T01:10:29.908Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T19:10:14.398Z
 sources:
   - id: openwiki-source-b9886f4aee6bc16bdaea61ff
     resource: repo://apps/server/langchain_chess_server/app.py

@@ -1,8 +1,8 @@
 ---
 type: integration adapter
-title: Agent Server graph and /ui app
-description: How the LangGraph Agent Server builds the `chess` graph (make_graph, the runless shape(), build_graph over the shared build_agent in libs/systemone, a fixed topology for every policy), how a run's ChessContext is resolved from assistant context and `configurable` through migrate/resolve, how GameSetupMiddleware records a game's settings in thread state, the shared System 1 HTTP client pools (TypeSafe and OpenAI Decisions), what ServerSettings validates, and how a custom FastAPI app serves /ui/config, /ui/model and (locally) the built web UI, while the hosted UI lives on GitHub Pages.
-tags: [agent-server, langgraph, graph-factory, context, configuration, fastapi, web-ui]
+title: Agent Server graph and HTTP surface
+description: How langgraph.json wires the `chess` graph factory, the "Sign in with LangSmith" auth handler and a custom FastAPI app into the LangGraph Agent Server; how make_graph builds runs and runless reads over the shared build_agent with a fixed topology, how a run's ChessContext is resolved, how GameSetupMiddleware records a game's settings, the shared System 1 client pools closed by the app's lifespan, ServerSettings, the single GET /model-facts route and the rule that custom routes must avoid Agent Server API paths, and how the GitHub Pages web client calls the server.
+tags: [agent-server, langgraph, graph-factory, context, configuration, fastapi, auth, http-api]
 sources:
   - id: openwiki-source-5f219f204b3e870beec929d9
     resource: repo://.github/workflows/pages.yml
@@ -22,6 +22,8 @@ sources:
     resource: repo://apps/server/langchain_chess_server/graph.py
   - id: openwiki-source-e3b0d2af80ee0702b2be4a6b
     resource: repo://apps/server/langchain_chess_server/settings.py
+  - id: openwiki-source-64a074f8a0917e42ea22836a
+    resource: repo://apps/server/tests/e2e/test_browser.py
   - id: openwiki-source-0c7af728d91c2bdeaf4f3679
     resource: repo://apps/server/tests/test_app.py
   - id: openwiki-source-85a241004b3536de61fe173c
@@ -38,8 +40,6 @@ sources:
     resource: repo://apps/server/tests/test_server.py
   - id: openwiki-source-f3c191b904053bff31100758
     resource: repo://apps/server/tests/test_settings.py
-  - id: openwiki-source-db33746522a03b766fdba194
-    resource: repo://apps/web/README.md
   - id: openwiki-source-958c86b14cece0555a5ab2c3
     resource: repo://apps/web/src/auth/session.ts
   - id: openwiki-source-7f2e3520a656d432bb97cc86
@@ -70,29 +70,28 @@ sources:
     resource: repo://libs/systemone/langchain_chess_systemone/ranker.py
   - id: openwiki-source-21de6a067affac443ab60933
     resource: repo://libs/systemone/langchain_chess_systemone/settings.py
-  - id: openwiki-source-72b5d686f860ea86c8592080
-    resource: repo://mise.toml
   - id: openwiki-source-c81a61ad418f9c19c518d61d
     resource: repo://packages/chess-ui/src/settings.ts
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-13T19:10:14.398Z" }
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T03:07:46.931Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T19:10:14.398Z
 ---
 
-# Agent Server graph and the /ui app
+# Agent Server graph and HTTP surface
 
-`apps/server` (package `langchain_chess_server`) is the Agent Server adapter. It adds no chess logic and no settings schema of its own. It resolves a run's settings into a `ChessContext` (defined in `libs/systemone`), hands them to the shared `build_agent` (also in `libs/systemone`, used by every surface) together with the pieces the server owns (a pooled System 1 ranker, a stricter model factory, and `GameSetupMiddleware`), and answers the web UI's small JSON routes next to the graph API. Nothing else depends on it.
+`apps/server` (package `langchain_chess_server`) is the Agent Server adapter. It adds no chess logic and no settings schema of its own. It resolves a run's settings into a `ChessContext` (defined in `libs/systemone`), hands them to the shared `build_agent` (also in `libs/systemone`, used by every surface) together with the pieces the server owns (a pooled System 1 ranker, a stricter model factory, and `GameSetupMiddleware`), decides who may call the deployment with a LangSmith sign-in token, and answers the web UI's one JSON route next to the graph API. It serves no UI: the web app is a static site on GitHub Pages. Nothing else depends on it.
 
-`langgraph.json` wires both entrypoints:
+`langgraph.json` wires three entrypoints:
 
 | Key | Target | Role |
 | --- | --- | --- |
-| `graphs.chess` | `apps/server/langchain_chess_server/graph.py:make_graph` | Graph factory. The Agent Server calls it with the config and runtime. |
-| `http.app` | `apps/server/langchain_chess_server/app.py:app` | Custom FastAPI routes merged into the server: `/ui/config`, `/ui/model`, `/ui` (redirect), `/ui/` (the static build, when present), plus a lifespan hook. |
+| `graphs.chess` | `./apps/server/langchain_chess_server/graph.py:make_graph` | Graph factory. The Agent Server calls it with the config and runtime. |
+| `auth.path` | `./apps/server/langchain_chess_server/auth.py:auth` | Custom auth handler for "Sign in with LangSmith" tokens, with `allow_langsmith_api_keys: true`. |
+| `http.app` | `./apps/server/langchain_chess_server/app.py:app` | Custom FastAPI app merged into the server: `GET /model-facts` plus a lifespan hook that closes the System 1 client pools. |
 | `env` | `.env` | Environment file for the server. Name the variables only. Never document their values. |
 
-For the image build (uv workspace, `dockerfile_lines`), see [deployment](/openwiki/operations/deployment.md).
+For the image build (uv workspace, `dockerfile_lines`), see [deployment](../operations/deployment.md).
 
 ## From a factory call to a compiled graph
 
@@ -152,7 +151,7 @@ It then applies `graph.with_config(metadata=sent(settings, "server"))`, so run m
 What the shared `build_agent` does with the settings:
 
 - **Model.** `policy == "systemone"` passes `model=None` and never calls the model factory. Every other policy calls `model_factory(settings)`. Only the factories a policy uses are called, so `model_kwargs` go unread when the LLM doesn't play (`test_model_kwargs_go_unread_when_the_llm_does_not_play`).
-- **Middleware.** For `systemone` and `hybrid`, one `SystemOneMiddleware` built from `ranker_factory(settings)` (see [System 1](/openwiki/architecture/system-one.md)); for `llm`, `NoSystemOne()` under a fixed topology. The surface's middleware follows. `test_the_llm_policy_never_asks_system_one` checks that an `llm` ply is sourced from the model and sends no System 1 request.
+- **Middleware.** For `systemone` and `hybrid`, one `SystemOneMiddleware` built from `ranker_factory(settings)` (see [System 1](../architecture/system-one.md)); for `llm`, `NoSystemOne()` under a fixed topology. The surface's middleware follows. `test_the_llm_policy_never_asks_system_one` checks that an `llm` ply is sourced from the model and sends no System 1 request.
 - **Memory.** `memory` is a boolean and is effective only when there is a model, so it is ignored for `systemone`.
 - **Memory guard.** With a model and `memory=True`, the model must have a known input limit (`input_limit(model)`, which reads `max_input_tokens` from the model's profile). Otherwise `build_agent` raises a `ChessContractError` saying the model has no known input limit, so it can't use memory, and to turn it off.
 - **Everything else** passes straight through to `create_chess_agent`: `system_prompt`, `show_fen`, `show_board`, `move_list`, `draw_claims`, `seed`, `fixed_topology`, `context_schema`, the optional checkpointer, and `name`.
@@ -168,7 +167,7 @@ The server's `pooled_ranker(server)` returns a ranker factory that builds a `Gat
 
 ### `server_model` and `chat_model`
 
-`server_model(settings)` calls `langchain_chess.chat_models.chat_model(settings.model, arguments(settings, "server"))`. The `"server"` surface is stricter than the local one: `model_kwargs` may set only allowlisted top-level arguments (`temperature`, `top_p`, the max-tokens aliases, `reasoning_effort`, `reasoning`, `verbosity`, `extra_body`), and never anything that reaches the deployment account's own tools and resources (`tools`, `tool_choice`, `previous_response_id`, `conversation`, `prompt`, also inside `extra_body`). A violation raises at build time. `test_the_server_builds_models_with_only_the_arguments_it_allows` covers both refusals. The full rules are on [settings and model arguments](/openwiki/concepts/settings-and-model-arguments.md).
+`server_model(settings)` calls `langchain_chess.chat_models.chat_model(settings.model, arguments(settings, "server"))`. The `"server"` surface is stricter than the local one: `model_kwargs` may set only allowlisted top-level arguments (`temperature`, `top_p`, the max-tokens aliases, `reasoning_effort`, `reasoning`, `verbosity`, `extra_body`), and never anything that reaches the deployment account's own tools and resources (`tools`, `tool_choice`, `previous_response_id`, `conversation`, `prompt`, also inside `extra_body`). A violation raises at build time. `test_the_server_builds_models_with_only_the_arguments_it_allows` covers both refusals. The full rules are on [settings and model arguments](../concepts/settings-and-model-arguments.md).
 
 Before building, the shared `chat_model` runs two checks that raise `ModelArgumentsError` (a `ValueError`) at graph build time:
 
@@ -188,7 +187,7 @@ It then calls `init_chat_model` with:
 
 The server builds no summarization middleware of its own. `libs/chess` applies its default fractional trigger (70% of the model's input limit), so `memory=True` works only for a model with a known input limit, enforced by the guard above. `test_memory_with_a_known_input_limit` builds gateway and native models with limits, and `test_memory_needs_a_known_input_limit` checks that an unknown gateway model fails with memory on, builds with it off, and that `systemone` with memory on still builds. The old string value `memory="full"` fails validation (`test_full_memory_is_gone`).
 
-`model_limit(model)` (cached with `lru_cache(maxsize=64)`) builds `default_model(ChessContext(model=model))` from `libs/systemone` and returns its `input_limit`, or `None` if the model has no limit or can't be built (`ValueError`/`ImportError`). Because it goes through the same `chat_model` factory, it agrees with what `build_agent` will accept (`test_the_model_limit_agrees_with_the_agent`). The web UI's new-game dialog reads it through `/ui/model` to decide whether to offer memory (Summarize).
+`model_limit(model)` (cached with `lru_cache(maxsize=64)`) builds `default_model(ChessContext(model=model))` from `libs/systemone` and returns its `input_limit`, or `None` if the model has no limit or can't be built (`ValueError`/`ImportError`). Because it goes through the same `chat_model` factory, it agrees with what `build_agent` will accept (`test_the_model_limit_agrees_with_the_agent`). The web UI's new-game dialog reads it through `GET /model-facts` to decide whether to offer memory (Summarize).
 
 ## `GameSetupMiddleware`: the game's settings in thread state
 
@@ -198,7 +197,7 @@ The server builds no summarization middleware of its own. `libs/chess` applies i
 - It hooks both `before_agent` (so a first turn whose model call fails still has it; `test_a_first_turn_that_fails_still_records_the_setup`) and `after_agent` (because a first turn that ends the game jumps from `ChessCore.before_agent` straight past this middleware's `before_agent`; the fool's-mate tests cover sync and async).
 - A thread from before `setup` existed never gains one, whether the next run is a later turn, an empty retry, the same position, an illegal position, or a retried pending first turn. A rejected first input records no setup.
 
-The web client uses this to continue a game from its thread alone: `gameOf` in `apps/web/src/setup.ts` takes `recordedContext(values.setup)` (falling back to the new game's picks only until the first turn records them), which calls `loadRecorded` from `packages/chess-ui`. That accepts the setup only if it has exactly its version's keys, all valid, and migrates it to the current version; a context filled in from defaults would play a different game, so a thread with no readable `setup` yields no game. See [state record](/openwiki/concepts/state-record.md) for the rest of the state.
+The web client uses this to continue a game from its thread alone: `gameOf` in `apps/web/src/setup.ts` takes `recordedContext(values.setup)` (falling back to the new game's picks only until the first turn records them), which calls `loadRecorded` from `packages/chess-ui`. That accepts the setup only if it has exactly its version's keys, all valid, and migrates it to the current version; a context filled in from defaults would play a different game, so a thread with no readable `setup` yields no game. See [state record](../concepts/state-record.md) for the rest of the state.
 
 ## The System 1 client pools
 
@@ -245,7 +244,7 @@ Current version 3 knobs and defaults:
 | `top_p` | `None` | In (0, 1]. Cut the top `k` by probability mass. |
 | `seed` | `0` | Seed for System 1's tournament shuffle, within ±(2^53−1). |
 
-Version 3 changed only the `systemone_model` default: the gateway retired SemIf, so the 2-to-3 migration rewrites any `semif-` model to Jev (and a partial that omits the key also gets Jev). For versions, migrations and how to add a knob, see [settings and model arguments](/openwiki/concepts/settings-and-model-arguments.md).
+Version 3 changed only the `systemone_model` default: the gateway retired SemIf, so the 2-to-3 migration rewrites any `semif-` model to Jev (and a partial that omits the key also gets Jev). For versions, migrations and how to add a knob, see [settings and model arguments](../concepts/settings-and-model-arguments.md).
 
 ## `resolve_context`: assistant context, then `configurable`
 
@@ -259,30 +258,37 @@ Knobs arrive two ways. Studio and the SDK set them as assistant **context**. The
 
 Each source is migrated from its own version, so an unversioned assistant can be overridden by a versioned partial `configurable` (`test_an_unversioned_assistant_with_a_versioned_partial_override` in `test_server.py`). `test_context.py` covers defaults, overrides, null versus omission, unversioned sources, model and dict contexts, validation failure, a newer version, and the numeric bounds at and past each edge.
 
-The web client's `configurableOf` sends `version` plus every setting key on every submit, so UI runs override all assistant context. The client's `ChessContext` type, defaults, per-key specs and version table are not hand-mirrored: `langchain_chess_server.codegen` (`mise run generate:settings`) generates them from the Python schema into `packages/chess-ui/src/generated`, and `test_codegen.py` fails when the committed files are stale. See [web frontends](/openwiki/architecture/web-frontends.md).
+The web client's `configurableOf` sends `version` plus every setting key on every submit, so UI runs override all assistant context. The client's `ChessContext` type, defaults, per-key specs and version table are not hand-mirrored: `langchain_chess_server.codegen` (`mise run generate:settings`) generates them from the Python schema into `packages/chess-ui/src/generated`, and `test_codegen.py` fails when the committed files are stale. See [web frontends](../architecture/web-frontends.md).
 
 ## `ServerSettings`
 
-`ServerSettings` is a pydantic-settings class. It reads the shell first, then `.env`, and ignores unknown keys. It deliberately holds no model credentials: chat models (and OpenAI Decisions) read their providers' own environment variables (or `LANGSMITH_GATEWAY*`) themselves. It reads three variables:
+`ServerSettings` is a pydantic-settings class. It reads the shell first, then `.env`, and ignores unknown keys. It deliberately holds no model credentials: chat models (and OpenAI Decisions) read their providers' own environment variables (or `LANGSMITH_GATEWAY*`) themselves. It reads five variables:
 
 - `LANGSMITH_GATEWAY_API_KEY` is read only so that a blank value can be rejected. The `.env` template expands it from a shell variable. If that expansion produces an empty string, langchain-core would otherwise fall back to the tracing key without any warning.
 - `TYPESAFE_API_KEY` and `TYPESAFE_BASE_URL` are the TypeSafe System 1 credentials. `typesafe()` returns them and raises `ValueError("System 1 needs TYPESAFE_API_KEY and TYPESAFE_BASE_URL")` if either is missing.
+- `OAUTH_CLIENT_ID` and `ALLOWED_ORGANIZATION_ID` configure the auth handler (below). They are stripped, and a blank value counts as unset, because the deploy workflow writes both before the OAuth app exists.
 
-A variable that is **set but empty** is a validation error, not the same as unset. Because `typesafe()` is called only when the ranker factory builds a TypeSafe client (for `systemone` and `hybrid` with a non-`openai/` System 1 model), an `llm`-only graph builds without TypeSafe settings, while `hybrid` with Jev fails at build time. `test_systemone_needs_typesafe_settings_only_when_it_runs` covers this. `make_graph` builds a fresh `ServerSettings()` on every run; `shape()` reads no settings at all.
+For the first three, a variable that is **set but empty** is a validation error, not the same as unset. Because `typesafe()` is called only when the ranker factory builds a TypeSafe client (for `systemone` and `hybrid` with a non-`openai/` System 1 model), an `llm`-only graph builds without TypeSafe settings, while `hybrid` with Jev fails at build time. `test_systemone_needs_typesafe_settings_only_when_it_runs` covers this. `make_graph` builds a fresh `ServerSettings()` on every run; `shape()` reads no settings at all.
 
-## The FastAPI app: `/ui/config`, `/ui/model` and the local `/ui`
+## Auth: who may call the deployment
 
-`app.py` exposes `app = create_app()`, a FastAPI app titled `langchain-chess ui` with the docs, redoc and OpenAPI routes turned off and the pool-closing `lifespan` attached. It has these routes:
+`langgraph.json` points `auth.path` at `auth.py:auth` and sets `allow_langsmith_api_keys: true`. Requests without an `Authorization` header (a LangSmith API key sent as `X-Api-Key`) go to LangSmith's own key check and never reach the handler; `langgraph dev` lets them through. The handler only judges "Sign in with LangSmith" bearer tokens:
 
-- `GET /ui/config` returns `ui_config()`: `{"graph": "chess", "schema": ChessContext.model_json_schema(), "defaults": dump(ChessContext())}`. The schema includes the `langgraph_nodes` extras and the field defaults. The web client uses the generated schema instead; the live test uses this route to check that the app is mounted.
-- `GET /ui/model?model=<spec>` returns `{"max_input_tokens": model_limit(model), "takes_effort": takes_effort(model)}`: the input limit (an integer or `null`) and whether the model takes a reasoning effort (`false` only for a spec the probe snapshot knows to reject one). The `model` query parameter is required (omitting it gives 422). `test_the_model_route` checks the GLM-5.3 limit with `takes_effort: true`, Claude Haiku 4.5 with `takes_effort: false`, and an unknown model with a `null` limit and `takes_effort: true`.
-- `GET /ui` redirects (307) to `/ui/`.
-- `/ui/` serves the static Vite build from `langchain_chess_server/static` through `StaticFiles(html=True)`, when that directory exists. The bundle lands there only from a local `mise run build` (for local runs and the e2e tests); **the deployment ships without it**, because GitHub Pages hosts the UI. Without the directory, `/ui/` returns a 404 JSON response that suggests `mise run build` or `vp dev`, and `/ui/config` and `/ui/model` still answer.
+- It verifies the JWT against LangSmith's JWKS (`EdDSA`, issuer and audience `https://api.smith.langchain.com`, requiring `exp`, `iss`, `aud` and `sub`). A missing or non-bearer header, or a token that fails verification, gets 401.
+- A verified token is admitted only when its `client_id` equals `OAUTH_CLIENT_ID` and its `organization_id` equals `ALLOWED_ORGANIZATION_ID`; otherwise 403. With either variable unset, every token is refused, so the deployment takes API keys only.
+- An admitted token's `sub` becomes the user identity. Settings and key lookups are cached, and the check runs in a worker thread because reading `.env` and fetching keys are synchronous.
 
-Two design constraints come from the source comments:
+`test_auth.py` covers these outcomes. The client side (PKCE sign-in, token refresh) is on [LangSmith sign-in](langsmith-sign-in.md).
 
-- **Why `/ui` and not `/`.** Custom routes shadow the Agent Server's own routes, and `/` is the server's health check. Mounting the UI at the root would break the health check.
-- **Why `app.mount` and not `app.frontend()`.** Routes added with `app.frontend()` have low priority. The Agent Server has its own `/ui` mount (`langgraph_api/api/ui.py`), which would answer first, and the chess UI would never load. An explicit `app.mount("/ui", ...)` takes priority.
+## The custom FastAPI app: `GET /model-facts`
+
+`app.py` exposes `app = create_app()`. `create_app()` takes no arguments and returns a FastAPI app titled `langchain-chess`, with the docs, redoc and OpenAPI routes turned off and the pool-closing `lifespan` attached. It serves no UI; GitHub Pages hosts that. It has exactly one route:
+
+- `GET /model-facts?model=<spec>` returns `{"max_input_tokens": model_limit(model), "takes_effort": takes_effort(model)}`: the input limit (an integer or `null`) and whether the model takes a reasoning effort (`false` only for a spec the probe snapshot knows to reject one). The `model` query parameter is required (omitting it gives 422). It answers what the new-game dialog offers: memory for a known input limit, and a reasoning effort unless the model is known to take none.
+
+**Route naming rule.** Custom routes shadow the Agent Server's own, so a new route must be named clear of its API: `/threads`, `/runs`, `/assistants`, `/store`, `/ui`, `/ok` and the rest. `/ok` is the health check (`curl http://127.0.0.1:2024/ok`), and a route that shadowed it or a graph API path would break the server for every client.
+
+The web client sends its session's credentials to `/model-facts` as it does to the graph API.
 
 ### How the web UI reaches the server
 
@@ -290,21 +296,22 @@ Two design constraints come from the source comments:
 sequenceDiagram
     participant B as Browser
     participant AS as Agent Server
-    B->>AS: GET /ui/model with model spec
+    B->>AS: GET /model-facts with model spec
     AS-->>B: max_input_tokens and takes_effort
     B->>AS: threads and runs for graph chess, configurable holds every setting
     AS-->>B: streamed values including setup
 ```
 *The web client's two kinds of calls: model facts for the new-game dialog, and graph runs.*
 
-- **Where the UI lives.** `apps/web/vite.config.ts` defaults to `base: "/ui/"` and writes into the server's static directory. The Pages workflow (`.github/workflows/pages.yml`) overrides `BASE_PATH` (`/<repo>/`), `OUT_DIR` and `VITE_API_URL`, and also passes the sign-in variables `VITE_OAUTH_CLIENT_ID`, `VITE_LANGSMITH_ORGANIZATION_ID` and `VITE_LANGSMITH_SSO_SLUG`, taken from repository variables. If they are unset, the UI offers API keys only; the server gets the same client and organization values. The workflow publishes the bundle to GitHub Pages and is skipped until the repository variable `VITE_API_URL` names the deployment.
-- **Which server it calls.** `apiUrl` in `apps/web/src/settings.ts` uses `VITE_API_URL` when set (the Pages build), `http://localhost:2024` under `vp dev`, and otherwise `window.location.origin` (when this server serves the UI under `/ui`). The client's session decides the credentials on each request: none (for `langgraph dev` or a local server), a LangSmith API key sent as `x-api-key`, or a fresh sign-in access token sent as `Authorization: Bearer`.
-- **Model facts.** `fetchModelFacts` in `apps/web/src/modelFacts.ts` calls `/ui/model` with the session's headers and returns `known` (a number or `null` limit plus a boolean `takes_effort`) or `failed` (non-OK response, malformed body or network error), which says nothing about the model. The dialog offers Summarize only for a known limit and drops the reasoning effort for a model that takes none.
-- **`render.html`** is the second Vite build input, LangSmith's custom output renderer for the positions dataset. It ships with the bundle, so it is served from GitHub Pages (and, in a local build, at `/ui/render.html` through the same static mount, with no route of its own). It fetches nothing from the server; it draws what LangSmith posts to it. See [web frontends](/openwiki/architecture/web-frontends.md).
+- **Where the UI lives.** The web app is a static site. `apps/web/vite.config.ts` uses `base` from `BASE_PATH` (default `/`) and writes to `OUT_DIR` (default `apps/web/dist`). The Pages workflow (`.github/workflows/pages.yml`) builds it with `BASE_PATH` (`/<repo>/`) and `VITE_API_URL`, plus the sign-in variables `VITE_OAUTH_CLIENT_ID`, `VITE_LANGSMITH_ORGANIZATION_ID` and `VITE_LANGSMITH_SSO_SLUG` taken from repository variables (unset, the UI offers API keys only; the server gets the same client and organization values), and publishes `apps/web/dist` to GitHub Pages. The workflow is skipped until the repository variable `VITE_API_URL` names the deployment; a manual dispatch republishes after changing it. The server image carries no UI.
+- **Which server it calls.** `apiUrl` in `apps/web/src/settings.ts` uses `VITE_API_URL` when set (the Pages build) and otherwise `http://localhost:2024` (`langgraph dev`). The browser therefore always calls the server cross-origin. The client's session decides the credentials on each request: none (for `langgraph dev` or a local server), a LangSmith API key sent as `x-api-key`, or a fresh sign-in access token sent as `Authorization: Bearer`.
+- **Model facts.** `fetchModelFacts` in `apps/web/src/modelFacts.ts` calls `${apiUrl}/model-facts` with the session's headers and returns `known` (a number or `null` limit plus a boolean `takes_effort`) or `failed` (non-OK response, malformed body or network error), which says nothing about the model. The dialog offers Summarize only for a known limit and drops the reasoning effort for a model that takes none.
+- **Runs.** The client streams runs on the `chess` graph through the SDK with `config.configurable` holding every setting (see `resolve_context` above), and continues a game from the thread's recorded `setup`. See [web frontends](../architecture/web-frontends.md).
+- **Other clients** (SDK scripts, Studio) call the same API; settings can also come from an assistant's `context`. For example, `client.runs.wait(thread_id, "chess", input={"messages": [...]}, config={"configurable": {"policy": "llm"}})`.
 
 ## Runtime note (LangSmith pull)
 
-Labels follow [runtime behavior](/openwiki/operations/runtime-behavior.md): **Observed** comes from sampled traces, **Correlated** from code cited here.
+Labels follow [runtime behavior](../operations/runtime-behavior.md): **Observed** comes from sampled traces, **Correlated** from code cited here.
 
 - **Observed (this pull, volatile):** none. No figures for runs per thread, policy mix or graph-build failures could be read from the `langchain-chess-app` sample, so this page reports no counts or rates. Record them in runtime behavior when a refresh can read the sample.
 - **Correlated, runs per thread.** One thread is one game and one run plays at most one turn, so a thread normally has about one run per opponent turn. Empty-input retries of a pending turn add runs. Threads that only read state add none, because reads build `shape()` and never run.
@@ -317,12 +324,8 @@ Labels follow [runtime behavior](/openwiki/operations/runtime-behavior.md): **Ob
 - `apps/server/tests/test_context.py` covers the migrate, merge, validation and bounds rules of `resolve_context`.
 - `apps/server/tests/test_server.py` runs an offline `langgraph dev` with no System 1 keys: a paused run reads back as the graph that ran (via run config and via assistant context), an unversioned assistant takes a versioned partial override, and a run that fails at build leaves a readable, empty thread.
 - `apps/server/tests/test_clients.py` covers single creation under concurrent first use and closing/recreating both pools.
-- `apps/server/tests/test_app.py` covers the `/ui/config` payload, the routes without a build (redirect, 404), the `/ui/model` route (known limit, model taking no effort, unknown model, missing parameter), serving a static build, and shutdown closing the clients of a path-loaded `graph.py`.
+- `apps/server/tests/test_app.py` covers the `/model-facts` route (the GLM-5.3 limit `1_048_000 - 64000` with `takes_effort: true`, Claude Haiku 4.5 with `takes_effort: false`, an unknown model with a `null` limit and `takes_effort: true`, and 422 without the `model` parameter), that the module-level `app` is titled `langchain-chess`, and that shutdown closes the clients of a `graph.py` loaded by file path under a generated module name, as langgraph loads it.
+- `apps/server/tests/test_auth.py` covers the auth handler: admitted members, 401 for missing or unverifiable tokens, 403 for another app or organization, and refusal of every token when the policy is unset.
 - `apps/server/tests/test_codegen.py` fails when the generated settings files in `packages/chess-ui` are stale.
-- `apps/server/tests/test_live.py` is opt-in (`-m live`) and costs money. It runs a real `langgraph dev` from `langgraph.json` and checks that the `/ui` app is mounted, that assistant context reaches the factory through `runtime`, that a full game plays on the server, and that the recorder prices LLM calls there.
-- `apps/server/tests/e2e` (`mise run test:e2e`) builds the web UI into the static directory and plays games in Chromium against `langgraph dev` at `/ui/`.
- creation under concurrent first use and closing/recreating both pools.
-- `apps/server/tests/test_app.py` covers the `/ui/config` payload, the routes without a build (redirect, 404), the `/ui/model` route (known limit, model taking no effort, unknown model, missing parameter), serving a static build, and shutdown closing the clients of a path-loaded `graph.py`.
-- `apps/server/tests/test_codegen.py` fails when the generated settings files in `packages/chess-ui` are stale.
-- `apps/server/tests/test_live.py` is opt-in (`-m live`) and costs money. It runs a real `langgraph dev` from `langgraph.json` and checks that the `/ui` app is mounted, that assistant context reaches the factory through `runtime`, that a full game plays on the server, and that the recorder prices LLM calls there.
-- `apps/server/tests/e2e` (`mise run test:e2e`) builds the web UI into the static directory and plays games in Chromium against `langgraph dev` at `/ui/`.
+- `apps/server/tests/test_live.py` is opt-in (`-m live`) and costs money. It runs a real `langgraph dev` from `langgraph.json` and checks that the custom app is mounted (`/model-facts` answers), that assistant context reaches the factory through `runtime`, that a full game plays on the server, and that the recorder prices LLM calls there.
+- `apps/server/tests/e2e` (`mise run test:e2e`) builds the web UI with `VITE_API_URL` pointing at a `langgraph dev` running a fake-model graph, serves the build from another origin as GitHub Pages does, and plays games in Chromium, checking that a setup's settings reach the agent.

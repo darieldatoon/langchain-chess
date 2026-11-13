@@ -80,10 +80,10 @@ sources:
     resource: repo://libs/systemone/langchain_chess_systemone/settings.py
   - id: openwiki-source-0e44d1e7d0101f3027cd3f67
     resource: repo://libs/systemone/tests/test_middleware.py
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-13T19:10:14.398Z" }
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T03:07:46.931Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T19:10:14.398Z
 ---
 
 # Runtime behavior and failure modes
@@ -199,11 +199,13 @@ flowchart TD
   window minus the output budget. `build_agent` raises `ChessContractError` when memory is on for
   a model that has no known input limit, and `ChessSummarization.check_room` rejects a system
   prompt that alone reaches the trigger.
-- The web new-game dialog asks `GET /ui/model?model=…`, which returns `max_input_tokens` (from
-  the cached `model_limit` in `graph.py`) and `takes_effort`. It offers memory only when an input
-  limit is known, and sends no reasoning effort for a model known to take none
-  (`apps/server/langchain_chess_server/app.py`, `apps/web/src/modelFacts.ts`). A failed request
-  reads as "nothing known", not as a fact about the model.
+- The web new-game dialog asks `GET /model-facts?model=…` (the server's one custom route, sent
+  with the tab's session headers), which returns `max_input_tokens` (from the cached
+  `model_limit` in `graph.py`, null when the model has no known limit or cannot be built) and
+  `takes_effort`. It offers memory only when an input limit is known, and sends no reasoning
+  effort for a model known to take none (`apps/server/langchain_chess_server/app.py`,
+  `apps/web/src/modelFacts.ts`). A non-OK response, a malformed body or a network error reads as
+  "nothing known" (`kind: "failed"`), not as a fact about the model.
 - Summary calls run in `before_model`, outside `ChessCore.wrap_model_call`. Their `Call`s go
   onto the turn record together with the message rewrite, but their time does not count toward
   `turn.latency_ms`. Summary calls go through the same `provider_errors()` translation as move
@@ -456,54 +458,5 @@ could be inspected in this refresh.
 - **Observed:** no figures, because the raw sample was not accessible to this refresh. When a
   later refresh can read it, record here the bucket counts (error / outlier / baseline), baseline
   medians, per-kind (`llm`, `summary`, `systemone`) call counts and latency or token totals, and
-  the results of the checks above. Bucket counts describe how the anomaly-weighted sample was
-  built. They are not fleet rates.
- counts and latency or token totals, and
-  the results of the checks above. Bucket counts describe how the anomaly-weighted sample was
-  built. They are not fleet rates.
- turns before the LLM starts.** (Correlated, checks 6
-   and 7.) With a 15 s timeout and 3 attempts, a failing System 1 can add tens of seconds. The
-   elapsed time appears in `SystemOneMeta.latency_ms` and in the turn's latency. Before tuning
-   `timeout_s`, `max_attempts` or the backoff, measure System 1 span time in outlier roots.
-3. **Illegal-reply retries repeat the most expensive call.** (Correlated, check 2.) Before
-   changing `SYSTEM_PROMPT`, `feedback_text`, `move_list` or `max_retries`, count LLM spans per
-   root and classify the rejection signature. A reply truncated at the length cap needs a
-   different fix from a disallowed move, and a stall retry is neither.
-4. **Recorded turn cost is a lower bound.** (Correlated.) Errored and stalled provider attempts
-   are not recorded, hosted-tool calls are marked incomplete, and System 1 calls from a
-   classifier other than Jev or a priced Decisions model are unpriced. Use LangSmith spans to
-   reconcile spend. Read the `CallRecorder` docstring about run-tree keying before changing it.
-5. **The gate may act as a pruner in practice.** (Hypothesis, check 4.) If sampled hybrid turns
-   almost always reach the LLM, System 1 adds latency without saving LLM calls.
-6. **Summarization is unlikely to appear in production traces.** (Correlated, check 8.) It is
-   opt-in and needs a model with a known input limit. For coverage, rely on `libs/chess/tests`.
-
-## Focused tests
-
-- `libs/chess/tests/test_contract.py`: a stalled stream is retried within the turn; a second
-  stall fails the turn and Retry resumes it; only a stall is retried; without `langchain_openai`
-  nothing is a stall; completed calls survive a wrapper failure; a resume calls the model again;
-  overflow after a completed call is still `ContextBudgetError`.
-- `libs/chess/tests/test_lifecycle.py`: overflow surfaces as `ContextBudgetError` and a rejected
-  effort as `ReasoningEffortError`, both leaving the turn pending; a fresh `go` while a turn is
-  pending is rejected; a new position abandons a pending turn.
-- `libs/chess/tests/test_commands.py`: resigning abandons a pending turn without playing its
-  saved move; a draw offer while a turn is pending is rejected.
-- `libs/chess/tests/test_chat_models.py`: a model without an effort is refused one before its
-  first call; output budgets stay within model limits.
-- `libs/systemone/tests/test_middleware.py`: ranking time counts once across retries; a skipped
-  ranking carries its elapsed time.
-- `libs/systemone/tests/test_ranker.py`: `RankingFailed.elapsed_ms` is set.
-- `apps/server/tests/test_clients.py`: concurrent first use makes one client pair; closing
-  resets each pool.
-
-## This pull
-
-- **Observed:** no figures, because the raw sample was not accessible to this refresh. When a
-  later refresh can read it, record here the bucket counts (error / outlier / baseline), baseline
-  medians, per-kind (`llm`, `summary`, `systemone`) call counts and latency or token totals, and
-  the results of the checks above. Bucket counts describe how the anomaly-weighted sample was
-  built. They are not fleet rates.
- counts and latency or token totals, and
   the results of the checks above. Bucket counts describe how the anomaly-weighted sample was
   built. They are not fleet rates.

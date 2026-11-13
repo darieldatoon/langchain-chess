@@ -1,8 +1,11 @@
 ---
 type: Reference
 title: Testing conventions
-description: How langchain-chess is tested — 100% line and branch coverage gates for Python (pytest) and JS (Vitest via Vite+), fakes instead of mocks (the testing.py helpers in each package and chess-ui's testing.ts), auth tests with injected fakes (Root props, locally signed JWTs and a fake JWKS) that need no LangSmith, Textual snapshot and Playwright e2e tests, and opt-in paid live tests selected with -m live.
+description: How langchain-chess is tested — 100% line and branch coverage gates for Python (pytest) and JS (Vitest via Vite+), fakes instead of mocks (the testing.py helpers in each package and chess-ui's testing.ts), auth tests with injected fakes (Root props, locally signed JWTs and a fake JWKS) that need no LangSmith, Textual snapshot tests, Playwright e2e tests against a separately served UI build, and opt-in paid live tests selected with -m live.
 tags: [testing, coverage, pytest, vitest, fakes, snapshots, e2e, live-tests, ci, auth]
+verified:
+  - by: openwiki/0.9.0
+    at: 2026-11-13T19:10:14.398Z
 sources:
   - id: openwiki-source-164e2da859b5277df81c7d94
     resource: repo://.github/workflows/ci.yml
@@ -50,6 +53,8 @@ sources:
     resource: repo://apps/web/tests/support/fakeStream.ts
   - id: openwiki-source-0f3cd019710b6ba7315199c5
     resource: repo://apps/web/tests/useGame.test.tsx
+  - id: openwiki-source-03f6dd3375679341910a29c1
+    resource: repo://apps/web/vite.config.ts
   - id: openwiki-source-5fd879e8b1a9ca380f062f2d
     resource: repo://conftest.py
   - id: openwiki-source-143e329ba5c6f68af1b676a6
@@ -92,10 +97,7 @@ sources:
     resource: repo://pyproject.toml
   - id: openwiki-source-5e1b077422a94ae165e88e4e
     resource: repo://vite.config.ts
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T03:07:46.931Z
+generated: { by: "openwiki/0.9.0", at: "2026-11-13T19:10:14.398Z" }
 ---
 
 # Testing conventions
@@ -111,7 +113,7 @@ flowchart TD
   PR["pull request or deploy workflow_call"] --> CI["ci.yml jobs"]
   CI --> Py
   CI --> Web
-  CI --> E2E["test:e2e: build UI, pytest -m e2e"]
+  CI --> E2E["test:e2e: pytest -m e2e, builds UI itself"]
   Manual["manual only"] --> Live["test:live: pytest -m live, costs money"]
   Manual --> Uci["test:uci: fastchess smoke match"]
 ```
@@ -125,13 +127,13 @@ The default suites run on every push and PR; e2e runs in CI; live and UCI tests 
 | `mise run test` | `test:python` and `test:web` |
 | `mise run test:python` | `uv run --all-packages pytest -q -n auto` (100% gate) |
 | `mise run test:web` | `pnpm exec vp run -r test` — every JS package's `vp test --run --coverage` |
-| `mise run test:e2e` | `mise run build`, then `pytest -m e2e --no-cov -q` |
+| `mise run test:e2e` | `pytest -m e2e --no-cov -q` (the test builds the web UI itself) |
 | `mise run test:live` | `pytest -m live --no-cov -q` with `--env-file .env` — **costs a few cents** |
 | `mise run test:uci` | a two-game fastchess match of System 1-only `lcchess uci` |
 
 xdist parallelism (`-n auto`) lives in the mise task, not in pytest `addopts`, so a bare `pytest` stays serial for `-k`, `--pdb` and `--snapshot-update`.
 
-See [Local development](/openwiki/operations/local-development.md) for toolchain setup and [Quickstart](/openwiki/quickstart.md) for the first run.
+See [Local development](../operations/local-development.md) for toolchain setup and [Quickstart](../quickstart.md) for the first run.
 
 ## Python: pytest and the coverage gate
 
@@ -152,10 +154,11 @@ Package-level fixtures worth knowing:
 
 ## JS: Vitest via Vite+
 
-Each JS package (`apps/web`, `apps/review`, `packages/chess-ui`, `evals/reports`) has a `test` script `vp test --run --coverage` and a `test` block in its own `vite.config.ts`: jsdom, v8 coverage over `src/**`, and thresholds of 100% for lines, functions, branches and statements. The repo-root `vite.config.ts` holds only `lint` and `fmt`, because Vite+ ignores those blocks in nested configs; its fmt ignores include the generated chess-ui settings files that `test_codegen` compares byte for byte.
+Each JS package (`apps/web`, `apps/review`, `packages/chess-ui`, `evals/reports`) has a `test` script `vp test --run --coverage` and a `test` block in its own `vite.config.ts`: jsdom, v8 coverage over `src/**`, and thresholds of 100% for lines, functions, branches and statements (for the web app, in `apps/web/vite.config.ts`). The repo-root `vite.config.ts` holds only `lint` and `fmt`, because Vite+ ignores those blocks in nested configs; its fmt ignores include the generated chess-ui settings files that `test_codegen` compares byte for byte.
 
 Details that matter when changing these configs:
 
+- `apps/web/vite.config.ts` reads its build output directory from `OUT_DIR` (default `dist`) and its base path from `BASE_PATH`; the e2e suite uses `OUT_DIR` to build into a temp directory.
 - `apps/review` writes coverage to `../../node_modules/.coverage/review`, outside the app, because `langsmith apps push` uploads the directory without reading `.gitignore`.
 - `evals/reports` excludes its one-off report pages (`src/experiments/**`) from the coverage gate. Instead `tests/reports.test.tsx` globs every report, asserts at least one exists, and checks each renders with a truthy `title` and at least one heading (with a 30 s timeout, since a full report can take 4–6 s on a CI runner). Under test the `@report` alias points at `tests/support/FixtureReport.tsx`.
 - The shared setup file adds jest-dom matchers, polyfills layout and media APIs jsdom lacks (`matchMedia`, `scrollIntoView`, pointer capture, `ResizeObserver`, `requestAnimationFrame`), and runs cleanup and clears `localStorage` after each test.
@@ -177,7 +180,7 @@ Each package ships its own fakes in a non-runtime module, so tests in other pack
 
 **`langchain_chess_evals.testing`** (`evals`)
 
-- `fake_analysis`, `FakePool` (stand-in for `EnginePool`), `FakeFetch` (in-memory URL fetcher) and `FakeDatasetClient` (the slice of `langsmith.Client` that uploads and experiments use, in memory). The evals tests use these instead of Stockfish, Lichess and LangSmith. See [System 1 evals](/openwiki/workflows/system-one-evals.md).
+- `fake_analysis`, `FakePool` (stand-in for `EnginePool`), `FakeFetch` (in-memory URL fetcher) and `FakeDatasetClient` (the slice of `langsmith.Client` that uploads and experiments use, in memory). The evals tests use these instead of Stockfish, Lichess and LangSmith. See [System 1 evals](../workflows/system-one-evals.md).
 
 **`@langchain-chess/chess-ui/testing`** (`packages/chess-ui/src/testing.ts`)
 
@@ -187,7 +190,7 @@ Each package ships its own fakes in a non-runtime module, so tests in other pack
 
 ## Testing auth without LangSmith
 
-"Sign in with LangSmith" (see [LangSmith sign-in](/openwiki/integrations/langsmith-sign-in.md)) is tested end to end in the default suite without any LangSmith account, network call or real token. Both sides are written so their outside dependencies can be injected.
+"Sign in with LangSmith" (see [LangSmith sign-in](../integrations/langsmith-sign-in.md)) is tested end to end in the default suite without any LangSmith account, network call or real token. Both sides are written so their outside dependencies can be injected.
 
 **Server (`apps/server/tests/test_auth.py`).** The auth handler's logic, `user_for(authorization, policy, signing_key)`, takes the `AccessPolicy` and a signing-key lookup as arguments. The tests generate throwaway Ed25519 keys, sign EdDSA JWTs locally with LangSmith's issuer and audience, and pass a lookup that returns the test key's public key. They cover:
 
@@ -214,16 +217,36 @@ After a deliberate change, `pytest --snapshot-update` rewrites the SVGs under `_
 
 ## Browser e2e tests
 
-`apps/server/tests/e2e/test_browser.py` is marked `e2e` and runs via `mise run test:e2e`, which builds the web UI first (the test fails fast if the built UI is missing). It boots `langgraph dev` offline through the `langgraph_dev` fixture with fake gateway keys, stripped credentials and a replacement `chess` graph (`e2e/graph.py`): the server's own graph with a `ScriptedModel` that echoes the prompt it was shown plus a legal move, and a `FakeRanker`. Playwright drives Chromium in desktop and phone (portrait, small, landscape) contexts.
+`apps/server/tests/e2e/test_browser.py` is marked `e2e` and runs via `mise run test:e2e` (it needs pnpm and Chromium). It sets up two module-scoped fixtures:
 
-The core test fills the setup form and asserts the stored setup, the prompt the agent saw, and the System 1 shortlist size match the chosen settings. Others check phone layouts (no sideways scrolling, controls in the viewport, 44 px tap targets), tap and drag moves, the reply card, promotion on a flipped board, resignation, games from a FEN where the agent moves first, and that a first move whose response was dropped is played only once.
+1. **`server`** boots `langgraph dev` offline through the `langgraph_dev` fixture, with an env file holding only fake gateway keys and tracing off, a process environment stripped of `LANGSMITH_`/`LANGCHAIN_`/`TYPESAFE_`/`LC_` variables, and a replacement `chess` graph (`e2e/graph.py`): the server's own graph with a `ScriptedModel` that echoes the prompt it was shown plus a legal move, and a `FakeRanker` that ranks options in order.
+2. **`site`** builds the web UI with `pnpm --dir apps/web exec vp build` into a temp directory, passing `VITE_API_URL` (the server's URL) and `OUT_DIR` (with any other `VITE_` variables removed), fails the test with the build output if the build fails, and serves the result from a separate `127.0.0.1` origin with a threaded static HTTP server — the way GitHub Pages serves the real UI against a separate API.
+
+```mermaid
+sequenceDiagram
+  participant T as test_browser.py
+  participant S as langgraph dev (fake model)
+  participant B as vp build (VITE_API_URL, OUT_DIR)
+  participant H as static server (other origin)
+  participant P as Playwright Chromium
+  T->>S: langgraph_dev(workdir, env_file, environ, graphs)
+  T->>B: build UI against server URL into temp dir
+  T->>H: serve temp dir
+  P->>H: load page
+  P->>S: API calls (cross-origin)
+  T->>S: langgraph_sdk get_state to assert stored values
+```
+
+Playwright drives Chromium in desktop and phone (portrait, small, landscape) contexts, with the site as `base_url`; assertions read back thread state through the LangGraph SDK. The core test fills the setup form and asserts the stored setup, the prompt the agent saw, and the System 1 shortlist size match the chosen settings. Others check phone layouts (no sideways scrolling, controls in the viewport, 44 px tap targets), tap and drag moves, the reply card, promotion on a flipped board and on a small phone, resignation, games from a FEN where the agent moves first, and that a first move whose response was dropped is played only once.
+
+Sign-in is exercised without LangSmith: one test routes `**/assistants/search` to a 401 in Playwright and expects the New game dialog to show "Sign-in needed", and the Settings dialog test expects "This server needs no sign-in." against the e2e server.
 
 ## Live tests: opt-in, and they cost money
 
 Tests marked `live` are deselected by default. They are selected only with `-m live`, normally through `mise run test:live` (`pytest -m live --no-cov` with `.env`). They call the real LLM Gateway and other real services, and **each run costs money** (a few cents). Neither the pre-push hook nor CI runs them.
 
 - `libs/chess/tests/test_live.py` plays and prices a few Opus moves.
-- `apps/server/tests/test_live.py` starts a real `langgraph dev` with the shared fixture. It checks the `/ui` mount via `/ui/config` (graph `chess`, default policy `hybrid`), a System 1 chat game with an idempotent resend and an illegal-move error, that assistant context reaches the factory through `runtime` with no run config, and that LLM calls are priced (threshold 1.0, default model `baseten:zai-org/GLM-5.3-Flash`).
+- `apps/server/tests/test_live.py` starts a real `langgraph dev` with the shared fixture and the repo's own `.env`. It checks that the custom HTTP app is mounted (`/model-facts?model=kimi-k3` answers `max_input_tokens: null`, `takes_effort: true`), a System 1 chat game with an idempotent resend and an illegal-move error, that assistant context reaches the factory through `runtime` with no run config, and that LLM calls are priced (threshold 1.0, default model `baseten:zai-org/GLM-5.3-Flash`).
 - `evals/tests/test_live.py` runs the System 1 eval target with a real `GatewayRanker("typesafe/jev-latest")` on the starting position (all 20 legal moves ranked, no tournament), and verifies LangSmith enforces the positions dataset schemas using a throwaway dataset it deletes afterwards.
 
 ## UCI smoke match
@@ -235,11 +258,6 @@ Tests marked `live` are deselected by default. They are selected only with `-m l
 The lefthook pre-push hook runs `mise run test`; pre-commit stays on staged files (format, lint, type check, secret scan). `.github/workflows/ci.yml` runs on pull requests (ignoring Markdown, `plans/**` and `openwiki/**`) and is called via `workflow_call` by the deploy workflows, so a deploy is gated on the same checks for its ref. It has three jobs:
 
 - **python** — `check:python`, `test:python`, and the snapshot report artifact on failure.
-- **web** — `check:web`, `test:web`, and `review:size` (the review app's upload budget).
-- **e2e** — installs Playwright Chromium and runs `test:e2e`.
-
-CI does not run live tests or the UCI smoke match.
-ct on failure.
 - **web** — `check:web`, `test:web`, and `review:size` (the review app's upload budget).
 - **e2e** — installs Playwright Chromium and runs `test:e2e`.
 

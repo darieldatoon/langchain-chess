@@ -20,6 +20,8 @@ sources:
     resource: repo://apps/server/tests/test_graph.py
   - id: openwiki-source-f3c191b904053bff31100758
     resource: repo://apps/server/tests/test_settings.py
+  - id: openwiki-source-7f2e3520a656d432bb97cc86
+    resource: repo://apps/web/src/modelFacts.ts
   - id: openwiki-source-3ae14faf8cc85a90b40ed182
     resource: repo://libs/chess/langchain_chess/agent.py
   - id: openwiki-source-65bee4ff16ecbe51243c1e47
@@ -76,10 +78,10 @@ sources:
     resource: repo://libs/systemone/langchain_chess_systemone/settings.py
   - id: openwiki-source-72b5d686f860ea86c8592080
     resource: repo://mise.toml
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T03:07:46.931Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-13T19:10:14.398Z" }
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T03:07:46.931Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T19:10:14.398Z
 ---
 
 # Model specs, the LLM Gateway and cost
@@ -211,9 +213,14 @@ a real probe, and `takes_effort(model)` reads it:
   Run it with `mise run probe:efforts` (append specs to add them). Only web presets have to be
   recorded. A probe sees only failures: the gateway silently drops the effort for GPT-4o and
   GPT-4.1, so those would be recorded as taking one.
-- **The web UI asks first.** The server's `GET /ui/model?model=…` route returns
+- **The web UI asks first.** The server's `GET /model-facts?model=…` route returns
   `{"max_input_tokens": model_limit(model), "takes_effort": takes_effort(model)}`, so the new-game
-  dialog offers an effort only to models not known to reject one.
+  dialog offers an effort only to models not known to reject one. The web client
+  (`fetchModelFacts` in `apps/web/src/modelFacts.ts`) sends the session headers and turns any
+  non-OK response, malformed body or network error into a `failed` result, which says nothing
+  about the model; a `known` result carries `maxInputTokens` (possibly `null`) and `takesEffort`.
+  The route sits outside the Agent Server's own API paths (`/threads`, `/runs`, `/ui`, …) because
+  custom routes shadow those.
 
 ## Building the chat model: output budget and the profile
 
@@ -272,7 +279,7 @@ The shared `build_agent` and the surfaces turn this into user-facing behaviors:
 - The server's `model_limit(model)` (cached with `lru_cache`) builds
   `default_model(ChessContext(model=model))` and returns its `input_limit`, or `None` if the model
   can't be built (`ValueError`, which includes `ModelArgumentsError`, or `ImportError`). The
-  `/ui/model` route in `apps/server/langchain_chess_server/app.py` returns it as
+  `GET /model-facts` route in `apps/server/langchain_chess_server/app.py` returns it as
   `max_input_tokens` (next to `takes_effort`), so the web UI's new-game dialog only offers memory
   for models with a known limit. The terminal UI's setup screen has its own uncached
   `model_limit` with the same logic (`libs/cli/langchain_chess_cli/tui/setup.py`).
@@ -525,7 +532,10 @@ not repeated here.
   limit; `model_limit` agreeing with the agent, including a small window split between input and
   output; the server holding back arguments it doesn't allow; run metadata recording the values
   sent.
-- `apps/server/tests/test_app.py`: the `/ui/model` route.
+- `apps/server/tests/test_app.py`: the `GET /model-facts` route — a known gateway model's
+  `window - 64000` limit with `takes_effort: true`, gateway Haiku 4.5 reporting
+  `takes_effort: false`, an unknown bare name returning `max_input_tokens: null`, and a missing
+  `model` parameter rejected with 422.
 - `libs/chess/tests/test_live.py` (opt-in `-m live`, costs money): real Opus turns through the
   gateway record `anthropic:claude-opus-5-5` with positive tokens and a complete `turn_cost`.
 - `apps/server/tests/test_settings.py`: blank-key rejection and `.env` loading.

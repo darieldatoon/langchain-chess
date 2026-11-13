@@ -31,7 +31,7 @@ sources:
     resource: repo://libs/systemone/langchain_chess_systemone/middleware.py
   - id: openwiki-source-72b5d686f860ea86c8592080
     resource: repo://mise.toml
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-13T19:10:14.398Z" }
 ---
 
 # UCI engine adapter (`lcchess uci`)
@@ -47,6 +47,12 @@ The code lives in `libs/cli/langchain_chess_cli/uci/`:
 | `completion.py` | Pure mapping from final agent state plus the search's run status to `info string` lines and exactly one `bestmove`. |
 | `engine.py` | The stateful `Engine`: search state machine, UCI options, tasks, stdin loop (`run`). |
 
+<!-- openwiki: broken internal link [/openwiki/architecture/turn-lifecycle.md] link "/openwiki/architecture/turn-lifecycle.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/concepts/middleware-contract.md] link "/openwiki/concepts/middleware-contract.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/concepts/settings-and-model-arguments.md] link "/openwiki/concepts/settings-and-model-arguments.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/architecture/system-one.md] link "/openwiki/architecture/system-one.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/integrations/terminal-ui.md] link "/openwiki/integrations/terminal-ui.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/operations/runtime-behavior.md] link "/openwiki/operations/runtime-behavior.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 Related pages: the per-turn lifecycle the adapter relies on (pending, committed, abandoned, terminal turns) is covered in [Turn lifecycle](/openwiki/architecture/turn-lifecycle.md) and the [middleware contract](/openwiki/concepts/middleware-contract.md) (which is what lets System 1 write `fallback_move`). The settings model (`ChessContext`), settings files and flags are covered in [Settings and model arguments](/openwiki/concepts/settings-and-model-arguments.md). The source of the fallback move is covered in [System 1](/openwiki/architecture/system-one.md). The other CLI adapter is the [Terminal UI](/openwiki/integrations/terminal-ui.md); runtime behaviour across surfaces is in [Runtime behavior](/openwiki/operations/runtime-behavior.md).
 
 ## Entry point and wiring

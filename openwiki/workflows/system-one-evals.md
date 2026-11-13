@@ -4,11 +4,15 @@ title: "System 1 evals: positions dataset, experiments and reports"
 description: How the unpublished evals workspace member builds and uploads the Lichess+Stockfish positions dataset, runs System 1 experiments (Jev, OpenAI Decisions, opponent files) in LangSmith through a GatewayRanker target, scores rows and summaries (gate table, calibration), and records results as static TSX reports and a board renderer.
 tags: [evals, system-one, langsmith, dataset, stockfish, lichess, reports]
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-11-01T01:10:29.908Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T19:10:14.398Z
 sources:
+  - id: openwiki-source-5f219f204b3e870beec929d9
+    resource: repo://.github/workflows/pages.yml
   - id: openwiki-source-db33746522a03b766fdba194
     resource: repo://apps/web/README.md
+  - id: openwiki-source-50b51378a1829867080b74e7
+    resource: repo://apps/web/render-preview.html
   - id: openwiki-source-19a42ef883802736914257fc
     resource: repo://apps/web/src/render/useParentMessage.ts
   - id: openwiki-source-03f6dd3375679341910a29c1
@@ -59,7 +63,7 @@ sources:
     resource: repo://evals/tests/test_live.py
   - id: openwiki-source-72b5d686f860ea86c8592080
     resource: repo://mise.toml
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-13T19:10:14.398Z" }
 ---
 
 # System 1 evals: positions dataset, experiments and reports
@@ -218,9 +222,9 @@ After the run, `run_experiment` writes `{name, url, spec, metadata, summary}` to
 
 ## Seeing outputs as a board
 
-LangSmith shows outputs as JSON. The web app also builds `render.html`, a [custom output renderer](https://docs.langchain.com/langsmith/custom-output-rendering) for this dataset. The web UI's GitHub Pages site serves it at `https://darieldatoon.github.io/langchain-chess/render.html`, because LangSmith embeds only `https` pages. Local builds put it under `/ui/`.
+LangSmith shows outputs as JSON. The web app also builds `render.html`, a [custom output renderer](https://docs.langchain.com/langsmith/custom-output-rendering) for this dataset. The web UI's GitHub Pages site serves it at `https://darieldatoon.github.io/langchain-chess/render.html` (that is, `/<repo>/render.html`), because LangSmith embeds only `https` pages. It is a second Vite build input next to `index.html`. The Pages workflow sets `BASE_PATH` to the repository path, and a local build with no `BASE_PATH` puts it at the root of `apps/web/dist`.
 
-The renderer draws Stockfish's best move and top 3 as arrows, with every move's eval. It draws System 1's picks as arrows with probability bars, confidence, margin and the tournament. LangSmith posts `{type: "output" | "reference", data, metadata: {inputs}}` into the iframe. The page fetches nothing and accepts messages only from the window that embeds it, not from a fixed origin, because self-hosted LangSmith can live on any origin. The renderer shows up in experiment runs, the compare view and annotation queues, but not in the dataset's Examples tab. Turn it on with `upload --renderer-url` as described above, and turn it off in LangSmith (⋮ → Custom Output Rendering). For local work, open `http://localhost:5173/ui/render-preview.html` while `vp dev` is running; see [Web frontends](../architecture/web-frontends.md).
+The renderer draws Stockfish's best move and top 3 as arrows, with every move's eval. It draws System 1's picks as arrows with probability bars, confidence, margin and the tournament. LangSmith posts `{type: "output" | "reference", data, metadata: {inputs}}` into the iframe. The page fetches nothing and accepts messages only from the window that embeds it, not from a fixed origin, because self-hosted LangSmith can live on any origin. The renderer shows up in experiment runs, the compare view and annotation queues, but not in the dataset's Examples tab. Turn it on with `upload --renderer-url` as described above, and turn it off in LangSmith (⋮ → Custom Output Rendering). LangSmith can't reach `vp dev`, so for local work open `http://localhost:5173/render-preview.html` while `vp dev` is running. That page embeds the renderer four times and posts real sample messages from `preview/samples.ts`, as LangSmith would. It is not a build input, so it is never deployed. See [Web frontends](../architecture/web-frontends.md).
 
 ## Static reports
 

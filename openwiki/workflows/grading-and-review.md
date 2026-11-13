@@ -53,7 +53,7 @@ sources:
     resource: repo://mise.toml
   - id: openwiki-source-27a918e9e11693d5de03d421
     resource: repo://scripts/grader-snapshot.py
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-13T19:10:14.398Z" }
 ---
 
 # Grading and review
@@ -74,6 +74,9 @@ The code is split into layers:
 | Review app | `apps/review/src` | Reads threads, last runs, review and `grade_status` feedback, replays the graded game, launches Analyze jobs (`analysis.ts`) |
 | Grader image | `docker/grader.Dockerfile`, `scripts/grader-snapshot.py`, `.github/workflows/deploy-grader.yml` | Builds the `langchain-chess-grader` sandbox snapshot (Stockfish + `lcchess`) |
 
+<!-- openwiki: broken internal link [/openwiki/concepts/state-record.md] link "/openwiki/concepts/state-record.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/architecture/web-frontends.md] link "/openwiki/architecture/web-frontends.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/operations/deployment.md] link "/openwiki/operations/deployment.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 For the shape of the run outputs the grader reads (`start_fen`, `moves`, `plies`, `outcome`), see [the state record](/openwiki/concepts/state-record.md). For how the review app is built and hosted, see [web frontends](/openwiki/architecture/web-frontends.md) and [deployment](/openwiki/operations/deployment.md).
 
 ## End-to-end sequence
@@ -321,4 +324,6 @@ The Analyze sandbox boots from a LangSmith snapshot named `langchain-chess-grade
 - `libs/chess/tests/test_engine.py`: search limit mapping, settings that leave out the path, fingerprint sensitivity, White-side scores, the error when no score comes back, and pool start-up and shutdown with a fake engine.
 - `apps/review/tests/`: logic (`logic.test.ts`), the Analyze flow (`analysis.test.ts`), review tools (`tools.test.ts`, `tools.view.test.tsx`), components, `App`, and entry rendering.
 
+<!-- openwiki: broken internal link [/openwiki/operations/runtime-behavior.md] link "/openwiki/operations/runtime-behavior.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/workflows/system-one-evals.md] link "/openwiki/workflows/system-one-evals.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 See also [runtime behavior](/openwiki/operations/runtime-behavior.md) for how the traced runs that grading reads are produced, and [System 1 evals](/openwiki/workflows/system-one-evals.md) for offline evaluation of the move policy.

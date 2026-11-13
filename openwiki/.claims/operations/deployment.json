@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ce2b11faed859daeafde4027fde0521c89c4f241dd40ac21223aec1eb22c9616",
+  "pageVersion": "sha256:61402629dbd0efe493ca530c2bfbec7878f34d70b48a3219118395edc4776e41",
   "claims": [
     {
       "id": "claim_43f5f214bfd64eabb5ac8d4b69f8cc47",
       "statement": "The Agent Server image is built from the uv workspace and lockfile: langgraph.json sets source.kind to uv with root '.' and package langchain-chess-server, Python 3.13 on the wolfi distro, graph chess from apps/server graph.py:make_graph and http.app from apps/server app.py:app.",
       "evidence": [
         {
-          "resource": "repo://langgraph.json#L1-L23",
+          "resource": "repo://langgraph.json#L1-L27",
           "version": "repo-lines-v1:sha256:d62d48db600263b8a6a15e4c301f2bc156d1be09cb47ef99f7b968c6d13f70d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -35,7 +35,7 @@
       "statement": "The root pyproject.toml is a virtual workspace whose [tool.uv.sources] marks all five distributions (including langchain-chess-evals) as workspace = true; member manifests carry no workspace sources because each member is installed on its own in the image and a member-level workspace source fails there.",
       "evidence": [
         {
-          "resource": "repo://apps/server/README.md#L101-L102",
+          "resource": "repo://apps/server/README.md#L102-L103",
           "version": "repo-lines-v1:sha256:17e659b35207021a31c549cffaad42ff90aebc3a91186be39f89b6d8811361ac:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODA1OTI5ZjY4NWMxYjg1NTFkZjlkZDNkMGRlYzk1YjdmMmE4YzdiNDVjYzJhOTgyMjljNjJmM2EzMWRkNmNkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjg3MGVhMjcyYTAzYmI4ODdmMDEzYjVhMGQzYWMxY2ZmZWY2YjhiOTYyZTY1NDU4ODljNDcxMTE3YmVjOWVkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjU3NTRkMDNkN2RkMjZmN2E3ZTEzZDAzZmU3ZjNjMTU4Yjk2MTIwNTU3NDZjYTQ3Njc0OTBkMzU5ZWFjNjgzYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmYxNDZiYzViYzY2NDA5MWRjNzlmYWU1NjgwYzU2NzYwMTMzNDZjY2E5YjFmNGExMDIyZjdjMDIxMDE0ZWU2MCJ9"
         },
         {
@@ -54,51 +54,25 @@
     },
     {
       "id": "claim_c251f2fa167e44da9529471136f14fe8",
-      "statement": "mise run build runs `pnpm --dir apps/web exec vp build`, whose Vite config takes base from BASE_PATH (default /ui/) and outDir from OUT_DIR (default apps/server/langchain_chess_server/static); mise run deploy no longer builds the UI and only runs `langgraph deploy --no-remote --agent-id langchain-chess --agent-environment production --deployment-type dev`, with a comment that deploys should come from CI because langgraph deploy sends .env as the deployment's secrets.",
+      "statement": "mise run deploy only runs `langgraph deploy --no-remote --agent-id langchain-chess --agent-environment production --deployment-type dev` and never builds the web UI; its comment says the UI ships separately to GitHub Pages and that deploys should come from CI because langgraph deploy sends .env as the deployment's secrets.",
       "evidence": [
         {
-          "resource": "repo://apps/web/vite.config.ts#L7-L13",
-          "version": "repo-lines-v1:sha256:1955c7d5de90b21d5554868ccf75860192183cd0d274f59a21609261c38132f1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWUwOGQ1YjZkY2Y0ZTZlNzQ4OTg2NTg4YWI3ZjdiMDI2ZTBiMjA1NThlNjFlNzQ3OTEyMjBkZWU4MTE2NzY3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTk0YTQwZmJmZmI5OGI4ZGU5MzUzYTMwZjYzZTc1NDAwYzk2ODg5YWYyZmJjYWE4Njg1NDE3NTFiNjYzOWQ1NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjE1ZGU2YzE3OTBiYTYzYjczNmY3NDU0ODMzYTdmZjM4ZGE2ZTlmYTgwOTM0OWI3ODNlNmJmZGU2OTU5NGJmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGI0ZWUwMjc1NWI0OTE2MDA5ODBiMDI4ZjA4YTBmZDQ1ZWI3ZTY3YTg3NjVjNDEwODA3NGFmOTk0NDJmYzViMyJ9"
-        },
-        {
-          "resource": "repo://mise.toml#L178-L186",
-          "version": "repo-lines-v1:sha256:613d2af579364cef140e39081cf33c7de73fd805a1a56e64da1b2a70bfdc4a31:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE0NmZmNzk4YzczZmEwMTk0NmY0MzVlZTQxYmVkNTU3MmUxZjJjY2E5YmFkYWZiOWI2NzQyNjkwNWMwNWQ5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWM2NzM2NTkxMjQwNWU5NGJkOTZkZTVkNjE3NGE3NGI1NmUzZjRkZmMwYjUxZGQ2NWUyYWZiN2JlYTk1YTU4ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjk4ZGEzNzI0ZGZjZDcwYmU2NGUwZGViODg1ZmM5NzQwZmUzMDg2ZTUxZjRmM2M1ZGIxNDEzNmU5NTVmNzY3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmZmOGQ3MWRjM2QyOGJlYzY3ZmJjNWExMGRlNmY0Y2M4ODUyMWJmZDg2MDFmYmY3MzBmZDFiMjYxNjYzN2QxMCJ9"
-        }
-      ]
-    },
-    {
-      "id": "claim_df468547fb354b1183b3709fffc6b42d",
-      "statement": "The server mounts the static UI at /ui only when the static directory exists; otherwise /ui/ returns a 404 JSON telling the user to run mise run build, and in the deployed image the directory is absent because GitHub Pages hosts the UI, while the /ui JSON routes still answer.",
-      "evidence": [
-        {
-          "resource": "repo://apps/server/langchain_chess_server/app.py#L1-L7",
-          "version": "repo-lines-v1:sha256:e643547cd7c835e471f157545c9031f46d7f1f946722d894b2132f563f085814:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGJjMzI4OTY0NGFkNWI5ODQyMDk5MTNmZWNlY2ZiMGNkY2NlMzlhNDY5YzQzODMxMGZlZjRmMzIyZmI2NjhmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzJhMjAyOWRkNGQ1Y2I4N2U3MzExZjJjZTQxMmEzNjJjNTc4ZDdlMWE4OWM1MDRiN2I1NjJjMDdkNzg0Zjk1YyJ9"
-        },
-        {
-          "resource": "repo://apps/server/langchain_chess_server/app.py#L46-L81",
-          "version": "repo-lines-v1:sha256:82311997e86ca4def2a158a85adbb75f9d237e63574caaa114a7716b3da107f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5Y2Y1ZjJmNmQxZDFhM2M4MmY3NzUzZTQzMDQ3ZmJjYjNiY2MzNTEzNjBjNjY3Zjg5NmIwYzgwZjY5NmI3ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkNjdiNDY2Mzc4NzVjM2JiN2Y5MDNiMWRiODczNGI0YTI5NjY4NWRmNGRiZTY2YTRmNmNlZjdmZGM0MTE2M2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlMWU2MWNlZTYyMzcwOTNmNThlN2UzMzI3MDgxZmFhNTQ1NDMwMTIwN2I1NjZlN2ZkYmYxMTNmMmFmMWVkNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3ZjdlNzJkYTFjMTA1MmNjMDBhY2U2MDBjMGNlZjljODAzZGViYWM5NmFlN2ZjYmY5MGViMTlmZjlmMTNhMTQifQ"
-        },
-        {
-          "resource": "repo://apps/server/tests/test_app.py#L20-L50",
-          "version": "repo-lines-v1:sha256:7d585538c64e0e3951595d0619d51ea6989f8a1f872a7b651439753ae8314422:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjN2E1NWFjZWVhZjgyZTMyYzcyMmJlZTQ1YmM2NDU2NGVhYzBlYzQ0OGNmMzczNGVjN2M1ZDgzOWIyMWJkN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzZGVhZTkyMTI1OWJmMzU1OGU3OTg4MWQwNjAxODZjY2NhYTEwNzEzNTM1ZWJiYzdhYWViZGZhZWViNjdhZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjNTBmMTI3YWMzNzhhZGZhMzZhMGY4MDgyMzA4MjllM2ZmNWMwYzM4ZTE0ZDJiMzJiNDEwMTFkZjllNjdjMmIifQ"
+          "resource": "repo://mise.toml#L182-L186",
+          "version": "repo-lines-v1:sha256:b9253385914e4562f5eeed905b08ff4c516ce37bd0d23a19589b9086207e5c6d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjZmNGRjZmRhZjg3NTVlYWM5MGJlMjdiOTY5MmEwNDhmMzk1Y2VkMmM2N2E1NTdiNGJkMzM2YjUyNDEzNWQyMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmU5NWZjNDZmMjFiMThjMjc5YjdiMWIwZGY0NjdkODYxNmRiMzYzNjNlNzdlMDBlZjg2MGViNTI5YzQ3NTU1MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTgzMmI0MmY5MjAyOGQ3MjdhZmJiMTFhMDRlNmFhZmFiYmRkZDM1NWQ2NWQyMmY4NzQwODZhMDZmMzM1Y2RiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDE5ZGYwMWI0NTE3NWVlN2FmN2Y2ZTBmYmY2N2VhYmRiYjVkNGJiNTI5NDM0OWUxYjFlMDM3NDVjNWYyMTk5NyJ9"
         }
       ]
     },
     {
       "id": "claim_d4a131b4ea3947b0ba041c6d08470e2e",
-      "statement": ".dockerignore limits the build context to the uv workspace and excludes tests, apps/web, apps/review, packages, .github and secret files such as .env; a gitignored static directory present in the build directory would still enter the image (Docker semantics only), but the CI agent job installs no web dependencies and no longer builds the UI, so its header comment claiming CI relies on the static build is out of date.",
+      "statement": ".dockerignore limits the build context to the uv workspace (libs/, apps/server/, the lockfile) and excludes tests, apps/web, apps/review, packages, .github and secret files such as .env, so no web UI source reaches the agent image; the CI agent job also sets up with web: false.",
       "evidence": [
         {
-          "resource": "repo://.dockerignore#L1-L30",
-          "version": "repo-lines-v1:sha256:341d9e71341fded4483531f2601d26a640ea855e19abaca09a477036915fd2bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzYzY0NTA1YjVlM2UxOTA3YmNiZGM3NDYyZGU2YWQxYTllNTJhYWE2YTE4ZTcyYTM2OTg2MDA3ODNiMGMyMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZTkwMzI0MTZhYjhjM2UyNzc4OWQ2YTUyODRjZjM3OWMwMzlhZTZjNjQ1ODVkMTZmYzg2Nzk2Mzk3NTkzZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://.dockerignore#L1-L28",
+          "version": "repo-lines-v1:sha256:f6e31a44965dc7abf720be2c032d6a4d54598e102207c3f8d1ab939b3af4ca09:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzYzY0NTA1YjVlM2UxOTA3YmNiZGM3NDYyZGU2YWQxYTllNTJhYWE2YTE4ZTcyYTM2OTg2MDA3ODNiMGMyMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZTkwMzI0MTZhYjhjM2UyNzc4OWQ2YTUyODRjZjM3OWMwMzlhZTZjNjQ1ODVkMTZmYzg2Nzk2Mzk3NTkzZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://.github/workflows/deploy.yml#L78-L124",
-          "version": "repo-lines-v1:sha256:bd3fecb6d8d7f80be4e0298ab9964ba2b708d4956c6e9ba05c277f06607e769c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzEwZTYzYzQwMDRkMTk5NTAyNGRjODY2Y2JlYzAxOGNiNjdlMWRiMWNmMDZmNzMxNjA2ZDg5N2I0NzI2MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkMGU5OGJkMzYzMDZkYzM5OGQ0NGM1M2UxNWU1YmJmMWQ3NTQ1ZDJjOTI3ZGI0OTAwMTkyYmViOWUwMzU3OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMjhmZjJjN2M2NjFjODdjMjhiYTg1NTI1OTIyZmRjMDIyMzNhZTE5YTFkMjEyOTE1NjQ1YWQxYTQzMzIyOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3NTdhZDU2N2Q1YzZkNTdiOWFmZDcwMzA5ZjhiNzkyNjJlYjE0OGU5ZDY0MDI0OTM4N2FlMzdlOTgyZjE4NzcifQ"
-        },
-        {
-          "resource": "repo://mise.toml#L182-L186",
-          "version": "repo-lines-v1:sha256:ce044db067d0a05577e104089f4851456a6f9157b4b68f36fe52e2278b2e1667:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGUyYjVjM2MzMjVkMDcwMjM2NDBkZDEzZGMxZmFjZDQ0OGJkOTRiMGM2MzY3NDFjMjNhZmIxYWM5NmE2ZWEwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWM2NzM2NTkxMjQwNWU5NGJkOTZkZTVkNjE3NGE3NGI1NmUzZjRkZmMwYjUxZGQ2NWUyYWZiN2JlYTk1YTU4ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWVjZjA2OWI1MjJmOWM2MTVlMmZhN2JjM2JmMDRkNzMwNTBkNTMwN2I0MjcxZDhhN2JlNzY2MjAyOTM1ZDM0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmZmOGQ3MWRjM2QyOGJlYzY3ZmJjNWExMGRlNmY0Y2M4ODUyMWJmZDg2MDFmYmY3MzBmZDFiMjYxNjYzN2QxMCJ9"
+          "resource": "repo://.github/workflows/deploy.yml#L78-L80",
+          "version": "repo-lines-v1:sha256:7e89affdb2dd7cb4ac5cb40b6a623e7574f724acb6275220232a508a3f69ea89:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzA3MTBlNjNjNDAwNGQxOTk1MDI0ZGM4NjZjYmVjMDE4Y2I2N2UxZGIxY2YwNmY3MzE2MDZkODk3YjQ3MjYwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmIzYjljYjExODMyODQyODMzM2YxZGM5YWQ1ZWMxOTIyNGZiMWJmOTJjNTlhOTkzMGJjYzQ3N2U4NWQxNzBlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTMyOGZmMmM3YzY2MWM4N2MyOGJhODU1MjU5MjJmZGMwMjIzM2FlMTlhMWQyMTI5MTU2NDVhZDFhNDMzMjI4ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWExNDA2YTM5YjBjM2IwYjVkZjkwNGUxMDhmOGU1NjRkZTI0YTdmYzI3MjFhNDE5NTZhNjM1MTdhY2QwOTcwMiJ9"
         }
       ]
     },
@@ -155,7 +129,7 @@
           "version": "repo-lines-v1:sha256:33f4299f85d66b035889b85cd14c4a4585c232b7c09272044e70ec9632d2b0aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3OWU3NmIwZGI5OGE0MjY4ZGYxMzAzZmMxNDY0NTMwN2ZhYWI4MjQwOGVjMDc5ZDA0NmU5NmNlYWE2YTMxODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZDZjMWNhYmE4NGZlZjMyYWRjYTViZDYyNjgyZDM2ODEzMmU0N2I3YWEzNjdkZWRmZTBiMDQ5YjRjNjdlNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkY2ViM2FmZGRhNTg5NDlhMDY4MDA4ZjExODUyODZmMzUzZWQ0ODFjNzNlM2Q2MWZkNWVlZTY1ODRmNWI3OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlNDQ0YTFjZTRkNzEyOWU1ZWU2YjY3ZjIzMGY1NzBiMDRjZGI4Y2ZhMzUyZWMzZGFkNzBhYzFhOTIxNmU3YzEifQ"
         },
         {
-          "resource": "repo://.github/workflows/deploy.yml#L65-L82",
+          "resource": "repo://.github/workflows/deploy.yml#L59-L76",
           "version": "repo-lines-v1:sha256:51b238e57edb3ff4342eb587b49df58af75a04bedd264c08937c794849572917:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3OWU3NmIwZGI5OGE0MjY4ZGYxMzAzZmMxNDY0NTMwN2ZhYWI4MjQwOGVjMDc5ZDA0NmU5NmNlYWE2YTMxODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZDZjMWNhYmE4NGZlZjMyYWRjYTViZDYyNjgyZDM2ODEzMmU0N2I3YWEzNjdkZWRmZTBiMDQ5YjRjNjdlNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkY2ViM2FmZGRhNTg5NDlhMDY4MDA4ZjExODUyODZmMzUzZWQ0ODFjNzNlM2Q2MWZkNWVlZTY1ODRmNWI3OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5NTA3OTYyYmEzM2Y2ZWU4OGQ1NTc5Nzg2Mzc2YmZkMjY1NDVhYThmMzFjYjZkY2I0ZDQzOGRmNWE5ZmFkOTIifQ"
         }
       ]
@@ -193,22 +167,26 @@
           "version": "repo-lines-v1:sha256:a5efc2d6d6847b44b40db5c1060a3eedab943519fb353feec13714ee0f8bbabb:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdiYzljMmQ1YjAyYjgxYTdkZDViYzBiN2IwYjY5MzQ1MmU5YmU2N2JjMmUzN2NhYTVmY2IxNmRlOTMxNGRjZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQxYzFlYTkzYTM4NTQwYjM2ZmI0YTJjOGEzN2M3NjEyMWQ0ZWE5OTgxYzRiZmU5ZTg0YzY5NTk1YjA2ZjQwMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmYxZDcwZDcyYmFkMjMxZDQzYzU3NWFjZWY2OTQ2NTgwZTQzOWM4Nzk3OTRlZDJlYTFmNGE0MDM0MDI0NTE3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmRjYTg1OWNlZDJjYzVmNDg3ZGJjNjIxNzc2NWIyNWIyNjMwZmQ0ODNmNzMxOGI1YWIyZTczNGQ0MGI1MzEyNyJ9"
         },
         {
-          "resource": "repo://.github/workflows/deploy.yml#L38-L45",
+          "resource": "repo://.github/workflows/deploy.yml#L32-L39",
           "version": "repo-lines-v1:sha256:ac440d85f3e9c64638a57832fba025674cc6ea30e9a8a94db4c904c1683c63aa:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzA5OTNhNmZhYTQ2YzRmNGQyNmFiODlkZDllNDA2OTdkZGUyMWIwZWFkMDAyMWIzOTIxZDE5MmY1MDg2NzM4YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQxYzFlYTkzYTM4NTQwYjM2ZmI0YTJjOGEzN2M3NjEyMWQ0ZWE5OTgxYzRiZmU5ZTg0YzY5NTk1YjA2ZjQwMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmYxZDcwZDcyYmFkMjMxZDQzYzU3NWFjZWY2OTQ2NTgwZTQzOWM4Nzk3OTRlZDJlYTFmNGE0MDM0MDI0NTE3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmRjYTg1OWNlZDJjYzVmNDg3ZGJjNjIxNzc2NWIyNWIyNjMwZmQ0ODNmNzMxOGI1YWIyZTczNGQ0MGI1MzEyNyJ9"
         }
       ]
     },
     {
       "id": "claim_c184075ea21f49a1990642c92920dd44",
-      "statement": "ci.yml runs on pull requests (ignoring markdown, plans and openwiki changes) and on workflow_call with an optional ref input; a python job runs mise run check:python and test:python, a web job runs check:web, test:web and review:size (the review app upload budget check), and an e2e job installs Chromium and runs mise run test:e2e.",
+      "statement": "ci.yml runs on pull requests (ignoring markdown, plans and openwiki changes) and on workflow_call with an optional ref input; a python job runs mise run check:python and test:python, a web job runs check:web, test:web and review:size, and an e2e job installs Chromium and runs mise run test:e2e, whose fixtures build the web UI with vp build into a temporary OUT_DIR against a langgraph dev server's URL and serve it from another origin as GitHub Pages does.",
       "evidence": [
         {
           "resource": "repo://.github/workflows/ci.yml#L1-L89",
           "version": "repo-lines-v1:sha256:f9e0f7065f0b91d4bc68c31fa0bf1d50e56b73c7ebcd01f909bc71c48d0a291d:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1OWUzYjlmMmNlZTBjMDgwOWJmNDA2NjFmZmYzZTJmZWQyNjQ0ZTFkMGUwN2NlMjIwNGVkMmJhMzllYTExYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZGE2ODU4NjExMTY3YzlhZjU4Yjc5YjQ0NTEzZjcxYWM0ZWMxNDgzZDFiNzZjZjgwZTQ4YjY3YWJmNjU3MjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://mise.toml#L97-L148",
-          "version": "repo-lines-v1:sha256:064f2deaec56b710c6d7fe5d47eba7011e93fe164fd777e47de79c13058fefdc:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZmQwZDM3ZGM5NjliZGNjYTkzZmUxODg0ZTUyYTQyNmFlM2YxYzYzODJkODA1YzA2OTMzYzJhMDhjYmU1MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhN2YwMmNjMzFiOWQ0NWZhNzZhZTM4MWJhYTc2Nzc3NjFmZDc3ZTBlOTYyMGEzNTNmZjIxMzYzYjhmNGM1OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxMDUyYTQwNmZmYjI5M2QzZDg0ZWQ5OGMwODdkMjE4MzQ0NzFmMzUyZjAyZTgwMWVlOTM2ZmYyOWJiYjUxOWUifQ"
+          "resource": "repo://apps/server/tests/e2e/test_browser.py#L32-L72",
+          "version": "repo-lines-v1:sha256:809bdc484e212c4e51771325589d44b11da0c5bf9d317e7ad0c1008ed13bde5f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzYjIyMjUzNWQ0MzMyYWVhYjNkYWFlNzk5MDFlN2FhMmIzMDcyMzY1OWEzMjNkMjk1NmE4MTUwYzYzODhlNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliZjMyYzU4NDZlN2U2ZjlkYTdhNTZlYjBhMzAzMDBmYTE3Y2UxODFjZjI1YWQ4NGZlYTNiZjNhMzRjZGQ4ODQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1YzgxYTRkN2IxZTZiZmY5MzhkYjNiNTY1NzI4NzNkNTJhMjA2NjhlMWFjNmIyZDk2N2ViMTExOGJjNWVmODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1NWQ1ZjYwNTlkOWJiNTIzMzQ3MTdlOTYxZjliMTQ5YWM5OWE0NTMyZTg1NDQ2ODk1M2IzYzFlZGQ4MWNjNzUifQ"
+        },
+        {
+          "resource": "repo://mise.toml#L143-L145",
+          "version": "repo-lines-v1:sha256:8410bc491546fc887f8ad232949508a7ce4487abf7e9c710b7f9612867803064:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2JkZjlmZmU4ZTVkZWJkNDhlYjQ4NzQ3NDQzYzQ4MTQ1MjcwMDEwNDM0OGI5MDJmNTA1NGQxMzgyMDc5NTE0NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2NhNjNlY2MxZGM2MDM2N2I0MDdkODVjNjVhYmM3YTg4YTIyN2ZkZGU5NzVjZThmN2VjZmJiOWQyNTlkZGIwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDAzYjE0MmE0ZjlmZTVjZDk4ZmY0YWMzOGFjMzhjNjNjZmJjOTZkM2RlMmQwZjhiNTU0OGNjMDBhNmZmMzc0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDEwNTJhNDA2ZmZiMjkzZDNkODRlZDk4YzA4N2QyMTgzNDQ3MWYzNTJmMDJlODAxZWU5MzZmZjI5YmJiNTE5ZSJ9"
         }
       ]
     },
@@ -227,32 +205,22 @@
       "statement": "A local image smoke build is run with `uv run --all-packages langgraph build -t langchain-chess:smoke`, and deploying needs Docker with buildx because the image is built locally.",
       "evidence": [
         {
-          "resource": "repo://apps/server/README.md#L85-L98",
-          "version": "repo-lines-v1:sha256:f2fd99133eef72bd500fc86a0a9eab6b9b18296f0e1fa52cbe748ed1b70178db:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNWNhZGJiZTgzODM3M2ViMGVjZDQwMmJlY2Y3NDY1NGYzMmEwNTczZjM2Nzg5ZWFjYWQwMzllMzYxNGE2ZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyNWJjNzBiZTBiODg1YWI0MjMxZDQ2NzhhY2QxYThlMDBhNzlkMGJiMWEzM2U4NTBhODI0Zjc2NDhjZWE0NzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjZTYxOGQ3NWYyNzc3MGZiNGM1MzAwZmIyZGI1NDRlZDhlYjAxOGY4NDE5MzFiOWJkNDk3NmRhNzBjNmRjNmEifQ"
+          "resource": "repo://apps/server/README.md#L86-L99",
+          "version": "repo-lines-v1:sha256:8e464517baaacbf7819d8436239d91c9762b5006f5236a2a73ef16356583d2b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmNDA2NDJkMzMxNWJiNWJhYjk3NDI4ZTg2OTk2MzgxYmFiOGU4MzU1NmExZDA5ZWM5YTk4ZDg1N2RlOTRlMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwY2RlMmNhZDFlMTZmYWIxZjViNmY2NTExZDNmMjRhYTk4YjcxYjlhZDVmY2NmMDRiZWFkMzMxY2FiOGQyZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhOGRkYjY1ZWRlNDU5MjNkYjEwOTA0YzAzMDMyMjFiMWZkOGY2NmVhZmM1MzhmMDVlODljYTkwOWZhODk5YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjMTEyZWYwNTgyYmVjOTg1NzNjYmYyNDg0MWI2OTRlZDk3MzQ0ZmU1NGZlYTMzMzQ0MjNkNDgwYTUxNmM4ODUifQ"
         }
       ]
     },
     {
       "id": "claim_29c00f0ca9d3416cbddaf4a8bbb9eb96",
-      "statement": "The server's custom app registers /ui/config (graph id, ChessContext JSON schema and defaults) and /ui/model (max_input_tokens and takes_effort for a required model query parameter) regardless of whether the static build exists, and redirects a bare /ui to /ui/.",
+      "statement": "The server's custom FastAPI app registers only GET /model-facts, returning max_input_tokens (null for unknown models) and takes_effort for a required model query parameter (422 without it); it mounts no static UI and has no /ui routes, because GitHub Pages hosts the UI, and its docstring warns that custom routes shadow the Agent Server's own paths.",
       "evidence": [
         {
-          "resource": "repo://apps/server/langchain_chess_server/app.py#L27-L67",
-          "version": "repo-lines-v1:sha256:5977b905f825bce0cb3895b781af7f9ac32491ddd73fb183e4b9d7591b1df8b5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwOTBlZWFkYTBmY2IwOGJkMmM1ZTMyMDNjYzBlZTk1NTNkMmFhMjE1M2MwZDc5YTU4OTdiMDYwOGQ5NTRlZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjYzVmZjI1MGQ5NWM0NGNhNjhkNGQxNDRiYjRiNGNlMWMyMTRmOGU0OTVjMTUyN2YzODQyOGEwNjcyOGZlZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkYTM4NWEwMmFhOWI5Mjk2NWZjNmIxY2UyNTM5ZDBjMjE3ZjQxNmIwMmYyMjU3NjIwMGUwNDA4NDk2MGQ3NjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyYTk0ODZjNWY2OGIyNzhjZDZiZmE0ZmNiOTk2YmI5MGYwMTY4NTBiMGUxNmM3Y2FlZmM2OGQ3YzgyOWI1MGMifQ"
+          "resource": "repo://apps/server/langchain_chess_server/app.py#L1-L46",
+          "version": "repo-lines-v1:sha256:38b6de33f23b4319ddedd90224aaed2e6886f4dfcb217b97d3e837432194535f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4YjAyMTMwOWNhMTIwNzczMDliYjc5YzE0MzE0ZWQ2MGJlNWQ1ZThiM2QzMDk5MzBkOWUzZGUyZTNmYTZlNjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNzUyOGIwMjRjMzQ2YmIwZGJjMmVkZjQ2YjMyZGI1M2I0NzEwMDQwMDg4ZmQyOTRhNWM3NjEzNjkwNzU0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://apps/server/tests/test_app.py#L11-L40",
-          "version": "repo-lines-v1:sha256:0ee4e4d3a2caaafa041c751598390f2b115b76e837b1cb0ff1ea9695c0d69066:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5ZDQ3MTg2ODdmNTI2OWUyNDVlMzY3MTRjOWVjN2I0NGM4M2QzNDZmY2M5YmJlOTBjYzhhNWQxZjgwMmFjM2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMTgwY2RiODdiYzY4MWFlNjQ0N2I2YzdhYjBjZjI2NWQyZDVlNDVlY2M4Njk1YTJlNjExYjk0NmIyM2Y5ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzODJiYTIwNGMzNzgxNWQ1ZDM3ZTgzZmY1OThkOWQyNThkZTk1YmU0M2FjY2NiOTEyYjZlZmI5MGQxZWI4OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5Y2IxMWRjYjViZWQyMTkxYjRkN2MyNGM2YzBiZTUzNWUwOTBmMjE2ZjEwZGIxMTg0MzlmMDA5YzY3NzUwMTgifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_dcee7ab2a0c747859c85b4db727701c5",
-      "statement": "The UI is mounted with app.mount rather than app.frontend() because frontend routes are low priority and the Agent Server's own /ui mount would otherwise answer first.",
-      "evidence": [
-        {
-          "resource": "repo://apps/server/langchain_chess_server/app.py#L68-L71",
-          "version": "repo-lines-v1:sha256:e658dff3a88c0455ff520b195c19c402efc52f068680b57c4761888bbabf8e09:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE0NzdkNTUzZmEwNTJhMjZjOTdkYzY0MTYzNWMyYjg4NjIwMjc2ZDU1YTQ0Mjk2YzkzOWVlMmQyOTMwNThlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWY1NTY5MTEwYTY2NGE2OGExMmE1NWYyMGEwY2MxY2U1MDlmMThlMWVlZGRhNmM0ZWE0NzU5ODNjYmNhZmNhMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjRkMjdjOTdlZDJhNGIyMDhmYzM0NDgxOWUxODIzZmM3NDBkNTkzNzE5Nzg4YjJmZWE2YjE1OTBiZDFhZTZmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQ1NjVlMDMwOGIxYzBjNWMwMzZhNDY5NTM0ZmUyMzM5ZmYxOTI5YTQzNTAyNjQ3ZjFlNTNjZDViMTM2YTg5NiJ9"
+          "resource": "repo://apps/server/tests/test_app.py#L11-L22",
+          "version": "repo-lines-v1:sha256:b7f5f1d60868b34f75f483b139bdc5cbb1d4635b513ae30c5eb222c60df0fbb2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNGE3Nzg0NzBkNDA0Y2ZlYjM4NzIzYmE5MDA5YzM2ZTUwNGU1NDQ3MzYxYWZiYmQ4YzlmZmM0ODZmZDNlYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5M2Y5YjAwMDIxNjA0NTE1ODM5YjU1MTM3YzFlZGNjYmE3ZGVkNTcwYzFkZTA0NzRiNWVlZTI3NjdiZThjNGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzODJiYTIwNGMzNzgxNWQ1ZDM3ZTgzZmY1OThkOWQyNThkZTk1YmU0M2FjY2NiOTEyYjZlZmI5MGQxZWI4OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmZjc1N2E1MDlmY2MxYmZlMTU4M2IzNmExNDk4OGRmNDQzYWUyMjhiYzkwMjg2NjFjYzkyN2Y2ZjQ3NWY1ZDYifQ"
         }
       ]
     },
@@ -287,7 +255,7 @@
           "version": "repo-lines-v1:sha256:2e6f7d8e6962cdb22f7e83fff39b1ca56f60615af596b37d3ee83cd2ef2761bb:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YmM5YzJkNWIwMmI4MWE3ZGQ1YmMwYjdiMGI2OTM0NTJlOWJlNjdiYzJlMzdjYWE1ZmNiMTZkZTkzMTRkY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZDZjMWNhYmE4NGZlZjMyYWRjYTViZDYyNjgyZDM2ODEzMmU0N2I3YWEzNjdkZWRmZTBiMDQ5YjRjNjdlNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmMWQ3MGQ3MmJhZDIzMWQ0M2M1NzVhY2VmNjk0NjU4MGU0MzljODc5Nzk0ZWQyZWExZjRhNDAzNDAyNDUxNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlNDQ0YTFjZTRkNzEyOWU1ZWU2YjY3ZjIzMGY1NzBiMDRjZGI4Y2ZhMzUyZWMzZGFkNzBhYzFhOTIxNmU3YzEifQ"
         },
         {
-          "resource": "repo://.github/workflows/deploy.yml#L38-L82",
+          "resource": "repo://.github/workflows/deploy.yml#L32-L76",
           "version": "repo-lines-v1:sha256:2981083dd223cd2fe1aa41249bcc3e094ba5d0f19b4be0ebb8e32aa8af650a59:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwOTkzYTZmYWE0NmM0ZjRkMjZhYjg5ZGQ5ZTQwNjk3ZGRlMjFiMGVhZDAwMjFiMzkyMWQxOTJmNTA4NjczOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZDZjMWNhYmE4NGZlZjMyYWRjYTViZDYyNjgyZDM2ODEzMmU0N2I3YWEzNjdkZWRmZTBiMDQ5YjRjNjdlNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmMWQ3MGQ3MmJhZDIzMWQ0M2M1NzVhY2VmNjk0NjU4MGU0MzljODc5Nzk0ZWQyZWExZjRhNDAzNDAyNDUxNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5NTA3OTYyYmEzM2Y2ZWU4OGQ1NTc5Nzg2Mzc2YmZkMjY1NDVhYThmMzFjYjZkY2I0ZDQzOGRmNWE5ZmFkOTIifQ"
         }
       ]
@@ -301,16 +269,16 @@
           "version": "repo-lines-v1:sha256:47e7465b9cb97edfd8a40d773e286d3ef2caf8576dbd59f12db782c4ce95f89c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1YzA2MjViMzQxOTEyMTIyMTEwNzQyZDQ2ZTYzMjhjNDMyYzhjZDNlYmNhZmZhNWQxYTkxMjQzOGQwMWM1MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NjQ4ZjY4YzRjNGU2MzhhOWNkNzM5NWJhNjVjYmU4Mjc5ZmViNWVmZTc3YzQ1ZDNjMTkxNWU0NTg2MTg3MDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2YjJmZmVkOTJiZjY2NzI0YWM1N2FiMzYxODc5YzQxYzhmZjU4MDE3ODc1NGQ2Y2M4YWE3MmVkYzc4YzU5NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0ZTdhNjcxODAyZDA4ODY4ZDAxNTY2Y2Y5ZTMwZjM2MzJhMmE2MjUwNTJjMjkwYjZmNWRjMjFhN2I0OTU4ODYifQ"
         },
         {
-          "resource": "repo://.github/workflows/deploy-review.yml#L81-L108",
-          "version": "repo-lines-v1:sha256:37b6eb3aa7b8b8e243d30018d14bba80d9afdd546eacb963763b471d1267b505:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMjk3ODI3YjkwZDY5NWUzOTZmODE2OWU1NDNjZjUzOTMyMmUyMTkzMmY5ZDllMWU4MWE4ZDNlZWU3YjcxNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NjQ4ZjY4YzRjNGU2MzhhOWNkNzM5NWJhNjVjYmU4Mjc5ZmViNWVmZTc3YzQ1ZDNjMTkxNWU0NTg2MTg3MDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmZDg2MzRlN2NjNTE4OTNiNGQ1ODQ5MDk2NzVmMTM1MzlhNjJiYTRiNTMyOTE0NjIwODc0Zjk2ZDk0MDk4NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxMzc5N2QyMWRkZTM0YmU3MjAyODA2ZTUxNTM2OGRmZjc5MDhkNjA0MTMzZGRiN2ZmNDRmZTdlODBlYzNlNDQifQ"
+          "resource": "repo://.github/workflows/deploy-review.yml#L81-L105",
+          "version": "repo-lines-v1:sha256:7ff35b1986bbb6e2d086ae50c8508e8036d092136b7f11fb85d3d29607101bb2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMjk3ODI3YjkwZDY5NWUzOTZmODE2OWU1NDNjZjUzOTMyMmUyMTkzMmY5ZDllMWU4MWE4ZDNlZWU3YjcxNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNTU5NzljZTczMDIwMzNlNmIyZmQ3ZDg4ZjUzN2EzYjhlMDkxZWEzMDVjODExZmZhMTI3NGJmNTc2NGVhNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmZDg2MzRlN2NjNTE4OTNiNGQ1ODQ5MDk2NzVmMTM1MzlhNjJiYTRiNTMyOTE0NjIwODc0Zjk2ZDk0MDk4NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVlYjhmNzI0YWFjM2M5M2UxMzk1NDgzZGI1ZWZhNmJhMjFjMTA1YTIwOTliYzNkNDUwYWQ4YjgwMDMwYjkxOWIifQ"
         },
         {
-          "resource": "repo://.github/workflows/deploy.yml#L93-L131",
-          "version": "repo-lines-v1:sha256:f45284ebf02ced6ed36790a80ea0b3daaad19bbcf466d985a3ba4286895692fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMjk3ODI3YjkwZDY5NWUzOTZmODE2OWU1NDNjZjUzOTMyMmUyMTkzMmY5ZDllMWU4MWE4ZDNlZWU3YjcxNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhMWFjMzYzZTUzNjllOGFmYzZiYWZkMjE2NmM0MTQyM2Q5M2QxMTFiMjYxMjBmZjE1NzM3MzA2NjU5Mzg5MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmZGY2ZDkzYzg0NWY5MWJmODdhYTUwZjQzN2U5NmZmMzEzODc2YjA5YTJmZGE3OWU2ZDk1NTk4MWJhZTE4NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://.github/workflows/deploy.yml#L96-L118",
+          "version": "repo-lines-v1:sha256:f30e4e10e050e99f50402527056cd68b97394a762744b83df93ee59569125063:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkZjk2ODM4NGVkN2FlM2YyZjE5M2VmZjM3NDU2YTAxZDU1MDQyOWMwMTA4MWFhYWNmMjJmMTliNzkwOTY4ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjZmM2YWYxNzhlNTVjNjZhODhhMGY5NDg0OGMwNzNmYWYyYjMwZDc0OWRmNGRkNzlmOWNhZDA4YzVhMmFkMzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjYzliNTk3NGQyNmE0NDExODczZmUxZmIzODIyOGUxMDFiZDBlMjY2ZDg0YjJiMjc5MzViZTg1YTNkZmY4NDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0MDgxMmNiNGRiNzM5ZmYyNGUyNDFjN2QxNGUzNTYxYjIzNjUxYTVmMDBlNDJiMzdjODU4Y2UwNTkyMWYxMDMifQ"
         },
         {
-          "resource": "repo://.github/workflows/pages.yml#L79-L121",
-          "version": "repo-lines-v1:sha256:696edad6067c2c3deb7693c5d17fe041614d0a5bdc620c2d9652ee73fac3d60a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMjk3ODI3YjkwZDY5NWUzOTZmODE2OWU1NDNjZjUzOTMyMmUyMTkzMmY5ZDllMWU4MWE4ZDNlZWU3YjcxNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2NmY4OWYyNzY0MGVkZmMxNjExMWYzODg4ZGMyMzJkNTFlMDhmZjY4OTlkY2JjYWZkNWIzYjIxZTY0Mjc0MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmZDg2MzRlN2NjNTE4OTNiNGQ1ODQ5MDk2NzVmMTM1MzlhNjJiYTRiNTMyOTE0NjIwODc0Zjk2ZDk0MDk4NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkZjMyNjM4MTZjYjk2YjMyYmM1OGU1ZjgwNWYzZTg3MDdkOWIxZmQ5ZmJmZDBjNmViMjk2NTc0ODJmZjAyYjEifQ"
+          "resource": "repo://.github/workflows/pages.yml#L79-L102",
+          "version": "repo-lines-v1:sha256:1802331f01a864cb2449fe4a04aa7f17ba875827a2bab462d27e55177059a827:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMjk3ODI3YjkwZDY5NWUzOTZmODE2OWU1NDNjZjUzOTMyMmUyMTkzMmY5ZDllMWU4MWE4ZDNlZWU3YjcxNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjZmM2YWYxNzhlNTVjNjZhODhhMGY5NDg0OGMwNzNmYWYyYjMwZDc0OWRmNGRkNzlmOWNhZDA4YzVhMmFkMzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmZDg2MzRlN2NjNTE4OTNiNGQ1ODQ5MDk2NzVmMTM1MzlhNjJiYTRiNTMyOTE0NjIwODc0Zjk2ZDk0MDk4NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyODU1NzM0N2IyOGQ0ZTg5OGJjYzg0NzVmZDY3OWZmZTU2YWZiMGNhMDU0NjI1NzcxMTA4N2E0ZTNlMWFlNTEifQ"
         },
         {
           "resource": "repo://scripts/superseded.sh#L1-L15",
@@ -327,7 +295,7 @@
           "version": "repo-lines-v1:sha256:ed4fbc181df6f8fee28f1538b06c3ff2badd54f05fd8661b3632514958857c22:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdiYzljMmQ1YjAyYjgxYTdkZDViYzBiN2IwYjY5MzQ1MmU5YmU2N2JjMmUzN2NhYTVmY2IxNmRlOTMxNGRjZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODRkYzkzZDExOWIyYWFlYjk2MWM2Nzk2YjdkZDFlZGIyMzYxYmYwNmRhYzQ3NDBmYjRjNzM2YmExNTQ4N2ExNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmYxZDcwZDcyYmFkMjMxZDQzYzU3NWFjZWY2OTQ2NTgwZTQzOWM4Nzk3OTRlZDJlYTFmNGE0MDM0MDI0NTE3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDIwYWE5ZWQ5MTBkNmZmMWZlZDM0NDQyMGE2MzhiMzAwYjg5MDY1MDRkMmZkZmNlYTg5Y2Y0NjE5Y2M4M2JmNiJ9"
         },
         {
-          "resource": "repo://.github/workflows/deploy.yml#L38-L40",
+          "resource": "repo://.github/workflows/deploy.yml#L32-L34",
           "version": "repo-lines-v1:sha256:a1c44b382e251d2766dbe790bbc16fb4977ef32f7528382cd870e1abb584cb11:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzA5OTNhNmZhYTQ2YzRmNGQyNmFiODlkZDllNDA2OTdkZGUyMWIwZWFkMDAyMWIzOTIxZDE5MmY1MDg2NzM4YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBiMGI3MTcxZGM4YjY1YTg4YmViNGYwODI2MWNjODRiZWRkNWE1MDRmMjQ2ZTliOTc4NjhiNjQzYzA1YWQzNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmYxZDcwZDcyYmFkMjMxZDQzYzU3NWFjZWY2OTQ2NTgwZTQzOWM4Nzk3OTRlZDJlYTFmNGE0MDM0MDI0NTE3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTQ0MzIxZjU5NjZkY2YyMzE4ZmVkYTIxNDc1NTNlNzA4NzNhOGI3YmE4YTUzMTg0NjQ2YzQ1NDBmNDYzMWNmZiJ9"
         }
       ]
@@ -354,7 +322,7 @@
         },
         {
           "resource": "repo://pyproject.toml#L59-L82",
-          "version": "repo-lines-v1:sha256:29283bff3dc73df14813d16f691dff6ac9da1aeead1fd6a162af4407b1da3e55:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2NzZlNjQxNDY1YTY1NTFlOWU5Y2ZmZDdmYWExZTZhNDJmOWI3MjQ4MDk4MTNjOTAzZDdlZGNiNTJmMzAwNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ZGVhNmIwNDc2YWEyZGEzMDQ5MmI3ZmUxNDc3YjU3NWU5NzBkODNmNzg4ZDc2MTdhMDBlNzJhNjI5YTBhMWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3NTNiODUyOWM0M2MzM2Y1OWNiNGQ5ZGJlNWNiOTg3MTRmNTUyNThmNzAzNTY5ZWRjMGYwNmRmN2JiNDYwMzEifQ"
+          "version": "repo-lines-v1:sha256:37fed29e44338f67ef23410e4b606a5ea9c3ef5bb8a4dac5fd78f2c931368937:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2NzZlNjQxNDY1YTY1NTFlOWU5Y2ZmZDdmYWExZTZhNDJmOWI3MjQ4MDk4MTNjOTAzZDdlZGNiNTJmMzAwNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ZGVhNmIwNDc2YWEyZGEzMDQ5MmI3ZmUxNDc3YjU3NWU5NzBkODNmNzg4ZDc2MTdhMDBlNzJhNjI5YTBhMWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3NTNiODUyOWM0M2MzM2Y1OWNiNGQ5ZGJlNWNiOTg3MTRmNTUyNThmNzAzNTY5ZWRjMGYwNmRmN2JiNDYwMzEifQ"
         }
       ]
     },
@@ -384,17 +352,21 @@
     },
     {
       "id": "claim_446fb7aec2c546af81f677ff7ca5597f",
-      "statement": "pages.yml publishes the web UI to GitHub Pages: its tip job requires main and a non-empty VITE_API_URL repository variable; the build job runs vp build in apps/web with BASE_PATH=/<repo>/, OUT_DIR=dist, VITE_API_URL and the sign-in variables VITE_OAUTH_CLIENT_ID, VITE_LANGSMITH_ORGANIZATION_ID and VITE_LANGSMITH_SSO_SLUG (from repository variables OAUTH_CLIENT_ID, LANGSMITH_ORGANIZATION_ID, LANGSMITH_SSO_SLUG), uploads apps/web/dist as a Pages artifact, and a deploy job (skipped when superseded) runs configure-pages and deploy-pages in the github-pages environment; its concurrency group is pages-<ref> with queue: max.",
+      "statement": "pages.yml publishes the web UI to GitHub Pages: its tip job requires main and a non-empty VITE_API_URL repository variable; the build job runs vp build in apps/web with BASE_PATH=/<repo>/, VITE_API_URL and the sign-in variables VITE_OAUTH_CLIENT_ID, VITE_LANGSMITH_ORGANIZATION_ID and VITE_LANGSMITH_SSO_SLUG (from repository variables OAUTH_CLIENT_ID, LANGSMITH_ORGANIZATION_ID, LANGSMITH_SSO_SLUG), relying on vite.config.ts's default outDir dist, uploads apps/web/dist as a Pages artifact, and a deploy job (skipped when superseded) runs configure-pages and deploy-pages in the github-pages environment; its concurrency group is pages-<ref> with queue: max.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/pages.yml#L26-L137",
-          "version": "repo-lines-v1:sha256:7744ed348309b4fe335898c5683a498c73e4c6fb4f66b42c878f54d136b2075f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNTI2MjQ3ZWRlMDA2ZTliZGFiOWM2ODUwNzI4NDI1ZDFiNDE2NmNhZjVjYWM1MGNmMDk1NWM0NGQyNGMxYThkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2OGVkNzQwOTdmOTUxOWE1YTdmYmE0ZmI2MGI5MWFjNjZlOWU2MDdiYzVhODYxMWQ4YjAxMzA5OGQ0YzIwOGM4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiNDIwOGI1NmU0ZGI4NGI4MGI5MThhNjMyZDYzZGQ4NjljYzZlZjZhYWMzNWFhMThiMDYzZDU4ZGQ5NzkyZDE1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://.github/workflows/pages.yml#L26-L136",
+          "version": "repo-lines-v1:sha256:07641d1d042fd6bcceff4b38d526da17d29c5d87e5ec2f1518e0421d296979aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNTI2MjQ3ZWRlMDA2ZTliZGFiOWM2ODUwNzI4NDI1ZDFiNDE2NmNhZjVjYWM1MGNmMDk1NWM0NGQyNGMxYThkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2OGVkNzQwOTdmOTUxOWE1YTdmYmE0ZmI2MGI5MWFjNjZlOWU2MDdiYzVhODYxMWQ4YjAxMzA5OGQ0YzIwOGM4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiNDIwOGI1NmU0ZGI4NGI4MGI5MThhNjMyZDYzZGQ4NjljYzZlZjZhYWMzNWFhMThiMDYzZDU4ZGQ5NzkyZDE1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://apps/web/vite.config.ts#L7-L12",
+          "version": "repo-lines-v1:sha256:7b493e73daffb354b1a98e8979441b6cfadaf3f9789b9fac563d759980e25522:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzAyYzVhNDQwY2ZlYzE0MzA0Yjg0ZGVmNDIxNDQ4ZjQ5NmUyOTE5ZDg2OWExMjI4ZTVkN2ViODQyOWIwNTcyOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTk0YTQwZmJmZmI5OGI4ZGU5MzUzYTMwZjYzZTc1NDAwYzk2ODg5YWYyZmJjYWE4Njg1NDE3NTFiNjYzOWQ1NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjE1ZGU2YzE3OTBiYTYzYjczNmY3NDU0ODMzYTdmZjM4ZGE2ZTlmYTgwOTM0OWI3ODNlNmJmZGU2OTU5NGJmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGI0ZWUwMjc1NWI0OTE2MDA5ODBiMDI4ZjA4YTBmZDQ1ZWI3ZTY3YTg3NjVjNDEwODA3NGFmOTk0NDJmYzViMyJ9"
         }
       ]
     },
     {
       "id": "claim_3fd06c30323843f1b879a5573b237454",
-      "statement": "Changing VITE_API_URL or the OAuth repository variables touches no watched path, so they take effect only after manually dispatching the workflows (pages.yml for VITE_API_URL; both pages.yml and deploy.yml for the OAuth variables, which both read); the built UI uses VITE_API_URL as its API base so it talks to the deployed agent.",
+      "statement": "Changing VITE_API_URL or the OAuth repository variables touches no watched path, so they take effect only after manually dispatching the workflows (pages.yml for VITE_API_URL; both pages.yml and deploy.yml for the OAuth variables, which both read); the built UI's apiUrl() uses VITE_API_URL when non-empty and otherwise http://localhost:2024.",
       "evidence": [
         {
           "resource": "repo://.github/workflows/pages.yml#L22-L24",
@@ -405,8 +377,8 @@
           "version": "repo-lines-v1:sha256:37d76bf59ff2f485a646092a5d2c0d11743efc890cba60a4d510533a9db543df:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlOTNkZTFjMmM4NTk4NmU1NWY5MjgwMzllM2QzNzQzZGU4N2IxYjY2NDA3MzE3MGIyMGFiZTY4YmFlNjc4N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMTFkMjQ2ZWEwYmRmNzRhOTBmNDQ0ZGYyZmM0MTk1NjY2YWJjMDhkNzE0ZTQ2YjdkZDgwMTA3Zjk0ZWQwNzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhY2IxMDQxZGI5ZDI5N2EzZDcyNGRkZGJjZDNkMDAyNTdmOTdmZjYyY2M3NzQ1YzgzMzlhYzc1OGNkYzlmMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1YWI3MDk1ZDk4MDliODU0N2I2MDg4NTJlNmNkOWU0OWExNTliODlkZjYwNTY5M2I0NzkwM2U2Y2IwOTMwZWEifQ"
         },
         {
-          "resource": "repo://apps/web/src/settings.ts#L61-L66",
-          "version": "repo-lines-v1:sha256:b5fd3612aa4027657f0f60cc2f260b88bfae496ec9b273450731e45db54583b0:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmU5ZTk0ZWVlM2JkOWMwNzUzNTgxNzE4NmMzM2IwNDZiYmIxODNhODJlNTYzZmFiZWJkYzZkMWJlMWY3ZmY2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODU4Y2ZhMzI0NGUyYmM1YmY2ZTUwYTBhNjZhODU1MWM0MTQ1OWYwYTc1ZDRiNzkxYmZkNTg2OWZlNDM4NmU3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2QzNTM1N2I3ZTllYjNmMmUyNWEzOTEyYzE4MTk0YjM3Nzc5MDFhNWNmYTA3MmE2OWIyM2NjNWQ4NzEyZjhmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTFhNWRiMWRjZTE4ZDc5NWZmY2E5YmRiMDQwZDU0ZTYzMGQwYjcxZDdmMDUyOWM0YjY0YzNhOWU0ZDM2ZjA3NyJ9"
+          "resource": "repo://apps/web/src/settings.ts#L56-L63",
+          "version": "repo-lines-v1:sha256:624095522335c4c78e353405a0d43d0efc8b3b7b0107aab62ca3f84eca094b46:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNkYmZmYTdmZTQxZGUwMjA5Y2U3N2IyODhlMjExZmFlZGQ1YWY2ODc0OGMxNzNkZTA2N2EyODY1ZjZhMjE3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWQ0NjcyNDc3MzdhM2E5YmVkNThiZTA1MjM1MTE0YjFmMjQ3N2E2ZmI5NDkwZDVjMmY2Y2RkODViNDY4ZDlkZSJ9"
         }
       ]
     },
@@ -415,11 +387,11 @@
       "statement": "mise run agent:tag (scripts/agent-tags.sh) looks up the langchain-chess agent via the langsmith CLI and tags the langchain-chess-positions dataset (when it exists) and each environment's tracing project with the agent's tag value; tagging upserts, so CI re-tags after every agent deploy.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/deploy.yml#L126-L131",
+          "resource": "repo://.github/workflows/deploy.yml#L128-L133",
           "version": "repo-lines-v1:sha256:a62d6187f6f14857a1a450ff55bcdf71c6e8160b46c6c2adaba3b66f3df95e50:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmNiYWZkZjMxMDhlM2ExMzRhZDNkN2M0MmE1NTM3NzYwMDRjZTkzZmVjOTkyYjFkOTFjOWFlZDZkYmJiOWZiOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmExYWMzNjNlNTM2OWU4YWZjNmJhZmQyMTY2YzQxNDIzZDkzZDExMWIyNjEyMGZmMTU3MzczMDY2NTkzODkxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGZhZTQwYTJkYzljMGU5YWMyNzZlY2IzYjI5ZGM1NjI1OGQ4MTVkMjRjYzc5ZjFjMTU3MDZlNzg4NjU4ODk5OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://mise.toml#L188-L190",
+          "resource": "repo://mise.toml#L181-L183",
           "version": "repo-lines-v1:sha256:5eefaccc774ad57bb460e44bb5a15d3fb6706b0ee6bcbc5f70c793a179385eff:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUyODE1ZTlkNDVlZmJlOGY1ODczYzYzNjNjZDA1MzVkZjZlNmRjYzAwMDg5NjJiOTVkMGNlNjA1MTcyNmMxMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGFhMjQwY2NhNWU1OWU4MDc0Y2U4MzhjODQ5MDE1ZTlkMzJmNTZiYjg0MTdiODFmNzQzODY3OGVmYjJjMGU0NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWRiODAyN2JkMDVjMDJhMzMxOGEzNTZmNjU0M2I2MWZiZTlhZGJhZTBjOGFiNjM2OGM1YTAwZDhjODUyNDAyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjJlMjViYjA0NmIwYjg4M2U1OTgyODcwNjBlMzlkMmVkNjdmZThkMjgwM2M4ZmZmMzE2MDYzN2ExYzNkOTZkMCJ9"
         },
         {
@@ -483,24 +455,10 @@
           "version": "repo-lines-v1:sha256:41782048b81e796a82d88430b2a9d1bbc23ff221c92542c6a67c047016193391:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMmE4MWMzODM2ZWRlZjJkMGJhMTFkMjM1M2ZiNmRhYmM3NzcxNTBhN2NhODNlYTBkOWU5YTcwMzEzZmVhYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhM2U1NTAwODQ1ODg3NTg0NTU1ZWU0MzkwYjI5MGM3ZmE1MjRlNjE5ZmIzZTgyMzA1M2MxZGIyZjU3ZjNkZDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
-    },
-    {
-      "id": "claim_42ed67050efb4d35b9a74060a09b33af",
-      "statement": "apps/server/README.md's comment that `mise run deploy` builds the web UI into the server's static directory is out of date: the mise deploy task only runs langgraph deploy --no-remote for the langchain-chess agent's production environment, and the UI ships to GitHub Pages.",
-      "evidence": [
-        {
-          "resource": "repo://apps/server/README.md#L95-L98",
-          "version": "repo-lines-v1:sha256:429a2ce75a6ba836d7512422069b5387bd8b3bc97cbf68563b67b694ecd59b91:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM0M2ZiODlkZDcxMzkxNzA2YmI2NTUzMzcxMzlhZTY2YWMxMGZhY2M0MjYyYmNkMjQ4YzIyOWNmMGUyNWQwNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFkNGNlZjUxOTQ4MzFhMThkN2VjNGFkOTk2ZWYwMjYwNGE2YTdhMDJmZjE0NmRjZjNiNWE5OGM3ZDg0MmQxYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2NlNjE4ZDc1ZjI3NzcwZmI0YzUzMDBmYjJkYjU0NGVkOGViMDE4Zjg0MTkzMWI5YmQ0OTc2ZGE3MGM2ZGM2YSJ9"
-        },
-        {
-          "resource": "repo://mise.toml#L182-L186",
-          "version": "repo-lines-v1:sha256:ce044db067d0a05577e104089f4851456a6f9157b4b68f36fe52e2278b2e1667:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGUyYjVjM2MzMjVkMDcwMjM2NDBkZDEzZGMxZmFjZDQ0OGJkOTRiMGM2MzY3NDFjMjNhZmIxYWM5NmE2ZWEwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWM2NzM2NTkxMjQwNWU5NGJkOTZkZTVkNjE3NGE3NGI1NmUzZjRkZmMwYjUxZGQ2NWUyYWZiN2JlYTk1YTU4ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWVjZjA2OWI1MjJmOWM2MTVlMmZhN2JjM2JmMDRkNzMwNTBkNTMwN2I0MjcxZDhhN2JlNzY2MjAyOTM1ZDM0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmZmOGQ3MWRjM2QyOGJlYzY3ZmJjNWExMGRlNmY0Y2M4ODUyMWJmZDg2MDFmYmY3MzBmZDFiMjYxNjYzN2QxMCJ9"
-        }
-      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-11-01T03:07:46.931Z"
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-13T19:10:14.398Z"
   }
 }

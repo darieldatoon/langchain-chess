@@ -30,7 +30,7 @@ sources:
     resource: repo://libs/systemone/langchain_chess_systemone/middleware.py
   - id: openwiki-source-0e44d1e7d0101f3027cd3f67
     resource: repo://libs/systemone/tests/test_middleware.py
-generated: { by: "openwiki/0.6.0", at: "2026-11-01T01:10:29.908Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-13T19:10:14.398Z" }
 verified:
   - by: openwiki/0.6.0
     at: 2026-11-01T01:10:29.908Z
@@ -45,10 +45,14 @@ Every middleware passed to `create_chess_agent(middleware=[...])` is an extensio
 
 The module docstring says plainly that the guard **is not a security boundary**. Extensions run in-process as trusted code. The guard exists so that their mistakes fail loudly with a `ChessContractError` instead of quietly corrupting a game. Don't rely on it to contain untrusted code.
 
+<!-- openwiki: broken internal link [/openwiki/architecture/turn-lifecycle.md] link "/openwiki/architecture/turn-lifecycle.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/concepts/state-record.md] link "/openwiki/concepts/state-record.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/openwiki/architecture/system-one.md] link "/openwiki/architecture/system-one.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 For the turn phases these hooks run inside, see [the turn lifecycle](/openwiki/architecture/turn-lifecycle.md). For the record clients read, see [the state record](/openwiki/concepts/state-record.md). For the main real extension, see [System One](/openwiki/architecture/system-one.md).
 
 ## Where extensions sit in the stack
 
+<!-- openwiki: broken internal link [/libs/chess/langchain_chess/agent.py] link "/libs/chess/langchain_chess/agent.py" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 `create_chess_agent` builds the stack in this order ([agent.py](/libs/chess/langchain_chess/agent.py)):
 
 1. `ChessCore`
@@ -61,6 +65,7 @@ It then calls `create_agent` with `tools=[]`, and with `NoModel()` when `model=N
 
 ### Core-owned `StallRetry` stays last
 
+<!-- openwiki: broken internal link [/libs/chess/langchain_chess/middleware/stall_retry.py] link "/libs/chess/langchain_chess/middleware/stall_retry.py" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 `StallRetry` ([stall_retry.py](/libs/chess/langchain_chess/middleware/stall_retry.py)) is a `ModelRetryMiddleware` that the core appends itself. You never pass it, and it is not guarded. It retries only errors that mean the response stream stalled: `langchain_openai.StreamChunkTimeoutError`, or nothing at all when `langchain_openai` isn't installed. It retries once, with no delay, because the stall has already waited out the 120 s chunk timeout. It uses `on_failure="error"`, so a second stall raises and the pending turn's retry can resume it. With `"continue"`, the last stall would instead become the model's reply. It only wraps the model call, so it adds no graph node.
 
 `create_agent` nests `wrap_model_call` wrappers in list order, so the last middleware is the innermost wrapper, the one closest to the provider. Putting `StallRetry` there means a retry repeats **only the provider call**. `ChessCore`'s wrapper, which prepares the prompt and keeps the call bookkeeping, runs once, and so does every user extension's wrapper. Summarization is a `before_model` hook, not a wrapper, so a stall retry never re-summarizes either. A stalled attempt records no call, because its usage would have come in the final chunk. User middleware can never sit after `StallRetry`, because `create_chess_agent` appends it after the extensions and the summarization slot. If it moved earlier, a stall would re-run the wrappers that come after it, including any user extension's wrapper or retry logic.
@@ -82,6 +87,8 @@ Construction also enforces some rules:
 - `create_chess_agent` raises if two extensions declare the same private state key.
 - `create_chess_agent` raises if the compiled graph's input schema exposes anything beyond `messages` and `position`. This catches a key that isn't marked `PrivateStateAttr`/`OmitFromInput`, and a redeclared `ChessState` key.
 
+<!-- openwiki: broken internal link [/apps/server/langchain_chess_server/graph.py] link "/apps/server/langchain_chess_server/graph.py" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
+<!-- openwiki: broken internal link [/libs/systemone/langchain_chess_systemone/agent.py] link "/libs/systemone/langchain_chess_systemone/agent.py" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 The server's graph ([graph.py](/apps/server/langchain_chess_server/graph.py)) always ends up with two extensions and `fixed_topology=True`. For a run, `build_graph` calls SystemOne's `build_agent` ([agent.py](/libs/systemone/langchain_chess_systemone/agent.py)) with `middleware=[GameSetupMiddleware(settings)]`. `build_agent` puts a SystemOne middleware first, or its `NoSystemOne` stand-in for the `llm` policy, and then that middleware. For reads and introspection, `shape()` calls `create_chess_agent(None, middleware=[NoSystemOne(), GameSetupMiddleware(ChessContext())])` directly, so both paths build the same nodes.
 
 ## `ChessMiddleware` helpers
@@ -95,6 +102,7 @@ The server's graph ([graph.py](/apps/server/langchain_chess_server/graph.py)) al
 | `turn_calls(state)` | Override to report your own model calls (`Call` records). They are appended to `TurnRecord.calls` whenever the turn finalizes: committed, terminal, or abandoned when a new command replaces a pending turn. Default: `[]`. |
 | `turn_latency_ms(state)` | Override to report your own time on the turn. It is added to `TurnRecord.latency_ms` whenever the turn finalizes, so the committed ply's `latency_ms` includes it. Report each frozen decision's time once per turn, however many retries replay it. Default: `0.0`. |
 
+<!-- openwiki: broken internal link [/libs/chess/langchain_chess/middleware/core.py] link "/libs/chess/langchain_chess/middleware/core.py" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 `ChessCore._finalized` folds the extensions' calls and latency into the turn once, as the turn finalizes. `_finalize` calls `ply_meta` for each extension when a move commits. All three helpers are reached through the proxy, and the proxy passes each a detached copy of the state ([core.py](/libs/chess/langchain_chess/middleware/core.py)).
 
 ## How the guard works
@@ -139,6 +147,7 @@ sequenceDiagram
 | `allowed_moves` | Must be non-empty and a subset of the current allowed moves ("may only narrow", "the narrowing leaves no move"). | The hard constraint. `ChessCore` parses the reply against it and checks it again at commit. In the prompt, a restricted turn gets an "Only these moves are permitted" line instead of the legal-move list. If an extension narrows the moves after a proposal exists, the commit fails with "proposal … is not an allowed move". |
 | `proposal` | Only allowed when no proposal exists this turn. Its `uci` must be allowed. | The decision. One per turn. A proposer must jump to `end` from `before_model` and must declare `@hook_config(can_jump_to=["end"])`. Without it, `create_agent` silently ignores the jump. A jump to `end` with neither a proposal nor an outcome fails at commit with "the turn ended without a move or an outcome". |
 | `candidates` | Must be duplicate-free and a subset of the allowed moves. Only one middleware may write it per turn: the guard records the writer in `candidates_by`, and a different writer fails with "X already set candidates this turn". The same writer may rewrite it on replay. `None` is accepted. | A **soft** suggestion. `ChessCore.turn_message` filters them to the moves that are still allowed before rendering, so a later hard restriction never leaves stale suggestions visible. The bundled renderer shows them, when `move_list` is `"both"` or `"candidates"`, as "Suggested candidates: … you may play any allowed move". `ForcedMoveMiddleware` reads `initial_allowed`, never `candidates`, so a one-move shortlist is not treated as a forced move. |
+<!-- openwiki: broken internal link [/libs/cli/langchain_chess_cli/uci/completion.py] link "/libs/cli/langchain_chess_cli/uci/completion.py" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 | `fallback_move` | If set, it must be allowed. | A move to play if the run never completes. Core only resets it. The UCI adapter plays it after a cancelled or failed search, as long as it's still in the root pool of the same request ([completion.py](/libs/cli/langchain_chess_cli/uci/completion.py)). |
 
 `ChessCore` clears `proposal`, `terminal_intent`, `candidates`, `candidates_by`, `fallback_move` and `failed_call` whenever a turn opens, retries from scratch, or finalizes (`_DECISION_RESET`). Extension-owned keys are **not** cleared. That is why a frozen decision survives a retry. The illegal-reply budget is not part of this reset: it is counted on the durable `TurnRecord.illegal_attempts`.
@@ -147,6 +156,7 @@ sequenceDiagram
 
 Declare extension state in a subclass of `ChessState` and mark each key `Annotated[..., PrivateStateAttr]`, or at least `OmitFromInput`. This keeps it out of the input schema. A key name may belong to only one extension per agent. Keep telemetry in these keys until the turn finalizes, then expose it through `ply_meta`, `turn_calls` and `turn_latency_ms`. Don't write it into core records directly, because the guard refuses that.
 
+<!-- openwiki: broken internal link [/apps/server/langchain_chess_server/game_setup.py] link "/apps/server/langchain_chess_server/game_setup.py" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 `OmitFromInput` without `PrivateStateAttr` is meant for a key that clients should read but never send. The server's `GameSetupMiddleware` ([game_setup.py](/apps/server/langchain_chess_server/game_setup.py)) is a plain `AgentMiddleware` extension that declares `setup: Annotated[dict, OmitFromInput]`. It writes the run's resolved `ChessContext` only on the run that opened the game's first turn, from both `before_agent` and `after_agent`. The `after_agent` write is there because a turn that ends the game jumps from `ChessCore.before_agent` straight past later `before_agent` hooks.
 
 ## Idempotent `before_model` and frozen decisions
@@ -166,6 +176,7 @@ The rules are therefore:
 
 ## Worked example: `SystemOneMiddleware`
 
+<!-- openwiki: broken internal link [/libs/systemone/langchain_chess_systemone/middleware.py] link "/libs/systemone/langchain_chess_systemone/middleware.py" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 [`SystemOneMiddleware`](/libs/systemone/langchain_chess_systemone/middleware.py) is the reference extension:
 
 - It declares `SystemOneState` with one private key, `systemone_turn: Annotated[FrozenDecision | None, PrivateStateAttr]`.
@@ -234,13 +245,17 @@ SystemOne's freeze and replay behaviour is covered in `libs/systemone/tests/test
 - `test_the_agent_seed_reaches_systemone` and `test_turn_seed_is_stable_and_turn_specific`
 - `test_a_hybrid_turn_counts_the_ranking_once_across_retries`
 
+<!-- openwiki: broken internal link [/openwiki/testing/testing-conventions.md] link "/openwiki/testing/testing-conventions.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 The shared fakes (`ScriptedModel`, `position`, `human`) live in `langchain_chess.testing`. See [testing conventions](/openwiki/testing/testing-conventions.md).
 rn_specific`
 - `test_a_hybrid_turn_counts_the_ranking_once_across_retries`
 
+<!-- openwiki: broken internal link [/openwiki/testing/testing-conventions.md] link "/openwiki/testing/testing-conventions.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 The shared fakes (`ScriptedModel`, `position`, `human`) live in `langchain_chess.testing`. See [testing conventions](/openwiki/testing/testing-conventions.md).
+<!-- openwiki: broken internal link [/openwiki/testing/testing-conventions.md] link "/openwiki/testing/testing-conventions.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 chess.testing`. See [testing conventions](/openwiki/testing/testing-conventions.md).
 rn_specific`
 - `test_a_hybrid_turn_counts_the_ranking_once_across_retries`
 
+<!-- openwiki: broken internal link [/openwiki/testing/testing-conventions.md] link "/openwiki/testing/testing-conventions.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 The shared fakes (`ScriptedModel`, `position`, `human`) live in `langchain_chess.testing`. See [testing conventions](/openwiki/testing/testing-conventions.md).
